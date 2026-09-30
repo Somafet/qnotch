@@ -15,7 +15,7 @@ public sealed class NoteGithubModule : INotchModule, ICadenceAware
         var note = new NoteStore(ctx);
         var github = _github = new GithubService(ctx);
 
-        ctx.Cards.Register(new CardDescriptor("note", "Note", 60, () => new NoteCard(s)));
+        ctx.Cards.Register(new CardDescriptor("note", "Note", 45, () => new NoteCard(s)));
         ctx.Cards.Register(new CardDescriptor("github", "GitHub", 50, () => new GithubCard(s, github, ctx.Shell), ColumnSpan: 2));
         ctx.SettingsSections.Register(new SettingsSectionDescriptor("github", "GitHub", Glyphs.Github, 50, () => GithubSection.Create(s, github)));
 
