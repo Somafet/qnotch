@@ -58,8 +58,18 @@ public partial class App : Application
         string? snapDir = snap >= 0 && snap + 1 < e.Args.Length ? Path.GetFullPath(e.Args[snap + 1]) : null;
         if (snapDir is null)
         {
-            var m = new Mutex(true, @"Local\QNotch.SingleInstance", out var first);
-            if (!first) { m.Dispose(); Shutdown(); return; }
+            // QNOTCH_INSTANCE keeps parallel test runs apart. --restart: the previous instance is shutting down, wait for its mutex.
+            var m = new Mutex(true, @"Local\QNotch.SingleInstance" + (Environment.GetEnvironmentVariable("QNOTCH_INSTANCE") is { Length: > 0 } i ? "." + i : ""), out var first);
+            if (!first)
+            {
+                var ok = false;
+                if (e.Args.Contains("--restart"))
+                {
+                    try { ok = m.WaitOne(10_000); }
+                    catch (AbandonedMutexException) { ok = true; }
+                }
+                if (!ok) { m.Dispose(); Shutdown(); return; }
+            }
             _mutex = m;
         }
         try { Boot(snapDir, e.Args.Contains("light")); }
@@ -133,6 +143,13 @@ public partial class App : Application
         if (snapDir is not null) { Snapshot.Run(snapDir, window, shell, tabs, sections, state, () => Shutdown()); return; }
         _tray = new TrayIcon(window, shell, () => Shutdown());
         Log.Info($"Started in {(DateTime.Now - System.Diagnostics.Process.GetCurrentProcess().StartTime).TotalMilliseconds:0} ms");
+    }
+
+    /// <summary>Starts a fresh instance (it waits for our mutex, released last in OnExit) and quits.</summary>
+    public static void Restart()
+    {
+        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(Environment.ProcessPath!, "--restart") { UseShellExecute = false });
+        Current.Shutdown();
     }
 
     void OnTextMouseDown(object sender, MouseButtonEventArgs e)
