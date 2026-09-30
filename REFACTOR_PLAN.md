@@ -1,5 +1,7 @@
 # Extension-boundary refactor plan
 
+Status: done (Core stage 263b897, 715bbe6, 1fad5a0; Integrate review and verification pass on top). Deviations from this plan: `SegmentHost` is an instance class with a per-id cache (the shell and the game mode controller each own one) instead of a static helper; `UiKit.Bind` and `UiKit.BindVisible` were added for the code-built segments; the legacy game bar flag migration lives in `GameModeSettings.MigrateLegacy()`; the snapshot tool also writes `settings-<id>-end.png` for scrollable pages. No temporary shims remain.
+
 Structural only: visuals, behaviour and the performance baseline stay the same or improve. Six extensions (Stats, Media, Clipboard, Ai, NoteGithub, FileTray) sit on a shell that knows none of them by name except `Modules/ModuleList.cs`. No DLL plugin loading.
 
 ## Coupling today (what this removes)

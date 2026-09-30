@@ -8,7 +8,7 @@ Parallel test runs: set `QNOTCH_INSTANCE` (suffix of the single-instance mutex n
 
 ## See your UI without driving the desktop
 
-`QNotch.exe --snapshot <dir> [light]` renders at 2x into `<dir>`: `pill.png` (with the glance strip), `tab-<id>.png` for every tab, `tab-home-edit.png`, `gamebar.png`, `gamebar-corner.png` and `settings-<id>.png` for every settings section, then exits. It runs next to a normal instance (no single-instance lock, window off-screen, nothing is saved, every module is loaded whatever `DisabledModules` says) and writes `snapshot.txt` (hotkey parse checks, errors). When `ctx.Settings.ReadOnly` is true a module should register everything and seed demo data instead of starting its providers (Media shows "Midnight City", Clipboard shows sample entries). Use it after every UI change and look at the PNGs.
+`QNotch.exe --snapshot <dir> [light]` renders at 2x into `<dir>`: `pill.png` (with the glance strip), `tab-<id>.png` for every tab, `tab-home-edit.png`, `gamebar.png`, `gamebar-corner.png` and `settings-<id>.png` for every settings section (a page taller than the window also gets `settings-<id>-end.png`, scrolled to the bottom, so the Game mode segment toggles are visible), then exits. It runs next to a normal instance (no single-instance lock, window off-screen, nothing is saved, every module is loaded whatever `DisabledModules` says) and writes `snapshot.txt` (hotkey parse checks, errors). When `ctx.Settings.ReadOnly` is true a module should register everything and seed demo data instead of starting its providers (Media shows "Midnight City", Clipboard shows sample entries). Use it after every UI change and look at the PNGs.
 
 ## Folder layout (`src/QNotch`)
 

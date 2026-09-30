@@ -105,6 +105,11 @@ public partial class SettingsWindow : Window
             w._buttons[s.Id].IsChecked = true;
             w.UpdateLayout();
             save((FrameworkElement)w.Content, s.Id);
+            if (w.Scroll.ScrollableHeight <= 0) continue;
+            w.Scroll.ScrollToEnd(); // tall pages (Game mode segments): a second shot of the bottom
+            w.UpdateLayout();
+            save((FrameworkElement)w.Content, s.Id + "-end");
+            w.Scroll.ScrollToHome();
         }
         w.Close();
     }
