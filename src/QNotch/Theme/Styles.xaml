@@ -619,6 +619,9 @@
                             <Setter TargetName="Bd" Property="Background" Value="{DynamicResource CardHoverBrush}"/>
                             <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource StrokeStrongBrush}"/>
                         </Trigger>
+                        <Trigger Property="IsLifted" Value="True">
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+                        </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>

@@ -25,15 +25,16 @@ public sealed class SavedClip
 internal sealed record ClipReady(ClipEntry Entry);
 
 /// <summary>
-/// Clipboard history. Event-driven: WM_CLIPBOARDUPDATE on the shell window, a short UI-thread read (text or DIB bytes, never sleeping),
-/// then classification and image conversion on the thread pool. No timers run while idle.
+/// Clipboard history. Event-driven: WM_CLIPBOARDUPDATE and the sequence-number check stay on the UI thread; the clipboard read
+/// (which can wait on a delayed-rendering owner such as Excel), classification and image conversion run on one STA worker thread.
+/// No timers run while idle.
 /// </summary>
 public sealed class ClipboardModule : INotchModule, ICadenceAware
 {
     public string Id => "clipboard";
 
     const int MaxEntries = 40;
-    const long ImageBudget = 24 << 20; // total PNG bytes kept, so 40 big screenshots can never blow the memory target
+    const long ImageBudget = 8 << 20;  // total PNG bytes kept, so 40 big screenshots can never blow the memory target
     const int MaxPersistChars = 20_000;
 
     ModuleContext _ctx = null!;
@@ -41,7 +42,9 @@ public sealed class ClipboardModule : INotchModule, ICadenceAware
     ClipboardSettings _cfg = null!;
     HwndSourceHook? _hook;
     DispatcherTimer? _capTimer, _ageTimer;
-    int _tries;
+    readonly AutoResetEvent _wake = new(false);
+    Thread? _worker;
+    int _pending; // latest clipboard sequence number waiting for the worker (0 = none); bursts coalesce
     uint _selfSeq, _lastSeq;
     bool _fast;
 
@@ -75,11 +78,11 @@ public sealed class ClipboardModule : INotchModule, ICadenceAware
 
     nint Hook(nint hwnd, int msg, nint w, nint l, ref bool handled)
     {
-        if (msg == ClipboardNative.WM_CLIPBOARDUPDATE) { _tries = 0; Arm(30); }
+        if (msg == ClipboardNative.WM_CLIPBOARDUPDATE) Arm(30);
         return 0;
     }
 
-    /// <summary>One-shot timer: coalesces bursts of updates (many apps set several formats) and retries a busy clipboard.</summary>
+    /// <summary>One-shot timer: coalesces bursts of updates (many apps set several formats).</summary>
     void Arm(int ms)
     {
         if (_capTimer is null)
@@ -95,27 +98,45 @@ public sealed class ClipboardModule : INotchModule, ICadenceAware
     void Capture()
     {
         _capTimer?.Stop();
-        try
+        uint seq = ClipboardNative.GetClipboardSequenceNumber();
+        if (seq == _selfSeq || seq == _lastSeq) return; // our own copy, or already handled
+        _lastSeq = seq;
+        Volatile.Write(ref _pending, (int)seq);
+        if (_worker is null)
         {
-            uint seq = ClipboardNative.GetClipboardSequenceNumber();
-            if (seq == _selfSeq || seq == _lastSeq) return; // our own copy, or already handled
-            var r = ClipboardNative.Read(_ctx.Shell.Hwnd, out var text, out var dib);
-            if (r == ReadResult.Busy) { if (++_tries < 6) Arm(40 * _tries); return; }
-            _lastSeq = seq;
-            if (r == ReadResult.Skip) return;
-            Task.Run(() => Publish(text, dib));
+            _worker = new Thread(WorkerLoop) { IsBackground = true, Name = "QNotch.Clipboard" };
+            _worker.SetApartmentState(ApartmentState.STA);
+            _worker.Start();
         }
-        catch (Exception ex) { Log.Warn("Clipboard capture failed", ex); }
+        _wake.Set();
     }
 
-    void Publish(string? text, byte[]? dib)
+    // ---------- worker thread ----------
+
+    void WorkerLoop()
     {
-        try
+        while (true)
         {
-            var e = text is not null ? ClipProcessor.FromText(text) : ClipProcessor.FromDib(dib!);
-            if (e is not null) _ctx.Bus.Post(new ClipReady(e));
+            _wake.WaitOne();
+            while (Interlocked.Exchange(ref _pending, 0) != 0)
+            {
+                try
+                {
+                    string? text = null; byte[]? dib = null;
+                    var r = ReadResult.Busy;
+                    for (int i = 1; i <= 6 && r == ReadResult.Busy; i++)
+                    {
+                        r = ClipboardNative.Read(0, out text, out dib); // may wait for a delayed-rendering owner: fine, this is not the UI thread
+                        if (r == ReadResult.Busy) Thread.Sleep(40 * i);
+                    }
+                    if (r != ReadResult.Ok) continue;
+                    var e = text is not null ? ClipProcessor.FromText(text) : ClipProcessor.FromDib(dib!);
+                    dib = null;
+                    if (e is not null) _ctx.Bus.Post(new ClipReady(e));
+                }
+                catch (Exception ex) { Log.Warn("Clipboard capture failed", ex); }
+            }
         }
-        catch (Exception ex) { Log.Warn("Clipboard processing failed", ex); }
     }
 
     // ---------- history (UI thread) ----------
@@ -138,6 +159,7 @@ public sealed class ClipboardModule : INotchModule, ICadenceAware
         }
         while (list.Sum(x => x.Png?.Length ?? 0) > ImageBudget && list.LastOrDefault(x => x.IsImage && !x.Pinned) is { } old) list.Remove(old);
         Changed();
+        if (e.IsImage) MemoryTrim.AfterActivity(); // a 4K screenshot leaves ~100 MB of large-object garbage behind
     }
 
     void Reposition(ClipEntry e)

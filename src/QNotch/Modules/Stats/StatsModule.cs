@@ -28,8 +28,26 @@ public sealed class StatsModule : INotchModule, ICadenceAware
         ctx.Bus.Subscribe<StatsSample>(Apply);
         ctx.Bus.Subscribe<ClockTick>(t => ctx.State.Stats.Clock = t.Text);
 
-        _sampleTimer = new Timer(SampleTick, null, 300, Timeout.Infinite);
-        _clockTimer = new Timer(_ => ClockTickCb(), null, 0, Timeout.Infinite);
+        // Timers are created idle and armed after assignment: a callback must never see a null field.
+        _sampleTimer = new Timer(SampleTick, null, Timeout.Infinite, Timeout.Infinite);
+        _clockTimer = new Timer(_ => ClockTickCb(), null, Timeout.Infinite, Timeout.Infinite);
+        _sampleTimer.Change(300, Timeout.Infinite);
+        _clockTimer.Change(0, Timeout.Infinite);
+
+        // A one-shot timer does not count time asleep: re-arm on resume and on clock or time-zone changes.
+        ctx.Shell.AddHwndHook(OnHwndMessage);
+    }
+
+    const int WM_TIMECHANGE = 0x1E, WM_POWERBROADCAST = 0x218, PBT_APMRESUMEAUTOMATIC = 0x12;
+
+    nint OnHwndMessage(nint hwnd, int msg, nint w, nint l, ref bool handled)
+    {
+        if (msg == WM_TIMECHANGE || (msg == WM_POWERBROADCAST && (int)w == PBT_APMRESUMEAUTOMATIC))
+        {
+            _clockTimer.Change(0, Timeout.Infinite);
+            _sampleTimer.Change(0, Timeout.Infinite);
+        }
+        return 0;
     }
 
     public void SetCadence(Cadence cadence)
@@ -47,9 +65,9 @@ public sealed class StatsModule : INotchModule, ICadenceAware
         {
             _sampler ??= new SystemSampler();
             _gpu ??= new GpuSampler();
-            // GPU counters can be expensive: at the slow cadence only sample them while cheap.
-            int? gpu = _gpu.Available && (_fast || _gpu.AvgMs < 4) ? _gpu.Sample() : null;
-            _ctx.Bus.Post(_sampler.Sample(gpu));
+            // The PDH GPU query is the expensive part: only while the panel is open or the game bar shows a GPU segment.
+            int? gpu = _gpu.Available && (_fast || _ctx.State.Stats.GpuWanted) ? _gpu.Sample() : null;
+            _ctx.Bus.Post(_sampler.Sample(gpu) with { GpuAvailable = _gpu.Available });
         }
         catch (Exception ex) { Log.Warn("Stats sample failed", ex); }
         finally { _sampleTimer.Change(_intervalMs, Timeout.Infinite); }
@@ -57,9 +75,13 @@ public sealed class StatsModule : INotchModule, ICadenceAware
 
     void ClockTickCb()
     {
-        var now = DateTime.Now;
-        _ctx.Bus.Post(new ClockTick(now.ToString("HH:mm")));
-        _clockTimer.Change(60_000 - (now.Second * 1000 + now.Millisecond) + 30, Timeout.Infinite);
+        try
+        {
+            var now = DateTime.Now;
+            _ctx.Bus.Post(new ClockTick(now.ToString("HH:mm")));
+            _clockTimer.Change(60_000 - (now.Second * 1000 + now.Millisecond) + 30, Timeout.Infinite);
+        }
+        catch (Exception ex) { Log.Warn("Clock tick failed", ex); }
     }
 
     // ---------- UI thread ----------
@@ -70,6 +92,7 @@ public sealed class StatsModule : INotchModule, ICadenceAware
         st.HasSample = true;
         st.CpuPercent = s.Cpu;
         st.CpuText = $"{s.Cpu}%";
+        st.GpuAvailable = s.GpuAvailable;
         st.GpuPercent = s.Gpu;
         st.GpuText = s.Gpu is { } g ? $"{g}%" : "n/a";
         st.RamUsedBytes = s.RamUsed;

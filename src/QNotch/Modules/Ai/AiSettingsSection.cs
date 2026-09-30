@@ -95,8 +95,10 @@ internal static class AiSettingsSection
             building = false;
         }
 
-        m.Changed += Rebuild;
-        st.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(st.IsScanning)) Rebuild(); };
+        // Subscribe only while the page is in the tree: the settings window is recreated on every open and must not be kept alive.
+        void OnState(object? _, System.ComponentModel.PropertyChangedEventArgs e) { if (e.PropertyName == nameof(st.IsScanning)) Rebuild(); }
+        page.Loaded += (_, _) => { m.Changed += Rebuild; st.PropertyChanged += OnState; Rebuild(); };
+        page.Unloaded += (_, _) => { m.Changed -= Rebuild; st.PropertyChanged -= OnState; };
         Rebuild();
         return page;
     }

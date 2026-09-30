@@ -33,7 +33,7 @@ internal static unsafe partial class GameModeNative
     }
 
     /// <summary>Gathers the classifier input for a window. Cheap: a handful of Win32 calls, only ever run on foreground or size change.</summary>
-    public static WindowFacts Probe(nint hwnd, nint selfHwnd)
+    public static WindowFacts Probe(nint hwnd, nint selfHwnd, nint notchMonitor)
     {
         var process = ProcessNameOf(hwnd, out var pid);
         Native.GetWindowRect(hwnd, out var rect);
@@ -43,7 +43,7 @@ internal static unsafe partial class GameModeNative
         Native.SHQueryUserNotificationState(out var notify);
         var style = (long)Native.GetWindowLongPtr(hwnd, Native.GWL_STYLE);
         return new WindowFacts(Native.ClassNameOf(hwnd), process, hwnd == selfHwnd || pid == (uint)Environment.ProcessId,
-            Native.IsWindowVisible(hwnd), IsIconic(hwnd), (style & WS_CAPTION) == WS_CAPTION, rect, mi.rcMonitor, notify);
+            Native.IsWindowVisible(hwnd), IsIconic(hwnd), (style & WS_CAPTION) == WS_CAPTION, rect, mi.rcMonitor, notify, notchMonitor == 0 || mon == notchMonitor);
     }
 }
 

@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace QNotch.Core;
@@ -21,6 +22,11 @@ public sealed partial class GeneralSettings : ObservableObject
     [ObservableProperty] string _profileImagePath = "";
     [ObservableProperty] bool _startWithWindows;
     [ObservableProperty] string _lastTab = "home";
+
+    // Runtime only (never saved): the hotkey recorder in Settings suspends global hotkeys while it listens, and shows failed registrations.
+    [ObservableProperty] [property: JsonIgnore] bool _recordingHotkey;
+    [ObservableProperty] [property: JsonIgnore] bool _toggleHotkeyTaken;
+    [ObservableProperty] [property: JsonIgnore] bool _gameModeHotkeyTaken;
 
     /// <summary>Card ids in display order, including hidden ones (hidden cards keep their slot).</summary>
     public List<string> CardOrder { get; set; } = new();

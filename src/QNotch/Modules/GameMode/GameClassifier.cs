@@ -12,8 +12,8 @@ public enum GameVerdict
     Ignore,
 }
 
-/// <summary>Everything the classifier looks at, gathered by the module from Win32. Pure data so the rules can be checked without a desktop.</summary>
-public readonly record struct WindowFacts(string ClassName, string Process, bool IsSelf, bool Visible, bool Iconic, bool HasCaption, RECT Window, RECT Monitor, int NotifyState);
+/// <summary>Everything the classifier looks at (SameMonitor: the window is on the display hosting the notch), gathered by the module from Win32. Pure data so the rules can be checked without a desktop.</summary>
+public readonly record struct WindowFacts(string ClassName, string Process, bool IsSelf, bool Visible, bool Iconic, bool HasCaption, RECT Window, RECT Monitor, int NotifyState, bool SameMonitor = true);
 
 /// <summary>The fullscreen rules of SPEC section 3 as one pure function, plus a tiny self-test.</summary>
 public static class GameClassifier
@@ -34,6 +34,8 @@ public static class GameClassifier
         if (Matches(deny, w.Process)) return GameVerdict.NotGame;
         if (Matches(allow, w.Process)) { reason = $"Listed: {w.Process}"; return GameVerdict.Game; }
         // A normal maximized window also covers the monitor when the taskbar auto-hides, but it keeps its caption. Games and video players do not.
+        // Only a window on the notch's own display counts: fullscreen video on monitor 2 must not silence the bar on monitor 1.
+        if (!w.SameMonitor) return GameVerdict.NotGame;
         if (!w.HasCaption && Covers(w.Window, w.Monitor)) { reason = $"Fullscreen: {w.Process}"; return GameVerdict.Game; }
         // Exclusive fullscreen D3D may not report a rect at all: ask the shell (value read on foreground change only).
         if (!w.HasCaption && w.NotifyState is Native.QUNS_BUSY or Native.QUNS_RUNNING_D3D_FULL_SCREEN or Native.QUNS_PRESENTATION_MODE)
@@ -68,7 +70,7 @@ public static class GameClassifier
         RECT R(int l, int t, int r, int b) => new() { Left = l, Top = t, Right = r, Bottom = b };
         var mon = R(0, 0, 1920, 1080);
         WindowFacts F(string cls = "Game", string proc = "game.exe", bool self = false, bool vis = true, bool icon = false, bool cap = false,
-            RECT? win = null, int notify = Native.QUNS_ACCEPTS_NOTIFICATIONS) => new(cls, proc, self, vis, icon, cap, win ?? mon, mon, notify);
+            RECT? win = null, int notify = Native.QUNS_ACCEPTS_NOTIFICATIONS, bool same = true) => new(cls, proc, self, vis, icon, cap, win ?? mon, mon, notify, same);
         string[] none = [], game = ["Game"], other = ["other.exe"];
 
         void Check(string name, GameVerdict expect, WindowFacts f, IReadOnlyCollection<string>? allow = null, IReadOnlyCollection<string>? deny = null)
@@ -91,6 +93,9 @@ public static class GameClassifier
         Check("presentation mode", GameVerdict.Game, F(win: R(50, 50, 800, 600), notify: Native.QUNS_PRESENTATION_MODE));
         Check("busy but captioned", GameVerdict.NotGame, F(cap: true, win: R(0, 0, 800, 600), notify: Native.QUNS_BUSY));
         Check("second monitor", GameVerdict.NotGame, F(win: R(1920, 0, 3840, 1080)));
+        Check("fullscreen on other monitor", GameVerdict.NotGame, F(same: false));
+        Check("captionless window while QUNS_BUSY elsewhere", GameVerdict.NotGame, F(win: R(100, 100, 500, 400), notify: Native.QUNS_BUSY, same: false));
+        Check("allow list ignores monitor", GameVerdict.Game, F(win: R(10, 10, 400, 300), same: false), allow: game);
         if (Normalize("Game.EXE ") != Normalize("game")) failed.Add("normalize");
         return failed;
     }

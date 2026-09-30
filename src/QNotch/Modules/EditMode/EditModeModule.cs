@@ -3,7 +3,6 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
-using System.Windows.Media.Effects;
 using System.Windows.Threading;
 using QNotch.Core;
 using QNotch.Shell;
@@ -121,7 +120,7 @@ public sealed class EditModeModule : INotchModule
         Snap(f.Move, TranslateTransform.YProperty);
         h.ClearValue(UIElement.RenderTransformProperty);
         h.ClearValue(UIElement.RenderTransformOriginProperty);
-        h.ClearValue(UIElement.EffectProperty);
+        h.IsLifted = false;
         h.ClearValue(Panel.ZIndexProperty);
     }
 
@@ -190,9 +189,9 @@ public sealed class EditModeModule : INotchModule
         var slot = VisualTreeHelper.GetOffset(h);
         _grab = _pressPos - new Point(slot.X + f.Move.X, slot.Y + f.Move.Y);
 
-        // Lift: straighten, scale up, shadow on this card only (effect is removed again after the settle).
+        // Lift: straighten, scale up, accent border (no shadow effect: it would be rasterized on the CPU every frame).
         Panel.SetZIndex(h, 10);
-        h.Effect = new DropShadowEffect { BlurRadius = 18, ShadowDepth = 6, Direction = 270, Opacity = 0.45, Color = Colors.Black, RenderingBias = RenderingBias.Performance };
+        h.IsLifted = true;
         Tween(f.Rot, RotateTransform.AngleProperty, f.Rot.Angle, 0, 120);
         Tween(f.Scale, ScaleTransform.ScaleXProperty, f.Scale.ScaleX, Lift, 140);
         Tween(f.Scale, ScaleTransform.ScaleYProperty, f.Scale.ScaleY, Lift, 140);
@@ -259,7 +258,7 @@ public sealed class EditModeModule : INotchModule
         Tween(f.Move, TranslateTransform.XProperty, f.Move.X, 0, 240, ease, () =>
         {
             if (f.Gen != gen) return;
-            h.ClearValue(UIElement.EffectProperty);
+            h.IsLifted = false;
             h.ClearValue(Panel.ZIndexProperty);
             if (_editing) Jiggle(h, f);
         });

@@ -8,7 +8,7 @@ namespace QNotch.Shell;
 /// <summary>The app icon (a notch pill) drawn at startup: no .ico asset to ship.</summary>
 public static unsafe class AppIcon
 {
-    public static BitmapSource Render(int size)
+    public static BitmapSource Render(int size, Color? tint = null)
     {
         var dv = new DrawingVisual();
         using (var dc = dv.RenderOpen())
@@ -25,7 +25,7 @@ public static unsafe class AppIcon
             fig.Segments.Add(new LineSegment(new Point(pill.Left + r, pill.Bottom), true));
             fig.Segments.Add(new ArcSegment(new Point(pill.Left, pill.Bottom - r), new Size(r, r), 0, false, SweepDirection.Clockwise, true));
             geo.Figures.Add(fig);
-            dc.DrawGeometry(new SolidColorBrush(Color.FromRgb(0x5B, 0x9D, 0xFF)), null, geo);
+            dc.DrawGeometry(new SolidColorBrush(tint ?? Color.FromRgb(0x5B, 0x9D, 0xFF)), null, geo);
             dc.DrawRoundedRectangle(new SolidColorBrush(Color.FromArgb(0x55, 255, 255, 255)), null, new Rect(s * 0.14, s * 0.62, s * 0.72, s * 0.1), s * 0.05, s * 0.05);
             dc.DrawRoundedRectangle(new SolidColorBrush(Color.FromArgb(0x33, 255, 255, 255)), null, new Rect(s * 0.14, s * 0.78, s * 0.45, s * 0.08), s * 0.04, s * 0.04);
         }
@@ -36,9 +36,9 @@ public static unsafe class AppIcon
     }
 
     /// <summary>Creates an HICON (caller owns it: DestroyIcon).</summary>
-    public static nint CreateHIcon(int size = 32)
+    public static nint CreateHIcon(int size = 32, Color? tint = null)
     {
-        var bmp = Render(size);
+        var bmp = Render(size, tint);
         var px = new byte[size * size * 4];
         bmp.CopyPixels(px, size * 4, 0);
         // Pbgra32 to straight alpha.

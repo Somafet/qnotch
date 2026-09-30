@@ -56,6 +56,14 @@ public partial class SeekBar : UserControl
         e.Handled = true;
     }
 
+    protected override void OnLostMouseCapture(MouseEventArgs e)
+    {
+        base.OnLostMouseCapture(e);
+        if (!_dragging) return;   // capture lost mid-drag (Alt-Tab, panel closing): drop the drag without seeking
+        _dragging = false;
+        Restyle();
+    }
+
     void Update()
     {
         var x = ActualWidth * Math.Clamp(_dragging ? _dragFraction : Progress, 0, 1);

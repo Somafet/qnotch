@@ -203,15 +203,21 @@ public static class GameModeSection
         }
 
         // Only when asked: enumerating processes is not free, so it never runs in the background.
-        void ShowRunning(Button anchor)
+        async void ShowRunning(Button anchor)
         {
-            var names = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var p in Process.GetProcesses())
+            anchor.IsEnabled = false;
+            var names = await Task.Run(() =>
             {
-                try { if (p.MainWindowHandle != 0 && p.Id != Environment.ProcessId) names.Add(p.ProcessName); }
-                catch { /* access denied */ }
-                finally { p.Dispose(); }
-            }
+                var set = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var p in Process.GetProcesses())
+                {
+                    try { if (p.MainWindowHandle != 0 && p.Id != Environment.ProcessId) set.Add(p.ProcessName); }
+                    catch { /* access denied */ }
+                    finally { p.Dispose(); }
+                }
+                return set;
+            });
+            anchor.IsEnabled = true;
             var menu = new ContextMenu { PlacementTarget = anchor, Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom, MaxHeight = 320 };
             foreach (var n in names.Take(60))
             {

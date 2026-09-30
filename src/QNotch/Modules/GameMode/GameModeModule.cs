@@ -20,9 +20,9 @@ public sealed class GameModeModule : INotchModule
     ModuleContext _ctx = null!;
     GameModeSettings _s = null!;
     GameBar _bar = null!;
-    DispatcherTimer? _entry;
+    DispatcherTimer? _entry, _sizeDebounce;
     readonly SizeWatcher _size = new();
-    bool _active, _gpuSeen;
+    bool _active;
 
     public void Initialize(ModuleContext ctx)
     {
@@ -48,7 +48,7 @@ public sealed class GameModeModule : INotchModule
         ctx.Shell.Foreground.Changed += _ => Request();
         ctx.Shell.GameModeOverrideChanged += _ => Request();
         ctx.Shell.AddHwndHook(OnHwndMessage);
-        _size.Changed += () => Request();
+        _size.Changed += OnSizeChanged;
 
         // The app may start while a game already owns the foreground.
         ctx.Dispatcher.BeginInvoke(DispatcherPriority.Background, () => Request());
@@ -71,7 +71,7 @@ public sealed class GameModeModule : INotchModule
     {
         switch (e.PropertyName)
         {
-            case nameof(StatsState.GpuPercent) when _ctx.State.Stats.GpuPercent is not null: _gpuSeen = true; RefreshSegments(); break;
+            case nameof(StatsState.GpuAvailable):
             case nameof(StatsState.HasBattery):
             case nameof(MediaState.HasSession):
             case nameof(MediaState.IsPlaying):
@@ -103,7 +103,8 @@ public sealed class GameModeModule : INotchModule
         var m = _ctx.State.Media;
         g.ShowMedia = _s.ShowMedia && m.HasSession && m.IsPlaying && m.Title.Length > 0;
         g.ShowCpu = _s.ShowCpu;
-        g.ShowGpu = _s.ShowGpu && _gpuSeen;   // latched: a GPU counter that never answered means no segment, never "0%"
+        g.ShowGpu = _s.ShowGpu && st.GpuAvailable;   // a dead GPU counter means no segment, never "0%"
+        st.GpuWanted = _active && g.ShowGpu;          // the sampler queries GPU at the slow cadence only while it is shown
         g.ShowRam = _s.ShowRam;
         g.ShowNet = _s.ShowNet;
         g.ShowBattery = _s.ShowBattery && st.HasBattery;
@@ -122,6 +123,7 @@ public sealed class GameModeModule : INotchModule
             if (ov != GameModeOverride.Auto || !_s.AutoDetect)
             {
                 CancelEntry();
+                _sizeDebounce?.Stop();
                 _size.Stop();
                 Apply(ov == GameModeOverride.ForceOn, ov switch { GameModeOverride.ForceOn => "Forced on", GameModeOverride.ForceOff => "Forced off", _ => "Detection is off" });
                 return;
@@ -129,7 +131,7 @@ public sealed class GameModeModule : INotchModule
 
             var fg = Native.GetForegroundWindow();
             if (fg == 0) return;
-            var facts = GameModeNative.Probe(fg, shell.Hwnd);
+            var facts = GameModeNative.Probe(fg, shell.Hwnd, shell.Monitor);
             var verdict = GameClassifier.Classify(facts, _s.AlwaysGame, _s.NeverGame, out var reason);
             if (verdict == GameVerdict.Ignore) return;
 
@@ -140,6 +142,18 @@ public sealed class GameModeModule : INotchModule
             else if (_entry is not { IsEnabled: true }) StartEntry();
         }
         catch (Exception ex) { Log.Warn("Game mode evaluation failed", ex); }
+    }
+
+    /// <summary>The location hook only wakes us; the probe (OpenProcess and friends) runs once after the window stopped moving.</summary>
+    void OnSizeChanged()
+    {
+        if (_sizeDebounce is null)
+        {
+            _sizeDebounce = new DispatcherTimer(DispatcherPriority.Normal, _ctx.Dispatcher) { Interval = TimeSpan.FromMilliseconds(250) };
+            _sizeDebounce.Tick += (_, _) => { _sizeDebounce.Stop(); Request(); };
+        }
+        _sizeDebounce.Stop();
+        _sizeDebounce.Start();
     }
 
     void StartEntry()
@@ -159,6 +173,7 @@ public sealed class GameModeModule : INotchModule
         _ctx.State.GameMode.Reason = reason;
         if (active == _active) return;
         _active = active;
+        RefreshSegments();
         _ctx.State.GameMode.IsActive = active;
         _ctx.Shell.SetGameBarActive(active);   // shell: click-through, hides pill and panel; leaving restores them with a short fade
         Log.Info(active ? $"Game bar on ({reason})" : "Game bar off");

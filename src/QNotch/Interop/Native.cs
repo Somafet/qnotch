@@ -160,6 +160,11 @@ public static unsafe partial class Native
     [LibraryImport("kernel32.dll")] [return: MarshalAs(UnmanagedType.Bool)]
     public static partial bool SetProcessWorkingSetSize(nint process, nint min, nint max);
 
+    /// <summary>Reads the live "Animation effects" setting (WPF's SystemParameters caches it and can be stale during WM_SETTINGCHANGE).</summary>
+    [LibraryImport("user32.dll", EntryPoint = "SystemParametersInfoW")] [return: MarshalAs(UnmanagedType.Bool)]
+    private static partial bool SystemParametersInfo(uint action, uint param, out int value, uint winIni);
+    public static bool ClientAreaAnimation => !SystemParametersInfo(0x1042, 0, out var v, 0) || v != 0;
+
     // DWM (dark title bar for the settings window)
     [LibraryImport("dwmapi.dll")] public static partial int DwmSetWindowAttribute(nint hwnd, int attr, ref int value, int size);
 

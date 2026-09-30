@@ -12,6 +12,33 @@ namespace QNotch;
 
 public partial class App : Application
 {
+    // Cold start: the UI thread spends ~200 ms in first-use costs (font cache, text stack, control type loads). A pool thread pays
+    // them in parallel. Nothing here touches a DispatcherObject.
+    static App()
+    {
+        // English UI text: numbers ("20.8/31.9 GB") and dates must not come out in the OS language either.
+        System.Globalization.CultureInfo.DefaultThreadCurrentCulture = UiCulture.Value;
+        System.Globalization.CultureInfo.CurrentCulture = UiCulture.Value;
+        Warm();
+    }
+
+    static void Warm() => Task.Run(() =>
+    {
+        try
+        {
+            var inv = System.Globalization.CultureInfo.InvariantCulture;
+            foreach (var (family, text) in new[] { ("Segoe UI Variable Text, Segoe UI", "CPU 12% RAM 4.2/15.7 GB 09:41"), ("Segoe Fluent Icons, Segoe MDL2 Assets", "") })
+            {
+                var tf = new System.Windows.Media.Typeface(new System.Windows.Media.FontFamily(family), FontStyles.Normal, FontWeights.SemiBold, FontStretches.Normal);
+                _ = new System.Windows.Media.FormattedText(text, inv, FlowDirection.LeftToRight, tf, 12, null!, 1.0).Width;
+            }
+            foreach (var t in new[] { typeof(Window), typeof(Button), typeof(ToggleButton), typeof(TextBox), typeof(ComboBox), typeof(Slider), typeof(ScrollViewer), typeof(Border), typeof(Grid), typeof(StackPanel), typeof(TextBlock), typeof(Image) })
+                System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(t.TypeHandle);
+            _ = System.Text.Json.JsonSerializer.Deserialize<GeneralSettings>("{}", SettingsStore.Json);
+        }
+        catch { /* warm-up only */ }
+    });
+
     Mutex? _mutex;
     HotkeyService? _hotkeys;
     ForegroundWatcher? _foreground;
@@ -42,7 +69,6 @@ public partial class App : Application
             Shutdown(1);
         }
     }
-
     void Boot(string? snapDir, bool light)
     {
         _store = new SettingsStore { ReadOnly = snapDir is not null };
@@ -50,7 +76,6 @@ public partial class App : Application
         if (snapDir is not null) { gs.Pinned = false; if (light) gs.Theme = ThemeChoice.Light; }
         Motion.Refresh(gs.ReduceMotion);
         ThemeManager.Apply(gs);
-
         var bus = new EventBus(Dispatcher);
         var state = new AppState();
         var cards = new Registry<CardDescriptor>();
@@ -76,15 +101,27 @@ public partial class App : Application
             State = state, Bus = bus, Settings = _store, Hotkeys = _hotkeys, Shell = shell, Dispatcher = Dispatcher,
             Cards = cards, Tabs = tabs, SettingsSections = sections, CardLayout = layout,
         };
+        // Cold start: the pill needs only Stats (clock, numbers) and Media (glance strip). The other modules initialize right after the
+        // first frame. Queued before shell.Start so they register their tabs and cards before the panel is first built.
         var modules = ModuleList.Create().ToList();
-        foreach (var m in modules)
+        var early = snapDir is not null ? modules : modules.Where(m => m is Modules.Stats.StatsModule or Modules.Media.MediaModule).ToList();
+        void Init(IEnumerable<INotchModule> list)
         {
-            try { m.Initialize(ctx); }
-            catch (Exception ex) { Log.Error($"Module '{m.Id}' failed to initialize", ex); }
+            foreach (var m in list)
+            {
+                try { m.Initialize(ctx); }
+                catch (Exception ex) { Log.Error($"Module '{m.Id}' failed to initialize", ex); }
+            }
         }
-
+        Init(early);
+        if (early.Count < modules.Count)
+            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ApplicationIdle, () =>
+            {
+                Init(modules.Except(early));
+                shell.SetCadenceAware(modules.OfType<ICadenceAware>());
+            });
         shell.Start();
-        shell.SetCadenceAware(modules.OfType<ICadenceAware>());
+        shell.SetCadenceAware(early.OfType<ICadenceAware>());
         window.Show();
         window.Reposition();
 

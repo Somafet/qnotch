@@ -91,7 +91,7 @@ internal sealed class NoteStore
         });
     }
 
-    static string DateText(DateTime d) => d.ToString("ddd, MMM d");
+    static string DateText(DateTime d) => d.ToString("ddd, MMM d", QNotch.Core.UiCulture.Value);
 
     static string WordsText(string text)
     {

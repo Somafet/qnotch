@@ -14,12 +14,14 @@ public sealed unsafe class TrayIcon : IDisposable
     readonly ShellController _shell;
     readonly Action _exit;
     readonly uint _taskbarCreated = Native.RegisterWindowMessage("TaskbarCreated");
-    nint _icon;
+    nint _icon, _iconActive; // active (amber pill): Game mode is forced or the game bar is showing
 
     public TrayIcon(NotchWindow window, ShellController shell, Action exit)
     {
         _w = window; _shell = shell; _exit = exit;
-        _icon = AppIcon.CreateHIcon(Math.Max(16, Native.GetSystemMetrics(Native.SM_CXSMICON)));
+        var size = Math.Max(16, Native.GetSystemMetrics(Native.SM_CXSMICON));
+        _icon = AppIcon.CreateHIcon(size);
+        _iconActive = AppIcon.CreateHIcon(size, System.Windows.Media.Color.FromRgb(0xF5, 0xA5, 0x24));
         _w.Source.AddHook(Hook);
         Add();
         shell.ModeChanged += _ => UpdateTip();
@@ -31,7 +33,7 @@ public sealed unsafe class TrayIcon : IDisposable
         var d = new NOTIFYICONDATAW
         {
             cbSize = (uint)sizeof(NOTIFYICONDATAW), hWnd = _w.Hwnd, uID = 1, uFlags = flags,
-            uCallbackMessage = CallbackMessage, hIcon = _icon,
+            uCallbackMessage = CallbackMessage, hIcon = _shell.Mode == ShellMode.GameBar || _shell.GameModeOverride != GameModeOverride.Auto ? _iconActive : _icon,
         };
         var mode = _shell.GameModeOverride switch { GameModeOverride.ForceOn => "Force on", GameModeOverride.ForceOff => "Force off", _ => "Auto" };
         var tip = $"QNotch\nGame mode: {mode}{(_shell.Mode == ShellMode.GameBar ? ", game bar showing" : "")}";
@@ -40,7 +42,7 @@ public sealed unsafe class TrayIcon : IDisposable
     }
 
     void Add() { var d = Data(Native.NIF_MESSAGE | Native.NIF_ICON | Native.NIF_TIP); Native.Shell_NotifyIcon(Native.NIM_ADD, ref d); }
-    void UpdateTip() { var d = Data(Native.NIF_TIP); Native.Shell_NotifyIcon(Native.NIM_MODIFY, ref d); }
+    void UpdateTip() { var d = Data(Native.NIF_TIP | Native.NIF_ICON); Native.Shell_NotifyIcon(Native.NIM_MODIFY, ref d); }
 
     nint Hook(nint hwnd, int msg, nint wParam, nint lParam, ref bool handled)
     {
@@ -89,5 +91,6 @@ public sealed unsafe class TrayIcon : IDisposable
         var d = Data(0);
         Native.Shell_NotifyIcon(Native.NIM_DELETE, ref d);
         if (_icon != 0) { Native.DestroyIcon(_icon); _icon = 0; }
+        if (_iconActive != 0) { Native.DestroyIcon(_iconActive); _iconActive = 0; }
     }
 }

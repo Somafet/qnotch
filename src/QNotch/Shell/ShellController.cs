@@ -154,8 +154,9 @@ public sealed class ShellController : IShell
         if (_mode != ShellMode.Collapsed) return;
         EnsurePanelBuilt();
         StopTimers();
-        var now = DateTime.Now; // regional format, like the Windows clock
-        Vm.DateText = $"{now:dddd}, {now.ToString(System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.MonthDayPattern)}";
+        MemoryTrim.Cancel();
+        var now = DateTime.Now;
+        Vm.DateText = now.ToString("dddd, MMMM d", UiCulture.Value);
         SetMode(ShellMode.Expanded);
         _w.SetOpen(true);
     }
@@ -168,7 +169,7 @@ public sealed class ShellController : IShell
         _w.DisableKeyboard();
         SetMode(ShellMode.Collapsed);
         _w.SetOpen(false);
-        MemoryTrim.Schedule();
+        MemoryTrim.AfterActivity();
     }
 
     public void TogglePanel()
@@ -378,6 +379,8 @@ public sealed class ShellController : IShell
 
     void OnSetting(object? s, PropertyChangedEventArgs e)
     {
+        if (e.PropertyName is nameof(GeneralSettings.RecordingHotkey)) { RegisterHotkeys(); return; }
+        if (e.PropertyName is nameof(GeneralSettings.ToggleHotkeyTaken) or nameof(GeneralSettings.GameModeHotkeyTaken)) return; // runtime only
         _store.Save("general", General);
         switch (e.PropertyName)
         {
@@ -398,10 +401,11 @@ public sealed class ShellController : IShell
     {
         Hotkeys.Unregister(_toggleKey);
         Hotkeys.Unregister(_gameKey);
+        if (General.RecordingHotkey) return; // the Settings recorder is listening: global hotkeys would swallow the keys
         _toggleKey = General.ToggleHotkey;
         _gameKey = General.GameModeHotkey;
-        Hotkeys.Register(_toggleKey, ToggleFromUser);
-        Hotkeys.Register(_gameKey, () => GameModeOverride = (GameModeOverride)(((int)_override + 1) % 3));
+        General.ToggleHotkeyTaken = !Hotkeys.Register(_toggleKey, ToggleFromUser);
+        General.GameModeHotkeyTaken = !Hotkeys.Register(_gameKey, () => GameModeOverride = (GameModeOverride)(((int)_override + 1) % 3));
     }
 
     nint SettingsHook(nint hwnd, int msg, nint wParam, nint lParam, ref bool handled)

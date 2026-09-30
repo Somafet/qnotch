@@ -65,7 +65,10 @@ internal sealed class GithubService
         if (_s.GithubGraph is { } d) _s.GithubUpdatedText = UpdatedText(d, _s.GithubStale);
     }
 
-    public async Task RefreshAsync()
+    /// <summary>Safe to call from the UI thread: the whole refresh (credential read, JSON parse, cache write) runs on the thread pool.</summary>
+    public Task RefreshAsync() => Task.Run(RefreshCore);
+
+    async Task RefreshCore()
     {
         if (Interlocked.Exchange(ref _busy, 1) == 1) return;
         try

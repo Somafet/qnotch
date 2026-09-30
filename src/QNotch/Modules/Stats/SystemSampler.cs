@@ -5,7 +5,11 @@ namespace QNotch.Modules.Stats;
 
 /// <summary>One immutable sample, posted from the thread pool. Null means "unavailable" (never a fake zero).</summary>
 public sealed record StatsSample(int Cpu, int? Gpu, long RamUsed, long RamTotal, double? NetDown, double? NetUp,
-    bool HasBattery, int? BatteryPercent, bool Charging);
+    bool HasBattery, int? BatteryPercent, bool Charging)
+{
+    /// <summary>False once the GPU counter sampler gave up for good.</summary>
+    public bool GpuAvailable { get; init; } = true;
+}
 
 /// <summary>Win32 sampling: GetSystemTimes, GlobalMemoryStatusEx, GetIfTable2, GetSystemPowerStatus. Thread-pool only, never on the UI thread.</summary>
 internal sealed unsafe class SystemSampler

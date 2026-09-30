@@ -87,7 +87,7 @@ public sealed class ContributionGraph : FrameworkElement
         if (idx < 0 || idx >= d.Days.Count || idx == _tipIndex) return;
         _tipIndex = idx;
         var day = d.Days[idx];
-        _tip.Content = $"{(day.Count == 0 ? "No contributions" : day.Count == 1 ? "1 contribution" : $"{day.Count} contributions")} on {day.Date.ToString("ddd, MMM d")}";
+        _tip.Content = $"{(day.Count == 0 ? "No contributions" : day.Count == 1 ? "1 contribution" : $"{day.Count} contributions")} on {day.Date.ToString("ddd, MMM d", QNotch.Core.UiCulture.Value)}";
     }
 
     protected override void OnMouseLeave(MouseEventArgs e) { base.OnMouseLeave(e); _tipIndex = -1; }

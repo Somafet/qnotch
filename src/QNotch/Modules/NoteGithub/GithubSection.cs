@@ -57,7 +57,9 @@ internal static class GithubSection
             status.SetResourceReference(TextBlock.ForegroundProperty, brush);
             clear.IsEnabled = refresh.IsEnabled = s.GithubHasToken;
         }
-        s.PropertyChanged += (_, e) => { if (e.PropertyName?.StartsWith("Github", StringComparison.Ordinal) == true) Sync(); };
+        void OnState(object? _, System.ComponentModel.PropertyChangedEventArgs e) { if (e.PropertyName?.StartsWith("Github", StringComparison.Ordinal) == true) Sync(); }
+        page.Loaded += (_, _) => { s.PropertyChanged += OnState; Sync(); }; // unsubscribed on Unloaded so a closed settings window can be collected
+        page.Unloaded += (_, _) => s.PropertyChanged -= OnState;
         Sync();
 
         save.Click += async (_, _) =>

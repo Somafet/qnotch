@@ -10,7 +10,7 @@ internal static unsafe partial class ClipboardNative
     public const int WM_CLIPBOARDUPDATE = 0x031D;
     const uint CF_UNICODETEXT = 13, CF_DIB = 8, GMEM_MOVEABLE = 2;
     public const int MaxChars = 200_000;
-    const long MaxDibBytes = 64 << 20;
+    const long MaxDibBytes = 34 << 20; // a 4K 32 bpp frame
 
     static readonly uint FmtExclude = RegisterClipboardFormat("ExcludeClipboardContentFromMonitorProcessing");
     static readonly uint FmtViewerIgnore = RegisterClipboardFormat("Clipboard Viewer Ignore");
@@ -32,7 +32,7 @@ internal static unsafe partial class ClipboardNative
     [LibraryImport("kernel32.dll")][return: MarshalAs(UnmanagedType.Bool)] private static partial bool GlobalUnlock(nint mem);
     [LibraryImport("kernel32.dll")] private static partial nuint GlobalSize(nint mem);
 
-    /// <summary>Reads text (preferred) or a DIB. Skip: nothing usable, flagged sensitive, or too large. Busy: clipboard held by another process.</summary>
+    /// <summary>Reads text (preferred) or a DIB. Blocks while a delayed-rendering owner produces the data: call it from the clipboard worker thread only. Skip: nothing usable, flagged sensitive, or too large. Busy: clipboard held by another process.</summary>
     public static ReadResult Read(nint hwnd, out string? text, out byte[]? dib)
     {
         text = null; dib = null;

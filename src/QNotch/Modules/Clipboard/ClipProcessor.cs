@@ -88,10 +88,8 @@ internal static class ClipProcessor
     /// <summary>DIB bytes (CF_DIB) to an image entry, or null when the PNG would exceed the 4 MB cap.</summary>
     public static ClipEntry? FromDib(byte[] dib)
     {
-        var bmp = BmpFile(dib);
-        if (bmp is null) return null;
-        var frame = BitmapDecoder.Create(new MemoryStream(bmp), BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad).Frames[0];
-        BitmapSource src = frame.Format == PixelFormats.Bgr32 ? frame : new FormatConvertedBitmap(frame, PixelFormats.Bgr32, null, 0);
+        var src = DibSource(dib) ?? DecodedBmp(dib);
+        if (src is null) return null;
         var enc = new PngBitmapEncoder();
         enc.Frames.Add(BitmapFrame.Create(src));
         using var ms = new MemoryStream();
@@ -116,6 +114,38 @@ internal static class ClipProcessor
     }
 
     static string Size(long b) => b >= 1 << 20 ? $"{b / 1048576.0:0.0} MB" : $"{Math.Max(1, b / 1024)} KB";
+
+    /// <summary>Common case (plain 24 or 32 bit, no palette): pixels straight from the DIB, no BMP copy and no decoder pass.</summary>
+    static unsafe BitmapSource? DibSource(byte[] dib)
+    {
+        if (dib.Length < 52) return null;
+        int hdr = BinaryPrimitives.ReadInt32LittleEndian(dib), w = BinaryPrimitives.ReadInt32LittleEndian(dib.AsSpan(4)), h = BinaryPrimitives.ReadInt32LittleEndian(dib.AsSpan(8));
+        int bits = BinaryPrimitives.ReadInt16LittleEndian(dib.AsSpan(14)), comp = BinaryPrimitives.ReadInt32LittleEndian(dib.AsSpan(16)), used = BinaryPrimitives.ReadInt32LittleEndian(dib.AsSpan(32));
+        if (hdr != 40 || w <= 0 || h == 0 || used != 0 || bits is not (24 or 32)) return null;
+        int offset = 40;
+        if (comp == 3) // BI_BITFIELDS: only the standard BGR masks
+        {
+            if (bits != 32 || BinaryPrimitives.ReadUInt32LittleEndian(dib.AsSpan(40)) != 0xFF0000 || BinaryPrimitives.ReadUInt32LittleEndian(dib.AsSpan(44)) != 0xFF00
+                || BinaryPrimitives.ReadUInt32LittleEndian(dib.AsSpan(48)) != 0xFF) return null;
+            offset = 52;
+        }
+        else if (comp != 0) return null;
+        int rows = Math.Abs(h), stride = (w * bits / 8 + 3) & ~3;
+        if ((long)stride * rows > dib.Length - offset) return null;
+        BitmapSource src;
+        fixed (byte* p = &dib[offset])
+            src = BitmapSource.Create(w, rows, 96, 96, bits == 32 ? PixelFormats.Bgr32 : PixelFormats.Bgr24, null, (nint)p, stride * rows, stride);
+        return h > 0 ? new TransformedBitmap(src, new ScaleTransform(1, -1)) : src;
+    }
+
+    /// <summary>Fallback for palettes, bit fields and other layouts: wrap the DIB in a BMP file header and let WIC decode it.</summary>
+    static BitmapSource? DecodedBmp(byte[] dib)
+    {
+        var bmp = BmpFile(dib);
+        if (bmp is null) return null;
+        var frame = BitmapDecoder.Create(new MemoryStream(bmp), BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad).Frames[0];
+        return frame.Format == PixelFormats.Bgr32 ? frame : new FormatConvertedBitmap(frame, PixelFormats.Bgr32, null, 0);
+    }
 
     static byte[]? BmpFile(byte[] dib)
     {

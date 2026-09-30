@@ -31,7 +31,7 @@ internal sealed class MediaProvider(EventBus bus)
     volatile GlobalSystemMediaTransportControlsSession? _selected;
     volatile bool _fast;
     volatile bool _labelsNeedTitles;
-    int _dirty, _running;
+    int _dirty, _running, _seq;
     ImageSource? _art;
     string? _artKey;
 
@@ -126,35 +126,37 @@ internal sealed class MediaProvider(EventBus bus)
     /// <summary>Syncs tracked sessions with the OS and picks the selected one: manual pick while it lives, else Windows' current.</summary>
     async Task<MediaSessions> Reconcile()
     {
-        var live = new Dictionary<string, GlobalSystemMediaTransportControlsSession>();
-        foreach (var s in _mgr!.GetSessions()) live.TryAdd(s.SourceAppUserModelId, s);
+        // Sessions are keyed by object identity: two tabs of one app share an AUMID. The id is "aumid#n", stable while the session lives.
+        var live = new List<Tracked>();
+        foreach (var s in _mgr!.GetSessions())
+        {
+            var t = _tracked.Values.FirstOrDefault(x => ReferenceEquals(x.Session, s));
+            if (t is null) { var id = $"{s.SourceAppUserModelId}#{++_seq}"; _tracked[id] = t = new Tracked(this, id, s); }
+            live.Add(t);
+        }
+        foreach (var id in _tracked.Keys.Where(k => !live.Any(t => t.Id == k)).ToList()) { _tracked[id].Detach(); _tracked.Remove(id); }
 
-        foreach (var id in _tracked.Keys.Where(k => !live.ContainsKey(k) || !ReferenceEquals(_tracked[k].Session, live[k])).ToList())
-        { _tracked[id].Detach(); _tracked.Remove(id); }
-        foreach (var (id, s) in live) if (!_tracked.ContainsKey(id)) _tracked[id] = new Tracked(this, id, s);
-
-        var sel = _manual is not null && live.ContainsKey(_manual) ? _manual : null;
+        var sel = _manual is not null && live.Any(t => t.Id == _manual) ? _manual : null;
         if (sel is null)
         {
             _manual = null;
-            sel = _mgr.GetCurrentSession()?.SourceAppUserModelId;
-            if (sel is null || !live.ContainsKey(sel)) sel = live.Keys.FirstOrDefault();
+            var cur = _mgr.GetCurrentSession();
+            sel = (live.FirstOrDefault(t => ReferenceEquals(t.Session, cur)) ?? live.FirstOrDefault())?.Id;
         }
 
-        // Labels are the app name; two sessions of one app (two browsers) get the track title to tell them apart.
-        var names = live.Keys.ToDictionary(k => k, AppName);
-        var dup = names.Values.GroupBy(n => n).Where(g => g.Count() > 1).Select(g => g.Key).ToHashSet();
+        // Labels are the app name; two sessions of one app (two tabs, two browsers) get the track title to tell them apart.
+        var dup = live.GroupBy(t => AppName(t.Aumid)).Where(g => g.Count() > 1).Select(g => g.Key).ToHashSet();
         _labelsNeedTitles = dup.Count > 0;
         var list = new List<MediaSessionInfo>();
-        foreach (var (id, s) in live)
+        foreach (var t in live)
         {
-            var label = names[id];
+            var label = AppName(t.Aumid);
             if (dup.Contains(label))
             {
-                try { label += ": " + ((await s.TryGetMediaPropertiesAsync())?.Title is { Length: > 0 } t ? t : "session"); }
+                try { label += ": " + ((await t.Session.TryGetMediaPropertiesAsync())?.Title is { Length: > 0 } title ? title : "session"); }
                 catch { label += ": session"; }
             }
-            list.Add(new MediaSessionInfo(id, label));
+            list.Add(new MediaSessionInfo(t.Id, label));
         }
         return new MediaSessions(list, sel);
     }
@@ -187,7 +189,7 @@ internal sealed class MediaProvider(EventBus bus)
 
         var key = img is null ? null : $"{img.Length}:{Convert.ToHexString(SHA1.HashData(img))}";
         if (key != _artKey) { _art = img is null ? null : Decode(img); _artKey = key; }
-        var app = AppName(id);
+        var app = AppName(_tracked.TryGetValue(id, out var tr) ? tr.Aumid : id);
         bus.Post(new MediaProps(title.Length > 0 ? title : app, artist, album, app, _art));
     }
 
@@ -250,6 +252,8 @@ internal sealed class MediaProvider(EventBus bus)
     sealed class Tracked
     {
         public GlobalSystemMediaTransportControlsSession Session { get; }
+        public string Id { get; }
+        public string Aumid { get; }
         readonly TypedEventHandler<GlobalSystemMediaTransportControlsSession, MediaPropertiesChangedEventArgs> _props;
         readonly TypedEventHandler<GlobalSystemMediaTransportControlsSession, PlaybackInfoChangedEventArgs> _play;
         readonly TypedEventHandler<GlobalSystemMediaTransportControlsSession, TimelinePropertiesChangedEventArgs> _time;
@@ -257,6 +261,8 @@ internal sealed class MediaProvider(EventBus bus)
         public Tracked(MediaProvider p, string id, GlobalSystemMediaTransportControlsSession s)
         {
             Session = s;
+            Id = id;
+            Aumid = s.SourceAppUserModelId;
             _props = (_, _) => { if (id == p._selectedId) p.Mark(Props); if (p._labelsNeedTitles) p.Mark(Sessions); };
             _play = (_, _) => { if (id == p._selectedId) p.Mark(Playback); };
             _time = (_, _) => { if (id == p._selectedId && p._fast) p.Mark(Timeline); };

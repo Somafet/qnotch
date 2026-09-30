@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using QNotch.Core;
 using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 
@@ -167,7 +168,7 @@ public sealed partial class AiProviderItem : ObservableObject
 
 static class AiFormat
 {
-    public static string When(DateTime t) => t.Date == DateTime.Today ? t.ToString("HH:mm") : t.ToString("ddd HH:mm");
+    public static string When(DateTime t) => t.Date == DateTime.Today ? t.ToString("HH:mm", UiCulture.Value) : t.ToString("ddd HH:mm", UiCulture.Value);
 
     public static string In(TimeSpan d) =>
         d.TotalMinutes < 1 ? "in under a minute"
