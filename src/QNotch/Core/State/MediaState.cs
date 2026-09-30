@@ -34,6 +34,23 @@ public sealed partial class MediaState : ObservableObject
     [ObservableProperty] string? _selectedSessionId;
     [ObservableProperty] IMediaControls? _controls;
 
+    // Added by the Media module (all set-if-changed, written on the UI thread).
+    /// <summary>True once the first query to the OS finished. Before that views show "nothing playing", never "unavailable".</summary>
+    [ObservableProperty] bool _isReady;
+    [ObservableProperty] string _album = "";
+    /// <summary>Friendly name of the app that owns the selected session ("Spotify", "Chrome").</summary>
+    [ObservableProperty] string _appName = "";
+    [ObservableProperty] bool _canPlayPause = true;
+    [ObservableProperty] bool _canNext = true;
+    [ObservableProperty] bool _canPrevious = true;
+    [ObservableProperty] bool _canSeek;
+    /// <summary>False for live streams or apps that report no duration: views hide the progress row.</summary>
+    [ObservableProperty] bool _hasTimeline;
+    /// <summary>0..1, interpolated locally by the Media module (1 Hz while the panel shows Home or Media, otherwise only on events).</summary>
+    [ObservableProperty] double _progress;
+    [ObservableProperty] string _elapsedText = "0:00";
+    [ObservableProperty] string _durationText = "0:00";
+
     public ObservableCollection<MediaSessionInfo> Sessions { get; } = new();
 
     public string NowPlayingText => string.IsNullOrEmpty(Artist) ? Title : $"{Title}  ·  {Artist}";
