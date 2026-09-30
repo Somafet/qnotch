@@ -1,0 +1,20 @@
+<UserControl x:Class="QNotch.Modules.Ai.AiAppsCard"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- DataContext: AiState. Icons for the apps bound to Alt+1..6; click launches. -->
+    <UserControl.Resources>
+        <ResourceDictionary Source="AiStyles.xaml"/>
+    </UserControl.Resources>
+    <Grid>
+        <ItemsControl ItemsSource="{Binding Slotted}" ItemTemplate="{StaticResource AppTileSmall}" VerticalAlignment="Top"
+                      Visibility="{Binding HasApps, Converter={StaticResource BoolToVis}}">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+        </ItemsControl>
+        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="{Binding NoApps, Converter={StaticResource BoolToVis}}">
+            <TextBlock Text="{Binding AppsEmptyText}" Style="{StaticResource Muted}" TextAlignment="Center" TextWrapping="Wrap"/>
+            <Button Content="Scan again" Command="{Binding RescanCommand}" Padding="10,4" Margin="0,8,0,0" FontSize="11" HorizontalAlignment="Center"/>
+        </StackPanel>
+    </Grid>
+</UserControl>
