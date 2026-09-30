@@ -1,6 +1,6 @@
 using QNotch.Interop;
 
-namespace QNotch.Modules.GameMode;
+namespace QNotch.Shell.GameMode;
 
 public enum GameVerdict
 {

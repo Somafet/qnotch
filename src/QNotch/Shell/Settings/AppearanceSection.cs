@@ -51,7 +51,7 @@ public static class AppearanceSection
         Mark();
         page.Children.Add(UiKit.Row("Accent color", null, sw));
 
-        page.Children.Add(UiKit.Row("Reduce motion", "Skips animations. Always on when Windows animation effects are off.", GeneralSection.Toggle(gs.ReduceMotion, v => gs.ReduceMotion = v)));
+        page.Children.Add(UiKit.Row("Reduce motion", "Skips animations. Always on when Windows animation effects are off.", UiKit.Toggle(gs.ReduceMotion, v => gs.ReduceMotion = v)));
 
         // Profile
         var name = new TextBox { Width = 200, Text = gs.ProfileName };
@@ -78,7 +78,7 @@ public static class AppearanceSection
         foreach (var c in layout.Ordered)
         {
             var id = c.Id;
-            cards.Children.Add(UiKit.Row(c.Title, null, GeneralSection.Toggle(layout.IsVisible(id), v => layout.SetVisible(id, v))));
+            cards.Children.Add(UiKit.Row(c.Title, null, UiKit.Toggle(layout.IsVisible(id), v => layout.SetVisible(id, v))));
         }
         page.Children.Add(cards);
         return page;

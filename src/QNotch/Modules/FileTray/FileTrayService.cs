@@ -22,10 +22,10 @@ public sealed class FileTrayService
     DispatcherTimer? _statusTimer;
     int _worker;
 
-    public FileTrayService(ModuleContext ctx)
+    public FileTrayService(ModuleContext ctx, FileTrayState state)
     {
         _ctx = ctx;
-        _s = ctx.State.FileTray;
+        _s = state;
         _cfg = ctx.Settings.Get<FileTraySettings>("filetray");
         foreach (var p in _cfg.Paths.Distinct(StringComparer.OrdinalIgnoreCase).Take(MaxItems)) _s.Items.Add(new TrayItem(p));
         Summarize();

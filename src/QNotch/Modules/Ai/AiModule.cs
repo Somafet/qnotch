@@ -23,7 +23,8 @@ public sealed class AiModule : INotchModule, ICadenceAware
 
     ModuleContext _ctx = null!;
     AiSettings _s = null!;
-    AiState St => _ctx.State.Ai;
+    readonly AiState _st = new();
+    AiState St => _st;
     IUsageProvider[] _providers = [];
     readonly Dictionary<string, AiProviderItem> _items = new();
     readonly HashSet<int> _registered = new();

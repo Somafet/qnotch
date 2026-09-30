@@ -32,5 +32,6 @@ public static class Glyphs
     public const string Note = "";
     public const string Warning = "";
     public const string Person = "";
+    public const string Apps = "";
     public const string Photo = "";
 }

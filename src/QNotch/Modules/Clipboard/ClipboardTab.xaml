@@ -1,7 +1,7 @@
 <UserControl x:Class="QNotch.Modules.Clipboard.ClipboardTab"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:core="clr-namespace:QNotch.Core">
+             xmlns:local="clr-namespace:QNotch.Modules.Clipboard">
     <!-- DataContext: ClipboardState. Row = one ClipEntry; hover reveals pin / copy / remove, a click copies the entry again. -->
     <UserControl.Resources>
         <Style x:Key="RowBorder" TargetType="Border">
@@ -90,7 +90,7 @@
             </Style.Triggers>
         </Style>
 
-        <DataTemplate x:Key="EntryRow" DataType="{x:Type core:ClipEntry}">
+        <DataTemplate x:Key="EntryRow" DataType="{x:Type local:ClipEntry}">
             <Border x:Name="Row" Style="{StaticResource RowBorder}" MouseLeftButtonUp="OnRowClick">
                 <Grid>
                     <Grid.ColumnDefinitions>

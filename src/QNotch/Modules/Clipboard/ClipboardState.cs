@@ -4,7 +4,7 @@ using System.Windows.Data;
 using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 
-namespace QNotch.Core;
+namespace QNotch.Modules.Clipboard;
 
 public enum ClipKind { Text, Code, Link, Image }
 public enum ClipFilter { All, Text, Code, Images }
@@ -98,9 +98,4 @@ public sealed partial class ClipboardState : ObservableObject
     }
 
     public void NotifyFlash() => Flash++;
-}
-
-public sealed partial class AppState
-{
-    public ClipboardState Clipboard { get; } = new();
 }

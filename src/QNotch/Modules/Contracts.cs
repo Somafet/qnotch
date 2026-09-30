@@ -32,6 +32,21 @@ public sealed record CardDescriptor(string Id, string Title, int DefaultOrder, F
     public int Order => DefaultOrder;
 }
 
+/// <summary>Where a segment is hosted: the pill (left or right cluster), the glance strip under the collapsed pill, or the game bar.</summary>
+public enum SegmentSlot { PillLeft, PillRight, Glance, GameBar }
+
+/// <summary>
+/// A small view the shell hosts outside the panel. Factory: called once, UI thread; it sets its own DataContext (or binds with Source).
+/// The element owns its Visibility for data availability ("no battery" collapses the battery). The shell owns Margin and, in the game bar,
+/// the per-segment user toggle. Segments never set their own outer Margin. Ids are unique across slots (module.slot.name); game bar ids
+/// are persisted keys. Title and Hint: game bar only (Settings, Game mode, Segments).
+/// </summary>
+public sealed record SegmentDescriptor(string Id, SegmentSlot Slot, int Order, Func<FrameworkElement> Factory,
+    string Title = "", string? Hint = null) : IRegistryItem;
+
+/// <summary>One entry of <see cref="ModuleList.All"/>. Create is called only when the module is enabled. Early: registers pill or glance segments, so it initializes before the first frame.</summary>
+public sealed record ModuleInfo(string Id, string Title, string Description, Func<INotchModule> Create, bool Early = false);
+
 /// <summary>A panel tab. Glyph is a Segoe Fluent Icons string (see Theme/Glyphs.cs). Factory is called once, lazily.</summary>
 public sealed record TabDescriptor(string Id, string Title, string Glyph, int Order, Func<FrameworkElement> Factory) : IRegistryItem;
 
@@ -62,7 +77,6 @@ public sealed class Registry<T> where T : class, IRegistryItem
 /// <summary>Everything a module may touch. Do not reach for App.Current or shell internals instead.</summary>
 public sealed class ModuleContext
 {
-    public required AppState State { get; init; }
     public required EventBus Bus { get; init; }
     public required SettingsStore Settings { get; init; }
     public required HotkeyService Hotkeys { get; init; }
@@ -71,6 +85,6 @@ public sealed class ModuleContext
     public required Registry<CardDescriptor> Cards { get; init; }
     public required Registry<TabDescriptor> Tabs { get; init; }
     public required Registry<SettingsSectionDescriptor> SettingsSections { get; init; }
-    /// <summary>Card order/visibility and the live card hosts (for Edit mode).</summary>
-    public required CardLayout CardLayout { get; init; }
+    /// <summary>Small views hosted by the shell outside the panel: pill clusters, glance strip, game bar.</summary>
+    public required Registry<SegmentDescriptor> Segments { get; init; }
 }

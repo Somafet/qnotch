@@ -20,10 +20,10 @@ internal sealed class NoteStore
     string? _pending;   // text not yet on disk
     bool _loaded;
 
-    public NoteStore(ModuleContext ctx)
+    public NoteStore(ModuleContext ctx, NoteGithubState state)
     {
         _ctx = ctx;
-        _s = ctx.State.NoteGithub;
+        _s = state;
         _timer = new Timer(_ => Save(), null, Timeout.Infinite, Timeout.Infinite);
         _s.NoteDateText = DateText(DateTime.Now);
     }

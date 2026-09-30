@@ -28,6 +28,9 @@ public sealed partial class GeneralSettings : ObservableObject
     [ObservableProperty] [property: JsonIgnore] bool _toggleHotkeyTaken;
     [ObservableProperty] [property: JsonIgnore] bool _gameModeHotkeyTaken;
 
+    /// <summary>Ids of modules the user turned off (Settings, Features). They are never created; a change applies on restart.</summary>
+    public List<string> DisabledModules { get; set; } = new();
+
     /// <summary>Card ids in display order, including hidden ones (hidden cards keep their slot).</summary>
     public List<string> CardOrder { get; set; } = new();
 

@@ -1,6 +1,5 @@
 using System.Windows.Controls;
 using QNotch.Shell;
-using MediaState = QNotch.Core.MediaState;
 
 namespace QNotch.Modules.Media;
 

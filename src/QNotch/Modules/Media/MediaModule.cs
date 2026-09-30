@@ -1,7 +1,6 @@
 using System.Windows.Threading;
 using QNotch.Core;
 using QNotch.Theme;
-using MediaState = QNotch.Core.MediaState;
 
 namespace QNotch.Modules.Media;
 
@@ -15,7 +14,7 @@ public sealed class MediaModule : INotchModule, ICadenceAware, IMediaControls
     public string Id => "media";
 
     ModuleContext _ctx = null!;
-    MediaState _m = null!;
+    readonly MediaState _m = new();
     MediaProvider _provider = null!;
     DispatcherTimer _ticker = null!;
     bool _fast, _canSeekCap;
@@ -24,13 +23,16 @@ public sealed class MediaModule : INotchModule, ICadenceAware, IMediaControls
     public void Initialize(ModuleContext ctx)
     {
         _ctx = ctx;
-        _m = ctx.State.Media;
         _provider = new MediaProvider(ctx.Bus);
         _ticker = new DispatcherTimer(DispatcherPriority.Background, ctx.Dispatcher) { Interval = TimeSpan.FromSeconds(1) };
         _ticker.Tick += (_, _) => RefreshProgress();
 
         ctx.Tabs.Register(new TabDescriptor("media", "Media", Glyphs.Music, 10, () => new MediaTab(_m, ctx.Shell)));
         ctx.Cards.Register(new CardDescriptor("media", "Now playing", 20, () => new MediaCard(_m, ctx.Shell), ColumnSpan: 2));
+        ctx.Segments.Register(new SegmentDescriptor("media.pill", SegmentSlot.PillLeft, 10, () => MediaSegments.Pill(_m)));
+        ctx.Segments.Register(new SegmentDescriptor("media.glance", SegmentSlot.Glance, 10, () => MediaSegments.Glance(_m)));
+        ctx.Segments.Register(new SegmentDescriptor("media.game", SegmentSlot.GameBar, 10, () => MediaSegments.Game(_m),
+            "Now playing", "Title and artist, only while something plays."));
 
         ctx.Bus.Subscribe<MediaUnavailable>(_ => { Clear(); _m.IsAvailable = false; _m.IsReady = true; });
         ctx.Bus.Subscribe<MediaSessions>(Apply);
@@ -44,8 +46,23 @@ public sealed class MediaModule : INotchModule, ICadenceAware, IMediaControls
         };
         ctx.Shell.TabChanged += _ => UpdateTicker();
 
+        if (ctx.Settings.ReadOnly) { SeedDemo(); return; } // snapshot run: demo track, never touch the OS media sessions
         _m.Controls = this;
         _provider.Start();
+    }
+
+    void SeedDemo()
+    {
+        _m.IsAvailable = _m.IsReady = _m.HasTimeline = true;
+        _m.Title = "Midnight City";
+        _m.Artist = "M83";
+        _m.IsPlaying = true;
+        _m.Position = TimeSpan.FromSeconds(72);
+        _m.Duration = TimeSpan.FromSeconds(243);
+        _m.LastTimelineUpdate = DateTimeOffset.Now;
+        _rate = 0; // frozen at 1:12 so snapshots are stable
+        _m.HasSession = true;
+        RefreshProgress();
     }
 
     public void SetCadence(Cadence cadence)

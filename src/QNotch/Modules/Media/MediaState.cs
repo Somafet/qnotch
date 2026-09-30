@@ -3,7 +3,7 @@ using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
-namespace QNotch.Core;
+namespace QNotch.Modules.Media;
 
 public sealed record MediaSessionInfo(string Id, string Title);
 
@@ -23,6 +23,8 @@ public sealed partial class MediaState : ObservableObject
     /// <summary>False when the OS media API cannot be used at all (render "unavailable"). True when it works even if nothing plays.</summary>
     [ObservableProperty] bool _isAvailable;
     [ObservableProperty] bool _hasSession;
+    /// <summary>HasSession, playing and a title: what the glance strip and the game bar show. Kept in sync by the partials below.</summary>
+    [ObservableProperty] bool _isNowPlaying;
     [ObservableProperty, NotifyPropertyChangedFor(nameof(NowPlayingText))] string _title = "";
     [ObservableProperty, NotifyPropertyChangedFor(nameof(NowPlayingText))] string _artist = "";
     [ObservableProperty] ImageSource? _artwork;
@@ -52,6 +54,11 @@ public sealed partial class MediaState : ObservableObject
     [ObservableProperty] string _durationText = "0:00";
 
     public ObservableCollection<MediaSessionInfo> Sessions { get; } = new();
+
+    partial void OnHasSessionChanged(bool value) => UpdateNowPlaying();
+    partial void OnIsPlayingChanged(bool value) => UpdateNowPlaying();
+    partial void OnTitleChanged(string value) => UpdateNowPlaying();
+    void UpdateNowPlaying() => IsNowPlaying = HasSession && IsPlaying && Title.Length > 0;
 
     public string NowPlayingText => string.IsNullOrEmpty(Artist) ? Title : $"{Title}  ·  {Artist}";
 

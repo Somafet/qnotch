@@ -30,10 +30,10 @@ internal sealed class GithubService
     readonly bool _demo = Environment.GetEnvironmentVariable("QNOTCH_GITHUB_DEMO") == "1";
     int _busy;
 
-    public GithubService(ModuleContext ctx)
+    public GithubService(ModuleContext ctx, NoteGithubState state)
     {
         _ctx = ctx;
-        _s = ctx.State.NoteGithub;
+        _s = state;
         _timer = new Timer(_ => _ = RefreshAsync(), null, Timeout.Infinite, Timeout.Infinite);
     }
 

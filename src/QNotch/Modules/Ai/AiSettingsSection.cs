@@ -1,7 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Win32;
-using QNotch.Shell.Settings;
 using QNotch.Theme;
 
 namespace QNotch.Modules.Ai;
@@ -23,7 +22,7 @@ internal static class AiSettingsSection
             var hint = p.Id == "claude" ? "Reads your Claude Code sign-in and asks Anthropic for your plan limits."
                 : "Reads the newest rate limit reading Codex stored locally. Nothing is sent anywhere.";
             var id = p.Id;
-            page.Children.Add(UiKit.Row(p.Name, hint, GeneralSection.Toggle(m.IsProviderEnabled(id), on => m.SetProviderEnabled(id, on))));
+            page.Children.Add(UiKit.Row(p.Name, hint, UiKit.Toggle(m.IsProviderEnabled(id), on => m.SetProviderEnabled(id, on))));
         }
 
         var interval = new ComboBox { Width = 140 };

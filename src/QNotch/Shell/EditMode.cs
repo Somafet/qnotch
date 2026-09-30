@@ -5,9 +5,8 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using QNotch.Core;
-using QNotch.Shell;
 
-namespace QNotch.Modules.EditMode;
+namespace QNotch.Shell;
 
 /// <summary>
 /// Home edit mode: cards jiggle, lift on drag, other cards slide to their new slots, the dragged card settles on drop.
@@ -15,7 +14,7 @@ namespace QNotch.Modules.EditMode;
 /// (the shell turns it off when the panel closes), so the module costs nothing while collapsed.
 /// The order is persisted live through CardLayout.Move, which keeps hidden cards in the order list.
 /// </summary>
-public sealed class EditModeModule : INotchModule
+internal sealed class EditModeController
 {
     const double Lift = 1.05, Threshold = 4, EdgeZone = 32, MaxScroll = 14;
     const int ReorderCooldownMs = 140;
@@ -29,7 +28,8 @@ public sealed class EditModeModule : INotchModule
         public int Gen;
     }
 
-    ModuleContext _ctx = null!;
+    readonly ShellController _shell;
+    readonly CardLayout _layout;
     readonly Dictionary<CardHost, Fx> _fx = new();
     ScrollViewer? _sv;
     Panel? _panel;
@@ -44,25 +44,24 @@ public sealed class EditModeModule : INotchModule
     DispatcherTimer? _scrollTimer;
     double _scrollSpeed;
 
-    public string Id => "editmode";
-
-    public void Initialize(ModuleContext ctx)
+    internal EditModeController(ShellController shell, CardLayout layout)
     {
-        _ctx = ctx;
-        ctx.Shell.EditModeChanged += Sync;
-        ctx.CardLayout.HostsChanged += () => { if (ctx.Shell.IsEditMode) Sync(); };
+        _shell = shell;
+        _layout = layout;
+        shell.EditModeChanged += Sync;
+        layout.HostsChanged += () => { if (shell.IsEditMode) Sync(); };
     }
 
     void Sync()
     {
-        if (!_ctx.Shell.IsEditMode) { Stop(); return; }
+        if (!_shell.IsEditMode) { Stop(); return; }
         if (!_editing) Start();
         if (_editing) Ensure();
     }
 
     void Start()
     {
-        var hosts = _ctx.CardLayout.Hosts;
+        var hosts = _layout.Hosts;
         if (hosts.Count == 0 || VisualTreeHelper.GetParent(hosts[0]) is not Panel panel) return;
         var sv = Ancestor<ScrollViewer>(panel);
         if (sv == null) return;
@@ -95,7 +94,7 @@ public sealed class EditModeModule : INotchModule
     /// <summary>Gives every live host its transform stack and jiggle (idempotent: hosts are reused across rebuilds).</summary>
     void Ensure()
     {
-        foreach (var h in _ctx.CardLayout.Hosts)
+        foreach (var h in _layout.Hosts)
         {
             if (_fx.ContainsKey(h)) continue;
             var f = new Fx();
@@ -182,7 +181,7 @@ public sealed class EditModeModule : INotchModule
         var h = _press!;
         var f = _fx[h];
         _dragging = true;
-        _hold = _ctx.Shell.HoldOpen();
+        _hold = _shell.HoldOpen();
         f.Gen++;
         Snap(f.Move, TranslateTransform.XProperty);
         Snap(f.Move, TranslateTransform.YProperty);
@@ -204,7 +203,7 @@ public sealed class EditModeModule : INotchModule
         Place(h);
         if (Environment.TickCount64 - _lastReorder < ReorderCooldownMs) return;
         var center = Mouse.GetPosition(_panel) - _grab + new Vector(h.ActualWidth / 2, h.ActualHeight / 2);
-        foreach (var o in _ctx.CardLayout.Hosts)
+        foreach (var o in _layout.Hosts)
             if (o != h && new Rect((Point)VisualTreeHelper.GetOffset(o), new Size(o.ActualWidth, o.ActualHeight)).Contains(center))
             {
                 Reorder(h, o);
@@ -224,11 +223,11 @@ public sealed class EditModeModule : INotchModule
 
     void Reorder(CardHost dragged, CardHost target)
     {
-        var before = _ctx.CardLayout.Hosts.ToDictionary(x => x, VisualTreeHelper.GetOffset);
-        _ctx.CardLayout.Move(dragged.CardId, target.CardId); // HomeView rebuilds synchronously
+        var before = _layout.Hosts.ToDictionary(x => x, VisualTreeHelper.GetOffset);
+        _layout.Move(dragged.CardId, target.CardId); // HomeView rebuilds synchronously
         _panel!.UpdateLayout();
         _lastReorder = Environment.TickCount64;
-        foreach (var o in _ctx.CardLayout.Hosts)
+        foreach (var o in _layout.Hosts)
         {
             if (o == dragged || !_fx.TryGetValue(o, out var f) || !before.TryGetValue(o, out var b)) continue;
             var d = b - VisualTreeHelper.GetOffset(o);
@@ -272,7 +271,7 @@ public sealed class EditModeModule : INotchModule
         _scrollSpeed = p.Y < EdgeZone ? -(1 - Math.Max(p.Y, 0) / EdgeZone) * MaxScroll
                      : p.Y > h - EdgeZone ? (1 - Math.Max(h - p.Y, 0) / EdgeZone) * MaxScroll : 0;
         if (_scrollSpeed == 0) { _scrollTimer?.Stop(); return; }
-        _scrollTimer ??= new DispatcherTimer(TimeSpan.FromMilliseconds(16), DispatcherPriority.Normal, (_, _) => ScrollTick(), _ctx.Dispatcher);
+        _scrollTimer ??= new DispatcherTimer(TimeSpan.FromMilliseconds(16), DispatcherPriority.Normal, (_, _) => ScrollTick(), _shell.Dispatcher);
         _scrollTimer.Start();
     }
 

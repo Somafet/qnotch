@@ -1,9 +1,8 @@
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
-using QNotch.Modules.Ai;
 
-namespace QNotch.Core;
+namespace QNotch.Modules.Ai;
 
 /// <summary>Observable model for the AI module: detected apps, slot bindings and per-provider usage. UI thread only.</summary>
 public sealed partial class AiState : ObservableObject
@@ -29,9 +28,4 @@ public sealed partial class AiState : ObservableObject
     public ICommand? LaunchCommand { get; set; }
     public ICommand? RescanCommand { get; set; }
     public ICommand? OpenSettingsCommand { get; set; }
-}
-
-public sealed partial class AppState
-{
-    public AiState Ai { get; } = new();
 }

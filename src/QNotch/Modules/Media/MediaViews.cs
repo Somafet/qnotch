@@ -3,7 +3,6 @@ using System.Windows.Controls;
 using QNotch.Core;
 using QNotch.Shell;
 using QNotch.Theme;
-using MediaState = QNotch.Core.MediaState;
 
 namespace QNotch.Modules.Media;
 

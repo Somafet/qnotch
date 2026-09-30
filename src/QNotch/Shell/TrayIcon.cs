@@ -3,6 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using QNotch.Core;
 using QNotch.Interop;
+using QNotch.Shell.GameMode;
 
 namespace QNotch.Shell;
 
@@ -25,7 +26,7 @@ public sealed unsafe class TrayIcon : IDisposable
         _w.Source.AddHook(Hook);
         Add();
         shell.ModeChanged += _ => UpdateTip();
-        shell.GameModeOverrideChanged += _ => UpdateTip();
+        shell.GameMode.OverrideChanged += _ => UpdateTip();
     }
 
     NOTIFYICONDATAW Data(uint flags)
@@ -33,9 +34,9 @@ public sealed unsafe class TrayIcon : IDisposable
         var d = new NOTIFYICONDATAW
         {
             cbSize = (uint)sizeof(NOTIFYICONDATAW), hWnd = _w.Hwnd, uID = 1, uFlags = flags,
-            uCallbackMessage = CallbackMessage, hIcon = _shell.Mode == ShellMode.GameBar || _shell.GameModeOverride != GameModeOverride.Auto ? _iconActive : _icon,
+            uCallbackMessage = CallbackMessage, hIcon = _shell.Mode == ShellMode.GameBar || _shell.GameMode.Override != GameModeOverride.Auto ? _iconActive : _icon,
         };
-        var mode = _shell.GameModeOverride switch { GameModeOverride.ForceOn => "Force on", GameModeOverride.ForceOff => "Force off", _ => "Auto" };
+        var mode = _shell.GameMode.Override switch { GameModeOverride.ForceOn => "Force on", GameModeOverride.ForceOff => "Force off", _ => "Auto" };
         var tip = $"QNotch\nGame mode: {mode}{(_shell.Mode == ShellMode.GameBar ? ", game bar showing" : "")}";
         for (var i = 0; i < Math.Min(tip.Length, 127); i++) d.szTip[i] = tip[i];
         return d;
@@ -68,8 +69,8 @@ public sealed unsafe class TrayIcon : IDisposable
         {
             var mode = o;
             var label = o switch { GameModeOverride.Auto => "Game mode: Auto", GameModeOverride.ForceOn => "Game mode: Force on", _ => "Game mode: Force off" };
-            var it = Item(label, () => _shell.GameModeOverride = mode);
-            it.IsChecked = _shell.GameModeOverride == o;
+            var it = Item(label, () => _shell.GameMode.Override = mode);
+            it.IsChecked = _shell.GameMode.Override == o;
             m.Items.Add(it);
         }
         m.Items.Add(new Separator());

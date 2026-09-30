@@ -14,8 +14,8 @@ public sealed class FileTrayModule : INotchModule, ICadenceAware
 
     public void Initialize(ModuleContext ctx)
     {
-        var svc = _svc = new FileTrayService(ctx);
-        var state = ctx.State.FileTray;
+        var state = new FileTrayState();
+        var svc = _svc = new FileTrayService(ctx, state);
         var shell = ctx.Shell;
 
         ctx.Tabs.Register(new TabDescriptor("files", "Files", Glyphs.Folder, 40, () => new FileTrayView(svc, state, shell)));

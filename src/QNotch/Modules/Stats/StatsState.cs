@@ -1,6 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 
-namespace QNotch.Core;
+namespace QNotch.Modules.Stats;
 
 /// <summary>System stats. Text properties are ready to render: "--" means not sampled yet, "n/a" means unavailable (never a fake 0).</summary>
 public sealed partial class StatsState : ObservableObject
@@ -8,8 +8,6 @@ public sealed partial class StatsState : ObservableObject
     [ObservableProperty] bool _hasSample;
     /// <summary>False once the GPU counters proved unusable.</summary>
     [ObservableProperty] bool _gpuAvailable = true;
-    /// <summary>Set by the game bar while its GPU segment is on screen; makes the sampler query GPU at the slow cadence. Read on the thread pool.</summary>
-    public volatile bool GpuWanted;
     [ObservableProperty] int _cpuPercent;
     [ObservableProperty] int? _gpuPercent;
     [ObservableProperty] long _ramUsedBytes;

@@ -9,10 +9,12 @@ using System.Windows.Threading;
 using QNotch.Core;
 using QNotch.Interop;
 using QNotch.Modules;
+using QNotch.Shell.GameMode;
 using QNotch.Theme;
-using MediaState = QNotch.Core.MediaState;
 
 namespace QNotch.Shell;
+
+public enum ShellMode { Collapsed, Expanded, GameBar }
 
 /// <summary>
 /// Owns the shell state machine (Collapsed / Expanded / GameBar), hover timing, hotkeys, cadence and settings reactions.
@@ -21,27 +23,32 @@ namespace QNotch.Shell;
 public sealed class ShellController : IShell
 {
     readonly NotchWindow _w;
-    readonly AppState _state;
     readonly SettingsStore _store;
     readonly Registry<TabDescriptor> _tabs;
     readonly Registry<SettingsSectionDescriptor> _sections;
+    readonly Registry<SegmentDescriptor> _segments;
+    readonly SegmentHost _segmentHost = new();
+    readonly HashSet<FrameworkElement> _glanceHooked = new();
+    // Kept alive for their event subscriptions.
+    readonly EditModeController _editMode;
     readonly Dictionary<string, Border> _tabViews = new();
     readonly Dictionary<string, RadioButton> _tabButtons = new();
     DispatcherTimer? _dwell, _leave;
     ICadenceAware[] _cadenceAware = [];
     ShellMode _mode;
-    GameModeOverride _override;
     bool _hovering, _fileDrag, _built, _wasExpandedBeforeGame;
     int _holds;
     string _toggleKey = "", _gameKey = "", _activeTab = "home";
 
-    public ShellController(NotchWindow window, AppState state, GeneralSettings settings, SettingsStore store, HotkeyService hotkeys,
-        ForegroundWatcher foreground, CardLayout layout, Registry<TabDescriptor> tabs, Registry<SettingsSectionDescriptor> sections)
+    public ShellController(NotchWindow window, GeneralSettings settings, SettingsStore store, HotkeyService hotkeys, ForegroundWatcher foreground,
+        CardLayout layout, Registry<TabDescriptor> tabs, Registry<SettingsSectionDescriptor> sections, Registry<SegmentDescriptor> segments)
     {
-        _w = window; _state = state; General = settings; _store = store; Hotkeys = hotkeys; Foreground = foreground;
-        Layout = layout; _tabs = tabs; _sections = sections;
-        Vm = new ShellViewModel(state, settings, () => OpenSettings());
+        _w = window; General = settings; _store = store; Hotkeys = hotkeys; Foreground = foreground;
+        Layout = layout; _tabs = tabs; _sections = sections; _segments = segments;
+        Vm = new ShellViewModel(settings, () => OpenSettings());
         _w.DataContext = Vm;
+        GameMode = new GameModeController(this, store, foreground, segments);
+        _editMode = new EditModeController(this, layout);
     }
 
     public ShellViewModel Vm { get; }
@@ -54,17 +61,14 @@ public sealed class ShellController : IShell
     public ShellMode Mode => _mode;
     public string ActiveTab => _activeTab;
     public event Action<ShellMode>? ModeChanged;
-    public event Action<GameModeOverride>? GameModeOverrideChanged;
     public event Action? EditModeChanged;
     public event Action<string>? TabChanged;
     public event Action? FileDragEntered;
     public event Action<string[]>? FilesDropped;
 
-    public GameModeOverride GameModeOverride
-    {
-        get => _override;
-        set { if (_override == value) return; _override = value; GameModeOverrideChanged?.Invoke(value); }
-    }
+    /// <summary>Game mode: detection, override and the game bar. Started by App after the first frame.</summary>
+    internal GameModeController GameMode { get; }
+    internal System.Windows.Threading.Dispatcher Dispatcher => _w.Dispatcher;
 
     public bool IsPinned { get => General.Pinned; set => General.Pinned = value; }
     public bool IsEditMode { get => Vm.IsEditMode; set => Vm.IsEditMode = value && Motion.Enabled && _mode == ShellMode.Expanded; }
@@ -73,6 +77,10 @@ public sealed class ShellController : IShell
 
     public void Start()
     {
+        BuildPill();
+        BuildGlance();
+        _segments.Changed += () => { BuildPill(); BuildGlance(); };
+        _w.PillStrip.SizeChanged += (_, _) => _w.InvalidatePill(); // content changed (segment data, a segment came or went): re-measure once, coalesced
         _w.InitPill();
         _w.SetMonitor(General.MonitorIndex);
         LoadProfile();
@@ -99,16 +107,6 @@ public sealed class ShellController : IShell
             if (!Vm.IsEditMode && !_hovering) StartLeave();
         };
         Motion.Changed += () => { Vm.MotionEnabled = Motion.Enabled; if (!Motion.Enabled) IsEditMode = false; };
-        _state.Media.PropertyChanged += (_, e) =>
-        {
-            if (e.PropertyName is nameof(MediaState.HasSession) or nameof(MediaState.Title) or nameof(MediaState.Artist)) _w.InvalidatePill();
-            if (e.PropertyName is nameof(MediaState.HasSession) or nameof(MediaState.IsPlaying)) UpdateGlance();
-        };
-        _state.Stats.PropertyChanged += (_, e) =>
-        {
-            var n = e.PropertyName ?? "";
-            if (n.EndsWith("Text") || n is nameof(StatsState.Clock) or nameof(StatsState.HasBattery) or nameof(StatsState.BatteryGlyph)) _w.InvalidatePill();
-        };
         Foreground.Changed += h => { if (h != _w.Hwnd) _w.ReassertTopmost(); };
         _w.Source.AddHook(SettingsHook);
 
@@ -145,7 +143,41 @@ public sealed class ShellController : IShell
         NotifyCadence();
     }
 
-    void UpdateGlance() => Vm.ShowGlance = _mode == ShellMode.Collapsed && _state.Media.HasSession && _state.Media.IsPlaying;
+    // ---------- pill and glance: hosted segments ----------
+
+    /// <summary>Pill = PillLeft segments, then PillRight segments, each by Order. The shell owns the margins; a collapsed segment drops its margin, so nothing needs a wrapper.</summary>
+    void BuildPill()
+    {
+        var strip = _w.PillStrip;
+        strip.Children.Clear();
+        foreach (var slot in new[] { SegmentSlot.PillLeft, SegmentSlot.PillRight })
+        {
+            foreach (var d in _segments.Items)
+            {
+                if (d.Slot != slot || _segmentHost.Get(d) is not { } el) continue;
+                el.Margin = new Thickness(0, 0, slot == SegmentSlot.PillLeft ? 18 : 12, 0);
+                strip.Children.Add(el);
+            }
+        }
+        if (strip.Children.Count > 0) ((FrameworkElement)strip.Children[^1]).Margin = new Thickness(0);
+    }
+
+    /// <summary>The glance strip shows while collapsed and at least one Glance segment is visible. Hooked once per element: no polling.</summary>
+    void BuildGlance()
+    {
+        var strip = _w.GlanceStrip;
+        strip.Children.Clear();
+        var vis = System.ComponentModel.DependencyPropertyDescriptor.FromProperty(UIElement.VisibilityProperty, typeof(UIElement));
+        foreach (var d in _segments.Items)
+        {
+            if (d.Slot != SegmentSlot.Glance || _segmentHost.Get(d) is not { } el) continue;
+            if (_glanceHooked.Add(el)) vis.AddValueChanged(el, (_, _) => UpdateGlance());
+            strip.Children.Add(el);
+        }
+        UpdateGlance();
+    }
+
+    void UpdateGlance() => Vm.ShowGlance = _mode == ShellMode.Collapsed && _w.GlanceStrip.Children.OfType<UIElement>().Any(e => e.Visibility == Visibility.Visible);
 
     // ---------- panel open / close ----------
 
@@ -272,7 +304,7 @@ public sealed class ShellController : IShell
 
     // ---------- game bar plumbing ----------
 
-    public void SetGameBarActive(bool active)
+    internal void SetGameBarActive(bool active)
     {
         if (active == (_mode == ShellMode.GameBar)) return;
         if (active)
@@ -294,9 +326,8 @@ public sealed class ShellController : IShell
         }
     }
 
-    public void SetGameBarView(UIElement? view) => _w.SetGameBarView(view);
-    public void SetClickThrough(bool on) => _w.SetClickThrough(on);
-    public void SetGameBarLayout(double height, double opacity, double offsetX, double offsetY) => _w.SetGameBarLayout(height, opacity, offsetX, offsetY);
+    internal void SetGameBarView(UIElement? view) => _w.SetGameBarView(view);
+    internal void SetGameBarLayout(double height, double opacity, double offsetX, double offsetY) => _w.SetGameBarLayout(height, opacity, offsetX, offsetY);
     public void AddHwndHook(HwndSourceHook hook) => _w.Source.AddHook(hook);
     public void RemoveHwndHook(HwndSourceHook hook) => _w.Source.RemoveHook(hook);
 
@@ -405,7 +436,7 @@ public sealed class ShellController : IShell
         _toggleKey = General.ToggleHotkey;
         _gameKey = General.GameModeHotkey;
         General.ToggleHotkeyTaken = !Hotkeys.Register(_toggleKey, ToggleFromUser);
-        General.GameModeHotkeyTaken = !Hotkeys.Register(_gameKey, () => GameModeOverride = (GameModeOverride)(((int)_override + 1) % 3));
+        General.GameModeHotkeyTaken = !Hotkeys.Register(_gameKey, GameMode.CycleOverride);
     }
 
     nint SettingsHook(nint hwnd, int msg, nint wParam, nint lParam, ref bool handled)

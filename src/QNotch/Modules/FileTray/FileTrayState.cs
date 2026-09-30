@@ -2,7 +2,7 @@ using System.Collections.ObjectModel;
 using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 
-namespace QNotch.Core;
+namespace QNotch.Modules.FileTray;
 
 /// <summary>One file or folder referenced by the tray. The tray never owns the file. Written on the UI thread by the FileTray module.</summary>
 public sealed partial class TrayItem : ObservableObject
@@ -42,9 +42,4 @@ public sealed partial class FileTrayState : ObservableObject
     [ObservableProperty] string _status = "";
 
     public bool HasItems => !IsEmpty;
-}
-
-public sealed partial class AppState
-{
-    public FileTrayState FileTray { get; } = new();
 }

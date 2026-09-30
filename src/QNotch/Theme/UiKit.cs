@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Media;
 
 namespace QNotch.Theme;
@@ -39,7 +40,28 @@ public static class UiKit
         return g;
     }
 
+    /// <summary>One-way binding from <paramref name="source"/>.<paramref name="path"/> (no DataContext needed). Works for elements, Runs and brushes.</summary>
+    public static T Bind<T>(T target, DependencyProperty property, object source, string path, IValueConverter? converter = null) where T : DependencyObject
+    {
+        BindingOperations.SetBinding(target, property, new Binding(path) { Source = source, Mode = BindingMode.OneWay, Converter = converter });
+        return target;
+    }
+
+    /// <summary>Visible while the bool property <paramref name="path"/> of <paramref name="source"/> is true, otherwise Collapsed.</summary>
+    public static T BindVisible<T>(T target, object source, string path) where T : UIElement =>
+        Bind(target, UIElement.VisibilityProperty, source, path, Res<IValueConverter>("BoolToVis"));
+
     public static CheckBox Toggle() => new() { Style = Res<Style>("ToggleSwitch") };
+
+    /// <summary>A toggle switch showing <paramref name="value"/>; <paramref name="set"/> is called on every change.</summary>
+    public static CheckBox Toggle(bool value, Action<bool> set)
+    {
+        var t = Toggle();
+        t.IsChecked = value;
+        t.Checked += (_, _) => set(true);
+        t.Unchecked += (_, _) => set(false);
+        return t;
+    }
 
     /// <summary>Vertical page container with standard padding for a settings section.</summary>
     public static StackPanel Page(string title)

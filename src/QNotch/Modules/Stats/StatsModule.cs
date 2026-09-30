@@ -20,13 +20,23 @@ public sealed class StatsModule : INotchModule, ICadenceAware
     Timer _sampleTimer = null!, _clockTimer = null!;
     volatile int _intervalMs = 5000;
     volatile bool _fast;
+    /// <summary>True while the game bar shows the GPU segment: the sampler then queries GPU at the slow cadence. Read on the thread pool.</summary>
+    volatile bool _gpuWanted;
+    readonly StatsState _st = new();
 
     public void Initialize(ModuleContext ctx)
     {
         _ctx = ctx;
-        ctx.Cards.Register(new CardDescriptor("stats", "System", 10, () => new StatsCard { DataContext = ctx.State.Stats }));
+        ctx.Cards.Register(new CardDescriptor("stats", "System", 10, () => new StatsCard { DataContext = _st }));
+        ctx.Segments.Register(new SegmentDescriptor("stats.pill", SegmentSlot.PillRight, 10, () => StatsSegments.Pill(_st)));
+        ctx.Segments.Register(new SegmentDescriptor("stats.game.cpu", SegmentSlot.GameBar, 20, () => StatsSegments.GameCpu(_st), "CPU"));
+        ctx.Segments.Register(new SegmentDescriptor("stats.game.gpu", SegmentSlot.GameBar, 30, () => StatsSegments.GameGpu(_st, on => _gpuWanted = on), "GPU", "Only when the system reports GPU usage."));
+        ctx.Segments.Register(new SegmentDescriptor("stats.game.ram", SegmentSlot.GameBar, 40, () => StatsSegments.GameRam(_st), "Memory"));
+        ctx.Segments.Register(new SegmentDescriptor("stats.game.net", SegmentSlot.GameBar, 50, () => StatsSegments.GameNet(_st), "Network"));
+        ctx.Segments.Register(new SegmentDescriptor("stats.game.battery", SegmentSlot.GameBar, 60, () => StatsSegments.GameBattery(_st), "Battery", "Only on devices with a battery."));
+        ctx.Segments.Register(new SegmentDescriptor("stats.game.clock", SegmentSlot.GameBar, 70, () => StatsSegments.GameClock(_st), "Clock"));
         ctx.Bus.Subscribe<StatsSample>(Apply);
-        ctx.Bus.Subscribe<ClockTick>(t => ctx.State.Stats.Clock = t.Text);
+        ctx.Bus.Subscribe<ClockTick>(t => _st.Clock = t.Text);
 
         // Timers are created idle and armed after assignment: a callback must never see a null field.
         _sampleTimer = new Timer(SampleTick, null, Timeout.Infinite, Timeout.Infinite);
@@ -66,7 +76,7 @@ public sealed class StatsModule : INotchModule, ICadenceAware
             _sampler ??= new SystemSampler();
             _gpu ??= new GpuSampler();
             // The PDH GPU query is the expensive part: only while the panel is open or the game bar shows a GPU segment.
-            int? gpu = _gpu.Available && (_fast || _ctx.State.Stats.GpuWanted) ? _gpu.Sample() : null;
+            int? gpu = _gpu.Available && (_fast || _gpuWanted) ? _gpu.Sample() : null;
             _ctx.Bus.Post(_sampler.Sample(gpu) with { GpuAvailable = _gpu.Available });
         }
         catch (Exception ex) { Log.Warn("Stats sample failed", ex); }
@@ -88,7 +98,7 @@ public sealed class StatsModule : INotchModule, ICadenceAware
 
     void Apply(StatsSample s)
     {
-        var st = _ctx.State.Stats;
+        var st = _st;
         st.HasSample = true;
         st.CpuPercent = s.Cpu;
         st.CpuText = $"{s.Cpu}%";

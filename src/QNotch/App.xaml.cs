@@ -5,6 +5,7 @@ using System.Windows.Input;
 using QNotch.Core;
 using QNotch.Modules;
 using QNotch.Shell;
+using QNotch.Shell.GameMode;
 using QNotch.Shell.Settings;
 using QNotch.Theme;
 
@@ -83,14 +84,14 @@ public partial class App : Application
     {
         _store = new SettingsStore { ReadOnly = snapDir is not null };
         var gs = _store.Get<GeneralSettings>("general");
-        if (snapDir is not null) { gs.Pinned = false; if (light) gs.Theme = ThemeChoice.Light; }
+        if (snapDir is not null) { gs.Pinned = false; gs.DisabledModules = new(); if (light) gs.Theme = ThemeChoice.Light; } // snapshots load every module
         Motion.Refresh(gs.ReduceMotion);
         ThemeManager.Apply(gs);
         var bus = new EventBus(Dispatcher);
-        var state = new AppState();
         var cards = new Registry<CardDescriptor>();
         var tabs = new Registry<TabDescriptor>();
         var sections = new Registry<SettingsSectionDescriptor>();
+        var segments = new Registry<SegmentDescriptor>();
 
         var window = new NotchWindow { Offscreen = snapDir is not null };
         window.InitHandle();
@@ -98,39 +99,55 @@ public partial class App : Application
         _foreground = new ForegroundWatcher();
         _foreground.Start();
         var layout = new CardLayout(cards, gs);
-        _shell = new ShellController(window, state, gs, _store, _hotkeys, _foreground, layout, tabs, sections);
+        _shell = new ShellController(window, gs, _store, _hotkeys, _foreground, layout, tabs, sections, segments);
         var shell = _shell;
+
+        // Modules the user turned off are never created. A change in Settings, Features applies on the next start.
+        var bootDisabled = gs.DisabledModules.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var enabled = ModuleList.All.Where(i => !bootDisabled.Contains(i.Id)).ToList();
+        Log.Info($"Modules: {string.Join(", ", enabled.Select(i => i.Id))} (off: {(bootDisabled.Count == 0 ? "none" : string.Join(", ", bootDisabled))})");
 
         // Built-in tab and settings sections (modules add theirs in Initialize).
         tabs.Register(new TabDescriptor("home", "Home", Glyphs.Home, 0, () => new HomeView(layout, shell)));
+        sections.Register(new SettingsSectionDescriptor("features", "Features", Glyphs.Apps, 5, () => FeaturesSection.Create(gs, _store!, ModuleList.All, bootDisabled, Restart)));
         sections.Register(new SettingsSectionDescriptor("general", "General", Glyphs.Settings, 0, () => GeneralSection.Create(gs)));
         sections.Register(new SettingsSectionDescriptor("appearance", "Appearance", Glyphs.Color, 10, () => AppearanceSection.Create(gs, layout)));
+        sections.Register(new SettingsSectionDescriptor("gamemode", "Game mode", Glyphs.Game, 20, () => GameModeSection.Create(shell.GameMode, gs, segments)));
 
         var ctx = new ModuleContext
         {
-            State = state, Bus = bus, Settings = _store, Hotkeys = _hotkeys, Shell = shell, Dispatcher = Dispatcher,
-            Cards = cards, Tabs = tabs, SettingsSections = sections, CardLayout = layout,
+            Bus = bus, Settings = _store, Hotkeys = _hotkeys, Shell = shell, Dispatcher = Dispatcher,
+            Cards = cards, Tabs = tabs, SettingsSections = sections, Segments = segments,
         };
-        // Cold start: the pill needs only Stats (clock, numbers) and Media (glance strip). The other modules initialize right after the
-        // first frame. Queued before shell.Start so they register their tabs and cards before the panel is first built.
-        var modules = ModuleList.Create().ToList();
-        var early = snapDir is not null ? modules : modules.Where(m => m is Modules.Stats.StatsModule or Modules.Media.MediaModule).ToList();
-        void Init(IEnumerable<INotchModule> list)
+        List<INotchModule> Init(IEnumerable<ModuleInfo> list)
         {
-            foreach (var m in list)
+            var done = new List<INotchModule>();
+            foreach (var info in list)
             {
+                INotchModule m;
+                try
+                {
+                    m = info.Create();
+                    if (m.Id != info.Id) Log.Warn($"Module id '{m.Id}' differs from its ModuleList id '{info.Id}'");
+                }
+                catch (Exception ex) { Log.Error($"Module '{info.Id}' failed to create", ex); continue; }
+                done.Add(m);
                 try { m.Initialize(ctx); }
-                catch (Exception ex) { Log.Error($"Module '{m.Id}' failed to initialize", ex); }
+                catch (Exception ex) { Log.Error($"Module '{info.Id}' failed to initialize", ex); }
             }
+            return done;
         }
-        Init(early);
-        if (early.Count < modules.Count)
+        // Cold start: the pill needs only the Early modules (they register pill and glance segments). The rest, and Game mode, start right
+        // after the first frame. Queued before shell.Start so late modules register their tabs and cards before the panel is first built.
+        var early = Init(enabled.Where(i => i.Early || snapDir is not null));
+        if (snapDir is null)
             Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ApplicationIdle, () =>
             {
-                Init(modules.Except(early));
-                shell.SetCadenceAware(modules.OfType<ICadenceAware>());
+                shell.GameMode.Start();
+                shell.SetCadenceAware(early.Concat(Init(enabled.Where(i => !i.Early))).OfType<ICadenceAware>());
             });
         shell.Start();
+        if (snapDir is not null) shell.GameMode.Start();
         shell.SetCadenceAware(early.OfType<ICadenceAware>());
         window.Show();
         window.Reposition();
@@ -140,7 +157,7 @@ public partial class App : Application
         EventManager.RegisterClassHandler(typeof(TextBoxBase), UIElement.PreviewMouseDownEvent, handler);
         EventManager.RegisterClassHandler(typeof(PasswordBox), UIElement.PreviewMouseDownEvent, handler);
 
-        if (snapDir is not null) { Snapshot.Run(snapDir, window, shell, tabs, sections, state, () => Shutdown()); return; }
+        if (snapDir is not null) { Snapshot.Run(snapDir, window, shell, tabs, sections, () => Shutdown()); return; }
         _tray = new TrayIcon(window, shell, () => Shutdown());
         Log.Info($"Started in {(DateTime.Now - System.Diagnostics.Process.GetCurrentProcess().StartTime).TotalMilliseconds:0} ms");
     }

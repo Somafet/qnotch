@@ -1,23 +1,21 @@
-using System.ComponentModel;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using QNotch.Core;
-using QNotch.Shell.Settings;
+using QNotch.Modules;
 using QNotch.Theme;
 
-namespace QNotch.Modules.GameMode;
+namespace QNotch.Shell.GameMode;
 
 /// <summary>Game mode settings page: override, detection, bar look and position, segments, per-process lists.</summary>
 public static class GameModeSection
 {
     static T Res<T>(string key) => (T)Application.Current.FindResource(key);
 
-    public static FrameworkElement Create(ModuleContext ctx, GameModeModule module)
+    internal static FrameworkElement Create(GameModeController game, GeneralSettings gs, Registry<SegmentDescriptor> segments)
     {
-        var s = ctx.Settings.Get<GameModeSettings>(module.Id);
-        var shell = ctx.Shell;
+        var s = game.Settings;
         var page = UiKit.Page("Game mode");
 
         // Live status: what the bar is doing right now and why.
@@ -30,13 +28,12 @@ public static class GameModeSection
         sp.Children.Add(dot);
         sp.Children.Add(status);
         bar.Child = sp;
-        var gs = ctx.State.GameMode;
         void ShowStatus()
         {
-            status.Text = gs.IsActive ? $"Game bar showing. {gs.Reason}." : $"Game bar not showing. Normal notch is active.";
-            dot.SetResourceReference(TextBlock.ForegroundProperty, gs.IsActive ? "AccentBrush" : "TextTertiaryBrush");
+            status.Text = game.IsActive ? $"Game bar showing. {game.Reason}." : "Game bar not showing. Normal notch is active.";
+            dot.SetResourceReference(TextBlock.ForegroundProperty, game.IsActive ? "AccentBrush" : "TextTertiaryBrush");
         }
-        PropertyChangedEventHandler onState = (_, _) => ShowStatus();
+        Action onState = ShowStatus;
         ShowStatus();
         page.Children.Add(bar);
 
@@ -46,33 +43,33 @@ public static class GameModeSection
         foreach (var (mode, label) in new[] { (GameModeOverride.Auto, "Auto"), (GameModeOverride.ForceOn, "Force on"), (GameModeOverride.ForceOff, "Force off") })
         {
             var m = mode;
-            var rb = new RadioButton { Style = Res<Style>("SegmentButton"), Content = label, GroupName = "gm-override", IsChecked = shell.GameModeOverride == m };
-            rb.Checked += (_, _) => shell.GameModeOverride = m;
+            var rb = new RadioButton { Style = Res<Style>("SegmentButton"), Content = label, GroupName = "gm-override", IsChecked = game.Override == m };
+            rb.Checked += (_, _) => game.Override = m;
             radios[m] = rb;
             seg.Children.Add(rb);
         }
         var segBox = new Border { CornerRadius = new CornerRadius(8), Child = seg };
         segBox.SetResourceReference(Border.BackgroundProperty, "ControlBrush");
         Action<GameModeOverride> onOverride = m => radios[m].IsChecked = true;
-        page.Children.Add(UiKit.Row("Mode", $"Auto follows the detection below. Cycle with {shell.General.GameModeHotkey} or from the tray icon.", segBox));
+        page.Children.Add(UiKit.Row("Mode", $"Auto follows the detection below. Cycle with {gs.GameModeHotkey} or from the tray icon.", segBox));
 
         // Subscribe only while the page is on screen.
-        page.Loaded += (_, _) => { gs.PropertyChanged += onState; shell.GameModeOverrideChanged += onOverride; ShowStatus(); onOverride(shell.GameModeOverride); };
-        page.Unloaded += (_, _) => { gs.PropertyChanged -= onState; shell.GameModeOverrideChanged -= onOverride; };
+        page.Loaded += (_, _) => { game.StatusChanged += onState; game.OverrideChanged += onOverride; ShowStatus(); onOverride(game.Override); };
+        page.Unloaded += (_, _) => { game.StatusChanged -= onState; game.OverrideChanged -= onOverride; };
 
         page.Children.Add(UiKit.Row("Automatic detection", "Show the bar when a fullscreen or borderless fullscreen app has the foreground, and apply the lists below.",
-            GeneralSection.Toggle(s.AutoDetect, v => { s.AutoDetect = v; module.SettingsChanged(true); })));
+            UiKit.Toggle(s.AutoDetect, v => { s.AutoDetect = v; game.SettingsChanged(true); })));
 
         // Look
         page.Children.Add(Section("Bar"));
-        page.Children.Add(UiKit.Row("Opacity", null, Slider(30, 100, 5, s.Opacity * 100, v => $"{v:0}%", v => { s.Opacity = v / 100; module.SettingsChanged(); }, out _)));
-        page.Children.Add(UiKit.Row("Height", null, Slider(16, 40, 2, s.Height, v => $"{v:0} px", v => { s.Height = v; module.SettingsChanged(); }, out _)));
+        page.Children.Add(UiKit.Row("Opacity", null, Slider(30, 100, 5, s.Opacity * 100, v => $"{v:0}%", v => { s.Opacity = v / 100; game.SettingsChanged(); }, out _)));
+        page.Children.Add(UiKit.Row("Height", null, Slider(16, 40, 2, s.Height, v => $"{v:0} px", v => { s.Height = v; game.SettingsChanged(); }, out _)));
 
         // Position
         bool sync = false;
         Slider sx = null!, sy = null!;
-        var xBox = Slider(-1500, 1500, 10, s.OffsetX, v => Math.Abs(v) >= 1500 ? "Edge" : $"{v:0} px", v => { if (sync) return; s.OffsetX = v; module.SettingsChanged(); }, out sx);
-        var yBox = Slider(0, 400, 4, s.OffsetY, v => $"{v:0} px", v => { if (sync) return; s.OffsetY = v; module.SettingsChanged(); }, out sy);
+        var xBox = Slider(-1500, 1500, 10, s.OffsetX, v => Math.Abs(v) >= 1500 ? "Edge" : $"{v:0} px", v => { if (sync) return; s.OffsetX = v; game.SettingsChanged(); }, out sx);
+        var yBox = Slider(0, 400, 4, s.OffsetY, v => $"{v:0} px", v => { if (sync) return; s.OffsetY = v; game.SettingsChanged(); }, out sy);
         var presets = new StackPanel { Orientation = Orientation.Horizontal };
         foreach (var (label, x) in new[] { ("Left", -10000.0), ("Center", 0.0), ("Right", 10000.0) })
         {
@@ -82,7 +79,7 @@ public static class GameModeSection
             {
                 s.OffsetX = px;
                 sync = true; sx.Value = Math.Clamp(px, sx.Minimum, sx.Maximum); sync = false;   // offsets beyond the slider range clamp to the screen edge
-                module.SettingsChanged();
+                game.SettingsChanged();
             };
             presets.Children.Add(b);
         }
@@ -92,19 +89,17 @@ public static class GameModeSection
 
         // Segments
         page.Children.Add(Section("Segments"));
-        page.Children.Add(Muted("GPU and battery only appear when the system reports them. A frame rate slot is reserved for a later version."));
-        page.Children.Add(Seg("Now playing", "Title and artist, only while something plays.", s.ShowMedia, v => s.ShowMedia = v, module));
-        page.Children.Add(Seg("CPU", null, s.ShowCpu, v => s.ShowCpu = v, module));
-        page.Children.Add(Seg("GPU", null, s.ShowGpu, v => s.ShowGpu = v, module));
-        page.Children.Add(Seg("Memory", null, s.ShowRam, v => s.ShowRam = v, module));
-        page.Children.Add(Seg("Network", null, s.ShowNet, v => s.ShowNet = v, module));
-        page.Children.Add(Seg("Battery", null, s.ShowBattery, v => s.ShowBattery = v, module));
-        page.Children.Add(Seg("Clock", null, s.ShowClock, v => s.ShowClock = v, module));
+        page.Children.Add(Muted("Segments without data stay hidden. A frame rate slot is reserved for a later version."));
+        foreach (var sd in segments.Items.Where(x => x.Slot == SegmentSlot.GameBar))
+        {
+            var id = sd.Id;
+            page.Children.Add(UiKit.Row(sd.Title, sd.Hint, UiKit.Toggle(game.IsSegmentOn(id), v => game.SetSegment(id, v))));
+        }
 
         // Per-process lists
         page.Children.Add(Section("Apps"));
-        var always = new ListEditor("Always use game mode", "Process names that get the bar whenever they are in the foreground, even windowed.", s.AlwaysGame, module);
-        var never = new ListEditor("Never use game mode", "Exempt apps, for example a borderless video player you still want to click. Wins over the list above.", s.NeverGame, module);
+        var always = new ListEditor("Always use game mode", "Process names that get the bar whenever they are in the foreground, even windowed.", s.AlwaysGame, game);
+        var never = new ListEditor("Never use game mode", "Exempt apps, for example a borderless video player you still want to click. Wins over the list above.", s.NeverGame, game);
         always.Other = never; never.Other = always;
         page.Children.Add(always.Root);
         page.Children.Add(never.Root);
@@ -116,9 +111,6 @@ public static class GameModeSection
 
     static TextBlock Muted(string text) =>
         new() { Text = text, Style = Res<Style>("Muted"), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, -6, 0, 12) };
-
-    static Grid Seg(string label, string? hint, bool value, Action<bool> set, GameModeModule module) =>
-        UiKit.Row(label, hint, GeneralSection.Toggle(value, v => { set(v); module.SettingsChanged(); }));
 
     static StackPanel Slider(double min, double max, double step, double value, Func<double, string> format, Action<double> set, out Slider slider)
     {
@@ -135,15 +127,15 @@ public static class GameModeSection
     sealed class ListEditor
     {
         readonly List<string> _list;
-        readonly GameModeModule _module;
+        readonly GameModeController _game;
         readonly StackPanel _rows = new();
         readonly TextBox _input = new() { Height = 30 };
         public ListEditor? Other;
         public StackPanel Root { get; } = new() { Margin = new Thickness(0, 0, 0, 20) };
 
-        public ListEditor(string title, string hint, List<string> list, GameModeModule module)
+        public ListEditor(string title, string hint, List<string> list, GameModeController game)
         {
-            _list = list; _module = module;
+            _list = list; _game = game;
             Root.Children.Add(new TextBlock { Text = title, FontSize = 13 });
             Root.Children.Add(new TextBlock { Text = hint, Style = Res<Style>("Muted"), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 8) });
 
@@ -180,7 +172,7 @@ public static class GameModeSection
             g.Children.Add(new TextBlock { Text = name, VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis });
             var x = new Button { Content = Glyphs.Close, Style = Res<Style>("IconButton"), ToolTip = "Remove", Width = 26, Height = 26 };
             Grid.SetColumn(x, 1);
-            x.Click += (_, _) => { _list.Remove(name); _module.SettingsChanged(true); Rebuild(); };
+            x.Click += (_, _) => { _list.Remove(name); _game.SettingsChanged(true); Rebuild(); };
             g.Children.Add(x);
             var b = new Border { CornerRadius = new CornerRadius(8), Padding = new Thickness(12, 2, 4, 2), Margin = new Thickness(0, 0, 0, 4), Child = g };
             b.SetResourceReference(Border.BackgroundProperty, "ControlBrush");
@@ -198,7 +190,7 @@ public static class GameModeSection
             if (_list.Any(e => GameClassifier.Normalize(e) == n)) return;
             if (Other is { } o && o._list.RemoveAll(e => GameClassifier.Normalize(e) == n) > 0) o.Rebuild();
             _list.Add(name);
-            _module.SettingsChanged(true);
+            _game.SettingsChanged(true);
             Rebuild();
         }
 

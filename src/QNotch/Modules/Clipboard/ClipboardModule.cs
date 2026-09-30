@@ -38,7 +38,7 @@ public sealed class ClipboardModule : INotchModule, ICadenceAware
     const int MaxPersistChars = 20_000;
 
     ModuleContext _ctx = null!;
-    ClipboardState _st = null!;
+    readonly ClipboardState _st = new();
     ClipboardSettings _cfg = null!;
     HwndSourceHook? _hook;
     DispatcherTimer? _capTimer, _ageTimer;
@@ -51,7 +51,6 @@ public sealed class ClipboardModule : INotchModule, ICadenceAware
     public void Initialize(ModuleContext ctx)
     {
         _ctx = ctx;
-        _st = ctx.State.Clipboard;
         _cfg = ctx.Settings.Get<ClipboardSettings>("clipboard");
 
         ctx.Tabs.Register(new TabDescriptor("clipboard", "Clipboard", Glyphs.Clipboard, 20, () => new ClipboardTab(this, _st)));

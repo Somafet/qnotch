@@ -2,7 +2,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using QNotch.Interop;
 
-namespace QNotch.Modules.GameMode;
+namespace QNotch.Shell.GameMode;
 
 /// <summary>Win32 pieces only Game mode needs (kept out of the shared Native class).</summary>
 internal static unsafe partial class GameModeNative

@@ -1,7 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
-using QNotch.Modules.NoteGithub;
 
-namespace QNotch.Core;
+namespace QNotch.Modules.NoteGithub;
 
 public enum NoteStatus { Saved, Editing, Failed }
 public enum GithubStatus { NoToken, Loading, Ready, Error }
@@ -28,9 +27,4 @@ public sealed partial class NoteGithubState : ObservableObject
     /// <summary>Error or offline explanation, empty when fine.</summary>
     [ObservableProperty] string _githubMessage = "";
     [ObservableProperty] string _githubLogin = "";
-}
-
-public sealed partial class AppState
-{
-    public NoteGithubState NoteGithub { get; } = new();
 }

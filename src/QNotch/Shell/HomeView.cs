@@ -13,11 +13,11 @@ public sealed class HomeView : ScrollViewer
     public const double Unit = 218, Gap = 10, RowHeight = 148;
 
     readonly CardLayout _layout;
-    readonly IShell _shell;
+    readonly ShellController _shell;
     readonly WrapPanel _panel = new() { Width = 3 * (Unit + Gap), HorizontalAlignment = HorizontalAlignment.Center };
     readonly Dictionary<string, CardHost> _hosts = new();
 
-    public HomeView(CardLayout layout, IShell shell)
+    public HomeView(CardLayout layout, ShellController shell)
     {
         _layout = layout;
         _shell = shell;

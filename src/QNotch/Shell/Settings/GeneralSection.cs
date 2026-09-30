@@ -80,15 +80,6 @@ public static class GeneralSection
         return t;
     }
 
-    public static CheckBox Toggle(bool value, Action<bool> set)
-    {
-        var t = UiKit.Toggle();
-        t.IsChecked = value;
-        t.Checked += (_, _) => set(true);
-        t.Unchecked += (_, _) => set(false);
-        return t;
-    }
-
     public static FrameworkElement SliderBox(int min, int max, int step, int value, Action<int> set, string unit)
     {
         var label = new TextBlock { Width = 64, TextAlignment = TextAlignment.Right, VerticalAlignment = VerticalAlignment.Center, Text = $"{value} {unit}" };

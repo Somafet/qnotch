@@ -15,41 +15,9 @@
             <Border.RenderTransform><TranslateTransform x:Name="SurfaceShift"/></Border.RenderTransform>
             <Grid>
                 <!-- Collapsed pill content -->
-                <Grid x:Name="PillLayer" Height="38" HorizontalAlignment="Center" VerticalAlignment="Top">
-                    <StackPanel Orientation="Horizontal" Margin="16,0,18,1" VerticalAlignment="Center">
-                        <!-- Left cluster: now playing (hidden when there is no session) -->
-                        <StackPanel Orientation="Horizontal" Margin="0,0,18,0"
-                                    Visibility="{Binding State.Media.HasSession, Converter={StaticResource BoolToVis}}">
-                            <Grid Width="22" Height="22">
-                                <Border CornerRadius="6" Background="{DynamicResource ControlHoverBrush}">
-                                    <TextBlock Text="&#xE8D6;" Style="{StaticResource Glyph}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"
-                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                </Border>
-                                <Border CornerRadius="6">
-                                    <Border.Background><ImageBrush ImageSource="{Binding State.Media.Artwork}" Stretch="UniformToFill"/></Border.Background>
-                                </Border>
-                            </Grid>
-                            <TextBlock Text="{Binding State.Media.Title}" FontWeight="SemiBold" MaxWidth="120" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="8,0,0,0"/>
-                            <TextBlock Text="{Binding State.Media.Artist}" MaxWidth="80" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="6,0,0,0"
-                                       Foreground="{DynamicResource TextSecondaryBrush}"/>
-                        </StackPanel>
-                        <!-- Right cluster: stats and clock. Minimum widths so changing digits never resize the pill. -->
-                        <TextBlock VerticalAlignment="Center" MinWidth="50" Margin="0,0,12,0">
-                            <Run Text="CPU" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource TextTertiaryBrush}"/><Run Text=" "/><Run Text="{Binding State.Stats.CpuText, Mode=OneWay}"/>
-                        </TextBlock>
-                        <TextBlock VerticalAlignment="Center" MinWidth="98" Margin="0,0,12,0">
-                            <Run Text="RAM" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource TextTertiaryBrush}"/><Run Text=" "/><Run Text="{Binding State.Stats.RamText, Mode=OneWay}"/>
-                        </TextBlock>
-                        <TextBlock VerticalAlignment="Center" MinWidth="116" Margin="0,0,12,0">
-                            <Run Text="&#x2193;" Foreground="{DynamicResource TextTertiaryBrush}"/><Run Text="{Binding State.Stats.NetDownText, Mode=OneWay}"/><Run Text="  "/><Run Text="&#x2191;" Foreground="{DynamicResource TextTertiaryBrush}"/><Run Text="{Binding State.Stats.NetUpText, Mode=OneWay}"/>
-                        </TextBlock>
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,12,0"
-                                    Visibility="{Binding State.Stats.HasBattery, Converter={StaticResource BoolToVis}}">
-                            <TextBlock Text="{Binding State.Stats.BatteryGlyph}" Style="{StaticResource Glyph}" FontSize="13" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                            <TextBlock Text="{Binding State.Stats.BatteryText}" MinWidth="28" VerticalAlignment="Center"/>
-                        </StackPanel>
-                        <TextBlock Text="{Binding State.Stats.Clock}" FontWeight="SemiBold" FontSize="13" MinWidth="36" VerticalAlignment="Center"/>
-                    </StackPanel>
+                <Grid x:Name="PillLayer" Height="38" MinWidth="96" HorizontalAlignment="Center" VerticalAlignment="Top">
+                    <!-- Filled by the shell from the registered PillLeft and PillRight segments (ShellController.BuildPill). -->
+                    <StackPanel x:Name="PillStrip" Orientation="Horizontal" Margin="16,0,18,1" VerticalAlignment="Center"/>
                 </Grid>
 
                 <!-- Expanded panel content: fixed size, pre-laid-out at startup, only opacity/transform animate -->
@@ -92,19 +60,16 @@
                     <Grid x:Name="TabHost" Grid.Row="1" Margin="4,0,4,0"/>
                 </Grid>
 
-                <!-- Game bar content (set by the Game mode module) -->
+                <!-- Game bar content (built by the game mode controller from the GameBar segments) -->
                 <ContentPresenter x:Name="GameBarHost" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Center"/>
             </Grid>
         </Border>
 
-        <!-- Glance strip: now playing line under the collapsed pill -->
+        <!-- Glance strip: one line under the collapsed pill, filled from the Glance segments -->
         <Border x:Name="Glance" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,44,0,0" Height="24" CornerRadius="12" Padding="10,0,12,0"
                 Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource StrokeBrush}" BorderThickness="1"
                 Visibility="{Binding ShowGlance, Converter={StaticResource BoolToVis}}">
-            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                <TextBlock Text="&#xE8D6;" Style="{StaticResource Glyph}" FontSize="11" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" Margin="0,0,7,0"/>
-                <TextBlock Text="{Binding State.Media.NowPlayingText}" FontSize="11" MaxWidth="340" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
-            </StackPanel>
+            <StackPanel x:Name="GlanceStrip" Orientation="Horizontal" VerticalAlignment="Center"/>
         </Border>
     </Grid>
 </Window>

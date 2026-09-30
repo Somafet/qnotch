@@ -383,5 +383,4 @@ public partial class NotchWindow : Window
     /// <summary>Snapshot mode: keep the window off every monitor.</summary>
     internal bool Offscreen { get; init; }
     internal FrameworkElement RootElement => Root;
-    internal bool HasGameBarView => GameBarHost.Content is not null;
 }
