@@ -1,0 +1,143 @@
+<UserControl x:Class="QNotch.Modules.FileTray.FileTrayView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             AllowDrop="True" DragEnter="OnDrag" DragOver="OnDrag" DragLeave="OnDragLeave" Drop="OnDragLeave">
+    <!-- DataContext: FileTrayState. 712 x 322 body. Drag events are not marked handled: the shell still runs its own file-drop logic. -->
+    <UserControl.Resources>
+        <Style x:Key="TileAction" TargetType="Button" BasedOn="{StaticResource IconButton}">
+            <Setter Property="Width" Value="26"/>
+            <Setter Property="Height" Value="24"/>
+            <Setter Property="Margin" Value="1,0"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsMissing}" Value="True"><Setter Property="IsEnabled" Value="False"/></DataTrigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="HeaderButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="Margin" Value="6,0,0,0"/>
+            <Setter Property="FontSize" Value="12"/>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Background="Transparent" Margin="19,0,19,14">
+        <Grid.RowDefinitions><RowDefinition Height="46"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+
+        <!-- Header -->
+        <DockPanel VerticalAlignment="Center">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                <Button Style="{StaticResource HeaderButton}" Click="OnAdd" ToolTip="Choose files to add">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xE710;" Style="{StaticResource Glyph}" FontSize="12" VerticalAlignment="Center"/>
+                        <TextBlock Text="Add files" Margin="6,0,0,0"/>
+                    </StackPanel>
+                </Button>
+                <Button Style="{StaticResource HeaderButton}" Click="OnExportAll" ToolTip="Copy every file in the tray to a folder" Visibility="{Binding HasItems, Converter={StaticResource BoolToVis}}">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xEDE1;" Style="{StaticResource Glyph}" FontSize="12" VerticalAlignment="Center"/>
+                        <TextBlock Text="Export all" Margin="6,0,0,0"/>
+                    </StackPanel>
+                </Button>
+                <Button Style="{StaticResource HeaderButton}" Click="OnClear" ToolTip="Remove every reference (your files are not touched)" Visibility="{Binding HasItems, Converter={StaticResource BoolToVis}}">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xE74D;" Style="{StaticResource Glyph}" FontSize="12" VerticalAlignment="Center"/>
+                        <TextBlock Text="Clear" Margin="6,0,0,0"/>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock Text="File tray" Style="{StaticResource Title}"/>
+                <TextBlock Text="{Binding CountText}" Style="{StaticResource Muted}" FontSize="12" Margin="8,2,0,0" VerticalAlignment="Center"/>
+                <TextBlock Text="{Binding MissingText}" FontSize="12" Margin="8,2,0,0" VerticalAlignment="Center" Foreground="{DynamicResource WarningBrush}"/>
+                <TextBlock Text="{Binding Status}" Style="{StaticResource Caption}" Margin="14,2,12,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="230"/>
+            </StackPanel>
+        </DockPanel>
+
+        <!-- Items -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                      Visibility="{Binding HasItems, Converter={StaticResource BoolToVis}}">
+            <ItemsControl ItemsSource="{Binding Items}">
+                <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border x:Name="Tile" Width="104" Height="118" Margin="0,0,8,8" CornerRadius="10" BorderThickness="1"
+                                Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource StrokeBrush}"
+                                ToolTip="{Binding Path}" ToolTipService.InitialShowDelay="600"
+                                PreviewMouseLeftButtonDown="OnTileDown" MouseMove="OnTileMove" MouseLeave="OnTileLeave">
+                            <Border.ContextMenu>
+                                <ContextMenu Opened="OnMenuOpened" Closed="OnMenuClosed">
+                                    <MenuItem Header="Open" Click="OnOpen"/>
+                                    <MenuItem Header="Show in folder" Click="OnReveal"/>
+                                    <MenuItem Header="Export to folder..." Click="OnExport"/>
+                                    <MenuItem Header="Copy path" Click="OnCopyPath"/>
+                                    <Separator/>
+                                    <MenuItem Header="Remove from tray" Click="OnRemove"/>
+                                </ContextMenu>
+                            </Border.ContextMenu>
+                            <Grid Margin="8,8,8,6">
+                                <Grid.RowDefinitions><RowDefinition Height="56"/><RowDefinition Height="*"/><RowDefinition Height="24"/></Grid.RowDefinitions>
+                                <Grid x:Name="Thumb" HorizontalAlignment="Center" Width="56">
+                                    <TextBlock x:Name="Fallback" Text="{Binding FallbackGlyph}" Style="{StaticResource Glyph}" FontSize="30"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{DynamicResource TextTertiaryBrush}"/>
+                                    <Image Source="{Binding Thumbnail}" Stretch="Uniform" Width="52" Height="52" RenderOptions.BitmapScalingMode="Fant"/>
+                                </Grid>
+                                <TextBlock Grid.Row="1" Text="{Binding Name}" FontSize="12" TextAlignment="Center" TextTrimming="CharacterEllipsis"
+                                           TextWrapping="Wrap" MaxHeight="32" VerticalAlignment="Center" Margin="0,2,0,0"/>
+                                <TextBlock x:Name="Size" Grid.Row="2" Text="{Binding SizeText}" Style="{StaticResource Muted}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <StackPanel x:Name="Actions" Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Visibility="Collapsed">
+                                    <Button Style="{StaticResource TileAction}" Content="&#xE8E5;" Click="OnOpen" ToolTip="Open"/>
+                                    <Button Style="{StaticResource TileAction}" Content="&#xE838;" Click="OnReveal" ToolTip="Show in folder"/>
+                                    <Button Style="{StaticResource TileAction}" Content="&#xEDE1;" Click="OnExport" ToolTip="Export to folder"/>
+                                </StackPanel>
+                                <Button Grid.RowSpan="3" Style="{StaticResource IconButton}" Content="&#xE711;" Click="OnRemove" ToolTip="Remove from tray"
+                                        x:Name="RemoveBtn" Width="22" Height="22" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-4,-4,0" Visibility="Collapsed"/>
+                            </Grid>
+                        </Border>
+                        <DataTemplate.Triggers>
+                            <Trigger SourceName="Tile" Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Tile" Property="Background" Value="{DynamicResource CardHoverBrush}"/>
+                                <Setter TargetName="Tile" Property="BorderBrush" Value="{DynamicResource StrokeStrongBrush}"/>
+                                <Setter TargetName="Size" Property="Visibility" Value="Collapsed"/>
+                                <Setter TargetName="Actions" Property="Visibility" Value="Visible"/>
+                                <Setter TargetName="RemoveBtn" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                            <!-- Stale: dimmed, warning glyph and text, only Remove stays active. -->
+                            <DataTrigger Binding="{Binding IsMissing}" Value="True">
+                                <Setter TargetName="Thumb" Property="Opacity" Value="0.6"/>
+                                <Setter TargetName="Fallback" Property="Foreground" Value="{DynamicResource WarningBrush}"/>
+                                <Setter TargetName="Size" Property="Foreground" Value="{DynamicResource WarningBrush}"/>
+                                <Setter TargetName="Tile" Property="BorderBrush" Value="{DynamicResource WarningBrush}"/>
+                                <Setter TargetName="Tile" Property="Opacity" Value="0.75"/>
+                            </DataTrigger>
+                        </DataTemplate.Triggers>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+
+        <!-- Empty state -->
+        <Grid Grid.Row="1">
+            <Grid.Style>
+                <Style TargetType="Grid">
+                    <Setter Property="Visibility" Value="Collapsed"/>
+                    <Style.Triggers><DataTrigger Binding="{Binding IsEmpty}" Value="True"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers>
+                </Style>
+            </Grid.Style>
+            <Rectangle RadiusX="14" RadiusY="14" StrokeThickness="1.5" StrokeDashArray="4 4" Stroke="{DynamicResource StrokeStrongBrush}" Fill="Transparent"/>
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                <TextBlock Text="&#xE8B7;" Style="{StaticResource Glyph}" FontSize="28" HorizontalAlignment="Center" Foreground="{DynamicResource TextTertiaryBrush}"/>
+                <TextBlock Text="Drop files here" Style="{StaticResource Title}" Margin="0,10,0,0" HorizontalAlignment="Center"/>
+                <TextBlock Text="The tray keeps a reference only: your files never move. Drag them out again to share." Style="{StaticResource Muted}"
+                           TextAlignment="Center" TextWrapping="Wrap" MaxWidth="320" Margin="0,4,0,0"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- Drop target, shown while files are dragged over the panel -->
+        <Grid x:Name="DropOverlay" Grid.Row="1" Visibility="Collapsed" IsHitTestVisible="False">
+            <Rectangle RadiusX="14" RadiusY="14" StrokeThickness="1.5" StrokeDashArray="4 3" Stroke="{DynamicResource AccentBrush}" Fill="{DynamicResource AccentSoftBrush}"/>
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                <TextBlock Text="&#xE896;" Style="{StaticResource Glyph}" FontSize="26" HorizontalAlignment="Center" Foreground="{DynamicResource AccentBrush}"/>
+                <TextBlock Text="Drop to add to the tray" Style="{StaticResource Title}" Margin="0,8,0,0" HorizontalAlignment="Center"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</UserControl>

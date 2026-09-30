@@ -1,0 +1,53 @@
+<UserControl x:Class="QNotch.Modules.FileTray.FileTrayCard"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- DataContext: FileTrayState. Body area is about 188 x 98. Click opens the Files tab. -->
+    <Grid Background="Transparent" Cursor="Hand" MouseLeftButtonUp="OnClick">
+        <!-- Empty -->
+        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+            <StackPanel.Style>
+                <Style TargetType="StackPanel">
+                    <Setter Property="Visibility" Value="Collapsed"/>
+                    <Style.Triggers><DataTrigger Binding="{Binding IsEmpty}" Value="True"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers>
+                </Style>
+            </StackPanel.Style>
+            <TextBlock Text="&#xE8B7;" Style="{StaticResource Glyph}" FontSize="22" HorizontalAlignment="Center" Foreground="{DynamicResource TextTertiaryBrush}"/>
+            <TextBlock Text="Drop files here" Style="{StaticResource Caption}" Margin="0,6,0,0" HorizontalAlignment="Center"/>
+            <TextBlock Text="Files stay where they are" Style="{StaticResource Muted}" HorizontalAlignment="Center"/>
+        </StackPanel>
+
+        <!-- Items -->
+        <StackPanel VerticalAlignment="Top" Visibility="{Binding HasItems, Converter={StaticResource BoolToVis}}">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Right" Text="{Binding MissingText}" Foreground="{DynamicResource WarningBrush}" FontSize="11"/>
+                <TextBlock Text="{Binding CountText}" FontWeight="SemiBold" FontSize="12"/>
+            </DockPanel>
+            <ItemsControl ItemsSource="{Binding Recent}" Margin="0,8,0,0">
+                <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border x:Name="Tile" Width="40" Height="40" Margin="0,0,6,0" CornerRadius="8" ToolTip="{Binding Name}"
+                                Background="{DynamicResource ControlBrush}" BorderBrush="{DynamicResource StrokeBrush}" BorderThickness="1">
+                            <Grid>
+                                <TextBlock x:Name="Fallback" Text="{Binding FallbackGlyph}" Style="{StaticResource Glyph}" FontSize="16"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{DynamicResource TextTertiaryBrush}"/>
+                                <Image Source="{Binding Thumbnail}" Margin="4" Stretch="Uniform" RenderOptions.BitmapScalingMode="Fant"/>
+                            </Grid>
+                        </Border>
+                        <DataTemplate.Triggers>
+                            <Trigger SourceName="Tile" Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Tile" Property="Background" Value="{DynamicResource ControlHoverBrush}"/>
+                                <Setter TargetName="Tile" Property="BorderBrush" Value="{DynamicResource StrokeStrongBrush}"/>
+                            </Trigger>
+                            <DataTrigger Binding="{Binding IsMissing}" Value="True">
+                                <Setter TargetName="Tile" Property="Opacity" Value="0.55"/>
+                                <Setter TargetName="Fallback" Property="Foreground" Value="{DynamicResource WarningBrush}"/>
+                            </DataTrigger>
+                        </DataTemplate.Triggers>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <TextBlock Text="Click to open the tray" Style="{StaticResource Muted}" Margin="0,6,0,0" TextTrimming="CharacterEllipsis"/>
+        </StackPanel>
+    </Grid>
+</UserControl>
