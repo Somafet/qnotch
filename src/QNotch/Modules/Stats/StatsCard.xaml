@@ -1,0 +1,32 @@
+<UserControl x:Class="QNotch.Modules.Stats.StatsCard"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- DataContext: StatsState. Text is pre-formatted. Placeholders: dashes before the first sample, n/a when unavailable. -->
+    <StackPanel VerticalAlignment="Top">
+        <DockPanel>
+            <TextBlock DockPanel.Dock="Right" Text="{Binding CpuText}" FontWeight="SemiBold"/>
+            <TextBlock Text="CPU" Style="{StaticResource Caption}"/>
+        </DockPanel>
+        <ProgressBar Maximum="100" Value="{Binding CpuPercent, Mode=OneWay}" Margin="0,3,0,6"
+                     Visibility="{Binding HasSample, Converter={StaticResource BoolToVis}}"/>
+        <DockPanel>
+            <TextBlock DockPanel.Dock="Right" Text="{Binding RamText}" FontWeight="SemiBold"/>
+            <TextBlock Text="RAM" Style="{StaticResource Caption}"/>
+        </DockPanel>
+        <ProgressBar Maximum="100" Value="{Binding RamPercent, Mode=OneWay}" Margin="0,3,0,6"
+                     Visibility="{Binding HasSample, Converter={StaticResource BoolToVis}}"/>
+        <DockPanel Margin="0,0,0,2">
+            <TextBlock Text="{Binding GpuText}" DockPanel.Dock="Right"/>
+            <TextBlock Text="GPU" Style="{StaticResource Caption}"/>
+        </DockPanel>
+        <DockPanel>
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                <TextBlock Text="&#x2193; " Foreground="{DynamicResource TextTertiaryBrush}"/>
+                <TextBlock Text="{Binding NetDownText}"/>
+                <TextBlock Text="   &#x2191; " Foreground="{DynamicResource TextTertiaryBrush}"/>
+                <TextBlock Text="{Binding NetUpText}"/>
+            </StackPanel>
+            <TextBlock Text="NET" Style="{StaticResource Caption}"/>
+        </DockPanel>
+    </StackPanel>
+</UserControl>

@@ -1,0 +1,18 @@
+<Window x:Class="QNotch.Shell.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="QNotch Settings" Width="840" Height="580" MinWidth="700" MinHeight="460"
+        WindowStartupLocation="CenterScreen" UseLayoutRounding="True"
+        Background="{DynamicResource WindowBrush}" Foreground="{DynamicResource TextPrimaryBrush}"
+        FontFamily="{StaticResource UiFont}" FontSize="12">
+    <Grid>
+        <Grid.ColumnDefinitions><ColumnDefinition Width="210"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+        <Border Background="{DynamicResource SurfaceRaisedBrush}" BorderBrush="{DynamicResource StrokeBrush}" BorderThickness="0,0,1,0">
+            <StackPanel Margin="12,20,12,12">
+                <TextBlock Text="QNotch" Style="{StaticResource Title}" FontSize="16" Margin="12,0,0,18"/>
+                <StackPanel x:Name="Nav"/>
+            </StackPanel>
+        </Border>
+        <ScrollViewer x:Name="Scroll" Grid.Column="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"/>
+    </Grid>
+</Window>
