@@ -16,6 +16,10 @@ dist\QNotch.exe
 
 Only one instance runs at a time. Quit from the tray icon menu. The tray icon turns amber while Game mode is forced or the game bar is showing.
 
+## Features
+
+Settings, Features has one switch per feature: System stats, Now playing, Clipboard history, AI apps and usage, Note and GitHub, File tray. A feature that is off is never loaded and costs nothing (no timers, hooks, hotkeys, cards or tabs). Changes apply after a restart: the page shows "Restart QNotch to apply your changes." with a "Restart now" button. Game mode and Edit mode are part of the shell and always available.
+
 ## Hotkeys
 
 | Keys | Action |
@@ -29,7 +33,7 @@ To change a hotkey, open Settings, General, click the box and press the new shor
 
 ## Data folder
 
-`%APPDATA%\QNotch\` holds one JSON file per module (`general.json`, `ai.json`, `clipboard.json`, and so on), the note, and `logs\` (`qnotch.log`, `crash.log`). Clipboard history lives in memory only unless you turn on "Keep history between sessions" (text only). The GitHub token is stored in Windows Credential Manager, never in a file.
+`%APPDATA%\QNotch\` holds one JSON file per module (`general.json`, `ai.json`, `clipboard.json`, and so on), the note, and `logs\` (`qnotch.log`, `crash.log`). Clipboard history lives in memory only unless you turn on "Keep history between sessions" (text only). The GitHub token is stored in Windows Credential Manager, never in a file. Set `QNOTCH_DATA_DIR` to a full path to use another folder, and `QNOTCH_INSTANCE` to a suffix to allow a second instance next to the first (both are for parallel test runs).
 
 ## Measured performance
 

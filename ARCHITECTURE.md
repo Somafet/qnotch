@@ -4,49 +4,49 @@ C# on .NET 10, WPF, `net10.0-windows10.0.22621.0`, x64. Only NuGet dependency: C
 Build: `dotnet build -c Release` from the repo root. Run: `src/QNotch/bin/Release/net10.0-windows10.0.22621.0/win-x64/QNotch.exe`.
 Data folder `%APPDATA%\QNotch`, logs in `%APPDATA%\QNotch\logs` (`qnotch.log`, `crash.log`).
 
+Parallel test runs: set `QNOTCH_INSTANCE` (suffix of the single-instance mutex name) and `QNOTCH_DATA_DIR` (full path that replaces `%APPDATA%\QNotch`) to unique values for every run you start, and only stop processes you started (by PID). `QNotch.exe --restart` waits up to 10 s for the running instance to release the mutex (used by Settings, Features, Restart now).
+
 ## See your UI without driving the desktop
 
-`QNotch.exe --snapshot <dir> [light]` renders at 2x into `<dir>`: `pill.png`, `pill-media.png` (fake now playing, only while no real session exists), `tab-<id>.png` for every tab, `tab-home-edit.png`, `gamebar.png` (your view if the Game mode module set one, else a dummy) and `settings-<id>.png` for every settings section, then exits. It runs next to a normal instance (no single-instance lock, window off-screen, nothing is saved) and writes `snapshot.txt` (hotkey parse checks, errors). Use it after every UI change and look at the PNGs.
+`QNotch.exe --snapshot <dir> [light]` renders at 2x into `<dir>`: `pill.png` (with the glance strip), `tab-<id>.png` for every tab, `tab-home-edit.png`, `gamebar.png`, `gamebar-corner.png` and `settings-<id>.png` for every settings section, then exits. It runs next to a normal instance (no single-instance lock, window off-screen, nothing is saved, every module is loaded whatever `DisabledModules` says) and writes `snapshot.txt` (hotkey parse checks, errors). When `ctx.Settings.ReadOnly` is true a module should register everything and seed demo data instead of starting its providers (Media shows "Midnight City", Clipboard shows sample entries). Use it after every UI change and look at the PNGs.
 
 ## Folder layout (`src/QNotch`)
 
 | Folder | Owner | Content |
 | --- | --- | --- |
-| `Core/` | shell | EventBus, AppState, SettingsStore, GeneralSettings, Log, Motion, MemoryTrim, Autostart |
-| `Core/State/` | one file per module | `<Module>State.cs`: the module's observable state plus a `partial class AppState` adding one property |
+| `Core/` | shell | EventBus, SettingsStore, GeneralSettings, Log, Motion, MemoryTrim, Autostart, Paths, UiCulture. Names no module. |
 | `Interop/` | shell | `Native` P/Invoke (LibraryImport), `Pdh` |
-| `Shell/` | shell | NotchWindow, ShellController (IShell), HomeView, CardHost, CardLayout, TrayIcon, HotkeyService, ForegroundWatcher, SettingsWindow, Snapshot |
+| `Shell/` | shell | NotchWindow, ShellController (IShell, ShellMode), ShellViewModel, HomeView, CardHost, CardLayout, SegmentHost, `EditMode.cs`, `GameMode/`, `Settings/` (General, Features, Appearance), TrayIcon, HotkeyService, ForegroundWatcher, Monitors, SettingsWindow, Snapshot |
 | `Theme/` | shell | Dark/Light dictionaries, Styles.xaml, Glyphs, ThemeManager, UiKit, Placeholder |
-| `Modules/` | shell | `Contracts.cs` (interfaces, descriptors, registries, ModuleContext), `ModuleList.cs` |
-| `Modules/<Name>/` | that module's agent | everything for one feature |
+| `Modules/` | shell | `Contracts.cs` (interfaces, descriptors, registries, ModuleContext), `ModuleList.cs` (the only file that names modules) |
+| `Modules/<Name>/` | that module's agent | everything for one feature, including its state class |
 
-Modules: Stats (done), GameMode, Media, Clipboard, Ai, NoteGithub, FileTray, EditMode (stubs that register placeholders; replace the folder contents).
+Modules: Stats, Media, Clipboard, Ai, NoteGithub, FileTray. Game mode and Edit mode are shell features (`Shell/GameMode/`, `Shell/EditMode.cs`), not modules: the shell owns the mode enum, click-through, the pill and panel swap and the card grid.
 
 ## Rules for feature agents
 
-You own ONLY `Modules/<YourName>/` and `Core/State/<YourName>State.cs`. Do not edit anything else. Sanctioned tiny exceptions:
+You own ONLY `Modules/<YourName>/`. Do not edit anything else. The only sanctioned tiny exception: a `PackageReference` line in `QNotch.csproj` if a feature truly cannot be done without it (say so in your report). Prefer raw P/Invoke and WinRT (the TFM already projects Windows.* APIs).
 
-1. Your `Core/State/<YourName>State.cs` (already exists as a stub, with the partial `AppState` property).
-2. A `PackageReference` line in `QNotch.csproj` only if a feature truly cannot be done without it. Say so in your report. Prefer raw P/Invoke and WinRT (the TFM already projects Windows.* APIs).
+Need a change in a shared file (a new IShell member, a new theme key, a new Native import)? Do not edit it: put the workaround in your folder and list the request in your report. P/Invoke you need goes in your own class (for example `Modules/Clipboard/ClipboardNative.cs`), never in `Interop/Native.cs`. New files need no csproj edit (globbing). Your module is listed once in `ModuleList.cs` (the shell owner adds the line). Styles or templates you need go in a ResourceDictionary inside your folder, merged into your own view's `Resources`.
 
-Need a change in a shared file (a new IShell member, a new theme key, a new Native import)? Do not edit it: put the workaround in your folder and list the request in your report. P/Invoke you need goes in your own class (for example `Modules/Clipboard/ClipboardNative.cs`), never in `Interop/Native.cs`. New files need no csproj edit (globbing). `ModuleList.cs` already lists every module. Styles or templates you need go in a ResourceDictionary inside your folder, merged into your own view's `Resources`.
-
-Namespace gotchas: `System.Windows.Controls.MediaState` collides with `QNotch.Core.MediaState`: add `using MediaState = QNotch.Core.MediaState;`. Inside `namespace QNotch.Modules.Clipboard` the name `Clipboard` resolves to the namespace: write `System.Windows.Clipboard`. `ThemeChoice` is the theme enum (WPF has its own `ThemeMode`). WPF implicit usings exclude `System.IO`/`System.Threading`; the csproj adds them. `Native.GetCursorPos` takes a `POINT`.
+Namespace gotchas: inside `namespace QNotch.Modules.Clipboard` the name `Clipboard` resolves to the namespace: write `System.Windows.Clipboard`. `ThemeChoice` is the theme enum (WPF has its own `ThemeMode`). WPF implicit usings exclude `System.IO`/`System.Threading`; the csproj adds them. `Native.GetCursorPos` takes a `POINT`.
 
 ## Module contract
 
 ```csharp
 public sealed class MyModule : INotchModule, ICadenceAware   // ICadenceAware optional
 {
-    public string Id => "mymodule";                         // also the settings file name
+    public string Id => "mymodule";                         // also the settings file name; must equal ModuleInfo.Id
     public void Initialize(ModuleContext ctx) { ... }       // UI thread, once, window handle exists
     public void SetCadence(Cadence c) { ... }               // Fast: panel open. Slow: collapsed or game bar.
 }
 ```
 
+- `ModuleList.All` is the list of `ModuleInfo(Id, Title, Description, Create, Early)`. A module the user turned off (Settings, Features; `GeneralSettings.DisabledModules`, applied on restart) is never created: no timers, hooks, hotkeys, cards, tabs, sections or segments. `Early: true` means the module registers pill or glance segments, so it initializes before the first frame; all others initialize right after it.
 - An exception in `Initialize` or `SetCadence` is caught and logged; the app continues. Still, register in `Initialize` before doing risky work.
-- Modules never read shell mode to decide refresh rates. React to `SetCadence` only (`ctx.Shell.ModeChanged` exists for the Game mode module).
-- `ModuleContext`: `State` (AppState), `Bus` (EventBus), `Settings` (SettingsStore), `Hotkeys`, `Shell` (IShell), `Dispatcher`, `Cards`, `Tabs`, `SettingsSections`, `CardLayout`.
+- Modules never read shell mode to decide refresh rates. React to `SetCadence` only.
+- `ModuleContext`: `Bus` (EventBus), `Settings` (SettingsStore), `Hotkeys`, `Shell` (IShell), `Dispatcher`, `Cards`, `Tabs`, `SettingsSections`, `Segments`.
+- Module state lives in the module: create your own observable state object in `Initialize` (or a field initializer) and pass it to your services and views. The shell never sees it.
 
 ### Registries
 
@@ -56,9 +56,15 @@ ctx.Tabs.Register(new TabDescriptor("clipboard", "Clipboard", Glyphs.Clipboard, 
 ctx.SettingsSections.Register(new SettingsSectionDescriptor("clipboard", "Clipboard", Glyphs.Clipboard, 30, () => MySettings.Create()));
 ```
 
+```csharp
+ctx.Segments.Register(new SegmentDescriptor("media.pill", SegmentSlot.PillLeft, Order: 10, () => MediaSegments.Pill(_m)));
+ctx.Segments.Register(new SegmentDescriptor("stats.game.cpu", SegmentSlot.GameBar, 20, () => StatsSegments.GameCpu(_st), Title: "CPU"));
+```
+
+- Segments are small views the shell hosts outside the panel: `PillLeft` and `PillRight` (the pill: left cluster by Order, then right cluster), `Glance` (the strip under the collapsed pill, shown while any glance element is Visible), `GameBar` (the game bar line). Ids are unique across slots: `<module>.<slot>[.<name>]`; game bar ids are persisted keys (Settings, Game mode toggles them; Title and Hint label the toggle). Factories run once, on the UI thread, on first use (game bar: the first time the bar shows). The factory sets its own DataContext or binds with `Source` (`UiKit.Bind`, `UiKit.BindVisible`), and the element owns its Visibility for data availability ("no battery" collapses the battery). The shell owns Margin (never set your own outer Margin) and, in the game bar, the per-segment user toggle. Font size in the game bar is inherited from the bar. Build segments in code to keep cold start down. Orders in use: pill 10, glance 10, game bar media 10, cpu 20, gpu 30, ram 40, net 50, battery 60, clock 70 (65 is free for frame time).
 - Register inside `Initialize` only (the tab strip is built once, after all modules initialized). Registering an existing id replaces it. Factories are called once, on the UI thread. A throwing factory shows an error placeholder.
 - Tab and card factories run at startup idle time (the shell pre-builds and pre-lays-out everything so the first open never stutters): keep them cheap, build heavy content when data arrives.
-- Cards: supply only the body; `CardHost` draws the title, hover state and the order badge. Grid: 3 columns of `HomeView.Unit` (218) with `HomeView.Gap` (10) between them, row height `HomeView.RowHeight` (148). A card spanning n columns is `n * 218 + (n - 1) * 10` wide; the body area is that minus 30 horizontally and minus about 50 vertically (card padding, border and title). Default orders in use: stats 10, media 20, clipboard 30, ai-usage 40, github 50, note 60, ai-apps 70, files 80. Tab orders: home 0, media 10, clipboard 20, ai 30, files 40. Settings orders: general 0, appearance 10, gamemode 20, clipboard 30, ai 40, github 50.
+- Cards: supply only the body; `CardHost` draws the title, hover state and the order badge. Grid: 3 columns of `HomeView.Unit` (218) with `HomeView.Gap` (10) between them, row height `HomeView.RowHeight` (148). A card spanning n columns is `n * 218 + (n - 1) * 10` wide; the body area is that minus 30 horizontally and minus about 50 vertically (card padding, border and title). Default orders in use: stats 10, media 20, clipboard 30, ai-usage 40, github 50, note 60, ai-apps 70, files 80. Tab orders: home 0, media 10, clipboard 20, ai 30, files 40. Settings orders: general 0, features 5, appearance 10, gamemode 20, clipboard 30, ai 40, github 50.
 - Tab body area is 712 x 322 DIPs. Give tabs their own scrolling (a plain `ScrollViewer` gets the overlay style automatically) and a 19 DIP side inset so content lines up with the header and the Home grid. The shell wraps your tab in its own container (fade/slide on switch): do not rely on your view's `Parent` type. Inactive tabs are `Hidden` (laid out, not rendered): do not run animations or timers because a view is loaded; use `ctx.Shell.ActiveTab` / `TabChanged` plus cadence.
 - Settings sections: `UiKit.Page(title)` plus `UiKit.Row(label, hint, control)` gives the standard layout; the window provides the scrolling.
 - Every view needs explicit empty and "unavailable" states (use `Placeholder.Create(glyph, title, message)`). Never show 0% or an empty list when data is unavailable.
@@ -77,33 +83,33 @@ ctx.Shell.AddHwndHook(hook);                                     // e.g. WM_CLIP
 
 All members are UI thread only.
 
-- `Mode` / `ModeChanged`, `OpenPanel/ClosePanel/TogglePanel`, `SelectTab(id)`, `ActiveTab` / `TabChanged`, `OpenSettings(sectionId)`, `IsPinned`, `General` (live GeneralSettings).
+- `Hwnd`, `AddHwndHook` / `RemoveHwndHook`.
+- `ActiveTab` / `TabChanged`, `SelectTab(id)`, `ClosePanel()`, `OpenSettings(sectionId)`.
+- `IsPinned`, `IsEditMode` (get only).
 - `HoldOpen()` returns an `IDisposable`: while any hold is alive the panel never auto-closes (pointer leave, focus loss). Wrap `DragDrop.DoDragDrop`, file dialogs, context menus and card drags in `using (ctx.Shell.HoldOpen()) { ... }`. On release the shell asks the OS where the pointer is and closes after the leave delay if it is outside.
-- `RequestKeyboardFocus()`: makes the window activatable and takes the foreground. `TextBox` and `PasswordBox` inside the panel do it automatically on mouse down. The keyboard is released (and the foreground returned to the previous app) when the panel closes or the user clicks elsewhere. Esc closes the panel only while the window has the keyboard.
 - File drops: `FilesDropped(string[] paths)` fires for files dropped anywhere on the panel that no element handled; `FileDragEntered` fires once when a file drag enters the notch. While nobody subscribes, the notch refuses file drops. The shell opens the panel itself when files are dragged over the pill (after the hover dwell).
-- `Foreground` (ForegroundWatcher): `Changed(hwnd)` on every foreground change (SetWinEventHook, no polling), including QNotch's own windows. It does not report size changes of the foreground window; if you need "game switched to fullscreen after launch", add your own out-of-context WinEvent hook in your folder (static `[UnmanagedCallersOnly]` callback, like ForegroundWatcher) scoped to the foreground process.
-- `Hwnd`, `Monitor` (HMONITOR hosting the notch), `AddHwndHook` / `RemoveHwndHook`.
-- `GameModeOverride` (+ event; Auto, ForceOn, ForceOff). The shell's hotkey (Ctrl+Alt+G) and tray menu drive it; the tray tooltip shows it and whether the game bar is showing.
 
-Game mode plumbing: `SetGameBarActive(bool)` switches the shell to `ShellMode.GameBar` (hover, hotkey, tray and file-drag opening off, window click-through, pill and panel hidden, glance hidden) and back (restores pill, opacity, click-through and, if it was open and pinned, the panel). `SetGameBarView(UIElement?)` hosts your bar; it sizes itself (natural width) and is centered vertically in the bar height. `SetGameBarLayout(height, opacity, offsetX, offsetY)`: DIPs; the offsets move the bar center from the monitor's top-center (positive is right/down) and are clamped so the bar stays on screen, so large values reach the corners; with `offsetY > 0` the bar is drawn as a free-floating capsule. `SetClickThrough(bool)` toggles WS_EX_TRANSPARENT directly. Set the view and layout before `SetGameBarActive(true)`; both are kept across game sessions.
+Everything else (mode, opening the panel, keyboard focus, foreground watcher, monitor, general settings, game mode, edit mode) is shell internal and stays on `ShellController`. `TextBox` and `PasswordBox` inside the panel take the keyboard automatically on mouse down; the keyboard is released when the panel closes or the user clicks elsewhere. Esc closes the panel only while the window has the keyboard.
 
-Edit mode plumbing: the header pencil toggles `IShell.IsEditMode` (only allowed while the panel is open and `Motion.Enabled`; the panel never auto-closes while it is on). `ctx.CardLayout.Hosts` is the live ordered list of `CardHost` (raises `HostsChanged` after every rebuild); each host has `CardId`, `OrderNumber` (fixed 1-based slot, badge shown when `IsEditMode`), and a free `RenderTransform`. Hosts sit in a `WrapPanel` inside `HomeView` (a ScrollViewer). Persist a reorder with `CardLayout.Move(id, targetId)` (moves `id` into the slot of `targetId`); `SetVisible(id, bool)` for visibility. HomeView rebuilds itself on `CardLayout.Changed` (hosts are reused, not recreated).
+### Shell features (not modules)
+
+- Game mode (`Shell/GameMode/GameModeController.cs`): detects a fullscreen app (foreground hook, WM_DISPLAYCHANGE, a scoped location hook), debounces entry by 250 ms, and switches the shell to `ShellMode.GameBar` (hover, hotkey, tray and file-drag opening off, window click-through, pill and panel hidden, glance hidden). The bar is built on first entry from the registered `GameBar` segments, each wrapped in a Border whose Visibility is the user toggle (`gamemode.json`, `Segments`: id to bool, missing means on; the old `ShowCpu` style flags are migrated on start). The Ctrl+Alt+G hotkey and the tray menu drive `GameMode.Override` (Auto, ForceOn, ForceOff). `Start()` runs after the first frame.
+- Edit mode (`Shell/EditMode.cs`): the header pencil toggles `IsEditMode` (only while the panel is open and `Motion.Enabled`; the panel never auto-closes while it is on). `CardLayout.Hosts` is the live ordered list of `CardHost`; a reorder is persisted with `CardLayout.Move(id, targetId)`, visibility with `SetVisible(id, bool)`.
 
 ## State and threading
 
-- `AppState` (`ctx.State`) is the single model: `Stats`, `Media` in core; other modules add their own via `Core/State/<Module>State.cs`. All properties are `[ObservableProperty]` (set-if-changed). Only touch state on the UI thread.
+- There is no shared model. Each module owns its observable state (all `[ObservableProperty]`, set-if-changed) and only touches it on the UI thread.
 - Providers do all I/O and sampling on the thread pool and hand results over the bus:
 
 ```csharp
 // background thread
 ctx.Bus.Post(new ClipboardCaptured(text));                    // typed event, any thread, never blocks
-ctx.Bus.Run(() => ctx.State.Media.Title = title);             // or run an action on the UI thread
+ctx.Bus.Run(() => _media.Title = title);                      // or run an action on the UI thread
 // Initialize (UI thread)
-ctx.Bus.Subscribe<ClipboardCaptured>(e => ctx.State.Clipboard.Add(e));
+ctx.Bus.Subscribe<ClipboardCaptured>(e => _state.Add(e));
 ```
   Posts are coalesced into one dispatcher callback. There is no polling anywhere; use OS events, or a one-shot `System.Threading.Timer` you re-arm for cadence.
-- `MediaState` is filled by the Media module (`IsAvailable`, `HasSession`, `Title`, `Artist`, `Artwork` (frozen ImageSource), `IsPlaying`, `Position`, `Duration`, `LastTimelineUpdate`, `Sessions`, `SelectedSessionId`, `Controls` (`IMediaControls`), plus `PlayPauseCommand`, `NextCommand`, `PreviousCommand`, `SelectSessionCommand`). The pill (artwork, title, artist) and the glance strip already bind to it. Media agent: implement `IMediaControls`, assign `State.Media.Controls`, keep `HasSession`/`IsPlaying` accurate (the glance strip appears when both are true and the panel is closed).
-- `StatsState` texts are ready to render. Game mode agent: bind your bar to `State.Stats` (`CpuText`, `GpuText` ("n/a" when unavailable), `RamText`, `NetDownText`, `NetUpText`, `BatteryText`, `BatteryGlyph`, `HasBattery`, `Clock`) and `State.Media.NowPlayingText`.
+- Keep text ready to render in the state ("--" before the first sample, "n/a" when unavailable), so a segment is a few bindings and unchanged data raises no change.
 
 ## Settings
 
@@ -115,13 +121,13 @@ var s = ctx.Settings.Get<MediaSettings>("media");   // cached live instance, def
 s.ShowArtwork = false;
 ctx.Settings.Save("media", s);                       // debounced 500 ms, atomic (temp file then move)
 ```
-Enums serialize as strings. The shell's own settings are `GeneralSettings` (`general.json`): monitor index, hover dwell 120 ms, leave delay 400 ms, pinned, hotkeys, accent, theme, reduce motion, profile, card order/visibility, last tab, start with Windows. It is an ObservableObject: bind to `ctx.Shell.General`; the shell persists changes automatically. Secrets (tokens) never go in JSON: use `Windows.Security.Credentials.PasswordVault`.
+Enums serialize as strings. The shell's own settings are `GeneralSettings` (`general.json`): monitor index, hover dwell 120 ms, leave delay 400 ms, pinned, hotkeys, accent, theme, reduce motion, profile, card order/visibility, last tab, start with Windows, `DisabledModules`. It is an ObservableObject persisted by the shell. Secrets (tokens) never go in JSON: use `Windows.Security.Credentials.PasswordVault`.
 
 ## Theme
 
 Always use `DynamicResource` for brushes so theme and accent switch live. Keys: `SurfaceBrush`, `SurfaceRaisedBrush`, `WindowBrush`, `CardBrush`, `CardHoverBrush`, `StrokeBrush`, `StrokeStrongBrush`, `ControlBrush`, `ControlHoverBrush`, `ControlPressedBrush`, `TextPrimaryBrush`, `TextSecondaryBrush`, `TextTertiaryBrush`, `AccentBrush`, `AccentHoverBrush`, `AccentSoftBrush`, `OnAccentBrush`, `ToggleKnobOnBrush`, `DangerBrush`, `SuccessBrush`, `WarningBrush`, `ScrollThumbBrush`. Fonts: `UiFont` (Segoe UI Variable), `IconFont` (Segoe Fluent Icons, fallback Segoe MDL2 Assets). Converter: `BoolToVis`. The notch window uses tabular numerals, so changing digits never shift layout.
 Styles: TextBlock `Title`, `Caption`, `Muted`, `Glyph`; Button (implicit), `AccentButton`, `IconButton`, `IconToggle` (ToggleButton), `TabButton`, `NavButton`, `SegmentButton` (RadioButton), `ToggleSwitch` (CheckBox); implicit TextBox, PasswordBox, CheckBox, ComboBox, ListBox, ListBoxItem (rounded rows with hover and selection), Slider, ProgressBar, ScrollViewer (overlay scrollbars shown on hover), ScrollBar, ContextMenu, MenuItem, ToolTip. Implicit styles skip subclasses: a class deriving from ScrollViewer (or any styled control) must set `Style = (Style)Application.Current.FindResource(typeof(ScrollViewer))`. Every interactive element has a hover state; keep it that way.
-Glyph constants: `Theme/Glyphs.cs`. Code helpers: `UiKit.Page/Row/Toggle/Text/Glyph/Header`, `Placeholder.Create`.
+Glyph constants: `Theme/Glyphs.cs`. Code helpers: `UiKit.Page/Row/Toggle(value, set)/Text/Glyph/Header/Bind/BindVisible`, `Placeholder.Create`.
 Spacing scale: 4, 8, 12, 16, 24. Radii: 6 chips, 8 controls, 14 cards, 26 panel. Typography: 11 captions and hints, 12 body, 13 emphasis, 14 titles, 20 settings page headers. Never use an em dash in UI text or docs.
 
 ## Performance rules (hard)
