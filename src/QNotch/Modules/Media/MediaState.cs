@@ -7,17 +7,7 @@ namespace QNotch.Modules.Media;
 
 public sealed record MediaSessionInfo(string Id, string Title);
 
-/// <summary>Implemented by the Media module; the shell and views only talk to this.</summary>
-public interface IMediaControls
-{
-    void PlayPause();
-    void Next();
-    void Previous();
-    void SelectSession(string sessionId);
-    void Seek(TimeSpan position);
-}
-
-/// <summary>Now playing. The Media module writes it (on the UI thread); shell views bind to it. Artwork must be a frozen ImageSource.</summary>
+/// <summary>Now playing. The Media module writes it (on the UI thread); only Media's own views and segments bind to it. Artwork must be a frozen ImageSource.</summary>
 public sealed partial class MediaState : ObservableObject
 {
     /// <summary>False when the OS media API cannot be used at all (render "unavailable"). True when it works even if nothing plays.</summary>
@@ -34,7 +24,6 @@ public sealed partial class MediaState : ObservableObject
     /// <summary>When Position was last reported; interpolate with (now - LastTimelineUpdate) while IsPlaying.</summary>
     [ObservableProperty] DateTimeOffset _lastTimelineUpdate;
     [ObservableProperty] string? _selectedSessionId;
-    [ObservableProperty] IMediaControls? _controls;
 
     // Added by the Media module (all set-if-changed, written on the UI thread).
     /// <summary>True once the first query to the OS finished. Before that views show "nothing playing", never "unavailable".</summary>
@@ -67,11 +56,17 @@ public sealed partial class MediaState : ObservableObject
     public IRelayCommand PreviousCommand { get; }
     public IRelayCommand<string> SelectSessionCommand { get; }
 
-    public MediaState()
+    readonly MediaModule _controls;
+
+    public MediaState(MediaModule controls)
     {
-        PlayPauseCommand = new RelayCommand(() => Controls?.PlayPause());
-        NextCommand = new RelayCommand(() => Controls?.Next());
-        PreviousCommand = new RelayCommand(() => Controls?.Previous());
-        SelectSessionCommand = new RelayCommand<string>(id => { if (id is not null) Controls?.SelectSession(id); });
+        _controls = controls;
+        PlayPauseCommand = new RelayCommand(controls.PlayPause);
+        NextCommand = new RelayCommand(controls.Next);
+        PreviousCommand = new RelayCommand(controls.Previous);
+        SelectSessionCommand = new RelayCommand<string>(id => { if (id is not null) controls.SelectSession(id); });
     }
+
+    /// <summary>Seek to a fraction (0..1) of the duration.</summary>
+    public void Seek(double fraction) => _controls.Seek(Duration * fraction);
 }

@@ -50,20 +50,6 @@ public struct ICONINFO
     public nint hbmMask, hbmColor;
 }
 
-[StructLayout(LayoutKind.Sequential)]
-public struct MEMORYSTATUSEX
-{
-    public uint dwLength, dwMemoryLoad;
-    public ulong ullTotalPhys, ullAvailPhys, ullTotalPageFile, ullAvailPageFile, ullTotalVirtual, ullAvailVirtual, ullAvailExtendedVirtual;
-}
-
-[StructLayout(LayoutKind.Sequential)]
-public struct SYSTEM_POWER_STATUS
-{
-    public byte ACLineStatus, BatteryFlag, BatteryLifePercent, SystemStatusFlag;
-    public uint BatteryLifeTime, BatteryFullLifeTime;
-}
-
 /// <summary>
 /// P/Invoke surface shared by the shell and modules. It is a shared file: feature agents do NOT edit it.
 /// Need another API? Declare it in your own module folder in a class named after the module (for example GameModeNative),
@@ -103,8 +89,6 @@ public static unsafe partial class Native
 
     [LibraryImport("user32.dll")] [return: MarshalAs(UnmanagedType.Bool)] public static partial bool SetForegroundWindow(nint hwnd);
     [LibraryImport("user32.dll")] public static partial nint GetForegroundWindow();
-    [LibraryImport("user32.dll")] public static partial nint GetDesktopWindow();
-    [LibraryImport("user32.dll")] public static partial nint GetShellWindow();
     [LibraryImport("user32.dll")] [return: MarshalAs(UnmanagedType.Bool)] public static partial bool IsWindowVisible(nint hwnd);
     [LibraryImport("user32.dll")] [return: MarshalAs(UnmanagedType.Bool)] public static partial bool GetWindowRect(nint hwnd, out RECT rect);
     [LibraryImport("user32.dll")] public static partial uint GetWindowThreadProcessId(nint hwnd, out uint pid);
@@ -146,16 +130,6 @@ public static unsafe partial class Native
 
     // Shell state (game mode)
     [LibraryImport("shell32.dll")] public static partial int SHQueryUserNotificationState(out int state);
-
-    // System stats
-    [LibraryImport("kernel32.dll")] [return: MarshalAs(UnmanagedType.Bool)]
-    public static partial bool GetSystemTimes(out ulong idle, out ulong kernel, out ulong user);
-    [LibraryImport("kernel32.dll")] [return: MarshalAs(UnmanagedType.Bool)]
-    public static partial bool GlobalMemoryStatusEx(ref MEMORYSTATUSEX status);
-    [LibraryImport("kernel32.dll")] [return: MarshalAs(UnmanagedType.Bool)]
-    public static partial bool GetSystemPowerStatus(out SYSTEM_POWER_STATUS status);
-    [LibraryImport("iphlpapi.dll")] public static partial int GetIfTable2(out nint table);
-    [LibraryImport("iphlpapi.dll")] public static partial void FreeMibTable(nint table);
 
     [LibraryImport("kernel32.dll")] [return: MarshalAs(UnmanagedType.Bool)]
     public static partial bool SetProcessWorkingSetSize(nint process, nint min, nint max);

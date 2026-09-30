@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using QNotch.Interop;
 
 namespace QNotch.Modules.Stats;
 
@@ -22,7 +21,7 @@ internal sealed unsafe class SystemSampler
 
     public SystemSampler()
     {
-        Native.GetSystemTimes(out _idle, out _kernel, out _user);
+        StatsNative.GetSystemTimes(out _idle, out _kernel, out _user);
         _netOk = ReadNet(out _rx, out _tx);
         _netStamp = Stopwatch.GetTimestamp();
     }
@@ -30,7 +29,7 @@ internal sealed unsafe class SystemSampler
     public StatsSample Sample(int? gpu)
     {
         // CPU: kernel time includes idle time.
-        if (Native.GetSystemTimes(out var i, out var k, out var u))
+        if (StatsNative.GetSystemTimes(out var i, out var k, out var u))
         {
             var total = (k - _kernel) + (u - _user);
             if (total > 0) _lastCpu = (int)Math.Clamp((total - (i - _idle)) * 100.0 / total, 0, 100);
@@ -38,7 +37,7 @@ internal sealed unsafe class SystemSampler
         }
 
         var mem = new MEMORYSTATUSEX { dwLength = (uint)sizeof(MEMORYSTATUSEX) };
-        Native.GlobalMemoryStatusEx(ref mem);
+        StatsNative.GlobalMemoryStatusEx(ref mem);
 
         double? down = null, up = null;
         var ok = ReadNet(out var rx, out var tx);
@@ -55,7 +54,7 @@ internal sealed unsafe class SystemSampler
         (_rx, _tx, _netStamp, _netOk) = (rx, tx, now, ok);
 
         var hasBattery = false; int? pct = null; var charging = false;
-        if (Native.GetSystemPowerStatus(out var ps))
+        if (StatsNative.GetSystemPowerStatus(out var ps))
         {
             hasBattery = ps.BatteryFlag != 128 && ps.BatteryFlag != 255;
             if (hasBattery && ps.BatteryLifePercent <= 100) pct = ps.BatteryLifePercent;
@@ -68,7 +67,7 @@ internal sealed unsafe class SystemSampler
     static bool ReadNet(out ulong rx, out ulong tx)
     {
         rx = tx = 0;
-        if (Native.GetIfTable2(out var table) != 0 || table == 0) return false;
+        if (StatsNative.GetIfTable2(out var table) != 0 || table == 0) return false;
         try
         {
             var n = *(uint*)table;
@@ -85,6 +84,6 @@ internal sealed unsafe class SystemSampler
             }
             return true;
         }
-        finally { Native.FreeMibTable(table); }
+        finally { StatsNative.FreeMibTable(table); }
     }
 }

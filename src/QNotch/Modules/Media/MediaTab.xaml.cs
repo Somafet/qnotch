@@ -11,6 +11,6 @@ public partial class MediaTab : UserControl
         InitializeComponent();
         MediaViews.WirePicker(Picker, m, shell);
         MediaViews.WireStates(m, Live, Empty, MediaViews.Nothing(false), MediaViews.Unavailable(false));
-        Seek.SeekRequested += f => MediaViews.Seek(m, f);
+        Seek.SeekRequested += f => m.Seek(f);
     }
 }

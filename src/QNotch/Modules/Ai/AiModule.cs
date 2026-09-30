@@ -19,12 +19,9 @@ public sealed class AiModule : INotchModule, ICadenceAware
     sealed record RefreshDone(DateTime At);
     sealed record IconLoaded(string Id, ImageSource? Icon);
 
-    public string Id => "ai";
-
     ModuleContext _ctx = null!;
     AiSettings _s = null!;
-    readonly AiState _st = new();
-    AiState St => _st;
+    readonly AiState St = new();
     IUsageProvider[] _providers = [];
     readonly Dictionary<string, AiProviderItem> _items = new();
     readonly HashSet<int> _registered = new();

@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace QNotch.Interop;
+namespace QNotch.Modules.Stats;
 
 /// <summary>Performance Data Helper: used by the stats module for the "GPU Engine" counters.</summary>
 internal static unsafe partial class Pdh

@@ -48,7 +48,7 @@ public sealed class CardLayout
     /// <summary>Move card <paramref name="id"/> into the slot currently held by <paramref name="targetId"/>.</summary>
     public void Move(string id, string targetId)
     {
-        var order = Ordered.Select(c => c.Id).ToList();
+        var order = FullOrder();
         var from = order.IndexOf(id);
         var to = order.IndexOf(targetId);
         if (from < 0 || to < 0 || from == to) return;
@@ -61,9 +61,17 @@ public sealed class CardLayout
     void Save()
     {
         _ordered = null;
-        _gs.CardOrder = Ordered.Select(c => c.Id).ToList();
+        _gs.CardOrder = FullOrder();
         Changed?.Invoke();
         // Persisted by the shell (it watches Changed and saves general.json).
+    }
+
+    /// <summary>The persisted order plus cards not in it yet. Ids of unregistered cards (module off) are kept, so they return to their slot.</summary>
+    List<string> FullOrder()
+    {
+        var ids = _gs.CardOrder.ToList();
+        foreach (var c in Ordered) if (!ids.Contains(c.Id)) ids.Add(c.Id);
+        return ids;
     }
 
     List<CardDescriptor> Resolve()

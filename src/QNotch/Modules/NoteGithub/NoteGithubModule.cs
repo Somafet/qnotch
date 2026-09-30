@@ -5,8 +5,6 @@ namespace QNotch.Modules.NoteGithub;
 /// <summary>Personal note card and GitHub contribution card (plus the GitHub settings section).</summary>
 public sealed class NoteGithubModule : INotchModule, ICadenceAware
 {
-    public string Id => "notegithub";
-
     GithubService? _github;
 
     public void Initialize(ModuleContext ctx)

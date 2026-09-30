@@ -8,8 +8,6 @@ namespace QNotch.Modules.FileTray;
 /// </summary>
 public sealed class FileTrayModule : INotchModule, ICadenceAware
 {
-    public string Id => "filetray";
-
     FileTrayService? _svc;
 
     public void Initialize(ModuleContext ctx)

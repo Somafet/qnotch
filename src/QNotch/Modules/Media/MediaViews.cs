@@ -59,6 +59,4 @@ internal static class MediaViews
         m.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(MediaState.SelectedSessionId)) Sync(); };
         Sync();
     }
-
-    public static void Seek(MediaState m, double fraction) => m.Controls?.Seek(m.Duration * fraction);
 }

@@ -17,6 +17,6 @@ public partial class FileTrayCard : UserControl
 
     void OnClick(object sender, MouseButtonEventArgs e)
     {
-        if (!_shell.IsEditMode) _shell.SelectTab("files");
+        _shell.SelectTab("files");
     }
 }

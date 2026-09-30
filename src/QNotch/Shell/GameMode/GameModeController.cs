@@ -23,7 +23,6 @@ internal sealed class GameModeController
     readonly SettingsStore _store;
     readonly ForegroundWatcher _foreground;
     readonly Registry<SegmentDescriptor> _segments;
-    readonly SegmentHost _host = new();
     readonly Dictionary<string, Border> _wraps = new();
     readonly SizeWatcher _size = new();
     GameModeSettings _s = new();
@@ -54,11 +53,10 @@ internal sealed class GameModeController
 
     internal GameModeSettings Settings => _s;
 
-    /// <summary>Loads gamemode.json (migrating the legacy segment flags), runs the self-test, installs the hooks, makes the first decision.</summary>
+    /// <summary>Loads gamemode.json, runs the self-test, installs the hooks, makes the first decision.</summary>
     public void Start()
     {
         _s = _store.Get<GameModeSettings>(FileId);
-        if (_s.MigrateLegacy()) _store.Save(FileId, _s);
 
 #if DEBUG
         RunSelfTest();
@@ -121,30 +119,25 @@ internal sealed class GameModeController
 
     // ---------- the bar ----------
 
-    /// <summary>Builds the strip on first entry (the segment factories run then, not at startup) and keeps it in step with later registrations.</summary>
+    /// <summary>Builds the strip on first entry: the segment factories run then, not at startup. Segments are read once.</summary>
     void EnsureBar()
     {
         if (_bar is not null) return;
         _bar = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(12, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center, IsHitTestVisible = false, Focusable = false };
         FillBar();
-        _segments.Changed += FillBar;
         ApplyLayout();
         _shell.SetGameBarView(_bar);
     }
 
     void FillBar()
     {
-        _bar!.Children.Clear();
         foreach (var d in _segments.Items)
         {
-            if (d.Slot != SegmentSlot.GameBar) continue;
-            if (!_wraps.TryGetValue(d.Id, out var wrap))
-            {
-                if (_host.Get(d) is not { } el) continue;
-                el.Margin = new Thickness(0, 0, 12, 0);
-                _wraps[d.Id] = wrap = new Border { Child = el, Visibility = IsSegmentOn(d.Id) ? Visibility.Visible : Visibility.Collapsed };
-            }
-            _bar.Children.Add(wrap);
+            if (d.Slot != SegmentSlot.GameBar || SegmentHost.Build(d) is not { } el) continue;
+            el.Margin = new Thickness(0, 0, 12, 0);
+            var wrap = new Border { Child = el, Visibility = IsSegmentOn(d.Id) ? Visibility.Visible : Visibility.Collapsed };
+            _wraps[d.Id] = wrap;
+            _bar!.Children.Add(wrap);
         }
     }
 

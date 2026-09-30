@@ -4,21 +4,16 @@ using QNotch.Modules;
 
 namespace QNotch.Shell;
 
-/// <summary>Builds segment elements from descriptors. A factory runs once per id (the element, or null after a failure, is cached), inside try/catch.</summary>
-internal sealed class SegmentHost
+/// <summary>Builds a segment element from its descriptor, inside try/catch. Each builder calls it once per segment (segments are read once).</summary>
+internal static class SegmentHost
 {
-    readonly Dictionary<string, FrameworkElement?> _cache = new();
-
-    public FrameworkElement? Get(SegmentDescriptor d)
+    public static FrameworkElement? Build(SegmentDescriptor d)
     {
-        if (_cache.TryGetValue(d.Id, out var el)) return el;
-        try { el = d.Factory(); }
+        try { return d.Factory(); }
         catch (Exception ex)
         {
             Log.Error($"Segment '{d.Id}' failed to build", ex);
-            el = null;
+            return null;
         }
-        _cache[d.Id] = el;
-        return el;
     }
 }

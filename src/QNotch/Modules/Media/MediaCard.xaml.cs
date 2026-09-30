@@ -11,6 +11,6 @@ public partial class MediaCard : UserControl
         InitializeComponent();
         MediaViews.WirePicker(Picker, m, shell);
         MediaViews.WireStates(m, Live, Empty, MediaViews.Nothing(true), MediaViews.Unavailable(true));
-        Seek.SeekRequested += f => MediaViews.Seek(m, f);
+        Seek.SeekRequested += f => m.Seek(f);
     }
 }

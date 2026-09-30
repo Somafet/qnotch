@@ -1,5 +1,7 @@
 # QNotch architecture (contract for feature agents)
 
+QNotch is a **shell** plus six **extensions**. The shell (window, pill, panel, tabs, Home grid, Settings, tray, hotkeys, Game mode, Edit mode) knows no extension by name except the single file `Modules/ModuleList.cs`. An extension (Media, Clipboard, Ai, NoteGithub, FileTray, Stats) lives entirely in `Modules/<Name>/`: its state, providers, views, P/Invoke and settings. It plugs in through four registries (cards, tabs, settings sections, segments) and a small `IShell`. Extensions are compiled in, not loaded at runtime (no DLL plugins: cold start, no WPF unload, no isolation). Each one has an on/off switch in Settings, Features; an extension that is off is never constructed. Game mode and Edit mode are shell features, not extensions: the shell owns the mode enum, click-through, the pill and panel swap and the card grid.
+
 C# on .NET 10, WPF, `net10.0-windows10.0.22621.0`, x64. Only NuGet dependency: CommunityToolkit.Mvvm. No System.Windows.Forms.
 Build: `dotnet build -c Release` from the repo root. Run: `src/QNotch/bin/Release/net10.0-windows10.0.22621.0/win-x64/QNotch.exe`.
 Data folder `%APPDATA%\QNotch`, logs in `%APPDATA%\QNotch\logs` (`qnotch.log`, `crash.log`).
@@ -15,13 +17,13 @@ Parallel test runs: set `QNOTCH_INSTANCE` (suffix of the single-instance mutex n
 | Folder | Owner | Content |
 | --- | --- | --- |
 | `Core/` | shell | EventBus, SettingsStore, GeneralSettings, Log, Motion, MemoryTrim, Autostart, Paths, UiCulture. Names no module. |
-| `Interop/` | shell | `Native` P/Invoke (LibraryImport), `Pdh` |
+| `Interop/` | shell | `Native` P/Invoke (LibraryImport) used by the shell |
 | `Shell/` | shell | NotchWindow, ShellController (IShell, ShellMode), ShellViewModel, HomeView, CardHost, CardLayout, SegmentHost, `EditMode.cs`, `GameMode/`, `Settings/` (General, Features, Appearance), TrayIcon, HotkeyService, ForegroundWatcher, Monitors, SettingsWindow, Snapshot |
 | `Theme/` | shell | Dark/Light dictionaries, Styles.xaml, Glyphs, ThemeManager, UiKit, Placeholder |
 | `Modules/` | shell | `Contracts.cs` (interfaces, descriptors, registries, ModuleContext), `ModuleList.cs` (the only file that names modules) |
 | `Modules/<Name>/` | that module's agent | everything for one feature, including its state class |
 
-Modules: Stats, Media, Clipboard, Ai, NoteGithub, FileTray. Game mode and Edit mode are shell features (`Shell/GameMode/`, `Shell/EditMode.cs`), not modules: the shell owns the mode enum, click-through, the pill and panel swap and the card grid.
+Modules: Stats, Media, Clipboard, Ai, NoteGithub, FileTray. Game mode and Edit mode are shell features (`Shell/GameMode/`, `Shell/EditMode.cs`).
 
 ## Rules for feature agents
 
@@ -36,13 +38,12 @@ Namespace gotchas: inside `namespace QNotch.Modules.Clipboard` the name `Clipboa
 ```csharp
 public sealed class MyModule : INotchModule, ICadenceAware   // ICadenceAware optional
 {
-    public string Id => "mymodule";                         // also the settings file name; must equal ModuleInfo.Id
     public void Initialize(ModuleContext ctx) { ... }       // UI thread, once, window handle exists
     public void SetCadence(Cadence c) { ... }               // Fast: panel open. Slow: collapsed or game bar.
 }
 ```
 
-- `ModuleList.All` is the list of `ModuleInfo(Id, Title, Description, Create, Early)`. A module the user turned off (Settings, Features; `GeneralSettings.DisabledModules`, applied on restart) is never created: no timers, hooks, hotkeys, cards, tabs, sections or segments. `Early: true` means the module registers pill or glance segments, so it initializes before the first frame; all others initialize right after it.
+- `ModuleList.All` is the list of `ModuleInfo(Id, Title, Description, Create, Early)`. `ModuleInfo.Id` is the single module id (and the settings file name if you store settings). A module the user turned off (Settings, Features; `GeneralSettings.DisabledModules`, applied on restart) is never created: no timers, hooks, hotkeys, cards, tabs, sections or segments. `Early: true` means the module registers pill or glance segments, so it initializes before the first frame; all others initialize right after it.
 - An exception in `Initialize` or `SetCadence` is caught and logged; the app continues. Still, register in `Initialize` before doing risky work.
 - Modules never read shell mode to decide refresh rates. React to `SetCadence` only.
 - `ModuleContext`: `Bus` (EventBus), `Settings` (SettingsStore), `Hotkeys`, `Shell` (IShell), `Dispatcher`, `Cards`, `Tabs`, `SettingsSections`, `Segments`.
@@ -62,9 +63,9 @@ ctx.Segments.Register(new SegmentDescriptor("stats.game.cpu", SegmentSlot.GameBa
 ```
 
 - Segments are small views the shell hosts outside the panel: `PillLeft` and `PillRight` (the pill: left cluster by Order, then right cluster), `Glance` (the strip under the collapsed pill, shown while any glance element is Visible), `GameBar` (the game bar line). Ids are unique across slots: `<module>.<slot>[.<name>]`; game bar ids are persisted keys (Settings, Game mode toggles them; Title and Hint label the toggle). Factories run once, on the UI thread, on first use (game bar: the first time the bar shows). The factory sets its own DataContext or binds with `Source` (`UiKit.Bind`, `UiKit.BindVisible`), and the element owns its Visibility for data availability ("no battery" collapses the battery). The shell owns Margin (never set your own outer Margin) and, in the game bar, the per-segment user toggle. Font size in the game bar is inherited from the bar. Build segments in code to keep cold start down. Orders in use: pill 10, glance 10, game bar media 10, cpu 20, gpu 30, ram 40, net 50, battery 60, clock 70 (65 is free for frame time).
-- Register inside `Initialize` only (the tab strip is built once, after all modules initialized). Registering an existing id replaces it. Factories are called once, on the UI thread. A throwing factory shows an error placeholder.
+- Register inside `Initialize` only (the tab strip is built once, after all modules initialized). Cards, tabs and settings sections: registering an existing id replaces it. Segments are read once (pill and glance at startup, game bar on the first entry into Game mode), so register them only in `Initialize` of an Early module (pill, glance) or any module (game bar). Factories are called once, on the UI thread. A throwing factory shows an error placeholder (a throwing segment is logged and skipped).
 - Tab and card factories run at startup idle time (the shell pre-builds and pre-lays-out everything so the first open never stutters): keep them cheap, build heavy content when data arrives.
-- Cards: supply only the body; `CardHost` draws the title, hover state and the order badge. Grid: 3 columns of `HomeView.Unit` (218) with `HomeView.Gap` (10) between them, row height `HomeView.RowHeight` (148). A card spanning n columns is `n * 218 + (n - 1) * 10` wide; the body area is that minus 30 horizontally and minus about 50 vertically (card padding, border and title). Default orders in use: stats 10, media 20, clipboard 30, ai-usage 40, github 50, note 60, ai-apps 70, files 80. Tab orders: home 0, media 10, clipboard 20, ai 30, files 40. Settings orders: general 0, features 5, appearance 10, gamemode 20, clipboard 30, ai 40, github 50.
+- Cards: supply only the body; `CardHost` draws the title, hover state and the order badge. Grid: 3 columns of `HomeView.Unit` (218) with `HomeView.Gap` (10) between them, row height `HomeView.RowHeight` (148). A card spanning n columns is `n * 218 + (n - 1) * 10` wide; the body area is that minus 30 horizontally and minus about 50 vertically (card padding, border and title). Default orders in use: stats 10, media 20, clipboard 30, ai-usage 40, note 45, github 50, ai-apps 70, files 80. Tab orders: home 0, media 10, clipboard 20, ai 30, files 40. Settings orders: general 0, features 5, appearance 10, gamemode 20, clipboard 30, ai 40, github 50.
 - Tab body area is 712 x 322 DIPs. Give tabs their own scrolling (a plain `ScrollViewer` gets the overlay style automatically) and a 19 DIP side inset so content lines up with the header and the Home grid. The shell wraps your tab in its own container (fade/slide on switch): do not rely on your view's `Parent` type. Inactive tabs are `Hidden` (laid out, not rendered): do not run animations or timers because a view is loaded; use `ctx.Shell.ActiveTab` / `TabChanged` plus cadence.
 - Settings sections: `UiKit.Page(title)` plus `UiKit.Row(label, hint, control)` gives the standard layout; the window provides the scrolling.
 - Every view needs explicit empty and "unavailable" states (use `Placeholder.Create(glyph, title, message)`). Never show 0% or an empty list when data is unavailable.
@@ -75,7 +76,7 @@ ctx.Segments.Register(new SegmentDescriptor("stats.game.cpu", SegmentSlot.GameBa
 ctx.Hotkeys.Register("Alt+1", () => LaunchSlot(1));           // gesture string (KeyGestureConverter syntax), returns false if taken
 ctx.Hotkeys.Register(ModifierKeys.Alt, Key.D2, () => ...);
 HwndSourceHook hook = (nint hwnd, int msg, nint w, nint l, ref bool handled) => { ... return 0; };
-ctx.Shell.AddHwndHook(hook);                                     // e.g. WM_CLIPBOARDUPDATE, WM_DISPLAYCHANGE; RemoveHwndHook(hook) to detach
+ctx.Shell.AddHwndHook(hook);                                     // e.g. WM_CLIPBOARDUPDATE, WM_DISPLAYCHANGE
 ```
 `ctx.Shell.Hwnd` is the window handle (for `AddClipboardFormatListener`). Hotkey actions and hooks run on the UI thread. Clipboard reads can block while the source app renders delayed formats: keep the UI-thread read small (formats check, text, a size-capped bitmap) or read on a dedicated STA thread and post the result.
 
@@ -83,9 +84,9 @@ ctx.Shell.AddHwndHook(hook);                                     // e.g. WM_CLIP
 
 All members are UI thread only.
 
-- `Hwnd`, `AddHwndHook` / `RemoveHwndHook`.
+- `Hwnd`, `AddHwndHook`.
 - `ActiveTab` / `TabChanged`, `SelectTab(id)`, `ClosePanel()`, `OpenSettings(sectionId)`.
-- `IsPinned`, `IsEditMode` (get only).
+- `IsPinned` (get only).
 - `HoldOpen()` returns an `IDisposable`: while any hold is alive the panel never auto-closes (pointer leave, focus loss). Wrap `DragDrop.DoDragDrop`, file dialogs, context menus and card drags in `using (ctx.Shell.HoldOpen()) { ... }`. On release the shell asks the OS where the pointer is and closes after the leave delay if it is outside.
 - File drops: `FilesDropped(string[] paths)` fires for files dropped anywhere on the panel that no element handled; `FileDragEntered` fires once when a file drag enters the notch. While nobody subscribes, the notch refuses file drops. The shell opens the panel itself when files are dragged over the pill (after the hover dwell).
 
@@ -93,8 +94,20 @@ Everything else (mode, opening the panel, keyboard focus, foreground watcher, mo
 
 ### Shell features (not modules)
 
-- Game mode (`Shell/GameMode/GameModeController.cs`): detects a fullscreen app (foreground hook, WM_DISPLAYCHANGE, a scoped location hook), debounces entry by 250 ms, and switches the shell to `ShellMode.GameBar` (hover, hotkey, tray and file-drag opening off, window click-through, pill and panel hidden, glance hidden). The bar is built on first entry from the registered `GameBar` segments, each wrapped in a Border whose Visibility is the user toggle (`gamemode.json`, `Segments`: id to bool, missing means on; the old `ShowCpu` style flags are migrated on start). The Ctrl+Alt+G hotkey and the tray menu drive `GameMode.Override` (Auto, ForceOn, ForceOff). `Start()` runs after the first frame.
+- Game mode (`Shell/GameMode/GameModeController.cs`): detects a fullscreen app (foreground hook, WM_DISPLAYCHANGE, a scoped location hook), debounces entry by 250 ms, and switches the shell to `ShellMode.GameBar` (hover, hotkey, tray and file-drag opening off, window click-through, pill and panel hidden, glance hidden). The bar is built on first entry from the registered `GameBar` segments, each wrapped in a Border whose Visibility is the user toggle (`gamemode.json`, `Segments`: id to bool, missing means on; ). The Ctrl+Alt+G hotkey and the tray menu drive `GameMode.Override` (Auto, ForceOn, ForceOff). `Start()` runs after the first frame.
 - Edit mode (`Shell/EditMode.cs`): the header pencil toggles `IsEditMode` (only while the panel is open and `Motion.Enabled`; the panel never auto-closes while it is on). `CardLayout.Hosts` is the live ordered list of `CardHost`; a reorder is persisted with `CardLayout.Move(id, targetId)`, visibility with `SetVisible(id, bool)`.
+
+### Enable switch
+
+Settings, Features has one switch per `ModuleList.All` entry. A switch edits `GeneralSettings.DisabledModules` (general.json) and shows "Restart QNotch to apply your changes." with a "Restart now" button (`QNotch.exe --restart`). At boot `App` skips every disabled module: `Create` is never called, so it has no timers, hooks, hotkeys, cards, tabs, sections or segments and costs nothing. Ids of cards of a disabled module stay in `CardOrder`, so turning the module back on restores its slot. `--snapshot` ignores the list and loads everything.
+
+### Add a new extension
+
+1. Create `Modules/<Name>/` with `<Name>Module.cs` implementing `INotchModule` (and `ICadenceAware` if it refreshes data).
+2. Put its state (an `ObservableObject`, set-if-changed properties), providers, views and P/Invoke in the same folder. Nothing in `Core/`, `Shell/` or `Interop/` changes.
+3. In `Initialize`, register what it shows: `ctx.Cards`, `ctx.Tabs`, `ctx.SettingsSections` and, for the pill, glance strip or game bar, `ctx.Segments`. Start providers after registering, and honor `ctx.Settings.ReadOnly` (snapshot run: demo data, no providers).
+4. Add one line to `ModuleList.All` (`Early: true` only if it registers pill or glance segments).
+5. Build, run `QNotch.exe --snapshot <dir>` and look at the PNGs, then measure idle CPU and memory against the performance rules below.
 
 ## State and threading
 

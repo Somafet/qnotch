@@ -125,11 +125,7 @@ public partial class App : Application
             foreach (var info in list)
             {
                 INotchModule m;
-                try
-                {
-                    m = info.Create();
-                    if (m.Id != info.Id) Log.Warn($"Module id '{m.Id}' differs from its ModuleList id '{info.Id}'");
-                }
+                try { m = info.Create(); }
                 catch (Exception ex) { Log.Error($"Module '{info.Id}' failed to create", ex); continue; }
                 done.Add(m);
                 try { m.Initialize(ctx); }

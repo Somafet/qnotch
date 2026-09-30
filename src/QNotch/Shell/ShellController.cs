@@ -27,8 +27,6 @@ public sealed class ShellController : IShell
     readonly Registry<TabDescriptor> _tabs;
     readonly Registry<SettingsSectionDescriptor> _sections;
     readonly Registry<SegmentDescriptor> _segments;
-    readonly SegmentHost _segmentHost = new();
-    readonly HashSet<FrameworkElement> _glanceHooked = new();
     // Kept alive for their event subscriptions.
     readonly EditModeController _editMode;
     readonly Dictionary<string, Border> _tabViews = new();
@@ -43,19 +41,19 @@ public sealed class ShellController : IShell
     public ShellController(NotchWindow window, GeneralSettings settings, SettingsStore store, HotkeyService hotkeys, ForegroundWatcher foreground,
         CardLayout layout, Registry<TabDescriptor> tabs, Registry<SettingsSectionDescriptor> sections, Registry<SegmentDescriptor> segments)
     {
-        _w = window; General = settings; _store = store; Hotkeys = hotkeys; Foreground = foreground;
-        Layout = layout; _tabs = tabs; _sections = sections; _segments = segments;
-        Vm = new ShellViewModel(settings, () => OpenSettings());
-        _w.DataContext = Vm;
+        _w = window; _general = settings; _store = store; _hotkeys = hotkeys; _foreground = foreground;
+        _layout = layout; _tabs = tabs; _sections = sections; _segments = segments;
+        _vm = new ShellViewModel(settings, () => OpenSettings());
+        _w.DataContext = _vm;
         GameMode = new GameModeController(this, store, foreground, segments);
         _editMode = new EditModeController(this, layout);
     }
 
-    public ShellViewModel Vm { get; }
-    public HotkeyService Hotkeys { get; }
-    public CardLayout Layout { get; }
-    public GeneralSettings General { get; }
-    public ForegroundWatcher Foreground { get; }
+    readonly ShellViewModel _vm;
+    readonly HotkeyService _hotkeys;
+    readonly CardLayout _layout;
+    readonly GeneralSettings _general;
+    readonly ForegroundWatcher _foreground;
     public nint Hwnd => _w.Hwnd;
     public nint Monitor => _w.MonitorHandle;
     public ShellMode Mode => _mode;
@@ -70,8 +68,8 @@ public sealed class ShellController : IShell
     internal GameModeController GameMode { get; }
     internal System.Windows.Threading.Dispatcher Dispatcher => _w.Dispatcher;
 
-    public bool IsPinned { get => General.Pinned; set => General.Pinned = value; }
-    public bool IsEditMode { get => Vm.IsEditMode; set => Vm.IsEditMode = value && Motion.Enabled && _mode == ShellMode.Expanded; }
+    public bool IsPinned => _general.Pinned;
+    public bool IsEditMode { get => _vm.IsEditMode; set => _vm.IsEditMode = value && Motion.Enabled && _mode == ShellMode.Expanded; }
 
     // ---------- startup ----------
 
@@ -79,12 +77,11 @@ public sealed class ShellController : IShell
     {
         BuildPill();
         BuildGlance();
-        _segments.Changed += () => { BuildPill(); BuildGlance(); };
-        _w.PillStrip.SizeChanged += (_, _) => _w.InvalidatePill(); // content changed (segment data, a segment came or went): re-measure once, coalesced
+        _w.PillStrip.SizeChanged += (_, _) => _w.InvalidatePill(); // content changed (segment data): re-measure once, coalesced
         _w.InitPill();
-        _w.SetMonitor(General.MonitorIndex);
+        _w.SetMonitor(_general.MonitorIndex);
         LoadProfile();
-        Vm.MotionEnabled = Motion.Enabled;
+        _vm.MotionEnabled = Motion.Enabled;
 
         _w.HoverEntered += OnHoverEnter;
         _w.HoverLeft += OnHoverLeave;
@@ -98,23 +95,23 @@ public sealed class ShellController : IShell
             try { FilesDropped?.Invoke(files); } catch (Exception ex) { Log.Error("FilesDropped handler failed", ex); }
         };
 
-        General.PropertyChanged += OnSetting;
-        Layout.Changed += () => _store.Save("general", General);
-        Vm.PropertyChanged += (_, e) =>
+        _general.PropertyChanged += OnSetting;
+        _layout.Changed += () => _store.Save("general", _general);
+        _vm.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName != nameof(ShellViewModel.IsEditMode)) return;
             EditModeChanged?.Invoke();
-            if (!Vm.IsEditMode && !_hovering) StartLeave();
+            if (!_vm.IsEditMode && !_hovering) StartLeave();
         };
-        Motion.Changed += () => { Vm.MotionEnabled = Motion.Enabled; if (!Motion.Enabled) IsEditMode = false; };
-        Foreground.Changed += h => { if (h != _w.Hwnd) _w.ReassertTopmost(); };
+        Motion.Changed += () => { _vm.MotionEnabled = Motion.Enabled; if (!Motion.Enabled) IsEditMode = false; };
+        _foreground.Changed += h => { if (h != _w.Hwnd) _w.ReassertTopmost(); };
         _w.Source.AddHook(SettingsHook);
 
         RegisterHotkeys();
         _w.Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, () =>
         {
             EnsurePanelBuilt();
-            if (General.Pinned) OpenPanel();
+            if (_general.Pinned) OpenPanel();
             MemoryTrim.Schedule(4000);
         });
     }
@@ -154,7 +151,7 @@ public sealed class ShellController : IShell
         {
             foreach (var d in _segments.Items)
             {
-                if (d.Slot != slot || _segmentHost.Get(d) is not { } el) continue;
+                if (d.Slot != slot || SegmentHost.Build(d) is not { } el) continue;
                 el.Margin = new Thickness(0, 0, slot == SegmentSlot.PillLeft ? 18 : 12, 0);
                 strip.Children.Add(el);
             }
@@ -170,14 +167,14 @@ public sealed class ShellController : IShell
         var vis = System.ComponentModel.DependencyPropertyDescriptor.FromProperty(UIElement.VisibilityProperty, typeof(UIElement));
         foreach (var d in _segments.Items)
         {
-            if (d.Slot != SegmentSlot.Glance || _segmentHost.Get(d) is not { } el) continue;
-            if (_glanceHooked.Add(el)) vis.AddValueChanged(el, (_, _) => UpdateGlance());
+            if (d.Slot != SegmentSlot.Glance || SegmentHost.Build(d) is not { } el) continue;
+            vis.AddValueChanged(el, (_, _) => UpdateGlance());
             strip.Children.Add(el);
         }
         UpdateGlance();
     }
 
-    void UpdateGlance() => Vm.ShowGlance = _mode == ShellMode.Collapsed && _w.GlanceStrip.Children.OfType<UIElement>().Any(e => e.Visibility == Visibility.Visible);
+    void UpdateGlance() => _vm.ShowGlance = _mode == ShellMode.Collapsed && _w.GlanceStrip.Children.OfType<UIElement>().Any(e => e.Visibility == Visibility.Visible);
 
     // ---------- panel open / close ----------
 
@@ -188,7 +185,7 @@ public sealed class ShellController : IShell
         StopTimers();
         MemoryTrim.Cancel();
         var now = DateTime.Now;
-        Vm.DateText = now.ToString("dddd, MMMM d", UiCulture.Value);
+        _vm.DateText = now.ToString("dddd, MMMM d", UiCulture.Value);
         SetMode(ShellMode.Expanded);
         _w.SetOpen(true);
     }
@@ -204,12 +201,6 @@ public sealed class ShellController : IShell
         MemoryTrim.AfterActivity();
     }
 
-    public void TogglePanel()
-    {
-        if (_mode == ShellMode.Expanded) ClosePanel();
-        else OpenPanel();
-    }
-
     /// <summary>Hotkey and tray: an explicit summon also takes keyboard focus, so Esc works and a click elsewhere dismisses.</summary>
     internal void ToggleFromUser()
     {
@@ -221,7 +212,7 @@ public sealed class ShellController : IShell
 
     public void RequestKeyboardFocus() => _w.EnableKeyboard();
 
-    public void OpenSettings(string? sectionId = null) => SettingsWindow.Show(_sections, General, sectionId);
+    public void OpenSettings(string? sectionId = null) => SettingsWindow.Show(_sections, _general, sectionId);
 
     public IDisposable HoldOpen()
     {
@@ -250,7 +241,7 @@ public sealed class ShellController : IShell
     {
         _hovering = true;
         _leave?.Stop();
-        if (_mode == ShellMode.Collapsed) Start(ref _dwell, General.HoverDwellMs, OpenPanel);
+        if (_mode == ShellMode.Collapsed) Start(ref _dwell, _general.HoverDwellMs, OpenPanel);
     }
 
     void OnHoverLeave()
@@ -265,7 +256,7 @@ public sealed class ShellController : IShell
         if (FilesDropped is null || _mode == ShellMode.GameBar) return false;
         _hovering = true;
         _leave?.Stop();
-        if (_mode == ShellMode.Collapsed && _dwell?.IsEnabled != true) Start(ref _dwell, General.HoverDwellMs, OpenPanel);
+        if (_mode == ShellMode.Collapsed && _dwell?.IsEnabled != true) Start(ref _dwell, _general.HoverDwellMs, OpenPanel);
         if (!_fileDrag)
         {
             _fileDrag = true;
@@ -274,12 +265,12 @@ public sealed class ShellController : IShell
         return true;
     }
 
-    bool CanAutoClose => _mode == ShellMode.Expanded && !General.Pinned && !_w.HasKeyboard && _holds == 0 && !Vm.IsEditMode;
+    bool CanAutoClose => _mode == ShellMode.Expanded && !_general.Pinned && !_w.HasKeyboard && _holds == 0 && !_vm.IsEditMode;
 
     void StartLeave()
     {
         if (!CanAutoClose) return;
-        Start(ref _leave, General.LeaveDelayMs, () =>
+        Start(ref _leave, _general.LeaveDelayMs, () =>
         {
             _fileDrag = false;
             if (!_hovering && CanAutoClose && !_w.IsPointerOver()) ClosePanel();
@@ -322,14 +313,13 @@ public sealed class ShellController : IShell
             _w.SetClickThrough(false);
             _w.ExitGameBar();
             SetMode(ShellMode.Collapsed);
-            if (_wasExpandedBeforeGame && General.Pinned) OpenPanel();
+            if (_wasExpandedBeforeGame && _general.Pinned) OpenPanel();
         }
     }
 
     internal void SetGameBarView(UIElement? view) => _w.SetGameBarView(view);
     internal void SetGameBarLayout(double height, double opacity, double offsetX, double offsetY) => _w.SetGameBarLayout(height, opacity, offsetX, offsetY);
     public void AddHwndHook(HwndSourceHook hook) => _w.Source.AddHook(hook);
-    public void RemoveHwndHook(HwndSourceHook hook) => _w.Source.RemoveHook(hook);
 
     // ---------- tabs ----------
 
@@ -347,7 +337,7 @@ public sealed class ShellController : IShell
             strip.Children.Add(rb);
             _tabButtons[id] = rb;
         }
-        SelectTab(_tabs.Find(General.LastTab) is not null ? General.LastTab : "home");
+        SelectTab(_tabs.Find(_general.LastTab) is not null ? _general.LastTab : "home");
         _w.WarmUpPanel();
         _w.Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, PrebuildNext);
     }
@@ -389,9 +379,9 @@ public sealed class ShellController : IShell
         var index = _tabs.Items.ToList().FindIndex(x => x.Id == id);
         _w.MoveTabIndicator(Math.Max(0, index), changed);
         if (changed && _mode == ShellMode.Expanded && Motion.Enabled) FadeIn(slot);
-        Vm.IsHomeSelected = id == "home";
+        _vm.IsHomeSelected = id == "home";
         if (id != "home") IsEditMode = false;
-        General.LastTab = id;
+        _general.LastTab = id;
         if (id == _activeTab) return;
         _activeTab = id;
         TabChanged?.Invoke(id);
@@ -412,17 +402,17 @@ public sealed class ShellController : IShell
     {
         if (e.PropertyName is nameof(GeneralSettings.RecordingHotkey)) { RegisterHotkeys(); return; }
         if (e.PropertyName is nameof(GeneralSettings.ToggleHotkeyTaken) or nameof(GeneralSettings.GameModeHotkeyTaken)) return; // runtime only
-        _store.Save("general", General);
+        _store.Save("general", _general);
         switch (e.PropertyName)
         {
-            case nameof(GeneralSettings.MonitorIndex): _w.SetMonitor(General.MonitorIndex); break;
-            case nameof(GeneralSettings.AccentColor) or nameof(GeneralSettings.Theme): ThemeManager.Apply(General); break;
-            case nameof(GeneralSettings.ReduceMotion): Motion.Refresh(General.ReduceMotion); break;
+            case nameof(GeneralSettings.MonitorIndex): _w.SetMonitor(_general.MonitorIndex); break;
+            case nameof(GeneralSettings.AccentColor) or nameof(GeneralSettings.Theme): ThemeManager.Apply(_general); break;
+            case nameof(GeneralSettings.ReduceMotion): Motion.Refresh(_general.ReduceMotion); break;
             case nameof(GeneralSettings.ProfileName) or nameof(GeneralSettings.ProfileImagePath): LoadProfile(); break;
-            case nameof(GeneralSettings.StartWithWindows): Autostart.Set(General.StartWithWindows); break;
+            case nameof(GeneralSettings.StartWithWindows): Autostart.Set(_general.StartWithWindows); break;
             case nameof(GeneralSettings.ToggleHotkey) or nameof(GeneralSettings.GameModeHotkey): RegisterHotkeys(); break;
             case nameof(GeneralSettings.Pinned):
-                if (General.Pinned) _leave?.Stop();
+                if (_general.Pinned) _leave?.Stop();
                 else if (!_hovering) StartLeave();
                 break;
         }
@@ -430,32 +420,32 @@ public sealed class ShellController : IShell
 
     void RegisterHotkeys()
     {
-        Hotkeys.Unregister(_toggleKey);
-        Hotkeys.Unregister(_gameKey);
-        if (General.RecordingHotkey) return; // the Settings recorder is listening: global hotkeys would swallow the keys
-        _toggleKey = General.ToggleHotkey;
-        _gameKey = General.GameModeHotkey;
-        General.ToggleHotkeyTaken = !Hotkeys.Register(_toggleKey, ToggleFromUser);
-        General.GameModeHotkeyTaken = !Hotkeys.Register(_gameKey, GameMode.CycleOverride);
+        _hotkeys.Unregister(_toggleKey);
+        _hotkeys.Unregister(_gameKey);
+        if (_general.RecordingHotkey) return; // the Settings recorder is listening: global hotkeys would swallow the keys
+        _toggleKey = _general.ToggleHotkey;
+        _gameKey = _general.GameModeHotkey;
+        _general.ToggleHotkeyTaken = !_hotkeys.Register(_toggleKey, ToggleFromUser);
+        _general.GameModeHotkeyTaken = !_hotkeys.Register(_gameKey, GameMode.CycleOverride);
     }
 
     nint SettingsHook(nint hwnd, int msg, nint wParam, nint lParam, ref bool handled)
     {
         if (msg == Native.WM_SETTINGCHANGE)
         {
-            Motion.Refresh(General.ReduceMotion);
-            if (General.Theme == ThemeChoice.System && lParam != 0 &&
-                System.Runtime.InteropServices.Marshal.PtrToStringUni(lParam) == "ImmersiveColorSet") ThemeManager.Apply(General);
+            Motion.Refresh(_general.ReduceMotion);
+            if (_general.Theme == ThemeChoice.System && lParam != 0 &&
+                System.Runtime.InteropServices.Marshal.PtrToStringUni(lParam) == "ImmersiveColorSet") ThemeManager.Apply(_general);
         }
         return 0;
     }
 
     void LoadProfile()
     {
-        var name = General.ProfileName?.Trim() ?? "";
-        Vm.ProfileInitial = name.Length > 0 ? name[..1].ToUpperInvariant() : "?";
-        Vm.ProfileImage = null;
-        var p = General.ProfileImagePath;
+        var name = _general.ProfileName?.Trim() ?? "";
+        _vm.ProfileInitial = name.Length > 0 ? name[..1].ToUpperInvariant() : "?";
+        _vm.ProfileImage = null;
+        var p = _general.ProfileImagePath;
         if (string.IsNullOrEmpty(p) || !File.Exists(p)) return;
         try
         {
@@ -466,7 +456,7 @@ public sealed class ShellController : IShell
             bmp.CacheOption = BitmapCacheOption.OnLoad;
             bmp.EndInit();
             bmp.Freeze();
-            Vm.ProfileImage = bmp;
+            _vm.ProfileImage = bmp;
         }
         catch (Exception ex) { Log.Warn("Profile image unreadable", ex); }
     }

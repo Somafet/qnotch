@@ -1,6 +1,6 @@
 # QNotch
 
-A personal, performance-first "notch" overlay for Windows 11. A near-black pill sits at the top edge of your monitor and shows live CPU, RAM, network, battery, clock and what is playing. Hover it (or press the hotkey) and it opens into a panel: system stats, now playing with seek and transport controls, clipboard history, AI tool usage and app shortcuts, a quick note, a GitHub contribution graph, and a file tray. When a game or fullscreen video owns the screen, the notch turns into a passive one-line status bar. See `SPEC.md` for the full specification and `ARCHITECTURE.md` for the module layout.
+A personal, performance-first "notch" overlay for Windows 11. A near-black pill sits at the top edge of your monitor and shows live CPU, RAM, network, battery, clock and what is playing. Hover it (or press the hotkey) and it opens into a panel: system stats, now playing with seek and transport controls, clipboard history, AI tool usage and app shortcuts, a quick note, a GitHub contribution graph, and a file tray. When a game or fullscreen video owns the screen, the notch turns into a passive one-line status bar. See `SPEC.md` for the full specification and `ARCHITECTURE.md` for the architecture: a small shell plus six self-contained extensions (Media, Clipboard, Ai, NoteGithub, FileTray, Stats), each in `src/QNotch/Modules/<Name>/`.
 
 Stack: C# on .NET 10, WPF, x64. The only NuGet package is CommunityToolkit.Mvvm. Native calls use `LibraryImport`; no WinForms.
 
@@ -18,7 +18,7 @@ Only one instance runs at a time. Quit from the tray icon menu. The tray icon tu
 
 ## Features
 
-Settings, Features has one switch per feature: System stats, Now playing, Clipboard history, AI apps and usage, Note and GitHub, File tray. A feature that is off is never loaded and costs nothing (no timers, hooks, hotkeys, cards or tabs). Changes apply after a restart: the page shows "Restart QNotch to apply your changes." with a "Restart now" button. Game mode and Edit mode are part of the shell and always available.
+Settings, Features has one switch per feature: System stats, Now playing, Clipboard history, AI apps and usage, Note and GitHub, File tray. A feature that is off is never loaded and costs nothing (no timers, hooks, hotkeys, cards or tabs). Changes apply after a restart: the page shows "Restart QNotch to apply your changes." with a "Restart now" button. Game mode and Edit mode are part of the shell and always available. `ARCHITECTURE.md` explains how to add an extension.
 
 ## Hotkeys
 

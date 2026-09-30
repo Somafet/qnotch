@@ -31,8 +31,6 @@ internal sealed record ClipReady(ClipEntry Entry);
 /// </summary>
 public sealed class ClipboardModule : INotchModule, ICadenceAware
 {
-    public string Id => "clipboard";
-
     const int MaxEntries = 40;
     const long ImageBudget = 8 << 20;  // total PNG bytes kept, so 40 big screenshots can never blow the memory target
     const int MaxPersistChars = 20_000;

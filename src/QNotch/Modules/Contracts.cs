@@ -10,9 +10,6 @@ public enum Cadence { Fast, Slow }
 
 public interface INotchModule
 {
-    /// <summary>Stable id, also the settings file name (media.json) if the module stores settings.</summary>
-    string Id { get; }
-
     /// <summary>Called once on the UI thread at startup, after the window handle exists. Register cards/tabs/sections and start providers here. Exceptions are caught and logged.</summary>
     void Initialize(ModuleContext ctx);
 }
@@ -36,7 +33,9 @@ public sealed record CardDescriptor(string Id, string Title, int DefaultOrder, F
 public enum SegmentSlot { PillLeft, PillRight, Glance, GameBar }
 
 /// <summary>
-/// A small view the shell hosts outside the panel. Factory: called once, UI thread; it sets its own DataContext (or binds with Source).
+/// A small view the shell hosts outside the panel. Segments are read once: pill and glance segments at startup, game bar segments on the
+/// first entry into game mode, so register them in <c>Initialize</c> of an Early module (pill, glance) or any module (game bar) and never
+/// later. Factory: called once, UI thread; it sets its own DataContext (or binds with Source).
 /// The element owns its Visibility for data availability ("no battery" collapses the battery). The shell owns Margin and, in the game bar,
 /// the per-segment user toggle. Segments never set their own outer Margin. Ids are unique across slots (module.slot.name); game bar ids
 /// are persisted keys. Title and Hint: game bar only (Settings, Game mode, Segments).
@@ -85,6 +84,6 @@ public sealed class ModuleContext
     public required Registry<CardDescriptor> Cards { get; init; }
     public required Registry<TabDescriptor> Tabs { get; init; }
     public required Registry<SettingsSectionDescriptor> SettingsSections { get; init; }
-    /// <summary>Small views hosted by the shell outside the panel: pill clusters, glance strip, game bar.</summary>
+    /// <summary>Small views hosted by the shell outside the panel: pill clusters, glance strip, game bar. Read once, see <see cref="SegmentDescriptor"/>.</summary>
     public required Registry<SegmentDescriptor> Segments { get; init; }
 }

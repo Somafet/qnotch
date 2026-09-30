@@ -12,8 +12,6 @@ internal sealed record ClockTick(string Text);
 /// </summary>
 public sealed class StatsModule : INotchModule, ICadenceAware
 {
-    public string Id => "stats";
-
     ModuleContext _ctx = null!;
     SystemSampler? _sampler;
     GpuSampler? _gpu;

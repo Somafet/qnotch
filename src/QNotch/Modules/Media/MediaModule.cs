@@ -9,16 +9,16 @@ namespace QNotch.Modules.Media;
 /// to <see cref="MediaState"/> on the UI thread and interpolates the progress locally at 1 Hz only while the panel shows Home or
 /// Media. While collapsed there is no timer at all.
 /// </summary>
-public sealed class MediaModule : INotchModule, ICadenceAware, IMediaControls
+public sealed class MediaModule : INotchModule, ICadenceAware
 {
-    public string Id => "media";
-
     ModuleContext _ctx = null!;
-    readonly MediaState _m = new();
+    readonly MediaState _m;
     MediaProvider _provider = null!;
     DispatcherTimer _ticker = null!;
     bool _fast, _canSeekCap;
     double _rate = 1;
+
+    public MediaModule() => _m = new MediaState(this);
 
     public void Initialize(ModuleContext ctx)
     {
@@ -47,7 +47,6 @@ public sealed class MediaModule : INotchModule, ICadenceAware, IMediaControls
         ctx.Shell.TabChanged += _ => UpdateTicker();
 
         if (ctx.Settings.ReadOnly) { SeedDemo(); return; } // snapshot run: demo track, never touch the OS media sessions
-        _m.Controls = this;
         _provider.Start();
     }
 
@@ -73,7 +72,7 @@ public sealed class MediaModule : INotchModule, ICadenceAware, IMediaControls
         UpdateTicker();
     }
 
-    // ---------- IMediaControls (UI thread) ----------
+    // ---------- transport commands, called by MediaState (UI thread) ----------
 
     public void PlayPause() { _m.IsPlaying = !_m.IsPlaying; _provider.PlayPause(); } // optimistic, corrected by the next playback event
     public void Next() => _provider.Next();
