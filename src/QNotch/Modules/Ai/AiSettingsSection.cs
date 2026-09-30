@@ -1,0 +1,131 @@
+using System.Windows;
+using System.Windows.Controls;
+using Microsoft.Win32;
+using QNotch.Shell.Settings;
+using QNotch.Theme;
+
+namespace QNotch.Modules.Ai;
+
+/// <summary>Settings page: provider toggles, refresh interval, slot bindings for Alt+1..6, custom shortcuts, rescan.</summary>
+internal static class AiSettingsSection
+{
+    static readonly int[] Intervals = [5, 10, 15, 30, 60];
+
+    public static FrameworkElement Create(AiModule m, ModuleContext ctx)
+    {
+        var st = m.State;
+        var page = UiKit.Page("AI");
+
+        // ----- usage -----
+        page.Children.Add(Sub("Usage providers"));
+        foreach (var p in m.Providers)
+        {
+            var hint = p.Id == "claude" ? "Reads your Claude Code sign-in and asks Anthropic for your plan limits."
+                : "Reads the newest rate limit reading Codex stored locally. Nothing is sent anywhere.";
+            var id = p.Id;
+            page.Children.Add(UiKit.Row(p.Name, hint, GeneralSection.Toggle(m.IsProviderEnabled(id), on => m.SetProviderEnabled(id, on))));
+        }
+
+        var interval = new ComboBox { Width = 140 };
+        foreach (var i in Intervals) interval.Items.Add($"{i} minutes");
+        interval.SelectedIndex = Math.Max(0, Array.IndexOf(Intervals, m.RefreshMinutes));
+        interval.SelectionChanged += (_, _) => { if (interval.SelectedIndex >= 0) m.RefreshMinutes = Intervals[interval.SelectedIndex]; };
+        page.Children.Add(UiKit.Row("Refresh every", "How often usage is read in the background.", interval));
+
+        var refresh = new Button { Content = "Refresh now", Padding = new Thickness(14, 6, 14, 6) };
+        refresh.Click += (_, _) => st.RefreshCommand?.Execute(null);
+        page.Children.Add(UiKit.Row("Usage readings", "Last check and per-tool status are on the AI tab.", refresh));
+
+        // ----- slots -----
+        page.Children.Add(Sub("App shortcuts"));
+        page.Children.Add(UiKit.Text("Bind up to six apps to Alt+1 to Alt+6. The hotkeys work from anywhere.").Also(t => t.Margin = new Thickness(0, -6, 0, 16)));
+        var slots = new StackPanel();
+        page.Children.Add(slots);
+
+        // ----- custom -----
+        page.Children.Add(Sub("Custom apps"));
+        var customs = new StackPanel();
+        page.Children.Add(customs);
+        var add = new Button { Content = "Add app...", Padding = new Thickness(14, 6, 14, 6), HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 4, 0, 16) };
+        add.Click += (_, _) =>
+        {
+            var dlg = new OpenFileDialog { Title = "Choose an app or shortcut", Filter = "Apps and shortcuts|*.exe;*.lnk;*.bat;*.cmd|All files|*.*" };
+            using (ctx.Shell.HoldOpen())
+                if (dlg.ShowDialog() == true) m.AddCustom(dlg.FileName);
+        };
+        page.Children.Add(add);
+
+        // ----- detection -----
+        page.Children.Add(Sub("Detection"));
+        var status = new TextBlock { Style = (Style)Application.Current.FindResource("Muted"), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 12, 0) };
+        var rescan = new Button { Content = "Scan again", Padding = new Thickness(14, 6, 14, 6) };
+        rescan.Click += (_, _) => st.RescanCommand?.Execute(null);
+        var scanRow = new StackPanel { Orientation = Orientation.Horizontal };
+        scanRow.Children.Add(status);
+        scanRow.Children.Add(rescan);
+        page.Children.Add(UiKit.Row("AI apps", "Checks the registry, Start menu, known folders and Store packages for ChatGPT, Claude, Cursor, Codex and Antigravity.", scanRow));
+
+        bool building = false;
+        void Rebuild()
+        {
+            building = true;
+            status.Text = st.IsScanning ? "Scanning..." : $"{st.Apps.Count} found";
+
+            slots.Children.Clear();
+            for (var i = 0; i < AiSettings.SlotCount; i++)
+            {
+                var index = i;
+                var combo = new ComboBox { Width = 200 };
+                combo.Items.Add("None");
+                foreach (var a in st.Apps) combo.Items.Add(a.Name);
+                var current = st.Apps.ToList().FindIndex(a => a.Id == m.Slots[index]);
+                combo.SelectedIndex = current + 1;
+                combo.SelectionChanged += (_, _) =>
+                {
+                    if (building || combo.SelectedIndex < 0) return;
+                    m.SetSlot(index, combo.SelectedIndex == 0 ? "" : st.Apps[combo.SelectedIndex - 1].Id);
+                };
+                var conflict = current >= 0 && st.Apps[current].HotkeyConflict;
+                slots.Children.Add(UiKit.Row($"Alt+{i + 1}", conflict ? "Taken by another app. Pick a different slot or free the shortcut." : null, combo));
+            }
+
+            customs.Children.Clear();
+            if (m.CustomApps.Count == 0) customs.Children.Add(UiKit.Text("No custom apps yet.").Also(t => { t.Style = (Style)Application.Current.FindResource("Muted"); t.Margin = new Thickness(0, 0, 0, 8); }));
+            foreach (var c in m.CustomApps.ToList()) customs.Children.Add(CustomRow(m, c));
+            building = false;
+        }
+
+        m.Changed += Rebuild;
+        st.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(st.IsScanning)) Rebuild(); };
+        Rebuild();
+        return page;
+    }
+
+    static TextBlock Sub(string text) =>
+        new() { Text = text, Style = (Style)Application.Current.FindResource("Title"), Margin = new Thickness(0, 8, 0, 14) };
+
+    static FrameworkElement CustomRow(AiModule m, CustomApp c)
+    {
+        var g = new Grid { Margin = new Thickness(0, 0, 0, 8) };
+        g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(170) });
+        g.ColumnDefinitions.Add(new ColumnDefinition());
+        g.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        var name = new TextBox { Text = c.Name, VerticalAlignment = VerticalAlignment.Center };
+        name.LostFocus += (_, _) => m.RenameCustom(c.Id, name.Text);
+        name.KeyDown += (_, e) => { if (e.Key == System.Windows.Input.Key.Enter) m.RenameCustom(c.Id, name.Text); };
+
+        var path = new TextBlock { Text = c.Path, Style = (Style)Application.Current.FindResource("Muted"), TextTrimming = TextTrimming.CharacterEllipsis, ToolTip = c.Path, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(12, 0, 8, 0) };
+        var remove = new Button { Style = (Style)Application.Current.FindResource("IconButton"), Content = Glyphs.Delete, ToolTip = "Remove" };
+        remove.Click += (_, _) => m.RemoveCustom(c.Id);
+
+        Grid.SetColumn(path, 1);
+        Grid.SetColumn(remove, 2);
+        g.Children.Add(name);
+        g.Children.Add(path);
+        g.Children.Add(remove);
+        return g;
+    }
+
+    static T Also<T>(this T t, Action<T> f) { f(t); return t; }
+}
