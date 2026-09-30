@@ -6,72 +6,87 @@
         ShowInTaskbar="False" ShowActivated="False" Topmost="True" ResizeMode="NoResize"
         UseLayoutRounding="True" SnapsToDevicePixels="True"
         FontFamily="{StaticResource UiFont}" FontSize="12" Foreground="{DynamicResource TextPrimaryBrush}"
-        TextOptions.TextFormattingMode="Ideal">
+        TextOptions.TextFormattingMode="Ideal" Typography.NumeralAlignment="Tabular">
     <Grid x:Name="Root">
-        <!-- Background shape: the ONLY thing animated per frame (size and corner radius). Hover events come from here. -->
-        <Border x:Name="Surface" VerticalAlignment="Top" HorizontalAlignment="Center" Width="420" Height="40"
+        <!-- Background shape: the ONLY thing animated per frame (size and corner radius). Hover and file-drag events come from here. -->
+        <Border x:Name="Surface" VerticalAlignment="Top" HorizontalAlignment="Center" Width="420" Height="38" AllowDrop="True"
                 Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource StrokeBrush}"
                 BorderThickness="1,0,1,1" CornerRadius="0,0,16,16" ClipToBounds="True">
+            <Border.RenderTransform><TranslateTransform x:Name="SurfaceShift"/></Border.RenderTransform>
             <Grid>
                 <!-- Collapsed pill content -->
-                <Grid x:Name="PillLayer" Height="40" HorizontalAlignment="Center" VerticalAlignment="Top">
-                    <StackPanel Orientation="Horizontal" Margin="18,0" VerticalAlignment="Center">
+                <Grid x:Name="PillLayer" Height="38" HorizontalAlignment="Center" VerticalAlignment="Top">
+                    <StackPanel Orientation="Horizontal" Margin="16,0,18,1" VerticalAlignment="Center">
                         <!-- Left cluster: now playing (hidden when there is no session) -->
-                        <StackPanel Orientation="Horizontal" Margin="0,0,22,0"
+                        <StackPanel Orientation="Horizontal" Margin="0,0,18,0"
                                     Visibility="{Binding State.Media.HasSession, Converter={StaticResource BoolToVis}}">
-                            <Grid Width="24" Height="24">
+                            <Grid Width="22" Height="22">
                                 <Border CornerRadius="6" Background="{DynamicResource ControlHoverBrush}">
-                                    <TextBlock Text="&#xE8D6;" Style="{StaticResource Glyph}" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}"
+                                    <TextBlock Text="&#xE8D6;" Style="{StaticResource Glyph}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"
                                                HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
                                 <Border CornerRadius="6">
                                     <Border.Background><ImageBrush ImageSource="{Binding State.Media.Artwork}" Stretch="UniformToFill"/></Border.Background>
                                 </Border>
                             </Grid>
-                            <TextBlock Text="{Binding State.Media.Title}" FontWeight="SemiBold" MaxWidth="130" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="8,0,0,0"/>
-                            <TextBlock Text="{Binding State.Media.Artist}" MaxWidth="90" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="6,0,0,0"
+                            <TextBlock Text="{Binding State.Media.Title}" FontWeight="SemiBold" MaxWidth="120" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                            <TextBlock Text="{Binding State.Media.Artist}" MaxWidth="80" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="6,0,0,0"
                                        Foreground="{DynamicResource TextSecondaryBrush}"/>
                         </StackPanel>
-                        <!-- Right cluster: stats and clock -->
-                        <TextBlock VerticalAlignment="Center" MinWidth="58" Margin="0,0,14,0">
-                            <Run Text="CPU" FontSize="10" Foreground="{DynamicResource TextTertiaryBrush}"/><Run Text=" "/><Run Text="{Binding State.Stats.CpuText, Mode=OneWay}"/>
+                        <!-- Right cluster: stats and clock. Minimum widths so changing digits never resize the pill. -->
+                        <TextBlock VerticalAlignment="Center" MinWidth="50" Margin="0,0,12,0">
+                            <Run Text="CPU" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource TextTertiaryBrush}"/><Run Text=" "/><Run Text="{Binding State.Stats.CpuText, Mode=OneWay}"/>
                         </TextBlock>
-                        <TextBlock VerticalAlignment="Center" MinWidth="112" Margin="0,0,14,0">
-                            <Run Text="RAM" FontSize="10" Foreground="{DynamicResource TextTertiaryBrush}"/><Run Text=" "/><Run Text="{Binding State.Stats.RamText, Mode=OneWay}"/>
+                        <TextBlock VerticalAlignment="Center" MinWidth="98" Margin="0,0,12,0">
+                            <Run Text="RAM" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource TextTertiaryBrush}"/><Run Text=" "/><Run Text="{Binding State.Stats.RamText, Mode=OneWay}"/>
                         </TextBlock>
-                        <TextBlock VerticalAlignment="Center" MinWidth="118" Margin="0,0,14,0">
-                            <Run Text="&#x2193;" Foreground="{DynamicResource TextTertiaryBrush}"/><Run Text=" "/><Run Text="{Binding State.Stats.NetDownText, Mode=OneWay}"/><Run Text="   "/><Run Text="&#x2191;" Foreground="{DynamicResource TextTertiaryBrush}"/><Run Text=" "/><Run Text="{Binding State.Stats.NetUpText, Mode=OneWay}"/>
+                        <TextBlock VerticalAlignment="Center" MinWidth="116" Margin="0,0,12,0">
+                            <Run Text="&#x2193;" Foreground="{DynamicResource TextTertiaryBrush}"/><Run Text="{Binding State.Stats.NetDownText, Mode=OneWay}"/><Run Text="  "/><Run Text="&#x2191;" Foreground="{DynamicResource TextTertiaryBrush}"/><Run Text="{Binding State.Stats.NetUpText, Mode=OneWay}"/>
                         </TextBlock>
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,14,0"
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,12,0"
                                     Visibility="{Binding State.Stats.HasBattery, Converter={StaticResource BoolToVis}}">
                             <TextBlock Text="{Binding State.Stats.BatteryGlyph}" Style="{StaticResource Glyph}" FontSize="13" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                            <TextBlock Text="{Binding State.Stats.BatteryText}" MinWidth="30" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding State.Stats.BatteryText}" MinWidth="28" VerticalAlignment="Center"/>
                         </StackPanel>
-                        <TextBlock Text="{Binding State.Stats.Clock}" FontWeight="SemiBold" MinWidth="36" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding State.Stats.Clock}" FontWeight="SemiBold" FontSize="13" MinWidth="36" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Grid>
 
                 <!-- Expanded panel content: fixed size, pre-laid-out at startup, only opacity/transform animate -->
                 <Grid x:Name="PanelLayer" Width="720" Height="380" HorizontalAlignment="Center" VerticalAlignment="Top" Visibility="Collapsed">
                     <Grid.RenderTransform><TranslateTransform x:Name="PanelShift"/></Grid.RenderTransform>
-                    <Grid.RowDefinitions><RowDefinition Height="56"/><RowDefinition Height="*"/></Grid.RowDefinitions>
-                    <Grid Margin="18,8,12,0">
-                        <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" MinWidth="150">
+                    <Grid.RowDefinitions><RowDefinition Height="58"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                    <Grid Margin="23,10,17,0">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <!-- Profile -->
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <Grid Width="32" Height="32">
                                 <Ellipse Fill="{DynamicResource AccentSoftBrush}"/>
                                 <TextBlock Text="{Binding ProfileInitial}" FontWeight="SemiBold" FontSize="14" Foreground="{DynamicResource AccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 <Ellipse><Ellipse.Fill><ImageBrush ImageSource="{Binding ProfileImage}" Stretch="UniformToFill"/></Ellipse.Fill></Ellipse>
                                 <Ellipse Stroke="{DynamicResource StrokeBrush}" StrokeThickness="1"/>
                             </Grid>
-                            <TextBlock Text="{Binding Settings.ProfileName}" Style="{StaticResource Title}" MaxWidth="120" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                            <StackPanel VerticalAlignment="Center" Margin="10,0,0,0">
+                                <TextBlock Text="{Binding Settings.ProfileName}" FontWeight="SemiBold" FontSize="13" MaxWidth="150" TextTrimming="CharacterEllipsis"/>
+                                <TextBlock Text="{Binding DateText}" Style="{StaticResource Muted}" Margin="0,1,0,0"/>
+                            </StackPanel>
                         </StackPanel>
-                        <StackPanel x:Name="TabStrip" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" MinWidth="150" HorizontalAlignment="Right">
+                        <!-- Tabs: one sliding indicator behind the icon buttons -->
+                        <Border Grid.Column="1" VerticalAlignment="Center" Padding="3" CornerRadius="12" Background="{DynamicResource ControlBrush}">
+                            <Grid>
+                                <Border x:Name="TabIndicator" Width="40" Height="30" CornerRadius="9" HorizontalAlignment="Left"
+                                        Background="{DynamicResource ControlHoverBrush}" BorderBrush="{DynamicResource StrokeBrush}" BorderThickness="1">
+                                    <Border.RenderTransform><TranslateTransform x:Name="TabIndicatorShift"/></Border.RenderTransform>
+                                </Border>
+                                <StackPanel x:Name="TabStrip" Orientation="Horizontal"/>
+                            </Grid>
+                        </Border>
+                        <!-- Actions -->
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right">
                             <ToggleButton Style="{StaticResource IconToggle}" Content="&#xE70F;" ToolTip="Edit cards" IsChecked="{Binding IsEditMode}"
                                           IsEnabled="{Binding MotionEnabled}" Visibility="{Binding IsHomeSelected, Converter={StaticResource BoolToVis}}"/>
-                            <ToggleButton Style="{StaticResource IconToggle}" Content="&#xE718;" ToolTip="Keep panel open" IsChecked="{Binding Settings.Pinned}" Margin="2,0,0,0"/>
-                            <Button Style="{StaticResource IconButton}" Content="&#xE713;" ToolTip="Settings" Command="{Binding OpenSettingsCommand}" Margin="2,0,0,0"/>
+                            <ToggleButton Style="{StaticResource IconToggle}" Content="&#xE718;" ToolTip="Keep panel open" IsChecked="{Binding Settings.Pinned}" Margin="4,0,0,0"/>
+                            <Button Style="{StaticResource IconButton}" Content="&#xE713;" ToolTip="Settings" Command="{Binding OpenSettingsCommand}" Margin="4,0,0,0"/>
                         </StackPanel>
                     </Grid>
                     <Grid x:Name="TabHost" Grid.Row="1" Margin="4,0,4,0"/>
@@ -83,7 +98,7 @@
         </Border>
 
         <!-- Glance strip: now playing line under the collapsed pill -->
-        <Border x:Name="Glance" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,46,0,0" Height="24" CornerRadius="12" Padding="12,0"
+        <Border x:Name="Glance" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,44,0,0" Height="24" CornerRadius="12" Padding="10,0,12,0"
                 Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource StrokeBrush}" BorderThickness="1"
                 Visibility="{Binding ShowGlance, Converter={StaticResource BoolToVis}}">
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">

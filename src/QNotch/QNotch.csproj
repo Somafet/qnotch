@@ -16,8 +16,12 @@
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
     <ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
     <ServerGarbageCollector>false</ServerGarbageCollector>
-    <TieredPGO>true</TieredPGO>
-    <TieredCompilation>true</TieredCompilation>
+    <!-- No tiered JIT: at a 5 s idle cadence methods take minutes to reach the tier-up threshold, so the background JIT kept
+         re-compiling (about 50 ms CPU per tick, 10x the app's own work) and doubled the code in memory. Full JIT up front costs
+         about 65 ms of startup; R2R framework code is used as is. -->
+    <TieredCompilation>false</TieredCompilation>
+    <!-- ObservableObject raises only PropertyChanged (nothing here listens to PropertyChanging). -->
+    <MvvmToolkitEnableINotifyPropertyChangingSupport>false</MvvmToolkitEnableINotifyPropertyChangingSupport>
     <UseSystemResourceKeys>false</UseSystemResourceKeys>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);CS1591;MVVMTK0045</NoWarn>

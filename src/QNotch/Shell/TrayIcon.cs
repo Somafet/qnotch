@@ -19,7 +19,7 @@ public sealed unsafe class TrayIcon : IDisposable
     public TrayIcon(NotchWindow window, ShellController shell, Action exit)
     {
         _w = window; _shell = shell; _exit = exit;
-        _icon = AppIcon.CreateHIcon(32);
+        _icon = AppIcon.CreateHIcon(Math.Max(16, Native.GetSystemMetrics(Native.SM_CXSMICON)));
         _w.Source.AddHook(Hook);
         Add();
         shell.ModeChanged += _ => UpdateTip();
@@ -33,7 +33,8 @@ public sealed unsafe class TrayIcon : IDisposable
             cbSize = (uint)sizeof(NOTIFYICONDATAW), hWnd = _w.Hwnd, uID = 1, uFlags = flags,
             uCallbackMessage = CallbackMessage, hIcon = _icon,
         };
-        var tip = $"QNotch | Game mode: {_shell.GameModeOverride}{(_shell.Mode == ShellMode.GameBar ? " (game bar active)" : "")}";
+        var mode = _shell.GameModeOverride switch { GameModeOverride.ForceOn => "Force on", GameModeOverride.ForceOff => "Force off", _ => "Auto" };
+        var tip = $"QNotch\nGame mode: {mode}{(_shell.Mode == ShellMode.GameBar ? ", game bar showing" : "")}";
         for (var i = 0; i < Math.Min(tip.Length, 127); i++) d.szTip[i] = tip[i];
         return d;
     }
@@ -47,7 +48,7 @@ public sealed unsafe class TrayIcon : IDisposable
         {
             handled = true;
             var ev = (int)(lParam & 0xFFFF);
-            if (ev == Native.WM_LBUTTONUP) { if (_shell.Mode != ShellMode.GameBar) _shell.TogglePanel(); }
+            if (ev == Native.WM_LBUTTONUP) _shell.ToggleFromUser();
             else if (ev == Native.WM_RBUTTONUP) ShowMenu();
         }
         else if ((uint)msg == _taskbarCreated) Add();
@@ -58,7 +59,7 @@ public sealed unsafe class TrayIcon : IDisposable
     {
         _w.EnableKeyboard(); // menus need a foreground owner to dismiss on outside click
         var m = new ContextMenu { PlacementTarget = _w, Placement = PlacementMode.MousePoint };
-        m.Items.Add(Item("Open panel", () => _shell.OpenPanel()));
+        if (_shell.Mode != ShellMode.GameBar) m.Items.Add(Item("Open panel", () => _shell.OpenPanel()));
         m.Items.Add(Item("Settings", () => _shell.OpenSettings()));
         m.Items.Add(new Separator());
         foreach (var o in Enum.GetValues<GameModeOverride>())
@@ -71,7 +72,8 @@ public sealed unsafe class TrayIcon : IDisposable
         }
         m.Items.Add(new Separator());
         m.Items.Add(Item("Exit", _exit));
-        m.Closed += (_, _) => _w.DisableKeyboard();
+        // Keep keyboard focus if "Open panel" was chosen, so Esc and an outside click dismiss the panel.
+        m.Closed += (_, _) => { if (_shell.Mode != ShellMode.Expanded) _w.DisableKeyboard(); };
         m.IsOpen = true;
     }
 

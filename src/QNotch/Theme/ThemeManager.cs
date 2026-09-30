@@ -32,7 +32,9 @@ public static class ThemeManager
         res["AccentBrush"] = Frozen(accent);
         res["AccentHoverBrush"] = Frozen(Blend(accent, dark ? Colors.White : Colors.Black, 0.18));
         res["AccentSoftBrush"] = Frozen(Color.FromArgb(0x38, accent.R, accent.G, accent.B));
-        res["OnAccentBrush"] = Frozen(lum > 0.55 ? Color.FromRgb(0x0B, 0x0B, 0x0D) : Colors.White);
+        var onAccent = lum > 0.55 ? Color.FromRgb(0x0B, 0x0B, 0x0D) : Colors.White;
+        res["OnAccentBrush"] = Frozen(onAccent);
+        res["ToggleKnobOnBrush"] = Frozen(dark ? onAccent : Colors.White); // Windows 11: dark knob in dark mode, white in light
     }
 
     static SolidColorBrush Frozen(Color c) { var b = new SolidColorBrush(c); b.Freeze(); return b; }

@@ -26,4 +26,6 @@ public sealed partial class ShellViewModel : ObservableObject
     [ObservableProperty] bool _isHomeSelected = true;
     [ObservableProperty] bool _isEditMode;
     [ObservableProperty] bool _motionEnabled = true;
+    /// <summary>Header date line ("Tuesday, 30 September"), refreshed when the panel opens.</summary>
+    [ObservableProperty] string _dateText = "";
 }

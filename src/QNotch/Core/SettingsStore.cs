@@ -25,6 +25,9 @@ public sealed class SettingsStore
 
     public SettingsStore() => _timer = new Timer(_ => Flush(), null, Timeout.Infinite, Timeout.Infinite);
 
+    /// <summary>Snapshot mode: keep changes in memory only, never write.</summary>
+    public bool ReadOnly { get; set; }
+
     static string PathFor(string id) => Path.Combine(Paths.DataDir, id + ".json");
 
     public T Get<T>(string moduleId) where T : class, new()
@@ -59,7 +62,7 @@ public sealed class SettingsStore
     public void Flush()
     {
         KeyValuePair<string, string>[] items;
-        lock (_gate) { items = _pending.ToArray(); _pending.Clear(); }
+        lock (_gate) { items = ReadOnly ? [] : _pending.ToArray(); _pending.Clear(); }
         foreach (var (id, json) in items)
         {
             try

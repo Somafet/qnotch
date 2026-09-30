@@ -2,6 +2,8 @@ using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Interop;
+using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using QNotch.Core;
@@ -23,14 +25,15 @@ public sealed class ShellController : IShell
     readonly SettingsStore _store;
     readonly Registry<TabDescriptor> _tabs;
     readonly Registry<SettingsSectionDescriptor> _sections;
-    readonly Dictionary<string, FrameworkElement> _tabViews = new();
+    readonly Dictionary<string, Border> _tabViews = new();
     readonly Dictionary<string, RadioButton> _tabButtons = new();
     DispatcherTimer? _dwell, _leave;
     ICadenceAware[] _cadenceAware = [];
     ShellMode _mode;
     GameModeOverride _override;
-    bool _hovering, _built, _wasExpandedBeforeGame;
-    string _toggleKey = "", _gameKey = "";
+    bool _hovering, _fileDrag, _built, _wasExpandedBeforeGame;
+    int _holds;
+    string _toggleKey = "", _gameKey = "", _activeTab = "home";
 
     public ShellController(NotchWindow window, AppState state, GeneralSettings settings, SettingsStore store, HotkeyService hotkeys,
         ForegroundWatcher foreground, CardLayout layout, Registry<TabDescriptor> tabs, Registry<SettingsSectionDescriptor> sections)
@@ -47,10 +50,15 @@ public sealed class ShellController : IShell
     public GeneralSettings General { get; }
     public ForegroundWatcher Foreground { get; }
     public nint Hwnd => _w.Hwnd;
+    public nint Monitor => _w.MonitorHandle;
     public ShellMode Mode => _mode;
+    public string ActiveTab => _activeTab;
     public event Action<ShellMode>? ModeChanged;
     public event Action<GameModeOverride>? GameModeOverrideChanged;
     public event Action? EditModeChanged;
+    public event Action<string>? TabChanged;
+    public event Action? FileDragEntered;
+    public event Action<string[]>? FilesDropped;
 
     public GameModeOverride GameModeOverride
     {
@@ -73,11 +81,23 @@ public sealed class ShellController : IShell
         _w.HoverEntered += OnHoverEnter;
         _w.HoverLeft += OnHoverLeave;
         _w.EscPressed += ClosePanel;
-        _w.KeyboardFocusLost += () => { if (_mode == ShellMode.Expanded && !_hovering && !General.Pinned) StartLeave(); };
+        _w.KeyboardFocusLost += () => { if (!_w.IsPointerOver()) { _hovering = false; StartLeave(); } };
+        _w.FileDragOver += OnFileDragOver;
+        _w.DragLeft += OnHoverLeave;
+        _w.FilesDropped += files =>
+        {
+            _fileDrag = false;
+            try { FilesDropped?.Invoke(files); } catch (Exception ex) { Log.Error("FilesDropped handler failed", ex); }
+        };
 
         General.PropertyChanged += OnSetting;
         Layout.Changed += () => _store.Save("general", General);
-        Vm.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(ShellViewModel.IsEditMode)) EditModeChanged?.Invoke(); };
+        Vm.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName != nameof(ShellViewModel.IsEditMode)) return;
+            EditModeChanged?.Invoke();
+            if (!Vm.IsEditMode && !_hovering) StartLeave();
+        };
         Motion.Changed += () => { Vm.MotionEnabled = Motion.Enabled; if (!Motion.Enabled) IsEditMode = false; };
         _state.Media.PropertyChanged += (_, e) =>
         {
@@ -134,6 +154,8 @@ public sealed class ShellController : IShell
         if (_mode != ShellMode.Collapsed) return;
         EnsurePanelBuilt();
         StopTimers();
+        var now = DateTime.Now; // regional format, like the Windows clock
+        Vm.DateText = $"{now:dddd}, {now.ToString(System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.MonthDayPattern)}";
         SetMode(ShellMode.Expanded);
         _w.SetOpen(true);
     }
@@ -155,9 +177,39 @@ public sealed class ShellController : IShell
         else OpenPanel();
     }
 
+    /// <summary>Hotkey and tray: an explicit summon also takes keyboard focus, so Esc works and a click elsewhere dismisses.</summary>
+    internal void ToggleFromUser()
+    {
+        if (_mode == ShellMode.GameBar) return;
+        if (_mode == ShellMode.Expanded) { ClosePanel(); return; }
+        OpenPanel();
+        _w.EnableKeyboard();
+    }
+
     public void RequestKeyboardFocus() => _w.EnableKeyboard();
 
     public void OpenSettings(string? sectionId = null) => SettingsWindow.Show(_sections, General, sectionId);
+
+    public IDisposable HoldOpen()
+    {
+        _holds++;
+        _leave?.Stop();
+        return new Hold(this);
+    }
+
+    sealed class Hold(ShellController s) : IDisposable
+    {
+        bool _done;
+        public void Dispose()
+        {
+            if (_done) return;
+            _done = true;
+            s._holds--;
+            // WPF hover state is stale after a drag or modal dialog: ask the OS where the pointer is.
+            s._hovering = s._w.IsPointerOver();
+            if (!s._hovering) s.StartLeave();
+        }
+    }
 
     // ---------- hover ----------
 
@@ -172,13 +224,34 @@ public sealed class ShellController : IShell
     {
         _hovering = false;
         _dwell?.Stop();
-        if (_mode == ShellMode.Expanded && !General.Pinned && !_w.HasKeyboard) StartLeave();
+        StartLeave();
     }
 
-    void StartLeave() => Start(ref _leave, General.LeaveDelayMs, () =>
+    bool OnFileDragOver(bool enter)
     {
-        if (!_hovering && !General.Pinned && !_w.HasKeyboard) ClosePanel();
-    });
+        if (FilesDropped is null || _mode == ShellMode.GameBar) return false;
+        _hovering = true;
+        _leave?.Stop();
+        if (_mode == ShellMode.Collapsed && _dwell?.IsEnabled != true) Start(ref _dwell, General.HoverDwellMs, OpenPanel);
+        if (!_fileDrag)
+        {
+            _fileDrag = true;
+            try { FileDragEntered?.Invoke(); } catch (Exception ex) { Log.Error("FileDragEntered handler failed", ex); }
+        }
+        return true;
+    }
+
+    bool CanAutoClose => _mode == ShellMode.Expanded && !General.Pinned && !_w.HasKeyboard && _holds == 0 && !Vm.IsEditMode;
+
+    void StartLeave()
+    {
+        if (!CanAutoClose) return;
+        Start(ref _leave, General.LeaveDelayMs, () =>
+        {
+            _fileDrag = false;
+            if (!_hovering && CanAutoClose && !_w.IsPointerOver()) ClosePanel();
+        });
+    }
 
     void Start(ref DispatcherTimer? t, int ms, Action action)
     {
@@ -224,6 +297,7 @@ public sealed class ShellController : IShell
     public void SetClickThrough(bool on) => _w.SetClickThrough(on);
     public void SetGameBarLayout(double height, double opacity, double offsetX, double offsetY) => _w.SetGameBarLayout(height, opacity, offsetX, offsetY);
     public void AddHwndHook(HwndSourceHook hook) => _w.Source.AddHook(hook);
+    public void RemoveHwndHook(HwndSourceHook hook) => _w.Source.RemoveHook(hook);
 
     // ---------- tabs ----------
 
@@ -241,45 +315,63 @@ public sealed class ShellController : IShell
             strip.Children.Add(rb);
             _tabButtons[id] = rb;
         }
-        var start = _tabs.Find(General.LastTab) is not null ? General.LastTab : "home";
-        SelectTab(start);
+        SelectTab(_tabs.Find(General.LastTab) is not null ? General.LastTab : "home");
         _w.WarmUpPanel();
         _w.Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, PrebuildNext);
     }
 
+    /// <summary>Builds one remaining tab per idle slot; when all exist, lays the whole panel out once (inactive tabs are Hidden, so they get layout).</summary>
     void PrebuildNext()
     {
         var next = _tabs.Items.FirstOrDefault(t => !_tabViews.ContainsKey(t.Id));
-        if (next is null) return;
+        if (next is null) { if (_mode != ShellMode.Expanded) _w.WarmUpPanel(); return; }
         EnsureView(next);
         _w.Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, PrebuildNext);
     }
 
-    FrameworkElement EnsureView(TabDescriptor t)
+    Border EnsureView(TabDescriptor t)
     {
-        if (_tabViews.TryGetValue(t.Id, out var v)) return v;
+        if (_tabViews.TryGetValue(t.Id, out var slot)) return slot;
+        FrameworkElement v;
         try { v = t.Factory(); }
         catch (Exception ex)
         {
             Log.Error($"Tab '{t.Id}' failed to build", ex);
             v = Placeholder.Create(Glyphs.Warning, t.Title, "This tab failed to load. See logs.");
         }
-        v.Visibility = Visibility.Collapsed;
-        _tabViews[t.Id] = v;
-        _w.TabHost.Children.Add(v);
-        return v;
+        // Shell-owned slot: the fade/slide transition never touches the module's own element.
+        slot = new Border { Child = v, Visibility = Visibility.Hidden, RenderTransform = new TranslateTransform() };
+        _tabViews[t.Id] = slot;
+        _w.TabHost.Children.Add(slot);
+        return slot;
     }
 
     public void SelectTab(string id)
     {
         var t = _tabs.Find(id);
         if (t is null) return;
-        var view = EnsureView(t);
-        foreach (var (k, el) in _tabViews) el.Visibility = k == id ? Visibility.Visible : Visibility.Collapsed;
+        var slot = EnsureView(t);
+        var changed = id != _activeTab || slot.Visibility != Visibility.Visible;
+        foreach (var (k, el) in _tabViews) el.Visibility = k == id ? Visibility.Visible : Visibility.Hidden;
         if (_tabButtons.TryGetValue(id, out var rb) && rb.IsChecked != true) rb.IsChecked = true;
+        var index = _tabs.Items.ToList().FindIndex(x => x.Id == id);
+        _w.MoveTabIndicator(Math.Max(0, index), changed);
+        if (changed && _mode == ShellMode.Expanded && Motion.Enabled) FadeIn(slot);
         Vm.IsHomeSelected = id == "home";
         if (id != "home") IsEditMode = false;
         General.LastTab = id;
+        if (id == _activeTab) return;
+        _activeTab = id;
+        TabChanged?.Invoke(id);
+    }
+
+    static void FadeIn(Border slot)
+    {
+        var d = TimeSpan.FromMilliseconds(180);
+        var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
+        slot.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(0, 1, d) { EasingFunction = ease, FillBehavior = FillBehavior.Stop });
+        ((TranslateTransform)slot.RenderTransform).BeginAnimation(TranslateTransform.YProperty,
+            new DoubleAnimation(6, 0, d) { EasingFunction = ease, FillBehavior = FillBehavior.Stop });
     }
 
     // ---------- settings reactions ----------
@@ -297,7 +389,7 @@ public sealed class ShellController : IShell
             case nameof(GeneralSettings.ToggleHotkey) or nameof(GeneralSettings.GameModeHotkey): RegisterHotkeys(); break;
             case nameof(GeneralSettings.Pinned):
                 if (General.Pinned) _leave?.Stop();
-                else if (_mode == ShellMode.Expanded && !_hovering) StartLeave();
+                else if (!_hovering) StartLeave();
                 break;
         }
     }
@@ -308,7 +400,7 @@ public sealed class ShellController : IShell
         Hotkeys.Unregister(_gameKey);
         _toggleKey = General.ToggleHotkey;
         _gameKey = General.GameModeHotkey;
-        Hotkeys.Register(_toggleKey, () => { if (_mode != ShellMode.GameBar) TogglePanel(); });
+        Hotkeys.Register(_toggleKey, ToggleFromUser);
         Hotkeys.Register(_gameKey, () => GameModeOverride = (GameModeOverride)(((int)_override + 1) % 3));
     }
 

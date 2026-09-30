@@ -23,9 +23,19 @@ public partial class App : Application
     {
         base.OnStartup(e);
         Log.InstallHandlers(this);
-        _mutex = new Mutex(true, @"Local\QNotch.SingleInstance", out var first);
-        if (!first) { Shutdown(); return; }
-        try { Boot(); }
+        // Layered (per-pixel alpha) windows read the whole surface back from the GPU every frame; software rendering is as fast
+        // for this UI (same frame rate measured) and saves about 20 MB of commit (no D3D device).
+        System.Windows.Media.RenderOptions.ProcessRenderMode = System.Windows.Interop.RenderMode.SoftwareOnly;
+        // Dev tool: QNotch.exe --snapshot <dir> [light]  renders every view to PNG and exits (see Shell/Snapshot.cs).
+        var snap = Array.IndexOf(e.Args, "--snapshot");
+        string? snapDir = snap >= 0 && snap + 1 < e.Args.Length ? Path.GetFullPath(e.Args[snap + 1]) : null;
+        if (snapDir is null)
+        {
+            var m = new Mutex(true, @"Local\QNotch.SingleInstance", out var first);
+            if (!first) { m.Dispose(); Shutdown(); return; }
+            _mutex = m;
+        }
+        try { Boot(snapDir, e.Args.Contains("light")); }
         catch (Exception ex)
         {
             Log.Crash("Startup", ex);
@@ -33,10 +43,11 @@ public partial class App : Application
         }
     }
 
-    void Boot()
+    void Boot(string? snapDir, bool light)
     {
-        _store = new SettingsStore();
+        _store = new SettingsStore { ReadOnly = snapDir is not null };
         var gs = _store.Get<GeneralSettings>("general");
+        if (snapDir is not null) { gs.Pinned = false; if (light) gs.Theme = ThemeChoice.Light; }
         Motion.Refresh(gs.ReduceMotion);
         ThemeManager.Apply(gs);
 
@@ -46,7 +57,7 @@ public partial class App : Application
         var tabs = new Registry<TabDescriptor>();
         var sections = new Registry<SettingsSectionDescriptor>();
 
-        var window = new NotchWindow();
+        var window = new NotchWindow { Offscreen = snapDir is not null };
         window.InitHandle();
         _hotkeys = new HotkeyService(window.Source);
         _foreground = new ForegroundWatcher();
@@ -76,12 +87,14 @@ public partial class App : Application
         shell.SetCadenceAware(modules.OfType<ICadenceAware>());
         window.Show();
         window.Reposition();
-        _tray = new TrayIcon(window, shell, () => Shutdown());
 
         // Any text input in the panel activates the window on mouse down so typing works despite WS_EX_NOACTIVATE.
         var handler = new MouseButtonEventHandler(OnTextMouseDown);
         EventManager.RegisterClassHandler(typeof(TextBoxBase), UIElement.PreviewMouseDownEvent, handler);
         EventManager.RegisterClassHandler(typeof(PasswordBox), UIElement.PreviewMouseDownEvent, handler);
+
+        if (snapDir is not null) { Snapshot.Run(snapDir, window, shell, tabs, sections, state, () => Shutdown()); return; }
+        _tray = new TrayIcon(window, shell, () => Shutdown());
         Log.Info($"Started in {(DateTime.Now - System.Diagnostics.Process.GetCurrentProcess().StartTime).TotalMilliseconds:0} ms");
     }
 

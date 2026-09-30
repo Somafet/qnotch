@@ -11,6 +11,9 @@ public struct RECT
 }
 
 [StructLayout(LayoutKind.Sequential)]
+public struct POINT { public int X, Y; }
+
+[StructLayout(LayoutKind.Sequential)]
 public struct MONITORINFO
 {
     public uint cbSize;
@@ -107,7 +110,9 @@ public static unsafe partial class Native
     [LibraryImport("user32.dll")] public static partial uint GetWindowThreadProcessId(nint hwnd, out uint pid);
     [LibraryImport("user32.dll", EntryPoint = "GetClassNameW", StringMarshalling = StringMarshalling.Utf16)]
     public static partial int GetClassName(nint hwnd, [Out] char[] buffer, int max);
-    [LibraryImport("user32.dll")] [return: MarshalAs(UnmanagedType.Bool)] public static partial bool GetCursorPos(out int x, out int y);
+    [LibraryImport("user32.dll")] [return: MarshalAs(UnmanagedType.Bool)] public static partial bool GetCursorPos(out POINT pt);
+    [LibraryImport("user32.dll")] public static partial int GetSystemMetrics(int index);
+    public const int SM_CXSMICON = 49;
     [LibraryImport("user32.dll", EntryPoint = "RegisterWindowMessageW", StringMarshalling = StringMarshalling.Utf16)]
     public static partial uint RegisterWindowMessage(string name);
 
