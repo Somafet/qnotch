@@ -1,0 +1,526 @@
+---
+import Icon from './Icon.astro';
+
+const extras = [
+  { icon: 'note', label: 'Note' },
+  { icon: 'grid', label: 'GitHub graph' },
+  { icon: 'folder', label: 'File tray' },
+  { icon: 'volume', label: 'Volume' },
+  { icon: 'timer', label: 'Timer' },
+  { icon: 'pipette', label: 'Color picker' },
+  { icon: 'calendar', label: 'Scheduled tasks' },
+] as const;
+---
+<section id="features">
+  <div class="wrap">
+    <div class="section-head center">
+      <span class="eyebrow">Features</span>
+      <h2>Everything else,<br />one hover away.</h2>
+      <p class="lead">The pill shows what matters right now. The panel holds the rest. Turn off what you don't use: a feature that is off is never loaded.</p>
+    </div>
+
+    <div class="bento">
+      <article class="card f-agents">
+        <div class="viz">
+          <div class="v-row"><span class="v-ico warn"><Icon name="terminal" /></span><div><b>api</b><span class="warn">Claude needs your permission to use Bash</span></div><em>$2.14</em></div>
+          <div class="v-row"><span class="v-ico ok"><Icon name="terminal" /></span><div><b>web</b><span>Working for 6m</span><i class="v-chip">4 processes · 484 MB · :3000</i></div><em>$1.72</em></div>
+          <div class="v-row"><span class="v-ico ok"><Icon name="check" /></span><div><b>ledge</b><span>Done 12m ago</span></div><em>$0.35</em></div>
+          <div class="v-row thin"><div><b>node astro.mjs dev</b><span>Left running · 210 MB · :4321</span></div><button class="v-btn" data-v="stop">Stop</button></div>
+        </div>
+        <div class="txt">
+          <h3>Know the moment an agent needs you.</h3>
+          <p>Every Claude Code session shows up in the pill and the Agents tab: working, needs you or done. When one stops to ask, the pill widens for a moment and plays a soft sound. You also see the tokens each one used today, and the dev servers it left running, each with a Stop button.</p>
+          <button class="try" data-try="agent">Try it in the demo <Icon name="arrow" /></button>
+        </div>
+      </article>
+
+      <article class="card f-notify">
+        <div class="viz code">
+          <code><span class="c-k">QNotch.exe</span> notify <span class="c-s">"Build finished"</span> <span class="c-s">"142 tests passed"</span> <span class="c-f">--level</span> success</code>
+          <div class="v-toast"><span class="v-ico ok"><Icon name="check" /></span><div><b>Build finished</b><span>142 tests passed</span></div></div>
+        </div>
+        <div class="txt">
+          <h3>Ping it from any script.</h3>
+          <p>A command, a named pipe or local HTTP. Add buttons and wait for the answer.</p>
+          <button class="try" data-try="notify">Try it <Icon name="arrow" /></button>
+        </div>
+      </article>
+
+      <article class="card f-media">
+        <div class="viz">
+          <div class="v-media"><span class="v-art"></span><div><b>Midnight City</b><span>M83</span><i class="v-track"><i style="width:34%"></i></i></div><button class="v-play" data-v="play" aria-label="Play or pause"><span class="pa"><Icon name="pause" /></span><span class="pl"><Icon name="play" /></span></button></div>
+        </div>
+        <div class="txt">
+          <h3>Whatever is playing.</h3>
+          <p>Track, artwork and controls for Spotify, your browser, or anything else that plays media.</p>
+        </div>
+      </article>
+
+      <article class="card f-clip">
+        <div class="viz">
+          <div class="v-clip"><Icon name="link" class="i acc" /><span class="acc">github.com/Somafet/qnotch</span></div>
+          <div class="v-clip"><Icon name="code" class="i acc" /><code>dotnet build -c Release</code></div>
+          <div class="v-clip"><Icon name="pipette" class="i acc" /><span><i class="v-sw"></i>#5B9DFF</span></div>
+        </div>
+        <div class="txt">
+          <h3>Everything you copied.</h3>
+          <p>Text, code, links and images, with pins. It stays in memory unless you choose to keep it.</p>
+          <button class="try" data-try="clipboard">Try it <Icon name="arrow" /></button>
+        </div>
+      </article>
+
+      <article class="card f-search">
+        <div class="viz">
+          <div class="v-search"><Icon name="search" /><span>deploy<i class="v-caret"></i></span></div>
+          <div class="v-hit"><Icon name="bell" class="i acc" /><span>Deploy to staging failed</span><small>Notifications</small></div>
+          <div class="v-hit"><Icon name="copy" class="i acc" /><span>npm run deploy -- --prod</span><small>Clipboard</small></div>
+        </div>
+        <div class="txt">
+          <h3>One box for everything.</h3>
+          <p>Clipboard, files, notes, notifications, tasks, tabs and settings. <kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>F</kbd> from anywhere.</p>
+        </div>
+      </article>
+
+      <article class="card f-game">
+        <div class="viz game">
+          <div class="v-bar"><b>Midnight City</b> · M83 <span><em>CPU</em> 13%</span><span class="opt"><em>GPU</em> 61% 71°C</span><span><em>RAM</em> 21.2/31.9 GB</span><b>21:09</b></div>
+        </div>
+        <div class="txt">
+          <h3>Game on. Notch off.</h3>
+          <p>When a game or fullscreen video runs, the notch shrinks to one quiet line of status. No hover, no pop-ups, clicks go straight through.</p>
+          <button class="try" data-try="game">Try it <Icon name="arrow" /></button>
+        </div>
+      </article>
+
+      <article class="card f-mic">
+        <div class="viz">
+          <div class="v-pill"><Icon name="mic" class="i warn" /><Icon name="camera" class="i warn" /><span class="dim">In a call</span><span><em>CPU</em> 9%</span><b>10:02</b></div>
+        </div>
+        <div class="txt">
+          <h3>Know when you are on.</h3>
+          <p>A glyph in the pill while any app uses your microphone or camera. Notifications stay quiet during calls.</p>
+        </div>
+      </article>
+
+      <article class="card f-ai">
+        <div class="viz">
+          <div class="v-usage"><span>Claude Code · 5h</span><i class="v-track"><i style="width:62%"></i></i><small>62%</small></div>
+          <div class="v-usage"><span>Codex · week</span><i class="v-track"><i style="width:28%"></i></i><small>28%</small></div>
+        </div>
+        <div class="txt">
+          <h3>Your AI apps, on two keys.</h3>
+          <p>Launch them with <kbd>Alt</kbd> <kbd>1</kbd> to <kbd>6</kbd>, and see your Claude Code and Codex usage limits.</p>
+        </div>
+      </article>
+
+      <article class="card f-extras">
+        <div class="txt">
+          <h3>And the small things you reach for all day.</h3>
+          <ul class="extras">
+            {extras.map(x => <li><Icon name={x.icon} />{x.label}</li>)}
+          </ul>
+          <p>Drag the pill sideways to get it out of the way of your tabs, and it remembers the spot for each app. Drag cards to rearrange the Home grid. Copy your whole setup as one line of text and paste it on another PC.</p>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<script>
+  // The small app pieces in these cards work too.
+  document.querySelector('[data-v="stop"]')?.addEventListener('click', e => {
+    const b = e.currentTarget as HTMLButtonElement;
+    b.closest('.v-row')!.classList.add('stopped');
+    b.textContent = 'Stopped';
+    b.disabled = true;
+  });
+  document.querySelector('[data-v="play"]')?.addEventListener('click', e => (e.currentTarget as HTMLElement).classList.toggle('paused'));
+
+  document.querySelectorAll<HTMLElement>('[data-try]').forEach(b => b.addEventListener('click', () => {
+    document.getElementById('demo')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setTimeout(() => document.querySelector<HTMLElement>(`[data-scenario="${b.dataset.try}"]`)?.click(), 500);
+  }));
+</script>
+
+<style>
+  .bento {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 16px;
+  }
+
+  .bento .card {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    padding: 14px;
+    overflow: hidden;
+  }
+
+  .f-agents { grid-column: span 4; }
+  .f-notify { grid-column: span 2; }
+  .f-media, .f-clip, .f-search { grid-column: span 2; }
+  .f-game, .f-mic { grid-column: span 3; }
+  .f-ai { grid-column: span 2; }
+  .f-extras { grid-column: span 4; justify-content: center; }
+
+  .txt {
+    padding: 0 12px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
+  }
+
+  .txt p {
+    color: var(--ink-2);
+    font-size: 15.5px;
+  }
+
+  .txt kbd {
+    height: 22px;
+    min-width: 22px;
+    padding: 0 6px;
+    font-size: 11.5px;
+    vertical-align: 1px;
+  }
+
+  .try {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent);
+  }
+
+  .try :global(.i) {
+    width: 15px;
+    height: 15px;
+    transition: transform 0.15s ease;
+  }
+
+  .try:hover :global(.i) { transform: translateX(3px); }
+
+  /* Mini app UI */
+  .viz {
+    --t1: #f4f4f7;
+    --t2: #a1a1ad;
+    --t3: #6f6f7b;
+    --acc: #5b9dff;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 6px;
+    min-height: 184px;
+    padding: 18px;
+    border-radius: 12px;
+    background:
+      radial-gradient(80% 120% at 50% 130%, rgba(91, 157, 255, 0.35), transparent 70%),
+      #0b0b0d;
+    color: var(--t1);
+    font: 13px/1.4 'Segoe UI Variable Text', 'Segoe UI', 'Inter Variable', system-ui, sans-serif;
+  }
+
+  .viz :global(.i) { width: 1em; height: 1em; }
+  .viz :global(.acc), .viz .acc { color: var(--acc); }
+  .viz :global(.warn), .viz .warn { color: #ffb74d; }
+  .viz .dim { color: var(--t2); }
+
+  .v-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 12px;
+    border-radius: 11px;
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .v-row > div { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .v-row b { font-weight: 600; }
+  .v-row span { color: var(--t2); font-size: 12.5px; }
+  .v-row em { font-style: normal; font-size: 12.5px; color: var(--t2); }
+  .v-row.thin { padding: 7px 12px; }
+
+  .v-ico {
+    width: 32px;
+    height: 32px;
+    flex: none;
+    display: grid;
+    place-items: center;
+    border-radius: 9px;
+    font-size: 17px;
+    background: rgba(76, 217, 140, 0.14);
+    color: #4cd98c;
+  }
+
+  .v-ico.warn { background: rgba(255, 183, 77, 0.14); color: #ffb74d; }
+
+  .v-chip {
+    align-self: flex-start;
+    margin-top: 4px;
+    padding: 1px 8px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.07);
+    color: var(--t2);
+    font-size: 11.5px;
+    font-style: normal;
+  }
+
+  .v-row.stopped { opacity: 0.45; }
+  .v-play .pl, .v-play.paused .pa { display: none; }
+  .v-play.paused .pl { display: contents; }
+  .v-play .pa { display: contents; }
+
+  .v-btn {
+    cursor: pointer;
+    padding: 4px 12px;
+    border-radius: 7px;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--t1) !important;
+  }
+
+  .viz.code code {
+    font: 12px/1.6 var(--mono);
+    color: #d6d6de;
+    word-break: break-word;
+  }
+
+  .c-k { color: #5b9dff; }
+  .c-s { color: #4cd98c; }
+  .c-f { color: #a1a1ad; }
+
+  .v-toast {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+    padding: 10px;
+    border-radius: 12px;
+    background: #141418;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    animation: pop 3.6s ease infinite;
+  }
+
+  .v-toast div { display: flex; flex-direction: column; }
+  .v-toast span { color: var(--t2); font-size: 12px; }
+
+  @keyframes pop {
+    0%, 12% { opacity: 0; transform: translateY(-6px); }
+    20%, 85% { opacity: 1; transform: none; }
+    100% { opacity: 0; }
+  }
+
+  .v-media {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .v-media > div { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .v-media b { font-size: 15px; font-weight: 600; }
+  .v-media div > span { color: var(--t2); }
+
+  .v-art {
+    width: 64px;
+    height: 64px;
+    flex: none;
+    border-radius: 11px;
+    background: linear-gradient(140deg, #ff6aa2, #8a5cff 50%, #1e2a6e);
+  }
+
+  .v-play {
+    cursor: pointer;
+    width: 42px;
+    height: 42px;
+    flex: none;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--acc);
+    color: #0b0b0d;
+    font-size: 18px;
+  }
+
+  .v-play :global(svg) { stroke-width: 3; }
+
+  .v-track {
+    display: block;
+    height: 4px;
+    margin-top: 8px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.12);
+    overflow: hidden;
+  }
+
+  .v-track i { display: block; height: 100%; background: var(--acc); border-radius: 4px; }
+
+  .v-clip {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  .v-clip code { font: 12px var(--mono); }
+
+  .v-sw {
+    display: inline-block;
+    width: 11px;
+    height: 11px;
+    margin-right: 6px;
+    border-radius: 3px;
+    background: #5b9dff;
+    vertical-align: -1px;
+  }
+
+  .v-search {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 40px;
+    padding: 0 12px;
+    margin-bottom: 4px;
+    border-radius: 11px;
+    border: 1px solid rgba(91, 157, 255, 0.55);
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--t2);
+    font-size: 15px;
+  }
+
+  .v-search span { color: var(--t1); font-size: 13.5px; }
+
+  .v-caret {
+    display: inline-block;
+    width: 1.5px;
+    height: 15px;
+    margin-left: 1px;
+    vertical-align: -3px;
+    background: var(--t1);
+    animation: blink 1s steps(1) infinite;
+  }
+
+  @keyframes blink { 50% { opacity: 0; } }
+
+  .v-hit {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 10px;
+    border-radius: 8px;
+  }
+
+  .v-hit:first-of-type { background: rgba(255, 255, 255, 0.06); }
+  .v-hit span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .v-hit small { color: var(--t3); font-size: 11.5px; }
+
+  .viz.game {
+    align-items: center;
+    background:
+      linear-gradient(180deg, transparent 55%, rgba(255, 61, 141, 0.35)),
+      linear-gradient(180deg, #120533, #3a0d63 70%, #8a1f6a);
+  }
+
+  .v-bar, .v-pill {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    align-self: center;
+    white-space: nowrap;
+    background: #0b0b0d;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 0;
+    position: absolute;
+    top: 0;
+  }
+
+  .v-bar {
+    height: 28px;
+    padding: 0 16px;
+    border-radius: 0 0 11px 11px;
+    font-size: 11.5px;
+    background: rgba(20, 20, 26, 0.92);
+  }
+
+  .v-bar em, .v-pill em { font-style: normal; color: var(--t2); }
+  .v-bar b { font-weight: 600; }
+
+  .v-pill {
+    height: 38px;
+    padding: 0 16px;
+    border-radius: 0 0 15px 15px;
+    font-size: 13px;
+  }
+
+  .v-pill :global(.i) { font-size: 16px; }
+  .v-pill b { font-weight: 600; }
+
+  .f-mic .viz, .f-game .viz { min-height: 150px; }
+
+  .f-mic .viz::after {
+    content: '';
+    position: absolute;
+    inset: 56px 18px 18px;
+    border-radius: 10px;
+    background:
+      radial-gradient(circle at 30% 50%, rgba(255, 255, 255, 0.14) 0 22px, transparent 23px),
+      radial-gradient(circle at 70% 50%, rgba(255, 255, 255, 0.1) 0 22px, transparent 23px),
+      rgba(255, 255, 255, 0.04);
+  }
+
+  .v-usage {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 4px 10px;
+    padding: 8px 4px;
+  }
+
+  .v-usage span { color: var(--t2); font-size: 12.5px; }
+  .v-usage .v-track { grid-column: 1 / -1; margin: 0; order: 3; }
+  .v-usage small { font-weight: 600; }
+
+  .f-extras .txt { padding: 18px; gap: 16px; }
+
+  .extras {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .extras li {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 38px;
+    padding: 0 14px;
+    border-radius: 10px;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    font-size: 14.5px;
+    font-weight: 500;
+  }
+
+  .extras :global(.i) { width: 17px; height: 17px; color: var(--accent); }
+
+  @media (max-width: 960px) {
+    .bento { grid-template-columns: repeat(2, 1fr); }
+    .bento .card { grid-column: span 1; }
+    .f-agents, .f-extras { grid-column: 1 / -1 !important; }
+  }
+
+  @media (max-width: 620px) {
+    .v-bar .opt { display: none; }
+    .v-bar { gap: 10px; padding: 0 12px; }
+    .bento { grid-template-columns: 1fr; }
+    .bento .card { grid-column: 1 / -1 !important; }
+  }
+</style>

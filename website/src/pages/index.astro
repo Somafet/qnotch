@@ -1,0 +1,561 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import Demo from '../components/Demo.astro';
+import Features from '../components/Features.astro';
+import OpenSource from '../components/OpenSource.astro';
+
+const GH = 'https://github.com/Somafet/qnotch';
+const DL = `${GH}/releases/latest`;
+
+const numbers = [
+  { v: '0.08%', l: 'of one core, idle' },
+  { v: '42 MB', l: 'of memory, idle' },
+  { v: '1 exe', l: 'native WPF, no web view' },
+  { v: '0', l: 'cost for what you turn off' },
+];
+
+const keys = [
+  { k: ['Ctrl', 'Alt', 'N'], l: 'Open or close the panel' },
+  { k: ['Ctrl', 'Alt', 'F'], l: 'Search' },
+  { k: ['Ctrl', 'Alt', 'G'], l: 'Game mode: Auto, On, Off' },
+  { k: ['Alt', '1-6'], l: 'Launch the AI app in that slot' },
+  { k: ['Esc'], l: 'Close the panel' },
+];
+
+const privacy = [
+  { icon: 'shield', t: 'No account, no cloud.', d: 'Settings, notes and logs live in %APPDATA%\\QNotch on your PC.' },
+  { icon: 'bolt', t: 'Secrets stay secret.', d: 'Tokens go in Windows Credential Manager, never in a file.' },
+  { icon: 'copy', t: 'Clipboard in memory.', d: 'History is kept in memory unless you choose to keep it.' },
+  { icon: 'link', t: 'Online for two things.', d: 'Your GitHub graph once you add a token, and Claude Code usage limits. Both are in Settings, and both can be turned off.' },
+] as const;
+
+const faq = [
+  { q: 'Is it really free?', a: 'Yes. QNotch is MIT licensed: no account, no subscription, no trial. The whole source is on GitHub.' },
+  { q: 'Windows says "Windows protected your PC". Is that normal?', a: 'The exe is not code-signed yet, so SmartScreen does not know it. Click More info, then Run anyway. Or build it yourself from source with the .NET 10 SDK.' },
+  { q: 'Which download do I need?', a: 'QNotch-self-contained.zip (80 MB) runs as is. QNotch.exe (27 MB) is smaller but needs the .NET 10 Desktop Runtime.' },
+  { q: 'Does it work on Windows 10?', a: 'Yes. It needs Windows 10 version 2004 or newer, on x64.' },
+  { q: 'Will it get in the way of my games?', a: 'No. When a game or fullscreen video is in front, Game mode shrinks the notch to one line of status, turns off hover and lets clicks pass straight through. Ctrl+Alt+G cycles Auto, On and Off.' },
+  { q: 'How does the Agents tab know what Claude Code is doing?', a: "One click in Settings, Agents adds a hook to Claude Code's settings.json, with a backup. The hook talks to QNotch over a local pipe. Token counts come from the transcripts Claude Code already keeps on your PC." },
+  { q: 'Is the cost what I am billed?', a: 'It is what those tokens would cost at API list prices. A Pro or Max plan is not billed per token, so think of it as a gauge.' },
+  { q: 'Can I put it on my other monitor?', a: 'Yes. Pick the monitor in Settings, General. It follows DPI changes without a restart.' },
+  { q: 'How do I add a feature of my own?', a: 'Open an issue with a sentence on what it does and where it shows, then build it in its own folder under src/QNotch/Modules. The contributing guide walks through it.' },
+];
+---
+<Base
+  title="QNotch: a notch for Windows 11"
+  description="A slim pill at the top of your screen with what's playing, system stats and your coding agents. Hover it for everything else. Free and open source."
+>
+  <header class="nav">
+    <div class="wrap nav-in">
+      <a class="logo" href="#top" aria-label="QNotch home"><span class="logo-mark"><i></i></span>QNotch</a>
+      <nav class="nav-links" aria-label="Sections">
+        <a href="#demo">Demo</a>
+        <a href="#features">Features</a>
+        <a href="#open-source">Open source</a>
+        <a href="#faq">FAQ</a>
+      </nav>
+      <div class="nav-cta">
+        <a class="gh-link" href={GH} aria-label="QNotch on GitHub"><Icon name="github" /></a>
+        <a class="btn btn-primary btn-sm" href={DL}><Icon name="download" />Download</a>
+      </div>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="wrap center">
+        <a class="badge" href={GH}><span class="badge-dot"></span>Free and open source<span class="sep">·</span>MIT</a>
+        <h1>Windows 11 has no <span class="grad">notch</span>.<br />Now it does.</h1>
+        <p class="lead hero-lead">A slim pill at the top of your screen shows what's playing, your system stats and your coding agents. Hover it and it opens into a panel with everything else.</p>
+        <div class="hero-cta">
+          <a class="btn btn-primary" href={DL}><Icon name="windows" />Download for Windows</a>
+          <a class="btn btn-ghost" href={GH}><Icon name="github" />Star on GitHub</a>
+        </div>
+        <p class="fine">Free, no account · Windows 10 2004 or newer, x64 · 27 MB</p>
+      </div>
+      <div class="wrap demo-wrap">
+        <Demo />
+      </div>
+    </section>
+
+    <section class="numbers-sec">
+      <div class="wrap">
+        <div class="numbers-head">
+          <h2 class="h2-sm">Built to stay out of the way.</h2>
+          <p>Measured on Windows 11, collapsed and idle. No Electron, no browser engine, no polling.</p>
+        </div>
+        <ul class="numbers">
+          {numbers.map(n => <li><b>{n.v}</b><span>{n.l}</span></li>)}
+        </ul>
+      </div>
+    </section>
+
+    <Features />
+
+    <section class="keys-sec">
+      <div class="wrap keys-grid">
+        <div>
+          <span class="eyebrow">Hotkeys</span>
+          <h2 class="h2-sm">Keyboard first, if you like.</h2>
+          <p class="lead">Every shortcut works from any app, and you can change them in Settings, Hotkeys. They work on the demo above too.</p>
+        </div>
+        <ul class="keys">
+          {keys.map(r => (
+            <li><span class="kk">{r.k.map(k => <kbd>{k}</kbd>)}</span><span>{r.l}</span></li>
+          ))}
+        </ul>
+      </div>
+    </section>
+
+    <OpenSource gh={GH} />
+
+    <section class="privacy">
+      <div class="wrap">
+        <div class="section-head center">
+          <span class="eyebrow">Privacy</span>
+          <h2>Stays on your PC.</h2>
+          <p class="lead">QNotch shows you your own machine. Apart from the two things below, nothing leaves it, and the code is there to check.</p>
+        </div>
+        <ul class="priv">
+          {privacy.map(p => <li class="card"><Icon name={p.icon} /><b>{p.t}</b><p>{p.d}</p></li>)}
+        </ul>
+      </div>
+    </section>
+
+    <section class="faq-sec" id="faq">
+      <div class="wrap faq-grid">
+        <div>
+          <span class="eyebrow">Questions</span>
+          <h2 class="h2-sm">Good to know.</h2>
+          <p class="lead">Anything else? <a class="inline" href={`${GH}/issues`}>Ask on GitHub</a>.</p>
+        </div>
+        <div class="faq">
+          {faq.map(f => (
+            <details>
+              <summary>{f.q}<span class="plus" aria-hidden="true"></span></summary>
+              <p>{f.a}</p>
+            </details>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section class="final">
+      <div class="wrap center">
+        <div class="final-pill" aria-hidden="true"><span></span></div>
+        <h2>Give the top of your screen<br />something to do.</h2>
+        <div class="hero-cta">
+          <a class="btn btn-primary" href={DL}><Icon name="windows" />Download for Windows</a>
+          <a class="btn btn-ghost" href={GH}><Icon name="github" />View the source</a>
+        </div>
+        <p class="fine">Free and open source · MIT license</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div class="wrap foot-in">
+      <span class="logo small"><span class="logo-mark"><i></i></span>QNotch</span>
+      <nav aria-label="Footer">
+        <a href={GH}>GitHub</a>
+        <a href={`${GH}/releases`}>Releases</a>
+        <a href={`${GH}/blob/main/CONTRIBUTING.md`}>Contributing</a>
+        <a href={`${GH}/blob/main/SECURITY.md`}>Security</a>
+        <a href={`${GH}/blob/main/LICENSE`}>MIT license</a>
+      </nav>
+    </div>
+  </footer>
+</Base>
+
+<style>
+  .nav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    backdrop-filter: saturate(1.4) blur(16px);
+    background: color-mix(in srgb, var(--bg) 78%, transparent);
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s ease;
+  }
+
+  .nav-in {
+    display: flex;
+    align-items: center;
+    height: 64px;
+    gap: 24px;
+  }
+
+  .logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    font-size: 17px;
+    letter-spacing: -0.02em;
+  }
+
+  .logo-mark {
+    position: relative;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: var(--mark);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+  }
+
+  .logo-mark i {
+    position: absolute;
+    left: 6px;
+    right: 6px;
+    top: 0;
+    height: 9px;
+    border-radius: 0 0 5px 5px;
+    background: #f4f4f7;
+  }
+
+  .logo-mark i::after {
+    content: '';
+    position: absolute;
+    right: 3px;
+    top: 3px;
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: #5b9dff;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 28px;
+    margin-inline: auto;
+    font-size: 15px;
+    color: var(--ink-2);
+  }
+
+  .nav-links a:hover { color: var(--ink); }
+
+  .nav-cta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .gh-link {
+    width: 38px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    color: var(--ink-2);
+  }
+
+  .gh-link:hover { color: var(--ink); background: var(--bg-2); }
+  .gh-link :global(.i) { width: 20px; height: 20px; }
+
+  .hero { padding-top: clamp(48px, 8vw, 96px); padding-bottom: clamp(64px, 9vw, 120px); }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 32px;
+    padding: 0 14px;
+    border-radius: 999px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--ink-2);
+    margin-bottom: 28px;
+  }
+
+  .badge-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--ok);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 22%, transparent);
+  }
+
+  .sep { color: var(--ink-3); }
+
+  h1 {
+    font-size: clamp(42px, 7.6vw, 96px);
+    letter-spacing: -0.05em;
+    line-height: 0.98;
+  }
+
+  .grad {
+    background: linear-gradient(100deg, #3b82f6 10%, #7a5cff 60%, #b45cff);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    padding-right: 0.04em;
+  }
+
+  .hero-lead { margin-top: 26px; }
+
+  .hero-cta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 34px;
+  }
+
+  .fine {
+    margin-top: 16px;
+    font-size: 13.5px;
+    color: var(--ink-3);
+  }
+
+  .demo-wrap {
+    margin-top: clamp(56px, 8vw, 88px);
+    scroll-margin-top: 90px;
+  }
+
+  .h2-sm { font-size: clamp(32px, 4.2vw, 48px); }
+
+  .numbers-sec { padding-top: 0; }
+
+  .numbers-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px 40px;
+    padding-bottom: 28px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .numbers-head p { color: var(--ink-2); max-width: 420px; }
+
+  .numbers {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .numbers li {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 32px 24px 0 0;
+  }
+
+  .numbers li + li { padding-left: 24px; border-left: 1px solid var(--line); }
+
+  .numbers b {
+    font-size: clamp(40px, 5vw, 60px);
+    font-weight: 700;
+    letter-spacing: -0.045em;
+    line-height: 1;
+  }
+
+  .numbers span { color: var(--ink-2); font-size: 15px; }
+
+  .keys-sec { padding-top: 0; }
+
+  .keys-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+    align-items: center;
+  }
+
+  .keys-grid .lead { margin-top: 16px; }
+
+  .keys {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-radius: var(--radius);
+    background: var(--card);
+    border: 1px solid var(--line);
+    box-shadow: var(--shadow);
+  }
+
+  .keys li {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 16px 22px;
+  }
+
+  .keys li + li { border-top: 1px solid var(--line); }
+
+  .kk {
+    display: flex;
+    gap: 5px;
+    min-width: 150px;
+  }
+
+  .keys kbd { height: 30px; min-width: 30px; font-size: 13px; }
+  .keys li > span:last-child { color: var(--ink-2); font-size: 15.5px; }
+
+  .priv {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .priv li {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 24px;
+  }
+
+  .priv :global(.i) {
+    width: 22px;
+    height: 22px;
+    color: var(--accent);
+    margin-bottom: 12px;
+  }
+
+  .priv b { font-size: 16.5px; letter-spacing: -0.01em; }
+  .priv p { color: var(--ink-2); font-size: 15px; }
+
+  .faq-sec { padding-top: 0; }
+
+  .faq-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.6fr;
+    gap: 48px;
+  }
+
+  .faq-grid .lead { margin-top: 16px; }
+
+  .inline {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .faq details {
+    border-bottom: 1px solid var(--line);
+  }
+
+  .faq details:first-child { border-top: 1px solid var(--line); }
+
+  summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 20px 0;
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  summary::-webkit-details-marker { display: none; }
+
+  .plus {
+    position: relative;
+    width: 14px;
+    height: 14px;
+    flex: none;
+  }
+
+  .plus::before,
+  .plus::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 6px;
+    width: 14px;
+    height: 2px;
+    border-radius: 1px;
+    background: var(--ink-3);
+    transition: transform 0.2s ease;
+  }
+
+  .plus::after { transform: rotate(90deg); }
+  details[open] .plus::after { transform: rotate(0); }
+
+  details p {
+    padding: 0 40px 22px 0;
+    color: var(--ink-2);
+  }
+
+  .final { padding-top: 0; }
+
+  .final .wrap { border-top: 1px solid var(--line-2); }
+
+  .final h2 { font-size: clamp(36px, 6vw, 72px); letter-spacing: -0.045em; }
+
+  .final-pill {
+    width: 168px;
+    height: 34px;
+    margin: 0 auto 56px;
+    border-radius: 0 0 16px 16px;
+    background: #0b0b0d;
+    box-shadow: 0 16px 34px -12px rgba(0, 0, 0, 0.45);
+    display: grid;
+    place-items: center;
+  }
+
+  .final-pill span {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #5b9dff;
+    margin-left: 110px;
+    animation: breathe 2.4s ease infinite;
+  }
+
+  @keyframes breathe { 50% { opacity: 0.35; } }
+
+  .foot {
+    border-top: 1px solid var(--line);
+    padding: 28px 0 40px;
+  }
+
+  .foot-in {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .logo.small { font-size: 15px; }
+  .logo.small .logo-mark { width: 24px; height: 24px; }
+
+  .foot nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 24px;
+    font-size: 14px;
+    color: var(--ink-2);
+  }
+
+  .foot a:hover { color: var(--ink); }
+
+  @media (max-width: 960px) {
+    .keys-grid, .faq-grid { grid-template-columns: 1fr; gap: 32px; }
+    .priv { grid-template-columns: repeat(2, 1fr); }
+    .numbers { grid-template-columns: repeat(2, 1fr); }
+    .numbers li:nth-child(3) { padding-left: 0; border-left: 0; }
+  }
+
+  @media (max-width: 720px) {
+    .nav-links { display: none; }
+    .nav-cta { margin-left: auto; }
+  }
+
+  @media (max-width: 560px) {
+    .priv { grid-template-columns: 1fr; }
+    .hero-cta .btn { width: 100%; justify-content: center; }
+    .kk { min-width: 120px; }
+    .keys li { padding: 14px 16px; gap: 14px; }
+  }
+</style>

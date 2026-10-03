@@ -1,0 +1,462 @@
+---
+import Icon from './Icon.astro';
+
+interface Props { gh: string }
+const { gh } = Astro.props;
+
+const slots = [
+  { icon: 'grid', name: 'Cards', where: 'A tile on the Home grid' },
+  { icon: 'tabs', name: 'Tabs', where: 'A page in the panel' },
+  { icon: 'pill', name: 'Segments', where: 'The pill, the glance strip, the game bar' },
+  { icon: 'search', name: 'Search sources', where: 'Results in the one search box' },
+  { icon: 'sliders', name: 'Settings', where: 'Its own settings page' },
+] as const;
+
+const toggles = [
+  { id: 'media', label: 'Now playing', on: true },
+  { id: 'agents', label: 'Agents', on: true },
+  { id: 'notifications', label: 'Notifications', on: true },
+  { id: 'timer', label: 'Timer', on: true },
+  { id: 'stats', label: 'System stats', on: true },
+] as const;
+
+const csharp = "<span class=\"k\">public sealed class</span> <span class=\"t\">WeatherModule</span> : <span class=\"t\">INotchModule</span>\n{\n    <span class=\"k\">public void</span> <span class=\"m\">Initialize</span>(<span class=\"t\">ModuleContext</span> ctx)\n    {\n        <span class=\"c\">// A tile on the Home grid</span>\n        ctx.Cards.<span class=\"m\">Register</span>(<span class=\"k\">new</span>(<span class=\"s\">\"weather\"</span>, <span class=\"s\">\"Weather\"</span>,\n            DefaultOrder: <span class=\"n\">35</span>, () =&gt; <span class=\"k\">new</span> <span class=\"t\">WeatherCard</span>()));\n\n        <span class=\"c\">// Today's temperature in the pill</span>\n        ctx.Segments.<span class=\"m\">Register</span>(<span class=\"k\">new</span>(<span class=\"s\">\"weather.pill\"</span>,\n            <span class=\"t\">SegmentSlot</span>.PillRight, Order: <span class=\"n\">8</span>, <span class=\"t\">WeatherSegments</span>.Pill));\n    }\n}";
+
+const steps = [
+  { t: 'Open an issue', d: 'Say what it does and where it shows: a card, a tab, the pill or the game bar. Space is limited, so agree on that first.' },
+  { t: 'Build in your folder', d: 'Everything lives in Modules/<Name>/. One line in ModuleList.cs is the only change outside it.' },
+  { t: 'Snapshot it', d: 'QNotch.exe --snapshot renders every tab and settings page to PNG. CI builds and snapshots every pull request.' },
+  { t: 'Send the pull request', d: 'Attach the PNGs and your idle CPU and memory numbers. The performance rules are hard limits.' },
+];
+---
+<section class="os" id="open-source">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Open source · MIT</span>
+      <h2>A feature is a folder.</h2>
+      <p class="lead">QNotch is a small shell and fifteen extensions. Each one lives in its own folder and plugs into five slots. Read every line, change what you don't like, or add the thing you wish it did.</p>
+    </div>
+
+    <div class="os-grid">
+      <div class="panel tree" aria-label="Source layout">
+        <div class="panel-bar"><Icon name="folder" /> src/QNotch</div>
+<pre><span class="d">├─</span> Shell/            <span class="c">window, pill, panel, tray</span>
+<span class="d">├─</span> Theme/
+<span class="d">└─</span> Modules/
+   <span class="d">├─</span> <span class="h">ModuleList.cs</span>   <span class="c">the one file that names them</span>
+   <span class="d">├─</span> Agents/
+   <span class="d">├─</span> Clipboard/
+   <span class="d">├─</span> Media/
+   <span class="d">├─</span> Notifications/
+   <span class="d">├─</span> Stats/
+   <span class="d">├─</span> <span class="c">10 more</span>
+   <span class="d">└─</span> <span class="new">Weather/</span>        <span class="new-c">yours</span></pre>
+      </div>
+
+      <div class="panel code" aria-label="A minimal extension">
+        <div class="panel-bar"><Icon name="code" /> Modules/Weather/WeatherModule.cs</div>
+<pre set:html={csharp} />
+      </div>
+    </div>
+
+    <ul class="slots">
+      {slots.map(s => (
+        <li><Icon name={s.icon} /><b>{s.name}</b><span>{s.where}</span></li>
+      ))}
+    </ul>
+
+    <div class="off">
+      <div class="off-txt">
+        <h3>Off means off.</h3>
+        <p>Every extension has a switch in Settings, Features. One that is off is never constructed: no timers, no hooks, no memory. Try it.</p>
+        <div class="toggles" role="group" aria-label="Extensions">
+          {toggles.map(t => (
+            <label class="tg"><input type="checkbox" data-mod={t.id} checked={t.on} /><span class="sw"></span>{t.label}</label>
+          ))}
+        </div>
+      </div>
+      <div class="off-stage" aria-hidden="true">
+        <div class="mini-pill" data-minipill>
+          <span data-seg="media" class="seg"><span class="mi"><Icon name="music" /></span><b>Midnight City</b><span class="dim">M83</span></span>
+          <span data-seg="agents" class="seg"><i class="dot"></i><b>2 working</b></span>
+          <span data-seg="notifications" class="seg acc"><Icon name="bell" /><b>2</b></span>
+          <span data-seg="timer" class="seg acc"><Icon name="timer" /><b>18:42</b></span>
+          <span data-seg="stats" class="seg"><span class="dim">CPU</span>13% <span class="dim">RAM</span>21.3 GB</span>
+          <span class="seg"><b>13:09</b></span>
+        </div>
+        <p class="mem" data-mem></p>
+      </div>
+    </div>
+
+    <div class="contribute">
+      <h3>From idea to merged.</h3>
+      <ol class="steps">
+        {steps.map((s, i) => (
+          <li><span class="num">{i + 1}</span><b>{s.t}</b><p>{s.d}</p></li>
+        ))}
+      </ol>
+      <div class="links">
+        <a class="btn btn-light btn-sm" href={`${gh}/blob/main/CONTRIBUTING.md`}>Contributing guide <Icon name="arrow" /></a>
+        <a class="btn btn-line btn-sm" href={`${gh}/blob/main/ARCHITECTURE.md`}>Architecture</a>
+        <a class="btn btn-line btn-sm" href={`${gh}/issues/new/choose`}>Open an issue</a>
+      </div>
+    </div>
+
+    <div class="script">
+      <div>
+        <h3>No C# needed.</h3>
+        <p>Anything that can run a program can talk to the notch. Post from a build script, a hook or a cron job, add buttons, and read back which one was clicked.</p>
+        <a class="more" href={`${gh}/blob/main/docs/notifications.md`}>Notifications reference <Icon name="arrow" /></a>
+      </div>
+      <div class="ways">
+        <div><small>Command line</small><code>QNotch.exe notify "Deploy done" --app CI --level success</code></div>
+        <div><small>Named pipe</small><code>\\.\pipe\QNotch.Notify</code></div>
+        <div><small>Local HTTP</small><code>POST http://127.0.0.1:47821/notify</code></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  const pill = document.querySelector<HTMLElement>('[data-minipill]')!;
+  const mem = document.querySelector<HTMLElement>('[data-mem]')!;
+  const boxes = [...document.querySelectorAll<HTMLInputElement>('[data-mod]')];
+  function sync() {
+    for (const b of boxes) pill.querySelector<HTMLElement>(`[data-seg="${b.dataset.mod}"]`)!.classList.toggle('gone', !b.checked);
+    const off = boxes.filter(b => !b.checked).map(b => b.parentElement!.textContent!.trim());
+    mem.textContent = off.length ? `${off.join(', ')}: never loaded, nothing running.` : 'Everything on, and still about 42 MB while idle.';
+  }
+  boxes.forEach(b => b.addEventListener('change', sync));
+  sync();
+</script>
+
+<style>
+  .os {
+    --o-bg: #0b0b0d;
+    --o-ink: #f4f4f7;
+    --o-ink-2: #a1a1ad;
+    --o-ink-3: #6f6f7b;
+    --o-line: rgba(255, 255, 255, 0.09);
+    --o-card: #131317;
+    background:
+      radial-gradient(60% 50% at 80% 0%, rgba(91, 157, 255, 0.12), transparent 70%),
+      var(--o-bg);
+    color: var(--o-ink);
+    border-block: 1px solid var(--o-line);
+  }
+
+  .os .eyebrow { color: #6ea8ff; }
+  .os .lead { color: var(--o-ink-2); }
+
+  .os-grid {
+    display: grid;
+    grid-template-columns: 5fr 7fr;
+    gap: 16px;
+  }
+
+  .panel {
+    border-radius: 16px;
+    background: var(--o-card);
+    border: 1px solid var(--o-line);
+    overflow: hidden;
+    min-width: 0;
+  }
+
+  .panel-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 40px;
+    padding: 0 16px;
+    border-bottom: 1px solid var(--o-line);
+    color: var(--o-ink-2);
+    font-size: 13px;
+    font-family: var(--mono);
+  }
+
+  .panel-bar :global(.i) { width: 15px; height: 15px; }
+
+  pre {
+    margin: 0;
+    padding: 20px;
+    overflow-x: auto;
+    font-size: 13px;
+    line-height: 1.75;
+    color: #d6d6de;
+  }
+
+  .tree .d { color: var(--o-ink-3); }
+  .tree .c { color: var(--o-ink-3); }
+  .tree .h { color: #6ea8ff; }
+  .tree .new { color: #4cd98c; font-weight: 600; }
+  .tree .new-c {
+    padding: 1px 8px;
+    border-radius: 6px;
+    background: rgba(76, 217, 140, 0.14);
+    color: #4cd98c;
+    font-size: 11.5px;
+  }
+
+  .code :global(.k) { color: #c792ea; }
+  .code :global(.t) { color: #6ea8ff; }
+  .code :global(.m) { color: #82e0aa; }
+  .code :global(.s) { color: #ffcb6b; }
+  .code :global(.n) { color: #f78c6c; }
+  .code :global(.c) { color: var(--o-ink-3); font-style: italic; }
+
+  .slots {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    margin: 16px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .slots li {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 18px;
+    border-radius: 14px;
+    background: var(--o-card);
+    border: 1px solid var(--o-line);
+  }
+
+  .slots :global(.i) { width: 20px; height: 20px; color: #6ea8ff; margin-bottom: 10px; }
+  .slots b { font-size: 15px; }
+  .slots span { font-size: 13.5px; color: var(--o-ink-2); line-height: 1.4; }
+
+  .off {
+    display: grid;
+    grid-template-columns: 1fr 1.1fr;
+    gap: 40px;
+    align-items: center;
+    margin-top: clamp(64px, 9vw, 110px);
+  }
+
+  .off h3, .contribute h3, .script h3 { font-size: clamp(26px, 3vw, 34px); letter-spacing: -0.03em; }
+  .off p, .script p { margin-top: 12px; color: var(--o-ink-2); }
+
+  .toggles {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 22px;
+  }
+
+  .tg {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    height: 42px;
+    padding: 0 14px 0 10px;
+    border-radius: 12px;
+    background: var(--o-card);
+    border: 1px solid var(--o-line);
+    font-size: 14.5px;
+    font-weight: 500;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .tg input { position: absolute; opacity: 0; pointer-events: none; }
+
+  .sw {
+    position: relative;
+    width: 34px;
+    height: 20px;
+    border-radius: 10px;
+    border: 1.5px solid var(--o-ink-3);
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+
+  .sw::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: var(--o-ink-2);
+    transition: transform 0.18s cubic-bezier(0.3, 1.4, 0.5, 1), background 0.15s ease;
+  }
+
+  .tg input:checked + .sw { background: #5b9dff; border-color: #5b9dff; }
+  .tg input:checked + .sw::after { transform: translateX(14px); background: #0b0b0d; }
+  .tg input:focus-visible + .sw { outline: 2px solid #5b9dff; outline-offset: 2px; }
+
+  .off-stage {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    min-height: 220px;
+    border-radius: 18px;
+    overflow: hidden;
+    background:
+      radial-gradient(42% 70% at 50% 115%, #8ec0ff, transparent 70%),
+      radial-gradient(36% 70% at 28% 100%, #7a5cff, transparent 70%),
+      linear-gradient(180deg, #0a1128, #18307a);
+  }
+
+  .mini-pill {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    height: 38px;
+    padding: 0 16px;
+    max-width: 100%;
+    border-radius: 0 0 16px 16px;
+    background: #0b0b0d;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 0;
+    font: 13px 'Segoe UI Variable Text', 'Segoe UI', 'Inter Variable', sans-serif;
+    white-space: nowrap;
+    overflow: hidden;
+    box-shadow: 0 14px 30px -10px rgba(0, 0, 0, 0.6);
+  }
+
+  .seg {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 240px;
+    overflow: hidden;
+    transition: max-width 0.3s ease, opacity 0.2s ease, margin 0.3s ease;
+  }
+
+  .seg.gone { max-width: 0; opacity: 0; margin-left: -14px; }
+  .seg b { font-weight: 600; }
+  .seg :global(.i) { width: 15px; height: 15px; }
+  .seg.acc :global(.i) { color: #5b9dff; }
+  .dim { color: var(--o-ink-2); }
+
+  .mi {
+    width: 22px;
+    height: 22px;
+    display: grid;
+    place-items: center;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--o-ink-2);
+  }
+
+  .mi :global(.i) { width: 13px; height: 13px; }
+
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: #5b9dff; }
+
+  .mem {
+    position: absolute;
+    bottom: 18px;
+    left: 20px;
+    right: 20px;
+    text-align: center;
+    font-size: 13.5px;
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  .contribute { margin-top: clamp(64px, 9vw, 110px); }
+
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin: 26px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .steps li {
+    padding: 20px;
+    border-radius: 14px;
+    border: 1px solid var(--o-line);
+  }
+
+  .num {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    margin-bottom: 14px;
+    border-radius: 50%;
+    background: rgba(91, 157, 255, 0.16);
+    color: #6ea8ff;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .steps b { font-size: 15.5px; }
+  .steps p { margin-top: 6px; color: var(--o-ink-2); font-size: 14.5px; line-height: 1.5; }
+
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 24px;
+  }
+
+  .btn-light { background: #f4f4f7; color: #0b0b0d; }
+  .btn-line { border: 1px solid rgba(255, 255, 255, 0.2); color: var(--o-ink); }
+  .btn-line:hover { border-color: rgba(255, 255, 255, 0.4); }
+
+  .script {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr;
+    gap: 40px;
+    align-items: center;
+    margin-top: clamp(64px, 9vw, 110px);
+    padding: clamp(24px, 4vw, 40px);
+    border-radius: 20px;
+    background: var(--o-card);
+    border: 1px solid var(--o-line);
+  }
+
+  .more {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 16px;
+    color: #6ea8ff;
+    font-weight: 600;
+    font-size: 15px;
+  }
+
+  .more :global(.i) { width: 15px; height: 15px; }
+
+  .ways {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .ways div {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: var(--o-bg);
+    border: 1px solid var(--o-line);
+    min-width: 0;
+  }
+
+  .ways small { color: var(--o-ink-3); font-size: 12px; font-weight: 600; }
+  .ways code { font-size: 13px; color: #d6d6de; overflow-x: auto; white-space: nowrap; scrollbar-width: none; }
+
+  @media (max-width: 960px) {
+    .os-grid, .off, .script { grid-template-columns: 1fr; }
+    .slots { grid-template-columns: repeat(2, 1fr); }
+    .steps { grid-template-columns: repeat(2, 1fr); }
+    .off-stage { min-height: 200px; }
+  }
+
+  @media (max-width: 560px) {
+    .slots, .steps { grid-template-columns: 1fr; }
+    pre { font-size: 12px; padding: 16px; }
+    .mini-pill { gap: 10px; padding: 0 12px; font-size: 12px; }
+  }
+</style>
