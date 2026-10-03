@@ -86,6 +86,8 @@ public sealed class NotificationSettings
     public int ToastSeconds { get; set; } = 6;
     public int RetentionDays { get; set; } = 7;
     public bool OpenOnError { get; set; } = true;
+    /// <summary>While an app uses the microphone: no toasts and no automatic panel. The history and unread count still update.</summary>
+    public bool QuietDuringCalls { get; set; } = true;
     public bool HttpEnabled { get; set; } = true;
     public int HttpPort { get; set; } = 47821;
     /// <summary>Apps that still land in the history but never toast, count as unread or open the panel.</summary>
@@ -187,6 +189,9 @@ public sealed partial class NotificationsState : ObservableObject
     [ObservableProperty] Note? _toast;
     [ObservableProperty] string _pipeStatus = "Starting";
     [ObservableProperty] string _httpStatus = "Starting";
+    /// <summary>"Quiet now: Zoom is using the microphone." while a call keeps notifications quiet, otherwise empty.</summary>
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(IsQuiet))] string _quietStatus = "";
+    public bool IsQuiet => QuietStatus.Length > 0;
 
     /// <summary>Call after any change to Items or a read flag. Every write is set-if-changed.</summary>
     public void Recount()

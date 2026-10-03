@@ -1,6 +1,8 @@
 # Notifications reference
 
-Any app, script or agent can post a notification to QNotch. It shows as a toast under the pill, adds to the unread count, and stays in the Notifications tab. Settings, Notifications has the toast time, how long history is kept, per-app mute and the HTTP token.
+Any app, script or agent can post a notification to QNotch. It shows as a toast under the pill, adds to the unread count, and stays in the Notifications tab. Settings, Notifications has the toast time, how long history is kept, quiet during calls, per-app mute and the HTTP token.
+
+While an app uses the microphone (a call, a recording), notifications stay quiet: no toast, and an error does not open the panel. They still land in the history and count as unread. A notification that waits for an answer shows as soon as the call ends. Turn it off in Settings, Notifications, Quiet during calls.
 
 ## Command line
 
@@ -56,7 +58,7 @@ Only `title` is required.
 
 - `id`: posting the same id again replaces the notification, for progress updates. `{"op":"dismiss","id":"build-42"}` removes it.
 - `icon`: an image, an exe or shortcut (its icon is used), or one of: bell, info, check, warning, error, chat, code, link, clock, download, bolt, person, folder, globe, mail, play, build. Local paths only.
-- `level`: info, success, warning or error. An error opens the panel, except in Game mode. You can turn that off.
+- `level`: info, success, warning or error. An error opens the panel, except in Game mode or during a call. You can turn that off.
 - `ttl`: how many seconds the toast shows. 0 means no toast.
 - `actions`: up to three buttons.
   - `url` opens a link (http, https, vscode, vscode-insiders, cursor, claude).
