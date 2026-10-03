@@ -158,7 +158,7 @@ public partial class App : Application
         EventManager.RegisterClassHandler(typeof(PasswordBox), UIElement.PreviewMouseDownEvent, handler);
 
         if (snapDir is not null) { Snapshot.Run(snapDir, window, shell, tabs, sections, () => Shutdown()); return; }
-        _tray = new TrayIcon(window, shell, () => Shutdown());
+        _tray = new TrayIcon(window, shell, shortcuts, () => Shutdown());
         Log.Info($"Started in {(DateTime.Now - System.Diagnostics.Process.GetCurrentProcess().StartTime).TotalMilliseconds:0} ms");
     }
 
