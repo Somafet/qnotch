@@ -6,7 +6,7 @@ public static class Glyphs
     public const string Home = "";
     public const string Music = "";
     public const string Clipboard = "";
-    public const string Chat = "";
+    public const string Robot = "\uE99A";
     public const string Folder = "";
     public const string Settings = "";
     public const string Pin = "";

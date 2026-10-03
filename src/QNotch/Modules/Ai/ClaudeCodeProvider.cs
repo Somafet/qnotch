@@ -23,14 +23,39 @@ internal sealed class ClaudeCodeProvider : IUsageProvider
         ("five_hour", "5-hour"), ("seven_day", "Weekly"), ("seven_day_opus", "Weekly Opus"), ("seven_day_sonnet", "Weekly Sonnet"),
     ];
 
-    public string Id => "claude";
+    readonly string _dir;
+
+    ClaudeCodeProvider(string dir, string id, string account) { _dir = dir; Id = id; Account = account; }
+
+    public string Id { get; }
     public string Name => "Claude Code";
+    /// <summary>Account name until the user picks one: "Default" or the folder suffix.</summary>
+    public string Account { get; }
+    public string Dir => _dir;
+
+    /// <summary>One provider per account: the default config folder, plus every signed-in ~/.claude-* folder (accounts kept apart with CLAUDE_CONFIG_DIR).</summary>
+    public static List<ClaudeCodeProvider> Discover()
+    {
+        var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        var main = Environment.GetEnvironmentVariable("CLAUDE_CONFIG_DIR");
+        if (string.IsNullOrWhiteSpace(main)) main = Path.Combine(home, ".claude");
+        var list = new List<ClaudeCodeProvider> { new(main, "claude", "Default") };
+        try
+        {
+            foreach (var d in Directory.GetDirectories(home, ".claude-*").Order())
+            {
+                if (string.Equals(d, Path.TrimEndingDirectorySeparator(main), StringComparison.OrdinalIgnoreCase) || !File.Exists(Path.Combine(d, ".credentials.json"))) continue;
+                var tag = Path.GetFileName(d)[".claude-".Length..];
+                list.Add(new(d, "claude:" + tag, tag));
+            }
+        }
+        catch (Exception ex) { Log.Warn("Looking for Claude Code accounts failed", ex); }
+        return list;
+    }
 
     public async Task<UsageResult> FetchAsync(CancellationToken ct)
     {
-        var dir = Environment.GetEnvironmentVariable("CLAUDE_CONFIG_DIR");
-        if (string.IsNullOrWhiteSpace(dir)) dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".claude");
-        var file = Path.Combine(dir, ".credentials.json");
+        var file = Path.Combine(_dir, ".credentials.json");
         if (!File.Exists(file)) return UsageResult.Unavailable("Not signed in. Sign in to Claude Code to see usage.");
 
         string token, plan;

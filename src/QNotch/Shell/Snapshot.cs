@@ -1,4 +1,8 @@
+using System.Text;
 using System.Windows;
+using System.Windows.Automation;
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using QNotch.Core;
@@ -72,6 +76,8 @@ internal static class Snapshot
     static void Save(FrameworkElement el, Rect crop, string path, Brush background)
     {
         el.UpdateLayout();
+        // Off-screen the window has no monitor, so on a scaled display it is laid out wider than WinW: the notch stays centered.
+        if (el.ActualWidth > crop.Width) crop.X += (el.ActualWidth - crop.Width) / 2;
         int W(double v) => (int)Math.Ceiling(v * 2);
         var full = new RenderTargetBitmap(W(el.ActualWidth), W(el.ActualHeight), 192, 192, PixelFormats.Pbgra32);
         full.Render(el);
@@ -87,6 +93,46 @@ internal static class Snapshot
         enc.Frames.Add(BitmapFrame.Create(outBmp));
         using var fs = File.Create(path);
         enc.Save(fs);
+        File.WriteAllText(Path.ChangeExtension(path, ".txt"), Tree(el));
+    }
+
+    /// <summary>Text outline of what is visible in <paramref name="root"/>: controls with name, id and state, nested with their text.</summary>
+    static string Tree(DependencyObject root)
+    {
+        var sb = new StringBuilder();
+        Walk(root, 0);
+        return sb.ToString();
+
+        void Walk(DependencyObject o, int depth)
+        {
+            if (o is UIElement { Visibility: not Visibility.Visible } or ScrollBar) return;
+            var line = o switch
+            {
+                TextBlock t => t.Text.All(c => c is >= '' and <= '') ? null : $"\"{t.Text}\"", // skips empty and icon glyphs
+                PasswordBox => "[PasswordBox]",
+                TextBox t => $"[TextBox] \"{t.Text}\"",
+                RangeBase r => $"[{o.GetType().Name}] {r.Value:0.##} of {r.Maximum:0.##}",
+                ButtonBase or ListBoxItem or ComboBox => $"[{o.GetType().Name}]",
+                _ => null,
+            };
+            if (line is not null)
+            {
+                sb.Append(' ', depth * 2).Append(line);
+                if (o is Control c)
+                {
+                    var name = AutomationProperties.GetName(c) is { Length: > 0 } n ? n : c.ToolTip as string;
+                    if (name is not null) sb.Append($" \"{name}\"");
+                    if (AutomationProperties.GetAutomationId(c) is { Length: > 0 } id) sb.Append($" #{id}");
+                    if (o is ToggleButton { IsChecked: true }) sb.Append(" checked");
+                    if (o is ListBoxItem { IsSelected: true }) sb.Append(" selected");
+                    if (!c.IsEnabled) sb.Append(" disabled");
+                }
+                sb.AppendLine();
+                if (o is RangeBase or TextBox) return;
+                depth++;
+            }
+            for (int i = 0, n = VisualTreeHelper.GetChildrenCount(o); i < n; i++) Walk(VisualTreeHelper.GetChild(o, i), depth);
+        }
     }
 
     static Brush Frozen(Color c) { var b = new SolidColorBrush(c); b.Freeze(); return b; }

@@ -13,6 +13,7 @@ public sealed partial class GeneralSettings : ObservableObject
     [ObservableProperty] int _hoverDwellMs = 120;
     [ObservableProperty] int _leaveDelayMs = 400;
     [ObservableProperty] bool _pinned;
+    // Only the defaults of the "toggle" and "gamemode" shortcuts now (a value saved here before hotkeys.json existed still counts).
     [ObservableProperty] string _toggleHotkey = "Ctrl+Alt+N";
     [ObservableProperty] string _gameModeHotkey = "Ctrl+Alt+G";
     [ObservableProperty] string _accentColor = "#5B9DFF";
@@ -22,11 +23,6 @@ public sealed partial class GeneralSettings : ObservableObject
     [ObservableProperty] string _profileImagePath = "";
     [ObservableProperty] bool _startWithWindows;
     [ObservableProperty] string _lastTab = "home";
-
-    // Runtime only (never saved): the hotkey recorder in Settings suspends global hotkeys while it listens, and shows failed registrations.
-    [ObservableProperty] [property: JsonIgnore] bool _recordingHotkey;
-    [ObservableProperty] [property: JsonIgnore] bool _toggleHotkeyTaken;
-    [ObservableProperty] [property: JsonIgnore] bool _gameModeHotkeyTaken;
 
     /// <summary>Ids of modules the user turned off (Settings, Features). They are never created; a change applies on restart.</summary>
     public List<string> DisabledModules { get; set; } = new();

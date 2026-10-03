@@ -42,6 +42,9 @@
                                         <TextBlock Text="{Binding Plan}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}"/>
                                     </Border>
                                     <TextBlock Text="{Binding Name}" Style="{StaticResource Title}" VerticalAlignment="Center"/>
+                                    <ComboBox Style="{StaticResource AccountPicker}" ItemsSource="{Binding Accounts}" SelectedItem="{Binding Account}" DisplayMemberPath="Name"
+                                              ToolTip="Account" FontSize="12" Margin="8,1,0,0" DropDownOpened="OnAccountsOpened" DropDownClosed="OnAccountsClosed"
+                                              Visibility="{Binding HasAccounts, Converter={StaticResource BoolToVis}}"/>
                                     <TextBlock Text="{Binding UpdatedText}" Style="{StaticResource Muted}" VerticalAlignment="Center" Margin="8,1,8,0" TextTrimming="CharacterEllipsis"/>
                                 </DockPanel>
 
@@ -91,7 +94,7 @@
             <!-- Apps -->
             <DockPanel Margin="0,6,0,8">
                 <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="{x:Static theme:Glyphs.Refresh}" ToolTip="Scan for AI apps" Command="{Binding RescanCommand}" Height="28" Width="28"/>
-                <TextBlock DockPanel.Dock="Right" Text="Alt+1 to Alt+6 launch the numbered apps" Style="{StaticResource Muted}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                <TextBlock DockPanel.Dock="Right" Text="Numbered apps launch with a hotkey (Settings, Hotkeys)" Style="{StaticResource Muted}" VerticalAlignment="Center" Margin="0,0,8,0"/>
                 <TextBlock Text="Apps" Style="{StaticResource Title}" VerticalAlignment="Center"/>
             </DockPanel>
             <TextBlock Text="{Binding HotkeyWarning}" Foreground="{DynamicResource WarningBrush}" FontSize="11" Margin="0,0,0,8" TextWrapping="Wrap">

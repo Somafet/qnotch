@@ -24,7 +24,10 @@ public sealed class AiModule : INotchModule, ICadenceAware
     readonly AiState St = new();
     IUsageProvider[] _providers = [];
     readonly Dictionary<string, AiProviderItem> _items = new();
-    readonly HashSet<int> _registered = new();
+    readonly Dictionary<string, UsageResult> _results = new();
+    string _claudeId = "claude";
+    readonly Shell.Shortcut[] _keys = new Shell.Shortcut[AiSettings.SlotCount];
+    bool _applying;
     Timer? _startTimer, _usageTimer;
     bool _refreshing, _refreshAgain, _scanning;
 
@@ -42,16 +45,34 @@ public sealed class AiModule : INotchModule, ICadenceAware
         St.RescanCommand = new RelayCommand(Rescan);
         St.OpenSettingsCommand = new RelayCommand(() => ctx.Shell.OpenSettings("ai"));
 
-        _providers = [new ClaudeCodeProvider(), new CodexProvider()];
-        foreach (var p in _providers) _items[p.Id] = new AiProviderItem(p.Id, p.Name);
+        // Every Claude account is fetched, but they share one row: the dropdown picks which reading it shows.
+        var claude = ClaudeCodeProvider.Discover();
+        _providers = [.. claude, new CodexProvider()];
+        List<AiAccount> accounts = [.. claude.Select(p => new AiAccount(p.Id, _s.AccountNames.GetValueOrDefault(p.Id) ?? p.Account, p.Dir))];
+        var shown = accounts.FirstOrDefault(a => a.Id == _s.ClaudeAccount) ?? accounts[0];
+        _claudeId = shown.Id;
+        foreach (var p in _providers) _items.TryAdd(Group(p), new AiProviderItem(Group(p), p.Name));
+        _items["claude"] = new AiProviderItem("claude", claude[0].Name) { Accounts = accounts, Account = shown, AccountChanged = ShowClaudeAccount };
         ApplyProviderSelection();
         UpdateAppFlags();
         St.AppsEmptyText = "Looking for AI apps...";
 
-        ctx.Cards.Register(new CardDescriptor("ai-usage", "AI usage", 40, () => new AiUsageCard { DataContext = St }));
+        ctx.Cards.Register(new CardDescriptor("ai-usage", "AI usage", 40, () => new AiUsageCard(ctx.Shell) { DataContext = St }));
         ctx.Cards.Register(new CardDescriptor("ai-apps", "AI apps", 70, () => new AiAppsCard { DataContext = St }));
-        ctx.Tabs.Register(new TabDescriptor("ai", "AI", Glyphs.Chat, 30, () => new AiTab { DataContext = St }));
-        ctx.SettingsSections.Register(new SettingsSectionDescriptor("ai", "AI", Glyphs.Chat, 40, () => AiSettingsSection.Create(this, _ctx)));
+        ctx.Tabs.Register(new TabDescriptor("ai", "AI", Glyphs.Robot, 30, () => new AiTab(ctx.Shell) { DataContext = St }));
+        ctx.SettingsSections.Register(new SettingsSectionDescriptor("ai", "AI", Glyphs.Robot, 40, () => AiSettingsSection.Create(this, _ctx)));
+
+        // One shortcut per slot, off until the slot holds an app: an empty slot leaves its key to other apps.
+        for (var i = 0; i < AiSettings.SlotCount; i++)
+        {
+            var slot = i + 1;
+            _keys[i] = ctx.Shortcuts.Add($"ai.slot{slot}", $"Launch AI app {slot}", "The app in that slot (Settings, AI).", $"Alt+{slot}", () => LaunchSlot(slot), 30 + i, enabled: false);
+        }
+        ctx.Shortcuts.Changed += ApplySlots;
+
+        ctx.Search.Register(new SearchSource("ai-apps", "AI apps", Glyphs.Apps, 60, q => St.Apps
+            .Where(a => a.Name.Contains(q, StringComparison.OrdinalIgnoreCase))
+            .Select(a => new SearchHit(a.Name, "opens the app", () => Launch(a)))));
 
         ctx.Bus.Subscribe<AppsScanned>(OnScanned);
         ctx.Bus.Subscribe<ProviderResult>(OnProviderResult);
@@ -72,8 +93,21 @@ public sealed class AiModule : INotchModule, ICadenceAware
 
     // ---------- settings API (UI thread) ----------
 
-    internal IReadOnlyList<IUsageProvider> Providers => _providers;
+    /// <summary>One entry per usage row: Claude accounts share the "claude" toggle.</summary>
+    internal IReadOnlyList<IUsageProvider> Providers => [.. _providers.Where(p => p.Id == Group(p))];
     internal bool IsProviderEnabled(string id) => _s.IsEnabled(id);
+    internal IReadOnlyList<AiAccount> ClaudeAccounts => _items["claude"].Accounts;
+
+    /// <summary>An empty name goes back to the folder's own name.</summary>
+    internal void RenameAccount(AiAccount a, string name)
+    {
+        name = name.Trim();
+        if (name.Length == 0) { _s.AccountNames.Remove(a.Id); name = _providers.OfType<ClaudeCodeProvider>().First(p => p.Id == a.Id).Account; }
+        else _s.AccountNames[a.Id] = name;
+        if (a.Name == name) return;
+        a.Name = name;
+        Save();
+    }
     internal IReadOnlyList<CustomApp> CustomApps => _s.Custom;
     internal IReadOnlyList<string> Slots => _s.Slots;
     internal AiState State => St;
@@ -187,28 +221,25 @@ public sealed class AiModule : INotchModule, ICadenceAware
         if (changed) Save();
     }
 
-    /// <summary>Applies slot ids to items and registers Alt+N lazily: only slots that hold an app own a hotkey.</summary>
+    /// <summary>Applies slot ids to items and turns each slot's shortcut on or off: only slots that hold an app own a hotkey.</summary>
     void ApplySlots()
     {
-        foreach (var a in St.Apps) { a.Slot = 0; a.HotkeyConflict = false; }
+        if (_applying) return; // Enable below raises Shortcuts.Changed
+        _applying = true;
+        foreach (var a in St.Apps) { a.Slot = 0; a.HotkeyConflict = false; a.Hotkey = ""; }
         var slotted = new List<AiAppItem>();
         var conflicts = new List<string>();
         for (var i = 0; i < AiSettings.SlotCount; i++)
         {
             var app = _s.Slots[i].Length > 0 ? St.Apps.FirstOrDefault(a => a.Id == _s.Slots[i] && a.Slot == 0) : null;
-            var key = Key.D1 + i;
-            if (app is null)
-            {
-                if (_registered.Remove(i)) _ctx.Hotkeys.Unregister(ModifierKeys.Alt, key);
-                continue;
-            }
+            _ctx.Shortcuts.Enable(_keys[i], app is not null);
+            if (app is null) continue;
             app.Slot = i + 1;
+            app.Hotkey = _keys[i].Gesture;
             slotted.Add(app);
-            if (_registered.Contains(i)) continue;
-            var slot = i + 1;
-            if (_ctx.Hotkeys.Register(ModifierKeys.Alt, key, () => LaunchSlot(slot))) _registered.Add(i);
-            else { app.HotkeyConflict = true; conflicts.Add($"Alt+{slot}"); }
+            if (_keys[i].Taken) { app.HotkeyConflict = true; conflicts.Add(_keys[i].Gesture); }
         }
+        _applying = false;
         if (!St.Slotted.SequenceEqual(slotted))
         {
             St.Slotted.Clear();
@@ -245,10 +276,20 @@ public sealed class AiModule : INotchModule, ICadenceAware
 
     // ---------- usage ----------
 
+    static string Group(IUsageProvider p) => p is ClaudeCodeProvider ? "claude" : p.Id;
+
+    void ShowClaudeAccount(AiAccount a)
+    {
+        if (a.Id == _claudeId) return;
+        _claudeId = _s.ClaudeAccount = a.Id;
+        Save();
+        if (_results.TryGetValue(a.Id, out var r)) _items["claude"].Apply(r);
+    }
+
     void ApplyProviderSelection()
     {
         St.Providers.Clear();
-        foreach (var p in _providers) if (_s.IsEnabled(p.Id)) St.Providers.Add(_items[p.Id]);
+        foreach (var id in _providers.Select(Group).Distinct()) if (_s.IsEnabled(id)) St.Providers.Add(_items[id]);
         St.HasProviders = St.Providers.Count > 0;
         St.NoProviders = !St.HasProviders;
         if (!St.HasProviders) St.LastUpdatedText = "";
@@ -256,7 +297,7 @@ public sealed class AiModule : INotchModule, ICadenceAware
 
     void RefreshUsage()
     {
-        var enabled = _providers.Where(p => _s.IsEnabled(p.Id)).ToList();
+        var enabled = _providers.Where(p => _s.IsEnabled(Group(p))).ToList();
         if (enabled.Count == 0) { ArmUsageTimer(); return; }
         if (_refreshing) { _refreshAgain = true; return; }
         _refreshing = true;
@@ -286,7 +327,10 @@ public sealed class AiModule : INotchModule, ICadenceAware
 
     void OnProviderResult(ProviderResult e)
     {
-        if (_items.TryGetValue(e.Id, out var item)) item.Apply(e.Result);
+        _results[e.Id] = e.Result;
+        var claude = e.Id.StartsWith("claude", StringComparison.Ordinal);
+        if (claude && e.Id != _claudeId) return;
+        if (_items.TryGetValue(claude ? "claude" : e.Id, out var item)) item.Apply(e.Result);
     }
 
     void OnRefreshDone(RefreshDone e)
@@ -301,7 +345,7 @@ public sealed class AiModule : INotchModule, ICadenceAware
     void ArmUsageTimer()
     {
         if (_usageTimer is null || _refreshing) return;
-        var any = _providers.Any(p => _s.IsEnabled(p.Id));
+        var any = _providers.Any(p => _s.IsEnabled(Group(p)));
         _usageTimer.Change(any ? TimeSpan.FromMinutes(_s.RefreshMinutes) : Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
     }
 }

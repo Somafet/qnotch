@@ -48,7 +48,7 @@ internal sealed class ClipboardCard : Grid
         line.Children.Add(g);
         line.Children.Add(t);
 
-        var b = new Border { CornerRadius = new CornerRadius(6), Padding = new Thickness(6, 4, 6, 4), Margin = new Thickness(-6, 0, -6, 1), Background = System.Windows.Media.Brushes.Transparent, Cursor = Cursors.Hand, Child = line, ToolTip = "Copy again" };
+        var b = new Border { CornerRadius = new CornerRadius(6), Padding = new Thickness(6, 4, 6, 4), Margin = new Thickness(-6, 0, -6, 1), Background = System.Windows.Media.Brushes.Transparent, Cursor = Cursors.Hand, Child = line, ToolTip = "Copy again", ContextMenu = _module.RowMenu(e) };
         b.MouseEnter += (_, _) => b.SetResourceReference(Border.BackgroundProperty, "ControlBrush");
         b.MouseLeave += (_, _) => b.Background = System.Windows.Media.Brushes.Transparent;
         b.MouseLeftButtonUp += (_, _) => _module.CopyAgain(e);

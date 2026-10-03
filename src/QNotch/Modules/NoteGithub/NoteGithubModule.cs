@@ -17,6 +17,10 @@ public sealed class NoteGithubModule : INotchModule, ICadenceAware
         ctx.Cards.Register(new CardDescriptor("github", "GitHub", 50, () => new GithubCard(s, github, ctx.Shell), ColumnSpan: 2));
         ctx.SettingsSections.Register(new SettingsSectionDescriptor("github", "GitHub", Glyphs.Github, 50, () => GithubSection.Create(s, github)));
 
+        ctx.Search.Register(new SearchSource("note", "Note", Glyphs.Note, 30, q => s.NoteText.Split('\n')
+            .Where(l => l.Contains(q, StringComparison.OrdinalIgnoreCase))
+            .Select(l => new SearchHit(SearchHit.Snippet(l, q), "", () => ctx.Shell.SelectTab("home")))));
+
         note.Start();
         github.Start();
     }

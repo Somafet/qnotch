@@ -46,11 +46,32 @@ public sealed record SegmentDescriptor(string Id, SegmentSlot Slot, int Order, F
 /// <summary>One entry of <see cref="ModuleList.All"/>. Create is called only when the module is enabled. Early: registers pill or glance segments, so it initializes before the first frame.</summary>
 public sealed record ModuleInfo(string Id, string Title, string Description, Func<INotchModule> Create, bool Early = false);
 
-/// <summary>A panel tab. Glyph is a Segoe Fluent Icons string (see Theme/Glyphs.cs). Factory is called once, lazily.</summary>
-public sealed record TabDescriptor(string Id, string Title, string Glyph, int Order, Func<FrameworkElement> Factory) : IRegistryItem;
+/// <summary>A panel tab. Glyph is a Segoe Fluent Icons string (see Theme/Glyphs.cs). Factory is called once, lazily.
+/// IsEmpty: true while the tab has nothing to show; the panel then opens on Home instead of this tab.</summary>
+public sealed record TabDescriptor(string Id, string Title, string Glyph, int Order, Func<FrameworkElement> Factory, Func<bool>? IsEmpty = null) : IRegistryItem;
 
 /// <summary>A section in the Settings window left nav. Factory is called once, lazily.</summary>
 public sealed record SettingsSectionDescriptor(string Id, string Title, string Glyph, int Order, Func<FrameworkElement> Factory) : IRegistryItem;
+
+/// <summary>One search result. Run (UI thread) does the whole action when the user picks it, including SelectTab or ClosePanel.</summary>
+public sealed record SearchHit(string Title, string Subtitle, Action Run)
+{
+    /// <summary>One line of <paramref name="text"/> around the first match of <paramref name="query"/>, for a hit title.</summary>
+    public static string Snippet(string text, string query, int max = 90)
+    {
+        var at = Math.Max(0, text.IndexOf(query, StringComparison.OrdinalIgnoreCase));
+        var from = at > max / 3 ? at - max / 3 : 0;
+        var s = text.AsSpan(from, Math.Min(max, text.Length - from)).ToString().ReplaceLineEndings(" ").Trim();
+        return (from > 0 ? "…" : "") + s + (from + max < text.Length ? "…" : "");
+    }
+}
+
+/// <summary>
+/// What a module offers to the Search tab (the search module reads the registry; without it nobody does). Find runs on the UI thread on
+/// every keystroke with the trimmed query (never empty): filter what is already in memory, case-insensitive, no I/O. The search module
+/// caps the count and draws Glyph and Title next to each hit.
+/// </summary>
+public sealed record SearchSource(string Id, string Title, string Glyph, int Order, Func<string, IEnumerable<SearchHit>> Find) : IRegistryItem;
 
 public sealed class Registry<T> where T : class, IRegistryItem
 {
@@ -78,7 +99,10 @@ public sealed class ModuleContext
 {
     public required EventBus Bus { get; init; }
     public required SettingsStore Settings { get; init; }
+    /// <summary>Raw RegisterHotKey, for a key held only for a moment (Esc while picking a color). Anything lasting goes in <see cref="Shortcuts"/>.</summary>
     public required HotkeyService Hotkeys { get; init; }
+    /// <summary>Global hotkeys the user can change in Settings, Hotkeys: declare each with <c>Shortcuts.Add</c> in <c>Initialize</c>.</summary>
+    public required Shortcuts Shortcuts { get; init; }
     public required IShell Shell { get; init; }
     public required Dispatcher Dispatcher { get; init; }
     public required Registry<CardDescriptor> Cards { get; init; }
@@ -86,4 +110,6 @@ public sealed class ModuleContext
     public required Registry<SettingsSectionDescriptor> SettingsSections { get; init; }
     /// <summary>Small views hosted by the shell outside the panel: pill clusters, glance strip, game bar. Read once, see <see cref="SegmentDescriptor"/>.</summary>
     public required Registry<SegmentDescriptor> Segments { get; init; }
+    /// <summary>Content the Search tab can find, see <see cref="SearchSource"/>. Register in <c>Initialize</c>.</summary>
+    public required Registry<SearchSource> Search { get; init; }
 }

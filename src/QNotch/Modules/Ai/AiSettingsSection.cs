@@ -19,11 +19,21 @@ internal static class AiSettingsSection
         page.Children.Add(Sub("Usage providers"));
         foreach (var p in m.Providers)
         {
-            var hint = p.Id == "claude" ? "Reads your Claude Code sign-in and asks Anthropic for your plan limits."
+            var hint = p is ClaudeCodeProvider ?"Reads your Claude Code sign-in and asks Anthropic for your plan limits."
                 : "Reads the newest rate limit reading Codex stored locally. Nothing is sent anywhere.";
             var id = p.Id;
             page.Children.Add(UiKit.Row(p.Name, hint, UiKit.Toggle(m.IsProviderEnabled(id), on => m.SetProviderEnabled(id, on))));
         }
+
+        if (m.ClaudeAccounts.Count > 1)
+            foreach (var a in m.ClaudeAccounts)
+            {
+                var name = new TextBox { Text = a.Name, Width = 170 };
+                void Commit() { m.RenameAccount(a, name.Text); name.Text = a.Name; }
+                name.LostFocus += (_, _) => Commit();
+                name.KeyDown += (_, e) => { if (e.Key == System.Windows.Input.Key.Enter) Commit(); };
+                page.Children.Add(UiKit.Row("Claude account name", a.Dir, name));
+            }
 
         var interval = new ComboBox { Width = 140 };
         foreach (var i in Intervals) interval.Items.Add($"{i} minutes");
@@ -37,7 +47,7 @@ internal static class AiSettingsSection
 
         // ----- slots -----
         page.Children.Add(Sub("App shortcuts"));
-        page.Children.Add(UiKit.Text("Bind up to six apps to Alt+1 to Alt+6. The hotkeys work from anywhere.").Also(t => t.Margin = new Thickness(0, -6, 0, 16)));
+        page.Children.Add(UiKit.Text("Bind up to six apps to a slot. Each slot has a hotkey that works from anywhere; change the keys in Hotkeys.").Also(t => t.Margin = new Thickness(0, -6, 0, 16)));
         var slots = new StackPanel();
         page.Children.Add(slots);
 
@@ -85,7 +95,8 @@ internal static class AiSettingsSection
                     m.SetSlot(index, combo.SelectedIndex == 0 ? "" : st.Apps[combo.SelectedIndex - 1].Id);
                 };
                 var conflict = current >= 0 && st.Apps[current].HotkeyConflict;
-                slots.Children.Add(UiKit.Row($"Alt+{i + 1}", conflict ? "Taken by another app. Pick a different slot or free the shortcut." : null, combo));
+                var key = ctx.Shortcuts.Find($"ai.slot{i + 1}")?.Gesture ?? "";
+                slots.Children.Add(UiKit.Row($"Slot {i + 1}" + (key.Length > 0 ? $": {key}" : ""), conflict ? "Taken by another app. Pick a different slot or change the shortcut in Hotkeys." : null, combo));
             }
 
             customs.Children.Clear();

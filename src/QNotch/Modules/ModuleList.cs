@@ -1,9 +1,15 @@
 using QNotch.Modules.Ai;
 using QNotch.Modules.Clipboard;
+using QNotch.Modules.ColorPicker;
 using QNotch.Modules.FileTray;
 using QNotch.Modules.Media;
 using QNotch.Modules.NoteGithub;
+using QNotch.Modules.Notifications;
+using QNotch.Modules.Pomodoro;
+using QNotch.Modules.Scheduled;
+using QNotch.Modules.Search;
 using QNotch.Modules.Stats;
+using QNotch.Modules.Volume;
 
 namespace QNotch.Modules;
 
@@ -18,5 +24,17 @@ public static class ModuleList
         new("ai", "AI apps and usage", "Alt+1 to Alt+6 shortcuts and usage limits for Claude Code and Codex.", () => new AiModule()),
         new("notegithub", "Note and GitHub", "A quick note and your GitHub contribution graph.", () => new NoteGithubModule()),
         new("filetray", "File tray", "Drop files on the notch to keep them within reach.", () => new FileTrayModule()),
+        new("notifications", "Notifications", "Lets apps and scripts post notifications to the notch: QNotch.exe notify, a named pipe or local HTTP.", () => new NotificationsModule(), Early: true),
+        new("scheduled", "Scheduled tasks", "Your Windows scheduled tasks (scripts and agents on a timer), with pause and delete.", () => new ScheduledModule()),
+        new("volume", "Volume", "System volume and mute on a Home card.", () => new VolumeModule()),
+        new("timer", "Timer", "Countdown with Pomodoro presets on a Home card, in the pill and in the game bar.", () => new PomodoroModule(), Early: true),
+        new("colorpicker", "Color picker", "Pick a color anywhere on screen and copy its hex code.", () => new ColorPickerModule()),
+        new("search", "Search", "One search box for clipboard history, files, notes, notifications, tasks, tabs and settings, with its own hotkey.", () => new SearchModule()),
     ];
+
+    /// <summary>Command line verbs (<c>QNotch.exe &lt;verb&gt; ...</c>). They run in Program.Main before WPF starts and return the exit code.</summary>
+    public static readonly IReadOnlyDictionary<string, Func<string[], int>> Verbs = new Dictionary<string, Func<string[], int>>
+    {
+        ["notify"] = NotifyCli.Run,
+    };
 }

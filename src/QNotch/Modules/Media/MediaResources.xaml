@@ -61,7 +61,78 @@
         </Style.Triggers>
     </Style>
 
-    <DataTemplate x:Key="SessionItem">
-        <TextBlock Text="{Binding Title}" TextTrimming="CharacterEllipsis" MaxWidth="260"/>
+    <!-- Source icon: brand mark for known services, a generic glyph otherwise. DataContext needs AppName (MediaState or MediaSessionInfo). -->
+    <DataTemplate x:Key="SourceIcon">
+        <Grid Width="14" Height="14">
+            <TextBlock x:Name="G" Text="&#xE8D6;" FontFamily="{DynamicResource IconFont}" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}"
+                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            <Ellipse x:Name="B" Margin="1" Fill="White" Visibility="Collapsed"/>
+            <Path x:Name="P" Stretch="Uniform" Visibility="Collapsed"/>
+        </Grid>
+        <DataTemplate.Triggers>
+            <DataTrigger Binding="{Binding AppName}" Value="Spotify">
+                <Setter TargetName="G" Property="Visibility" Value="Collapsed"/>
+                <Setter TargetName="P" Property="Visibility" Value="Visible"/>
+                <Setter TargetName="P" Property="Fill" Value="#1ED760"/>
+                <Setter TargetName="P" Property="Data" Value="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
+            </DataTrigger>
+            <DataTrigger Binding="{Binding AppName}" Value="YouTube Music">
+                <Setter TargetName="G" Property="Visibility" Value="Collapsed"/>
+                <Setter TargetName="B" Property="Visibility" Value="Visible"/>
+                <Setter TargetName="P" Property="Visibility" Value="Visible"/>
+                <Setter TargetName="P" Property="Fill" Value="#FF0000"/>
+                <Setter TargetName="P" Property="Data" Value="M12 0C5.376 0 0 5.376 0 12s5.376 12 12 12 12-5.376 12-12S18.624 0 12 0zm0 19.104c-3.924 0-7.104-3.18-7.104-7.104S8.076 4.896 12 4.896s7.104 3.18 7.104 7.104-3.18 7.104-7.104 7.104zm0-13.332c-3.432 0-6.228 2.796-6.228 6.228S8.568 18.228 12 18.228s6.228-2.796 6.228-6.228S15.432 5.772 12 5.772zM9.684 15.54V8.46L15.816 12l-6.132 3.54z"/>
+            </DataTrigger>
+        </DataTemplate.Triggers>
     </DataTemplate>
+
+    <!-- Source switcher: one chip per media session, the selected one raised. Use on ListBox. -->
+    <Style x:Key="SourceChip" TargetType="ListBoxItem">
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="ToolTip" Value="{Binding Title}"/>
+        <Setter Property="AutomationProperties.Name" Value="{Binding Title}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ListBoxItem">
+                    <Border x:Name="Bd" Width="32" Height="22" CornerRadius="11" Background="Transparent" Opacity="0.55">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ControlHoverBrush}"/>
+                            <Setter TargetName="Bd" Property="Opacity" Value="1"/>
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ControlPressedBrush}"/>
+                            <Setter TargetName="Bd" Property="Opacity" Value="1"/>
+                            <Setter Property="Cursor" Value="Arrow"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="SourceSwitcher" TargetType="ListBox">
+        <Setter Property="Visibility" Value="Collapsed"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="ItemContainerStyle" Value="{StaticResource SourceChip}"/>
+        <Setter Property="ItemTemplate" Value="{StaticResource SourceIcon}"/>
+        <Setter Property="ItemsPanel">
+            <Setter.Value>
+                <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ListBox">
+                    <Border Background="{DynamicResource ControlBrush}" CornerRadius="13" Padding="2">
+                        <ItemsPresenter/>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
 </ResourceDictionary>

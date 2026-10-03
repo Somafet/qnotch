@@ -32,11 +32,10 @@ internal static class MediaViews
     public static FrameworkElement Unavailable(bool compact) => Placeholder.Create(Glyphs.Warning, "Media controls unavailable",
         compact ? "Windows did not provide media sessions." : "Windows did not provide media sessions, so now playing cannot be shown.");
 
-    /// <summary>Drop-down for choosing a session. Hidden unless more than one session exists. Holds the panel open while the list is showing.</summary>
-    public static void WirePicker(ComboBox box, MediaState m, IShell shell)
+    /// <summary>Source switcher for choosing a session. Hidden unless more than one session exists.</summary>
+    public static void WirePicker(ListBox box, MediaState m)
     {
         var sync = false;
-        IDisposable? hold = null;
         void Sync()
         {
             sync = true;
@@ -53,8 +52,6 @@ internal static class MediaViews
         {
             if (!sync && box.SelectedValue is string id && id != m.SelectedSessionId) m.SelectSessionCommand.Execute(id);
         };
-        box.DropDownOpened += (_, _) => hold ??= shell.HoldOpen();
-        box.DropDownClosed += (_, _) => { hold?.Dispose(); hold = null; };
         m.Sessions.CollectionChanged += (_, _) => Sync();
         m.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(MediaState.SelectedSessionId)) Sync(); };
         Sync();

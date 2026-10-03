@@ -11,6 +11,8 @@
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <SelfContained>false</SelfContained>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- Program.Main handles command line verbs before WPF starts; App.xaml still generates its own Main. -->
+    <StartupObject>QNotch.Program</StartupObject>
     <RootNamespace>QNotch</RootNamespace>
     <AssemblyName>QNotch</AssemblyName>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>

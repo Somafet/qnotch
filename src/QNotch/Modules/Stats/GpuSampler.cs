@@ -23,6 +23,7 @@ internal sealed unsafe class GpuSampler : IDisposable
         try
         {
             if (Pdh.PdhOpenQueryW(null, 0, out _query) != 0 || Pdh.PdhAddEnglishCounterW(_query, Path, 0, out _counter) != 0) _dead = true;
+            else _primed = Pdh.PdhCollectQueryData(_query) == 0; // rate counters need two samples: take the first one now
         }
         catch { _dead = true; }
     }

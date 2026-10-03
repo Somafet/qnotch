@@ -13,7 +13,7 @@ public static class GameModeSection
 {
     static T Res<T>(string key) => (T)Application.Current.FindResource(key);
 
-    internal static FrameworkElement Create(GameModeController game, GeneralSettings gs, Registry<SegmentDescriptor> segments)
+    internal static FrameworkElement Create(GameModeController game, Shortcuts keys, Registry<SegmentDescriptor> segments)
     {
         var s = game.Settings;
         var page = UiKit.Page("Game mode");
@@ -51,7 +51,7 @@ public static class GameModeSection
         var segBox = new Border { CornerRadius = new CornerRadius(8), Child = seg };
         segBox.SetResourceReference(Border.BackgroundProperty, "ControlBrush");
         Action<GameModeOverride> onOverride = m => radios[m].IsChecked = true;
-        page.Children.Add(UiKit.Row("Mode", $"Auto follows the detection below. Cycle with {gs.GameModeHotkey} or from the tray icon.", segBox));
+        page.Children.Add(UiKit.Row("Mode", $"Auto follows the detection below. Cycle with {(keys.Find("gamemode") is { Gesture.Length: > 0 } k ? k.Gesture + " or " : "")}the tray icon.", segBox));
 
         // Subscribe only while the page is on screen.
         page.Loaded += (_, _) => { game.StatusChanged += onState; game.OverrideChanged += onOverride; ShowStatus(); onOverride(game.Override); };

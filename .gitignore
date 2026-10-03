@@ -3,3 +3,6 @@ obj/
 dist/
 *.user
 .vs/
+brag-output/
+.claude/worktrees/
+.claude/settings.local.json

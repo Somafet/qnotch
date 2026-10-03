@@ -41,11 +41,13 @@ public sealed partial class AiAppItem : ObservableObject
     [ObservableProperty] private ImageSource? _icon;
     [ObservableProperty] private int _slot;
     [ObservableProperty] private bool _hotkeyConflict;
+    /// <summary>The gesture of the slot's shortcut, empty without a slot or when the user turned it off.</summary>
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(Tooltip))] private string _hotkey = "";
     [ObservableProperty] private string _error = "";
 
     public string Initial => Name.Length > 0 ? Name[..1].ToUpperInvariant() : "?";
     public string Tooltip => Name
-        + (Slot > 0 ? $"\nAlt+{Slot}" + (HotkeyConflict ? " (taken by another app)" : "") : "")
+        + (Hotkey.Length > 0 ? $"\n{Hotkey}" + (HotkeyConflict ? " (taken by another app)" : "") : "")
         + (Error.Length > 0 ? "\n" + Error : "");
 
     partial void OnNameChanged(string value) { OnPropertyChanged(nameof(Initial)); OnPropertyChanged(nameof(Tooltip)); }
@@ -85,6 +87,14 @@ public sealed partial class AiWindowItem : ObservableObject
     }
 }
 
+/// <summary>One sign-in of a provider. Id is the usage provider id, Dir its config folder, Name what the user calls it.</summary>
+public sealed partial class AiAccount(string id, string name, string dir) : ObservableObject
+{
+    public string Id { get; } = id;
+    public string Dir { get; } = dir;
+    [ObservableProperty] private string _name = name;
+}
+
 public sealed partial class AiProviderItem : ObservableObject
 {
     public AiProviderItem(string id, string name) { Id = id; Name = name; }
@@ -92,6 +102,14 @@ public sealed partial class AiProviderItem : ObservableObject
     public string Id { get; }
     public string Name { get; }
     public ObservableCollection<AiWindowItem> Windows { get; } = new();
+
+    /// <summary>Accounts to choose from; the row shows the selected one. A dropdown appears with two or more.</summary>
+    public IReadOnlyList<AiAccount> Accounts { get; init; } = [];
+    public bool HasAccounts => Accounts.Count > 1;
+    public Action<AiAccount>? AccountChanged { get; set; }
+    [ObservableProperty] private AiAccount? _account;
+    // A ComboBox writes null while its row unloads; that is not a choice.
+    partial void OnAccountChanged(AiAccount? value) { if (value is not null) AccountChanged?.Invoke(value); }
 
     [ObservableProperty] private UsageStatus _status = UsageStatus.Pending;
     [ObservableProperty] private string _reason = "";

@@ -15,6 +15,12 @@ public interface IShell
     event Action<string>? TabChanged;
     /// <summary>Switch the panel to a tab id (opens nothing by itself).</summary>
     void SelectTab(string tabId);
+    /// <summary>Opens the panel without taking the keyboard, optionally on a tab. Returns false in game mode (nothing opens).
+    /// When the pointer is elsewhere the panel closes again after <paramref name="lingerMs"/> (at least the leave delay).</summary>
+    bool TryOpenPanel(string? tabId = null, int lingerMs = 0);
+    /// <summary>Opens the panel, optionally on a tab, and takes the keyboard like the toggle hotkey does: Esc or a click elsewhere
+    /// closes it. Returns false in game mode. Only for an explicit summon by the user (a module hotkey).</summary>
+    bool OpenPanelWithKeyboard(string? tabId = null);
     void ClosePanel();
     void OpenSettings(string? sectionId = null);
 

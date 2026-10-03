@@ -21,6 +21,8 @@ public sealed partial class StatsState : ObservableObject
 
     [ObservableProperty] string _cpuText = "--";
     [ObservableProperty] string _gpuText = "n/a";
+    /// <summary>" 61°C" (leading space: it follows the GPU percentage in the game bar), empty when unknown.</summary>
+    [ObservableProperty] string _gpuTempText = "";
     [ObservableProperty] string _ramText = "--";
     [ObservableProperty] int _ramPercent;
     [ObservableProperty] string _netDownText = "--";

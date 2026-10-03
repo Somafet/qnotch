@@ -30,7 +30,7 @@ internal sealed class MediaProvider(EventBus bus)
     string? _selectedId;
     volatile GlobalSystemMediaTransportControlsSession? _selected;
     volatile bool _fast;
-    volatile bool _labelsNeedTitles;
+    bool _relabeled; // pump only
     int _dirty, _running, _seq;
     ImageSource? _art;
     string? _artKey;
@@ -110,7 +110,8 @@ internal sealed class MediaProvider(EventBus bus)
 
     async Task Process(int d)
     {
-        var post = await Reconcile();
+        var post = await Reconcile((d & (Props | Sessions)) != 0);
+        if (_relabeled) { _relabeled = false; d |= Props; }
         if (post.SelectedId != _selectedId) { _selectedId = post.SelectedId; d = All; }
         var s = _selected = post.SelectedId is { } id && _tracked.TryGetValue(id, out var t) ? t.Session : null;
 
@@ -124,7 +125,7 @@ internal sealed class MediaProvider(EventBus bus)
     }
 
     /// <summary>Syncs tracked sessions with the OS and picks the selected one: manual pick while it lives, else Windows' current.</summary>
-    async Task<MediaSessions> Reconcile()
+    async Task<MediaSessions> Reconcile(bool detect)
     {
         // Sessions are keyed by object identity: two tabs of one app share an AUMID. The id is "aumid#n", stable while the session lives.
         var live = new List<Tracked>();
@@ -144,21 +145,49 @@ internal sealed class MediaProvider(EventBus bus)
             sel = (live.FirstOrDefault(t => ReferenceEquals(t.Session, cur)) ?? live.FirstOrDefault())?.Id;
         }
 
+        if (detect) await DetectYtm(live);
+
         // Labels are the app name; two sessions of one app (two tabs, two browsers) get the track title to tell them apart.
-        var dup = live.GroupBy(t => AppName(t.Aumid)).Where(g => g.Count() > 1).Select(g => g.Key).ToHashSet();
-        _labelsNeedTitles = dup.Count > 0;
+        var dup = live.GroupBy(Label).Where(g => g.Count() > 1).Select(g => g.Key).ToHashSet();
         var list = new List<MediaSessionInfo>();
         foreach (var t in live)
         {
-            var label = AppName(t.Aumid);
-            if (dup.Contains(label))
-            {
-                try { label += ": " + ((await t.Session.TryGetMediaPropertiesAsync())?.Title is { Length: > 0 } title ? title : "session"); }
-                catch { label += ": session"; }
-            }
-            list.Add(new MediaSessionInfo(t.Id, label));
+            var app = Label(t);
+            var label = dup.Contains(app) ? $"{app}: {(await TitleOf(t) is { Length: > 0 } title ? title : "session")}" : app;
+            list.Add(new MediaSessionInfo(t.Id, label, app));
         }
         return new MediaSessions(list, sel);
+    }
+
+    /// <summary>
+    /// A browser tab reports only the browser, so YouTube Music is recognized by a window of that browser with "YouTube Music" in its
+    /// title (the tab is in front). The flag sticks while the tab is in the background and is dropped once a window of that browser
+    /// shows the current track under another site.
+    /// </summary>
+    async Task DetectYtm(List<Tracked> live)
+    {
+        var wins = MediaNative.Windows();
+        foreach (var t in live)
+        {
+            var app = AppName(t.Aumid);
+            bool Has(string text) => wins.Any(w => w.Title.Contains(text, StringComparison.OrdinalIgnoreCase) && ProcessApp(w.Pid) == app);
+            var ytm = t.Ytm;
+            if (Has(Ytm)) ytm = true;
+            else if (ytm && await TitleOf(t) is { Length: > 0 } title && Has(title)) ytm = false;
+            if (ytm != t.Ytm) { t.Ytm = ytm; _relabeled = true; }
+        }
+    }
+
+    static string ProcessApp(uint pid)
+    {
+        try { using var p = System.Diagnostics.Process.GetProcessById((int)pid); return AppName(p.ProcessName); }
+        catch { return ""; }
+    }
+
+    static async Task<string?> TitleOf(Tracked t)
+    {
+        try { return (await t.Session.TryGetMediaPropertiesAsync())?.Title; }
+        catch { return null; }
     }
 
     async Task ReadProps(GlobalSystemMediaTransportControlsSession s, string id)
@@ -189,7 +218,7 @@ internal sealed class MediaProvider(EventBus bus)
 
         var key = img is null ? null : $"{img.Length}:{Convert.ToHexString(SHA1.HashData(img))}";
         if (key != _artKey) { _art = img is null ? null : Decode(img); _artKey = key; }
-        var app = AppName(_tracked.TryGetValue(id, out var tr) ? tr.Aumid : id);
+        var app = _tracked.TryGetValue(id, out var tr) ? Label(tr) : AppName(id);
         bus.Post(new MediaProps(title.Length > 0 ? title : app, artist, album, app, _art));
     }
 
@@ -236,7 +265,12 @@ internal sealed class MediaProvider(EventBus bus)
     {
         ["chrome"] = "Chrome", ["msedge"] = "Edge", ["microsoftedge"] = "Edge", ["308046B0AF4A39CB"] = "Firefox", ["firefox"] = "Firefox",
         ["vlc"] = "VLC", ["zunemusic"] = "Media Player", ["zunevideo"] = "Movies & TV", ["spotify"] = "Spotify",
+        ["_crx_cinhimbnkkaeohfgghhklpknlkffjgod"] = Ytm, // installed from Chrome as an app
     };
+
+    const string Ytm = "YouTube Music";
+
+    static string Label(Tracked t) => t.Ytm ? Ytm : AppName(t.Aumid);
 
     static string AppName(string id)
     {
@@ -254,6 +288,7 @@ internal sealed class MediaProvider(EventBus bus)
         public GlobalSystemMediaTransportControlsSession Session { get; }
         public string Id { get; }
         public string Aumid { get; }
+        public bool Ytm; // pump only
         readonly TypedEventHandler<GlobalSystemMediaTransportControlsSession, MediaPropertiesChangedEventArgs> _props;
         readonly TypedEventHandler<GlobalSystemMediaTransportControlsSession, PlaybackInfoChangedEventArgs> _play;
         readonly TypedEventHandler<GlobalSystemMediaTransportControlsSession, TimelinePropertiesChangedEventArgs> _time;
@@ -263,7 +298,7 @@ internal sealed class MediaProvider(EventBus bus)
             Session = s;
             Id = id;
             Aumid = s.SourceAppUserModelId;
-            _props = (_, _) => { if (id == p._selectedId) p.Mark(Props); if (p._labelsNeedTitles) p.Mark(Sessions); };
+            _props = (_, _) => p.Mark(id == p._selectedId ? Props | Sessions : Sessions); // Sessions: labels and the YouTube Music check
             _play = (_, _) => { if (id == p._selectedId) p.Mark(Playback); };
             _time = (_, _) => { if (id == p._selectedId && p._fast) p.Mark(Timeline); };
             s.MediaPropertiesChanged += _props;

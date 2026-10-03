@@ -26,6 +26,7 @@ public partial class ClipboardTab : UserControl
     }
 
     void OnRowClick(object sender, MouseButtonEventArgs e) { if (Entry(sender) is { } en) _module.CopyAgain(en); }
+    void OnRowLoaded(object sender, RoutedEventArgs e) { if (sender is Border b && Entry(b) is { } en) b.ContextMenu ??= _module.RowMenu(en); }
     void OnCopy(object sender, RoutedEventArgs e) { if (Entry(sender) is { } en) _module.CopyAgain(en); }
     void OnPin(object sender, RoutedEventArgs e) { if (Entry(sender) is { } en) _module.TogglePin(en); }
     void OnRemove(object sender, RoutedEventArgs e) { if (Entry(sender) is { } en) _module.Remove(en); }

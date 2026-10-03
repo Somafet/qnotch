@@ -15,20 +15,21 @@ public sealed class StatsModule : INotchModule, ICadenceAware
     ModuleContext _ctx = null!;
     SystemSampler? _sampler;
     GpuSampler? _gpu;
+    GpuTemp? _gpuTemp;
     Timer _sampleTimer = null!, _clockTimer = null!;
     volatile int _intervalMs = 5000;
     volatile bool _fast;
-    /// <summary>True while the game bar shows the GPU segment: the sampler then queries GPU at the slow cadence. Read on the thread pool.</summary>
-    volatile bool _gpuWanted;
+    /// <summary>True while the pill or the game bar shows its GPU segment: the sampler then queries GPU at the slow cadence. Read on the thread pool.</summary>
+    volatile bool _gpuPill, _gpuGame;
     readonly StatsState _st = new();
 
     public void Initialize(ModuleContext ctx)
     {
         _ctx = ctx;
         ctx.Cards.Register(new CardDescriptor("stats", "System", 10, () => new StatsCard { DataContext = _st }));
-        ctx.Segments.Register(new SegmentDescriptor("stats.pill", SegmentSlot.PillRight, 10, () => StatsSegments.Pill(_st)));
+        ctx.Segments.Register(new SegmentDescriptor("stats.pill", SegmentSlot.PillRight, 10, () => StatsSegments.Pill(_st, on => _gpuPill = on)));
         ctx.Segments.Register(new SegmentDescriptor("stats.game.cpu", SegmentSlot.GameBar, 20, () => StatsSegments.GameCpu(_st), "CPU"));
-        ctx.Segments.Register(new SegmentDescriptor("stats.game.gpu", SegmentSlot.GameBar, 30, () => StatsSegments.GameGpu(_st, on => _gpuWanted = on), "GPU", "Only when the system reports GPU usage."));
+        ctx.Segments.Register(new SegmentDescriptor("stats.game.gpu", SegmentSlot.GameBar, 30, () => StatsSegments.GameGpu(_st, on => _gpuGame = on), "GPU", "Usage and temperature. Only when the system reports GPU usage."));
         ctx.Segments.Register(new SegmentDescriptor("stats.game.ram", SegmentSlot.GameBar, 40, () => StatsSegments.GameRam(_st), "Memory"));
         ctx.Segments.Register(new SegmentDescriptor("stats.game.net", SegmentSlot.GameBar, 50, () => StatsSegments.GameNet(_st), "Network"));
         ctx.Segments.Register(new SegmentDescriptor("stats.game.battery", SegmentSlot.GameBar, 60, () => StatsSegments.GameBattery(_st), "Battery", "Only on devices with a battery."));
@@ -73,9 +74,10 @@ public sealed class StatsModule : INotchModule, ICadenceAware
         {
             _sampler ??= new SystemSampler();
             _gpu ??= new GpuSampler();
-            // The PDH GPU query is the expensive part: only while the panel is open or the game bar shows a GPU segment.
-            int? gpu = _gpu.Available && (_fast || _gpuWanted) ? _gpu.Sample() : null;
-            _ctx.Bus.Post(_sampler.Sample(gpu) with { GpuAvailable = _gpu.Available });
+            // The PDH GPU query is the expensive part: only while the panel is open or a GPU segment shows.
+            int? gpu = _gpu.Available && (_fast || _gpuPill || _gpuGame) ? _gpu.Sample() : null;
+            int? temp = _gpuGame ? (_gpuTemp ??= new GpuTemp()).Sample() : null;
+            _ctx.Bus.Post(_sampler.Sample(gpu) with { GpuAvailable = _gpu.Available, GpuTemp = temp });
         }
         catch (Exception ex) { Log.Warn("Stats sample failed", ex); }
         finally { _sampleTimer.Change(_intervalMs, Timeout.Infinite); }
@@ -103,6 +105,7 @@ public sealed class StatsModule : INotchModule, ICadenceAware
         st.GpuAvailable = s.GpuAvailable;
         st.GpuPercent = s.Gpu;
         st.GpuText = s.Gpu is { } g ? $"{g}%" : "n/a";
+        st.GpuTempText = s.GpuTemp is { } c ? $" {c}°C" : "";
         st.RamUsedBytes = s.RamUsed;
         st.RamTotalBytes = s.RamTotal;
         st.RamPercent = s.RamTotal > 0 ? (int)(s.RamUsed * 100 / s.RamTotal) : 0;

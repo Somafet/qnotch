@@ -26,7 +26,7 @@ Collapsed state (always visible)
 
 - Centered pill at the top edge of the chosen monitor, roughly 40 px tall, width adapts to content. Topmost, click-through outside the pill, no taskbar entry, no focus steal.
 - Left cluster: now-playing artwork thumbnail, track title, artist.
-- Right cluster: live CPU %, RAM used / total, network throughput, battery % with charging glyph, clock (HH:MM).
+- Right cluster: live CPU %, GPU % if available, RAM used / total, battery % with charging glyph, clock (HH:MM).
 - Glance layer: when the panel is closed, a slim strip under the pill shows the now-playing line and nothing else.
 
 Expanded state (panel)

@@ -13,6 +13,10 @@ public sealed class AiSettings
     public const int SlotCount = 6;
 
     public Dictionary<string, bool> Providers { get; set; } = new();
+    /// <summary>Provider id of the Claude Code account shown on the usage row.</summary>
+    public string ClaudeAccount { get; set; } = "";
+    /// <summary>User-given account names by provider id.</summary>
+    public Dictionary<string, string> AccountNames { get; set; } = new();
     public int RefreshMinutes { get; set; } = 10;
     public List<string> Slots { get; set; } = new();
     /// <summary>Apps already auto-placed into a slot once, so clearing a slot is never undone.</summary>
@@ -23,7 +27,7 @@ public sealed class AiSettings
 
     public void Normalize()
     {
-        Slots ??= new(); AutoPlaced ??= new(); Custom ??= new(); Providers ??= new();
+        Slots ??= new(); AutoPlaced ??= new(); Custom ??= new(); Providers ??= new(); AccountNames ??= new(); ClaudeAccount ??= "";
         while (Slots.Count < SlotCount) Slots.Add("");
         if (Slots.Count > SlotCount) Slots.RemoveRange(SlotCount, Slots.Count - SlotCount);
         for (var i = 0; i < Slots.Count; i++) Slots[i] ??= "";

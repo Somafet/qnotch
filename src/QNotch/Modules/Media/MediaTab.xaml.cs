@@ -9,7 +9,7 @@ public partial class MediaTab : UserControl
     {
         DataContext = m;
         InitializeComponent();
-        MediaViews.WirePicker(Picker, m, shell);
+        MediaViews.WirePicker(Picker, m);
         MediaViews.WireStates(m, Live, Empty, MediaViews.Nothing(false), MediaViews.Unavailable(false));
         Seek.SeekRequested += f => m.Seek(f);
     }

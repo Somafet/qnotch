@@ -27,49 +27,7 @@ public static class GeneralSection
 
         page.Children.Add(UiKit.Row("Keep panel open", "Pinned: the panel stays open when the pointer leaves.", BoundToggle(gs, nameof(GeneralSettings.Pinned))));
         page.Children.Add(UiKit.Row("Start with Windows", "Adds QNotch to your sign-in items.", BoundToggle(gs, nameof(GeneralSettings.StartWithWindows))));
-
-        page.Children.Add(UiKit.Row("Toggle panel hotkey", "Click the box, then press the new shortcut. Esc cancels.",
-            HotkeyBox(gs, () => gs.ToggleHotkey, v => gs.ToggleHotkey = v, nameof(GeneralSettings.ToggleHotkeyTaken))));
-        page.Children.Add(UiKit.Row("Cycle Game mode hotkey", "Auto, Force on, Force off.",
-            HotkeyBox(gs, () => gs.GameModeHotkey, v => gs.GameModeHotkey = v, nameof(GeneralSettings.GameModeHotkeyTaken))));
         return page;
-    }
-
-    /// <summary>Hotkey recorder: a read-only box that turns the next Ctrl/Alt chord into a gesture string. Global hotkeys are suspended while it has focus.</summary>
-    static FrameworkElement HotkeyBox(GeneralSettings gs, Func<string> get, Action<string> set, string takenProp)
-    {
-        var box = new TextBox
-        {
-            Text = get(), Width = 150, IsReadOnly = true, IsReadOnlyCaretVisible = false, TextAlignment = TextAlignment.Center,
-            FontFamily = new System.Windows.Media.FontFamily("Consolas"), FontSize = 12, Cursor = Cursors.Arrow, ToolTip = "Click, then press the new shortcut",
-        };
-        var note = new TextBlock { Text = "Taken by another app", Margin = new Thickness(0, 0, 10, 0), VerticalAlignment = VerticalAlignment.Center, FontSize = 12 };
-        note.SetResourceReference(TextBlock.ForegroundProperty, "DangerBrush");
-        note.SetBinding(UIElement.VisibilityProperty, new Binding(takenProp) { Source = gs, Converter = (IValueConverter)Application.Current.FindResource("BoolToVis") });
-
-        box.GotKeyboardFocus += (_, _) => { gs.RecordingHotkey = true; box.Text = "Press shortcut"; };
-        box.LostKeyboardFocus += (_, _) => { gs.RecordingHotkey = false; box.Text = get(); };
-        box.Unloaded += (_, _) => gs.RecordingHotkey = false;
-        box.PreviewKeyDown += (_, e) =>
-        {
-            e.Handled = true;
-            var key = e.Key == Key.System ? e.SystemKey : e.Key;
-            if (key is Key.None or Key.LeftCtrl or Key.RightCtrl or Key.LeftAlt or Key.RightAlt or Key.LeftShift or Key.RightShift or Key.LWin or Key.RWin
-                or Key.DeadCharProcessed or Key.ImeProcessed) return;
-            var mods = Keyboard.Modifiers;
-            if (key == Key.Escape && mods == ModifierKeys.None) { Keyboard.ClearFocus(); return; }
-            if ((mods & (ModifierKeys.Control | ModifierKeys.Alt)) == 0) { box.Text = "Add Ctrl or Alt"; return; }
-            string gesture;
-            try { gesture = new KeyGestureConverter().ConvertToInvariantString(new KeyGesture(key, mods)) ?? ""; }
-            catch { box.Text = "Not supported"; return; }
-            if (gesture.Length > 0 && gesture != get()) set(gesture);
-            Keyboard.ClearFocus(); // LostKeyboardFocus re-registers the hotkeys and refreshes the "taken" note
-        };
-
-        var p = new StackPanel { Orientation = Orientation.Horizontal };
-        p.Children.Add(note);
-        p.Children.Add(box);
-        return p;
     }
 
     /// <summary>Two-way bound, so a change made elsewhere (the pin button in the panel header) shows up on an open page.</summary>

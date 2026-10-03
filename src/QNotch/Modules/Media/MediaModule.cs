@@ -27,7 +27,7 @@ public sealed class MediaModule : INotchModule, ICadenceAware
         _ticker = new DispatcherTimer(DispatcherPriority.Background, ctx.Dispatcher) { Interval = TimeSpan.FromSeconds(1) };
         _ticker.Tick += (_, _) => RefreshProgress();
 
-        ctx.Tabs.Register(new TabDescriptor("media", "Media", Glyphs.Music, 10, () => new MediaTab(_m, ctx.Shell)));
+        ctx.Tabs.Register(new TabDescriptor("media", "Media", Glyphs.Music, 10, () => new MediaTab(_m, ctx.Shell), () => !_m.HasSession));
         ctx.Cards.Register(new CardDescriptor("media", "Now playing", 20, () => new MediaCard(_m, ctx.Shell), ColumnSpan: 2));
         ctx.Segments.Register(new SegmentDescriptor("media.pill", SegmentSlot.PillLeft, 10, () => MediaSegments.Pill(_m)));
         ctx.Segments.Register(new SegmentDescriptor("media.glance", SegmentSlot.Glance, 10, () => MediaSegments.Glance(_m)));
@@ -60,6 +60,11 @@ public sealed class MediaModule : INotchModule, ICadenceAware
         _m.Duration = TimeSpan.FromSeconds(243);
         _m.LastTimelineUpdate = DateTimeOffset.Now;
         _rate = 0; // frozen at 1:12 so snapshots are stable
+        _m.AppName = "Spotify";
+        _m.Sessions.Add(new("spotify", "Spotify", "Spotify"));
+        _m.Sessions.Add(new("ytm", "YouTube Music", "YouTube Music"));
+        _m.Sessions.Add(new("chrome", "Chrome", "Chrome"));
+        _m.SelectedSessionId = "spotify";
         _m.HasSession = true;
         RefreshProgress();
     }

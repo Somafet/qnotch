@@ -36,12 +36,12 @@ public sealed class ShellController : IShell
     ShellMode _mode;
     bool _hovering, _fileDrag, _built, _wasExpandedBeforeGame;
     int _holds;
-    string _toggleKey = "", _gameKey = "", _activeTab = "home";
+    string _activeTab = "home";
 
-    public ShellController(NotchWindow window, GeneralSettings settings, SettingsStore store, HotkeyService hotkeys, ForegroundWatcher foreground,
+    public ShellController(NotchWindow window, GeneralSettings settings, SettingsStore store, Shortcuts shortcuts, ForegroundWatcher foreground,
         CardLayout layout, Registry<TabDescriptor> tabs, Registry<SettingsSectionDescriptor> sections, Registry<SegmentDescriptor> segments)
     {
-        _w = window; _general = settings; _store = store; _hotkeys = hotkeys; _foreground = foreground;
+        _w = window; _general = settings; _store = store; _shortcuts = shortcuts; _foreground = foreground;
         _layout = layout; _tabs = tabs; _sections = sections; _segments = segments;
         _vm = new ShellViewModel(settings, () => OpenSettings());
         _w.DataContext = _vm;
@@ -50,7 +50,7 @@ public sealed class ShellController : IShell
     }
 
     readonly ShellViewModel _vm;
-    readonly HotkeyService _hotkeys;
+    readonly Shortcuts _shortcuts;
     readonly CardLayout _layout;
     readonly GeneralSettings _general;
     readonly ForegroundWatcher _foreground;
@@ -107,7 +107,8 @@ public sealed class ShellController : IShell
         _foreground.Changed += h => { if (h != _w.Hwnd) _w.ReassertTopmost(); };
         _w.Source.AddHook(SettingsHook);
 
-        RegisterHotkeys();
+        _shortcuts.Add("toggle", "Toggle panel", "Opens or closes the panel and takes the keyboard.", _general.ToggleHotkey, ToggleFromUser, 0);
+        _shortcuts.Add("gamemode", "Cycle Game mode", "Auto, Force on, Force off.", _general.GameModeHotkey, GameMode.CycleOverride, 10);
         _w.Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, () =>
         {
             EnsurePanelBuilt();
@@ -174,7 +175,18 @@ public sealed class ShellController : IShell
         UpdateGlance();
     }
 
-    void UpdateGlance() => _vm.ShowGlance = _mode == ShellMode.Collapsed && _w.GlanceStrip.Children.OfType<UIElement>().Any(e => e.Visibility == Visibility.Visible);
+    void UpdateGlance()
+    {
+        // The shell owns the gap between glance segments: only between visible ones.
+        var any = false;
+        foreach (FrameworkElement e in _w.GlanceStrip.Children)
+        {
+            if (e.Visibility != Visibility.Visible) continue;
+            e.Margin = new Thickness(any ? 14 : 0, 0, 0, 0);
+            any = true;
+        }
+        _vm.ShowGlance = _mode == ShellMode.Collapsed && any;
+    }
 
     // ---------- panel open / close ----------
 
@@ -182,12 +194,20 @@ public sealed class ShellController : IShell
     {
         if (_mode != ShellMode.Collapsed) return;
         EnsurePanelBuilt();
+        // Never reopen on a tab with nothing to show (a file drag selects the empty Files tab on purpose).
+        if (!_fileDrag && IsTabEmpty(_activeTab)) SelectTab("home");
         StopTimers();
         MemoryTrim.Cancel();
         var now = DateTime.Now;
         _vm.DateText = now.ToString("dddd, MMMM d", UiCulture.Value);
         SetMode(ShellMode.Expanded);
         _w.SetOpen(true);
+    }
+
+    bool IsTabEmpty(string id)
+    {
+        try { return _tabs.Find(id)?.IsEmpty?.Invoke() == true; }
+        catch (Exception ex) { Log.Error($"Tab '{id}' IsEmpty failed", ex); return false; }
     }
 
     public void ClosePanel()
@@ -199,6 +219,27 @@ public sealed class ShellController : IShell
         SetMode(ShellMode.Collapsed);
         _w.SetOpen(false);
         MemoryTrim.AfterActivity();
+    }
+
+    public bool TryOpenPanel(string? tabId = null, int lingerMs = 0)
+    {
+        if (_mode == ShellMode.GameBar) return false;
+        var open = _mode == ShellMode.Collapsed;
+        if (open) EnsurePanelBuilt();
+        if (tabId is not null) SelectTab(tabId);
+        if (!open) return true;
+        OpenPanel();
+        // Nobody hovered: without this the panel would stay open until the pointer visits it.
+        if (!_w.IsPointerOver()) StartLeave(Math.Max(lingerMs, _general.LeaveDelayMs));
+        return true;
+    }
+
+    public bool OpenPanelWithKeyboard(string? tabId = null)
+    {
+        if (!TryOpenPanel(tabId)) return false;
+        _leave?.Stop();
+        _w.EnableKeyboard();
+        return true;
     }
 
     /// <summary>Hotkey and tray: an explicit summon also takes keyboard focus, so Esc works and a click elsewhere dismisses.</summary>
@@ -267,10 +308,10 @@ public sealed class ShellController : IShell
 
     bool CanAutoClose => _mode == ShellMode.Expanded && !_general.Pinned && !_w.HasKeyboard && _holds == 0 && !_vm.IsEditMode;
 
-    void StartLeave()
+    void StartLeave(int? ms = null)
     {
         if (!CanAutoClose) return;
-        Start(ref _leave, _general.LeaveDelayMs, () =>
+        Start(ref _leave, ms ?? _general.LeaveDelayMs, () =>
         {
             _fileDrag = false;
             if (!_hovering && CanAutoClose && !_w.IsPointerOver()) ClosePanel();
@@ -332,6 +373,7 @@ public sealed class ShellController : IShell
         {
             var id = t.Id;
             var rb = new RadioButton { Style = (Style)Application.Current.FindResource("TabButton"), Content = t.Glyph, ToolTip = t.Title, GroupName = "tabs" };
+            System.Windows.Automation.AutomationProperties.SetAutomationId(rb, $"tab-{id}");
             rb.Checked += (_, _) => SelectTab(id);
             if (strip.Children.Count > 0) rb.Margin = new Thickness(2, 0, 0, 0);
             strip.Children.Add(rb);
@@ -400,8 +442,6 @@ public sealed class ShellController : IShell
 
     void OnSetting(object? s, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is nameof(GeneralSettings.RecordingHotkey)) { RegisterHotkeys(); return; }
-        if (e.PropertyName is nameof(GeneralSettings.ToggleHotkeyTaken) or nameof(GeneralSettings.GameModeHotkeyTaken)) return; // runtime only
         _store.Save("general", _general);
         switch (e.PropertyName)
         {
@@ -410,23 +450,11 @@ public sealed class ShellController : IShell
             case nameof(GeneralSettings.ReduceMotion): Motion.Refresh(_general.ReduceMotion); break;
             case nameof(GeneralSettings.ProfileName) or nameof(GeneralSettings.ProfileImagePath): LoadProfile(); break;
             case nameof(GeneralSettings.StartWithWindows): Autostart.Set(_general.StartWithWindows); break;
-            case nameof(GeneralSettings.ToggleHotkey) or nameof(GeneralSettings.GameModeHotkey): RegisterHotkeys(); break;
             case nameof(GeneralSettings.Pinned):
                 if (_general.Pinned) _leave?.Stop();
                 else if (!_hovering) StartLeave();
                 break;
         }
-    }
-
-    void RegisterHotkeys()
-    {
-        _hotkeys.Unregister(_toggleKey);
-        _hotkeys.Unregister(_gameKey);
-        if (_general.RecordingHotkey) return; // the Settings recorder is listening: global hotkeys would swallow the keys
-        _toggleKey = _general.ToggleHotkey;
-        _gameKey = _general.GameModeHotkey;
-        _general.ToggleHotkeyTaken = !_hotkeys.Register(_toggleKey, ToggleFromUser);
-        _general.GameModeHotkeyTaken = !_hotkeys.Register(_gameKey, GameMode.CycleOverride);
     }
 
     nint SettingsHook(nint hwnd, int msg, nint wParam, nint lParam, ref bool handled)

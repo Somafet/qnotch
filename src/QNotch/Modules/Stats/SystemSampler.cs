@@ -8,6 +8,8 @@ public sealed record StatsSample(int Cpu, int? Gpu, long RamUsed, long RamTotal,
 {
     /// <summary>False once the GPU counter sampler gave up for good.</summary>
     public bool GpuAvailable { get; init; } = true;
+    /// <summary>Degrees Celsius; sampled only while the game bar shows the GPU segment.</summary>
+    public int? GpuTemp { get; init; }
 }
 
 /// <summary>Win32 sampling: GetSystemTimes, GlobalMemoryStatusEx, GetIfTable2, GetSystemPowerStatus. Thread-pool only, never on the UI thread.</summary>

@@ -99,7 +99,8 @@ public partial class App : Application
         _foreground = new ForegroundWatcher();
         _foreground.Start();
         var layout = new CardLayout(cards, gs);
-        _shell = new ShellController(window, gs, _store, _hotkeys, _foreground, layout, tabs, sections, segments);
+        var shortcuts = new Shortcuts(_hotkeys, _store);
+        _shell = new ShellController(window, gs, _store, shortcuts, _foreground, layout, tabs, sections, segments);
         var shell = _shell;
 
         // Modules the user turned off are never created. A change in Settings, Features applies on the next start.
@@ -112,12 +113,13 @@ public partial class App : Application
         sections.Register(new SettingsSectionDescriptor("features", "Features", Glyphs.Apps, 5, () => FeaturesSection.Create(gs, _store!, ModuleList.All, bootDisabled, Restart)));
         sections.Register(new SettingsSectionDescriptor("general", "General", Glyphs.Settings, 0, () => GeneralSection.Create(gs)));
         sections.Register(new SettingsSectionDescriptor("appearance", "Appearance", Glyphs.Color, 10, () => AppearanceSection.Create(gs, layout)));
-        sections.Register(new SettingsSectionDescriptor("gamemode", "Game mode", Glyphs.Game, 20, () => GameModeSection.Create(shell.GameMode, gs, segments)));
+        sections.Register(new SettingsSectionDescriptor("hotkeys", "Hotkeys", "", 7, () => HotkeysSection.Create(shortcuts)));
+        sections.Register(new SettingsSectionDescriptor("gamemode", "Game mode", Glyphs.Game, 20, () => GameModeSection.Create(shell.GameMode, shortcuts, segments)));
 
         var ctx = new ModuleContext
         {
             Bus = bus, Settings = _store, Hotkeys = _hotkeys, Shell = shell, Dispatcher = Dispatcher,
-            Cards = cards, Tabs = tabs, SettingsSections = sections, Segments = segments,
+            Cards = cards, Tabs = tabs, SettingsSections = sections, Segments = segments, Search = new(), Shortcuts = shortcuts,
         };
         List<INotchModule> Init(IEnumerable<ModuleInfo> list)
         {

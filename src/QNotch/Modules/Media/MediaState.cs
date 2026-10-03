@@ -5,7 +5,8 @@ using CommunityToolkit.Mvvm.Input;
 
 namespace QNotch.Modules.Media;
 
-public sealed record MediaSessionInfo(string Id, string Title);
+/// <summary>Title is the label (app, plus the track when two sessions share an app); AppName picks the icon.</summary>
+public sealed record MediaSessionInfo(string Id, string Title, string AppName);
 
 /// <summary>Now playing. The Media module writes it (on the UI thread); only Media's own views and segments bind to it. Artwork must be a frozen ImageSource.</summary>
 public sealed partial class MediaState : ObservableObject

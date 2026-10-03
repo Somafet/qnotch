@@ -3,6 +3,9 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ai="clr-namespace:QNotch.Modules.Ai">
     <!-- DataContext: AiState. Headline window per enabled provider; unavailable providers say so instead of showing 0%. -->
+    <UserControl.Resources>
+        <ResourceDictionary Source="AiStyles.xaml"/>
+    </UserControl.Resources>
     <Grid>
         <ItemsControl ItemsSource="{Binding Providers}" VerticalAlignment="Top" Visibility="{Binding HasProviders, Converter={StaticResource BoolToVis}}">
             <ItemsControl.ItemTemplate>
@@ -21,7 +24,20 @@
                                     </Style>
                                 </TextBlock.Style>
                             </TextBlock>
-                            <TextBlock Text="{Binding Name}" Style="{StaticResource Caption}" TextTrimming="CharacterEllipsis"/>
+                            <Grid>
+                                <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource Caption}">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding HasAccounts}" Value="True"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                                <ComboBox Style="{StaticResource AccountPicker}" Tag="Claude: " ItemsSource="{Binding Accounts}" SelectedItem="{Binding Account}" DisplayMemberPath="Name"
+                                          DropDownOpened="OnAccountsOpened" DropDownClosed="OnAccountsClosed"
+                                          Visibility="{Binding HasAccounts, Converter={StaticResource BoolToVis}}"/>
+                            </Grid>
                         </DockPanel>
                         <ai:UsageBar Percent="{Binding HeadlinePercent}" Margin="0,4,0,0" Visibility="{Binding IsOk, Converter={StaticResource BoolToVis}}"/>
                         <TextBlock Text="{Binding SubText}" Style="{StaticResource Muted}" TextTrimming="CharacterEllipsis" Margin="0,3,0,0"/>

@@ -9,7 +9,7 @@ public partial class MediaCard : UserControl
     {
         DataContext = m;
         InitializeComponent();
-        MediaViews.WirePicker(Picker, m, shell);
+        MediaViews.WirePicker(Picker, m);
         MediaViews.WireStates(m, Live, Empty, MediaViews.Nothing(true), MediaViews.Unavailable(true));
         Seek.SeekRequested += f => m.Seek(f);
     }

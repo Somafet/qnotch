@@ -15,6 +15,7 @@ public partial class NoteCard : UserControl
         DataContext = state;
         InitializeComponent();
         _s.PropertyChanged += OnChanged;
+        Box.IsKeyboardFocusedChanged += (_, _) => Update();
         Update();
     }
 
@@ -25,7 +26,7 @@ public partial class NoteCard : UserControl
 
     void Update()
     {
-        Hint.Visibility = _s.NoteText.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
+        Hint.Visibility = _s.NoteText.Length == 0 && !Box.IsKeyboardFocused ?Visibility.Visible : Visibility.Collapsed;
         Meta.Text = $"{_s.NoteDateText} · {_s.NoteWordsText}";
     }
 }

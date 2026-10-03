@@ -1,6 +1,6 @@
 # QNotch
 
-A personal, performance-first "notch" overlay for Windows 11. A near-black pill sits at the top edge of your monitor and shows live CPU, RAM, network, battery, clock and what is playing. Hover it (or press the hotkey) and it opens into a panel: system stats, now playing with seek and transport controls, clipboard history, AI tool usage and app shortcuts, a quick note, a GitHub contribution graph, and a file tray. When a game or fullscreen video owns the screen, the notch turns into a passive one-line status bar. See `SPEC.md` for the full specification and `ARCHITECTURE.md` for the architecture: a small shell plus six self-contained extensions (Media, Clipboard, Ai, NoteGithub, FileTray, Stats), each in `src/QNotch/Modules/<Name>/`.
+A personal, performance-first "notch" overlay for Windows 11. A near-black pill sits at the top edge of your monitor and shows live CPU, GPU, RAM, battery, clock and what is playing. Hover it (or press the hotkey) and it opens into a panel: system stats, now playing with seek and transport controls, clipboard history, AI tool usage and app shortcuts, a quick note, a GitHub contribution graph, a file tray, and notifications that any app or script can post. When a game or fullscreen video owns the screen, the notch turns into a passive one-line status bar. See `SPEC.md` for the full specification and `ARCHITECTURE.md` for the architecture: a small shell plus seven self-contained extensions (Media, Clipboard, Ai, NoteGithub, FileTray, Stats, Notifications), each in `src/QNotch/Modules/<Name>/`.
 
 Stack: C# on .NET 10, WPF, x64. The only NuGet package is CommunityToolkit.Mvvm. Native calls use `LibraryImport`; no WinForms.
 
@@ -18,7 +18,78 @@ Only one instance runs at a time. Quit from the tray icon menu. The tray icon tu
 
 ## Features
 
-Settings, Features has one switch per feature: System stats, Now playing, Clipboard history, AI apps and usage, Note and GitHub, File tray. A feature that is off is never loaded and costs nothing (no timers, hooks, hotkeys, cards or tabs). Changes apply after a restart: the page shows "Restart QNotch to apply your changes." with a "Restart now" button. Game mode and Edit mode are part of the shell and always available. `ARCHITECTURE.md` explains how to add an extension.
+Settings, Features has one switch per feature: System stats, Now playing, Clipboard history, AI apps and usage, Note and GitHub, File tray, Notifications, Scheduled tasks. A feature that is off is never loaded and costs nothing (no timers, hooks, hotkeys, cards or tabs). Changes apply after a restart: the page shows "Restart QNotch to apply your changes." with a "Restart now" button. Game mode and Edit mode are part of the shell and always available. `ARCHITECTURE.md` explains how to add an extension.
+
+## Scheduled tasks
+
+The Scheduled tab and Home card list the tasks you added to the Windows Task Scheduler (root folder; tasks installed by a vendor such as OneDrive are left out): schedule, next run and last run. Each row has pause or resume and delete (delete asks once more). The list is read when the panel opens, so it costs nothing while collapsed.
+
+## Notifications
+
+Any app, script or agent can post a notification. It shows as a toast under the pill, counts as unread in the pill, and stays in the Notifications tab and Home card. Settings, Notifications has the toast time, the history retention, per-app mute and the HTTP token.
+
+```powershell
+QNotch.exe notify "Build finished" "142 tests passed" --app Build --level success --url https://example.com/report
+QNotch.exe notify "Claude needs you" --app "Claude Code" --icon chat --focus          # button that brings the calling terminal forward
+QNotch.exe notify "Run the tests?" --action approve=Approve --action deny=Deny        # waits, prints the clicked id
+QNotch.exe notify --help
+```
+
+Exit codes: 0 sent or answered, 1 dismissed, 2 timed out, 3 QNotch not running, 4 error. `QNotch.exe` is a GUI program, so an interactive shell does not wait for it: capture the output (`$answer = QNotch.exe notify ...`) when you need the answer. Hooks and scripts that capture output wait as usual.
+
+The payload behind every option (only `title` is required):
+
+```json
+{
+  "id": "build-42",
+  "app": "Build",
+  "title": "Build finished",
+  "body": "142 tests passed",
+  "icon": "C:\\tools\\build.png",
+  "level": "success",
+  "ttl": 8,
+  "wait": false,
+  "timeout": 0,
+  "actions": [
+    { "label": "Open report", "url": "https://example.com/report" },
+    { "label": "Show", "focusPid": 1234 },
+    { "id": "approve", "label": "Approve" }
+  ]
+}
+```
+
+- `id`: posting the same id again replaces the notification (progress updates). `{"op":"dismiss","id":"build-42"}` removes it.
+- `icon`: an image path, an exe or shortcut path (its icon is used), or a glyph name: bell, info, check, warning, error, chat, code, link, clock, download, bolt, person, folder, globe, mail, play, build. Local drive paths only.
+- `level`: info, success, warning or error. An error opens the panel by itself (not in Game mode; can be turned off).
+- `ttl`: toast seconds, 0 for no toast.
+- `actions`: three at most. `url` opens a link (http, https, vscode, vscode-insiders, cursor, claude). `focusPid` brings that process's window forward, or the window of its nearest parent that has one (a script's terminal). An action with neither only answers a waiting request. Nothing can run a program.
+- `wait`: the request stays open until the user clicks an action or dismisses the notification, then answers `{"ok":true,"id":"...","result":"clicked","action":"approve"}` (`result` is `clicked`, `dismissed` or `timeout`). `timeout` is in seconds, 0 means no limit. In Game mode a waiting request is held until the game ends.
+
+Three ways in, same payload:
+
+| Way | How | Who can use it |
+| --- | --- | --- |
+| Command line | `QNotch.exe notify`, or `--json` / `--stdin` for a raw payload | anything that can start a program |
+| Named pipe | connect to `\\.\pipe\QNotch.Notify`, write one line of JSON, read one line back | programs under your Windows account only |
+| HTTP | `POST http://127.0.0.1:47821/notify` (add `?wait=1` to wait), `DELETE /notify/{id}` | this computer only, with the header `Authorization: Bearer <token>` |
+
+```bash
+curl -X POST http://127.0.0.1:47821/notify -H "Authorization: Bearer <token>" -d '{"title":"Deploy done","app":"CI","level":"success"}'
+```
+
+Copy the token from Settings, Notifications. Requests that carry an `Origin` header (web pages) are refused. Titles are cut at 80 characters, descriptions at 300, messages at 64 KB, and an app gets one toast per second (the rest goes straight to the history).
+
+Claude Code example (`~/.claude/settings.json`), a toast with a button back to the session whenever Claude waits for you:
+
+```json
+{
+  "hooks": {
+    "Notification": [
+      { "hooks": [{ "type": "command", "command": "C:\\path\\to\\QNotch.exe notify \"Claude needs you\" --app \"Claude Code\" --icon chat --focus" }] }
+    ]
+  }
+}
+```
 
 ## Hotkeys
 
@@ -33,7 +104,7 @@ To change a hotkey, open Settings, General, click the box and press the new shor
 
 ## Data folder
 
-`%APPDATA%\QNotch\` holds one JSON file per module (`general.json`, `ai.json`, `clipboard.json`, and so on), the note, and `logs\` (`qnotch.log`, `crash.log`). Clipboard history lives in memory only unless you turn on "Keep history between sessions" (text only). The GitHub token is stored in Windows Credential Manager, never in a file. Set `QNOTCH_DATA_DIR` to a full path to use another folder, and `QNOTCH_INSTANCE` to a suffix to allow a second instance next to the first (both are for parallel test runs).
+`%APPDATA%\QNotch\` holds one JSON file per module (`general.json`, `ai.json`, `clipboard.json`, and so on), the note, and `logs\` (`qnotch.log`, `crash.log`). Clipboard history lives in memory only unless you turn on "Keep history between sessions" (text only). Notifications keep their history in `notifications.history.json` for the retention period (7 days by default). The GitHub token and the notification HTTP token are stored in Windows Credential Manager, never in a file. Set `QNOTCH_DATA_DIR` to a full path to use another folder, and `QNOTCH_INSTANCE` to a suffix to allow a second instance next to the first (both are for parallel test runs).
 
 ## Measured performance
 

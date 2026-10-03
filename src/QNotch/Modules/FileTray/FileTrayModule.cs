@@ -16,8 +16,12 @@ public sealed class FileTrayModule : INotchModule, ICadenceAware
         var svc = _svc = new FileTrayService(ctx, state);
         var shell = ctx.Shell;
 
-        ctx.Tabs.Register(new TabDescriptor("files", "Files", Glyphs.Folder, 40, () => new FileTrayView(svc, state, shell)));
+        ctx.Tabs.Register(new TabDescriptor("files", "Files", Glyphs.Folder, 40, () => new FileTrayView(svc, state, shell), () => state.IsEmpty));
         ctx.Cards.Register(new CardDescriptor("files", "File tray", 80, () => new FileTrayCard(shell) { DataContext = state }));
+
+        ctx.Search.Register(new SearchSource("files", "File tray", Glyphs.Folder, 20, q => state.Items
+            .Where(i => i.Name.Contains(q, StringComparison.OrdinalIgnoreCase))
+            .Select(i => new SearchHit(i.Name, i.Path, () => { svc.Open(i); shell.ClosePanel(); }))));
 
         // Subscribing also makes the notch accept file drops. Dragging files over the notch reveals the drop target on the Files tab.
         shell.FilesDropped += svc.Add;

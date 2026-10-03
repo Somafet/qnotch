@@ -33,8 +33,7 @@
             </StackPanel>
 
             <StackPanel Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right" Width="112">
-                <ComboBox x:Name="Picker" Height="26" FontSize="11" Margin="0,0,0,8" Visibility="Collapsed"
-                          ItemTemplate="{StaticResource SessionItem}"/>
+                <ListBox x:Name="Picker" Margin="0,0,0,8" Style="{StaticResource SourceSwitcher}"/>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                     <Button Style="{StaticResource TransportButton}" Content="&#xE892;" Width="32" Height="32" FontSize="13"
                             Command="{Binding PreviousCommand}" IsEnabled="{Binding CanPrevious}" ToolTip="Previous"/>

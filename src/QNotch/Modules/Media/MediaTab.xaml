@@ -28,10 +28,10 @@
 
                 <!-- Source app and session picker -->
                 <DockPanel Height="32">
-                    <ComboBox x:Name="Picker" DockPanel.Dock="Right" Width="190" Visibility="Collapsed" ItemTemplate="{StaticResource SessionItem}"/>
+                    <ListBox x:Name="Picker" DockPanel.Dock="Right" Style="{StaticResource SourceSwitcher}"/>
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <TextBlock Text="&#xE8D6;" FontFamily="{DynamicResource IconFont}" FontSize="12" Foreground="{DynamicResource TextTertiaryBrush}"
-                                   VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <ContentControl Content="{Binding}" ContentTemplate="{StaticResource SourceIcon}" IsTabStop="False"
+                                        VerticalAlignment="Center" Margin="0,0,6,0"/>
                         <TextBlock Text="{Binding AppName}" Style="{StaticResource Caption}" VerticalAlignment="Center"/>
                         <TextBlock Text="  Paused" VerticalAlignment="Center">
                             <TextBlock.Style>

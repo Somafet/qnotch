@@ -51,9 +51,12 @@ public sealed class ClipboardModule : INotchModule, ICadenceAware
         _ctx = ctx;
         _cfg = ctx.Settings.Get<ClipboardSettings>("clipboard");
 
-        ctx.Tabs.Register(new TabDescriptor("clipboard", "Clipboard", Glyphs.Clipboard, 20, () => new ClipboardTab(this, _st)));
+        ctx.Tabs.Register(new TabDescriptor("clipboard", "Clipboard", Glyphs.Clipboard, 20, () => new ClipboardTab(this, _st), () => _st.Entries.Count == 0));
         ctx.Cards.Register(new CardDescriptor("clipboard", "Clipboard", 30, () => new ClipboardCard(this, _st)));
         ctx.SettingsSections.Register(new SettingsSectionDescriptor("clipboard", "Clipboard", Glyphs.Clipboard, 30, BuildSettings));
+        ctx.Search.Register(new SearchSource("clipboard", "Clipboard", Glyphs.Clipboard, 10, q => _st.Entries
+            .Where(e => e.Text.Contains(q, StringComparison.OrdinalIgnoreCase))
+            .Select(e => new SearchHit(SearchHit.Snippet(e.Text, q), $"{e.Meta} · copies it", () => { CopyAgain(e); ctx.Shell.ClosePanel(); }))));
         ctx.Bus.Subscribe<ClipReady>(e => Add(e.Entry));
         ctx.Shell.TabChanged += _ => UpdateAgeTimer();
 
@@ -169,6 +172,19 @@ public sealed class ClipboardModule : INotchModule, ICadenceAware
     void Changed() { _st.Recount(); Persist(); }
 
     internal void Remove(ClipEntry e) { _st.Entries.Remove(e); Changed(); }
+
+    /// <summary>Right-click menu for one entry. Keeps the notch open while the menu is showing.</summary>
+    internal ContextMenu RowMenu(ClipEntry e)
+    {
+        IDisposable? hold = null;
+        var delete = new MenuItem { Header = "Delete" };
+        delete.Click += (_, _) => Remove(e);
+        var menu = new ContextMenu();
+        menu.Items.Add(delete);
+        menu.Opened += (_, _) => hold ??= _ctx.Shell.HoldOpen();
+        menu.Closed += (_, _) => { hold?.Dispose(); hold = null; };
+        return menu;
+    }
 
     /// <summary>Clears everything except pinned entries.</summary>
     internal void Clear()

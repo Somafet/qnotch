@@ -91,7 +91,7 @@
         </Style>
 
         <DataTemplate x:Key="EntryRow" DataType="{x:Type local:ClipEntry}">
-            <Border x:Name="Row" Style="{StaticResource RowBorder}" MouseLeftButtonUp="OnRowClick">
+            <Border x:Name="Row" Style="{StaticResource RowBorder}" MouseLeftButtonUp="OnRowClick" Loaded="OnRowLoaded">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>

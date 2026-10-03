@@ -2,6 +2,43 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:ai="clr-namespace:QNotch.Modules.Ai">
 
+    <!-- Account picker that reads as caption text: the name and a small chevron, no chrome. Items need a Name; Tag is an optional prefix. -->
+    <Style x:Key="AccountPicker" TargetType="ComboBox">
+        <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
+        <Setter Property="FontSize" Value="11"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="HorizontalAlignment" Value="Left"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ComboBox">
+                    <Grid>
+                        <ToggleButton Focusable="False" ClickMode="Press" IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}">
+                            <ToggleButton.Template>
+                                <ControlTemplate TargetType="ToggleButton"><Border Background="Transparent"/></ControlTemplate>
+                            </ToggleButton.Template>
+                        </ToggleButton>
+                        <StackPanel Orientation="Horizontal" IsHitTestVisible="False">
+                            <TextBlock Text="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}"/>
+                            <TextBlock Text="{Binding SelectedItem.Name, RelativeSource={RelativeSource TemplatedParent}}"/>
+                            <TextBlock Text="&#xE70D;" Style="{StaticResource Glyph}" FontSize="7" VerticalAlignment="Center" Margin="5,2,0,0"/>
+                        </StackPanel>
+                        <Popup x:Name="PART_Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" AllowsTransparency="True" Focusable="False" PopupAnimation="None">
+                            <Border Margin="0,4,0,0" Background="{DynamicResource SurfaceRaisedBrush}" BorderBrush="{DynamicResource StrokeStrongBrush}" BorderThickness="1" CornerRadius="10" Padding="0,4">
+                                <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Contained"/>
+                            </Border>
+                        </Popup>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True"><Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/></Trigger>
+                        <Trigger Property="IsDropDownOpen" Value="True"><Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/></Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- App tile button: raised chip with hover and pressed states. -->
     <Style x:Key="AiTile" TargetType="Button">
         <Setter Property="Cursor" Value="Hand"/>

@@ -8,14 +8,14 @@ namespace QNotch.Modules.Stats;
 /// <summary>Pill and game bar views of the Stats module. Built in code: no XAML parse on the cold start path. Minimum widths keep changing digits from resizing the host.</summary>
 internal static class StatsSegments
 {
-    // ---------- pill: CPU, RAM, network, battery, clock in one element ----------
+    // ---------- pill: CPU, GPU, RAM, battery, clock in one element ----------
 
-    public static FrameworkElement Pill(StatsState st)
+    public static FrameworkElement Pill(StatsState st, Action<bool> gpuWanted)
     {
         var p = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
         p.Children.Add(Pair("CPU", st, nameof(StatsState.CpuText), 50, small: true, gap: true));
+        p.Children.Add(Gpu(st, gpuWanted, 50, small: true, gap: true));
         p.Children.Add(Pair("RAM", st, nameof(StatsState.RamText), 98, small: true, gap: true));
-        p.Children.Add(Net(st, 116, gap: true));
         p.Children.Add(Battery(st, 13, gap: true));
         p.Children.Add(Clock(st, 13, 36));
         return p;
@@ -25,12 +25,11 @@ internal static class StatsSegments
 
     public static FrameworkElement GameCpu(StatsState st) => Pair("CPU", st, nameof(StatsState.CpuText), 44);
 
-    /// <summary>Collapsed while the GPU counter is unusable. <paramref name="wanted"/> follows the visibility so the sampler queries the GPU only while it shows.</summary>
+    /// <summary>"GPU 34% 61°C": the temperature shows in the game bar only.</summary>
     public static FrameworkElement GameGpu(StatsState st, Action<bool> wanted)
     {
-        var t = Pair("GPU", st, nameof(StatsState.GpuText), 44);
-        UiKit.BindVisible(t, st, nameof(StatsState.GpuAvailable));
-        t.IsVisibleChanged += (_, e) => wanted((bool)e.NewValue);
+        var t = Gpu(st, wanted, 44);
+        t.Inlines.Add(Bound(st, nameof(StatsState.GpuTempText)));
         return t;
     }
 
@@ -60,6 +59,15 @@ internal static class StatsSegments
         t.Inlines.Add(Tertiary(label, label: true, size: small ? 10 : null));
         t.Inlines.Add(new Run(" "));
         t.Inlines.Add(Bound(st, path));
+        return t;
+    }
+
+    /// <summary>Collapsed while the GPU counter is unusable. <paramref name="wanted"/> follows the visibility so the sampler queries the GPU only while it shows.</summary>
+    static TextBlock Gpu(StatsState st, Action<bool> wanted, double minWidth, bool small = false, bool gap = false)
+    {
+        var t = Pair("GPU", st, nameof(StatsState.GpuText), minWidth, small, gap);
+        UiKit.BindVisible(t, st, nameof(StatsState.GpuAvailable));
+        t.IsVisibleChanged += (_, e) => wanted((bool)e.NewValue);
         return t;
     }
 
