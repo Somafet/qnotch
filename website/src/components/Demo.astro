@@ -1,0 +1,144 @@
+---
+import '../styles/demo.css';
+import '../styles/desktop.css';
+import Icon from './Icon.astro';
+
+const chips = [
+  { id: 'open', icon: 'pill', label: 'Open the panel' },
+  { id: 'agent', icon: 'terminal', label: 'Agent needs you' },
+  { id: 'notify', icon: 'chat', label: 'Ask from a script' },
+  { id: 'files', icon: 'folder', label: 'Drop a file' },
+  { id: 'clipboard', icon: 'copy', label: 'Clipboard' },
+  { id: 'search', icon: 'search', label: 'Search' },
+  { id: 'game', icon: 'gamepad', label: 'Play a game' },
+] as const;
+
+const apps = [
+  { id: 'term', icon: 'terminal', label: 'Terminal' },
+  { id: 'browser', icon: 'globe', label: 'Browser' },
+  { id: 'files', icon: 'folder', label: 'File Explorer' },
+  { id: 'music', icon: 'music', label: 'Music' },
+] as const;
+---
+<div class="demo" id="demo">
+  <div class="qn-frame" data-frame>
+    <div class="qn-stage" data-stage data-mode="collapsed">
+      <div class="qn-wall" aria-hidden="true"></div>
+      <div class="qn-game" aria-hidden="true">
+        <div class="qn-game-sky"></div><div class="qn-game-sun"></div><div class="qn-game-floor"></div>
+        <div class="qn-game-hud"><span>LAP 2/3</span><span>Esc to quit</span><span data-k="lap">01:42.318</span></div>
+      </div>
+
+      <div role="group" class="qn-win qn-browser" data-win="browser" aria-label="Browser">
+        <div class="qn-titlebar" data-drag>
+          <span class="qn-wtitle"><Icon name="globe" /></span>
+          <span class="qn-url">localhost:3000/upload</span>
+          <span class="qn-winbtns">
+            <button data-act="win" data-arg="min" aria-label="Minimize"></button><button data-act="win" data-arg="max" aria-label="Maximize"></button><button data-act="win" data-arg="closed" aria-label="Close"></button>
+          </span>
+        </div>
+        <div class="qn-page">
+          <h5>Upload</h5>
+          <p>Files go to the api you are building. Nothing leaves your browser.</p>
+          <button class="qn-drop" data-act="upload" data-upload>
+            <Icon name="download" />
+            <span>Drop files here, or click to choose</span>
+          </button>
+          <input type="file" multiple hidden data-picker />
+          <div class="qn-received" data-received></div>
+        </div>
+      </div>
+
+      <div role="group" class="qn-win qn-files closed" data-win="files" aria-label="File Explorer">
+        <div class="qn-titlebar" data-drag>
+          <span class="qn-wtitle"><Icon name="folder" /> Downloads</span>
+          <span class="qn-winbtns">
+            <button data-act="win" data-arg="min" aria-label="Minimize"></button><button data-act="win" data-arg="max" aria-label="Maximize"></button><button data-act="win" data-arg="closed" aria-label="Close"></button>
+          </span>
+        </div>
+        <div class="fx-path">This PC <Icon name="chevron" /> Downloads</div>
+        <div class="fx-list" data-files></div>
+        <div class="fx-hint">Drag a file onto the notch or into the browser. Double-click to preview.</div>
+        <div class="fx-prev" data-preview></div>
+      </div>
+
+      <div role="group" class="qn-win qn-music closed" data-win="music" aria-label="Music">
+        <div class="qn-titlebar" data-drag>
+          <span class="qn-wtitle"><Icon name="music" /> Music</span>
+          <span class="qn-winbtns">
+            <button data-act="win" data-arg="min" aria-label="Minimize"></button><button data-act="win" data-arg="max" aria-label="Maximize"></button><button data-act="win" data-arg="closed" aria-label="Close"></button>
+          </span>
+        </div>
+        <div class="mu" data-music></div>
+      </div>
+
+      <div role="group" class="qn-win qn-term" data-win="term" data-term aria-label="Terminal">
+        <div class="qn-titlebar" data-drag>
+          <button class="qn-ttab" data-act="term" data-arg="claude"><Icon name="terminal" /> claude · api</button>
+          <button class="qn-ttab" data-act="term" data-arg="pwsh"><Icon name="terminal" /> pwsh</button>
+          <span class="qn-winbtns">
+            <button data-act="win" data-arg="min" aria-label="Minimize"></button><button data-act="win" data-arg="max" aria-label="Maximize"></button><button data-act="win" data-arg="closed" aria-label="Close"></button>
+          </span>
+        </div>
+        <div class="qn-term-body" data-termbody>
+          <div data-lines></div>
+          <label class="t-in" data-inline><span data-ps></span><input data-termin spellcheck="false" autocomplete="off" aria-label="Terminal input" /></label>
+        </div>
+      </div>
+
+      <div class="qn-notch" data-notch>
+        <div class="qn-shell" data-shell>
+          <div class="qn-pill" data-pill data-act="openPill" role="button" tabindex="0" aria-label="Open the QNotch panel"></div>
+          <div class="qn-peek" data-peek></div>
+          <div class="qn-bar" data-bar></div>
+          <div class="qn-panel">
+            <header class="qn-head" data-head></header>
+            <div class="qn-body">
+              <div data-tab="home"></div>
+              <div data-tab="search" hidden></div>
+              <div data-tab="clipboard" hidden class="qn-scroll"></div>
+              <div data-tab="agents" hidden class="qn-scroll"></div>
+              <div data-tab="files" hidden class="qn-scroll"></div>
+              <div data-tab="notifications" hidden class="qn-scroll"></div>
+            </div>
+          </div>
+        </div>
+        <div class="qn-glance" data-glance data-act="openNotes" role="button" tabindex="0"></div>
+        <div class="qn-toast" data-toast data-act="openNotes"></div>
+      </div>
+
+      <div class="qn-fly start" data-fly="start"></div>
+      <div class="qn-fly cal" data-fly="cal"></div>
+      <div class="qn-fly tray" data-fly="tray"></div>
+
+      <div class="qn-taskbar">
+        <div class="qn-tb-apps">
+          <button class="qn-app win" data-act="start" title="Start" aria-label="Start"><Icon name="windows" /></button>
+          {apps.map(a => (
+            <button class={`qn-app ${a.id}`} data-act="launch" data-arg={a.id} title={a.label} aria-label={a.label}><Icon name={a.icon} /></button>
+          ))}
+        </div>
+        <div class="qn-tray">
+          <button class="qn-traybtn" data-act="trayMenu" title="QNotch" aria-label="QNotch menu"><span class="qn-trayicon"></span></button>
+          <button class="qn-traybtn" data-act="sound" title="Sound on" aria-label="Toggle demo sound"><Icon name="volume" /></button>
+          <button class="qn-clock" data-act="cal" title="Calendar" aria-label="Calendar"><span data-k="clock"></span><span data-k="shortdate"></span></button>
+        </div>
+      </div>
+
+      <div class="qn-sleep" data-sleep data-act="wake"><span>Click to wake</span></div>
+    </div>
+  </div>
+
+  <div class="demo-chips" role="group" aria-label="Demo moments">
+    {chips.map(c => (
+      <button class="chip" data-scenario={c.id} aria-pressed="false"><Icon name={c.icon} />{c.label}</button>
+    ))}
+  </div>
+  <p class="demo-caption" data-caption aria-live="polite"></p>
+  <p class="demo-keys">Everything on the desktop works. Try <kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>N</kbd>, or type <code>QNotch.exe notify "Hi"</code> in the pwsh tab.</p>
+</div>
+
+<script>
+  import { initDemo } from '../scripts/demo';
+  initDemo(document.getElementById('demo')!);
+</script>
