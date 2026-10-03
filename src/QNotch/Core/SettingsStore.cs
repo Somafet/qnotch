@@ -21,6 +21,7 @@ public sealed class SettingsStore
     readonly object _gate = new();
     readonly Dictionary<string, object> _cache = new();
     readonly Dictionary<string, string> _pending = new();
+    readonly HashSet<string> _sealed = new();
     readonly Timer _timer;
 
     public SettingsStore() => _timer = new Timer(_ => Flush(), null, Timeout.Infinite, Timeout.Infinite);
@@ -30,18 +31,21 @@ public sealed class SettingsStore
 
     static string PathFor(string id) => Path.Combine(Paths.DataDir, id + ".json");
 
-    public T Get<T>(string moduleId) where T : class, new()
+    public T Get<T>(string moduleId) where T : class, new() => (T)Get(typeof(T), moduleId);
+
+    /// <summary>Get for a type known only at run time (setup codes). The type needs a public parameterless constructor.</summary>
+    public object Get(Type type, string moduleId)
     {
         lock (_gate)
         {
-            if (_cache.TryGetValue(moduleId, out var o) && o is T t) return t;
-            T value;
+            if (_cache.TryGetValue(moduleId, out var o) && type.IsInstanceOfType(o)) return o;
+            object value;
             try
             {
                 var p = PathFor(moduleId);
-                value = File.Exists(p) ? JsonSerializer.Deserialize<T>(File.ReadAllText(p), Json) ?? new T() : new T();
+                value = (File.Exists(p) ? JsonSerializer.Deserialize(File.ReadAllText(p), type, Json) : null) ?? Activator.CreateInstance(type)!;
             }
-            catch (Exception ex) { Log.Warn($"Settings '{moduleId}' unreadable, using defaults", ex); value = new T(); }
+            catch (Exception ex) { Log.Warn($"Settings '{moduleId}' unreadable, using defaults", ex); value = Activator.CreateInstance(type)!; }
             _cache[moduleId] = value;
             return value;
         }
@@ -52,6 +56,7 @@ public sealed class SettingsStore
         var json = JsonSerializer.Serialize(value, Json);
         lock (_gate)
         {
+            if (_sealed.Contains(moduleId)) return;
             _cache[moduleId] = value;
             _pending[moduleId] = json;
             _timer.Change(500, Timeout.Infinite);
@@ -63,16 +68,34 @@ public sealed class SettingsStore
     {
         KeyValuePair<string, string>[] items;
         lock (_gate) { items = ReadOnly ? [] : _pending.ToArray(); _pending.Clear(); }
-        foreach (var (id, json) in items)
+        foreach (var (id, json) in items) Write(id, json);
+    }
+
+    /// <summary>
+    /// Replaces whole files now (a setup code, applied right before a restart). Every later Save of them is ignored, so the live
+    /// objects of this run cannot write the old values back before it exits.
+    /// </summary>
+    /// <returns>False when a file could not be written (logged).</returns>
+    public bool Replace(IReadOnlyDictionary<string, string> files)
+    {
+        lock (_gate)
+            foreach (var id in files.Keys) { _pending.Remove(id); _sealed.Add(id); }
+        if (ReadOnly) return true;
+        var ok = true;
+        foreach (var (id, json) in files) ok &= Write(id, json);
+        return ok;
+    }
+
+    static bool Write(string id, string json)
+    {
+        try
         {
-            try
-            {
-                var p = PathFor(id);
-                var tmp = p + ".tmp";
-                File.WriteAllText(tmp, json);
-                File.Move(tmp, p, true);
-            }
-            catch (Exception ex) { Log.Error($"Saving settings '{id}' failed", ex); }
+            var p = PathFor(id);
+            var tmp = p + ".tmp";
+            File.WriteAllText(tmp, json);
+            File.Move(tmp, p, true);
+            return true;
         }
+        catch (Exception ex) { Log.Error($"Saving settings '{id}' failed", ex); return false; }
     }
 }
