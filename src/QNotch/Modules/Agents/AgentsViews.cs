@@ -325,7 +325,8 @@ internal static class AgentsSettings
                 var (status, detail) = hooks.Check();
                 connected = status == HookStatus.Connected;
                 button.Content = connected ? "Disconnect" : status == HookStatus.OtherCopy ? "Use this copy" : "Connect";
-                button.Style = connected ? null : (Style)Application.Current.FindResource("AccentButton");
+                if (connected) button.ClearValue(FrameworkElement.StyleProperty); // back to the themed implicit style
+                else button.Style = (Style)Application.Current.FindResource("AccentButton");
                 hint.Text = status switch
                 {
                     HookStatus.Connected => "Connected. Sessions that were already open show up after you restart them.",
