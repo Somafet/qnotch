@@ -18,11 +18,11 @@ public static class GeneralSection
         for (var i = 0; i < mons.Count; i++) combo.Items.Add(mons[i].Label(i));
         combo.SelectedIndex = Math.Clamp(gs.MonitorIndex, 0, Math.Max(0, mons.Count - 1));
         combo.SelectionChanged += (_, _) => { if (combo.SelectedIndex >= 0) gs.MonitorIndex = combo.SelectedIndex; };
-        page.Children.Add(UiKit.Row("Monitor", "The display that hosts the notch. Follows resolution and DPI changes live.", combo));
+        page.Children.Add(UiKit.Row("Monitor", "The display that hosts the notch. You can also drag the pill onto another display. Follows resolution and DPI changes live.", combo));
 
         var reset = new Button { Content = "Reset positions", Padding = new Thickness(14, 6, 14, 6) };
         reset.Click += (_, _) => resetSpots();
-        page.Children.Add(UiKit.Row("Notch position", "Drag the pill sideways to move it out of the way. It remembers the spot for each app. Double-click it to center it again.", reset));
+        page.Children.Add(UiKit.Row("Notch position", "Drag the pill sideways to move it out of the way, or onto another display. It remembers the spot for each app. Double-click it to center it again.", reset));
 
         page.Children.Add(UiKit.Row("Hover delay", "How long the pointer must rest on the pill before the panel opens.",
             SliderBox(0, 600, 10, gs.HoverDwellMs, v => gs.HoverDwellMs = v, "ms")));
