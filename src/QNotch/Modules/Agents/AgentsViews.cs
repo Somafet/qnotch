@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Windows;
+using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
@@ -70,7 +71,7 @@ internal static class AgentsViews
     const string PriceNote = "At API list prices. A Pro or Max plan is not billed per token.";
 
     /// <summary>Right side of a row: what the session used today. Null before any usage is known.</summary>
-    static FrameworkElement? UsageColumn(AgentsState st, AgentSession s)
+    static FrameworkElement? UsageColumn(AgentsState st, AgentSession s, UIElement? below = null)
     {
         if (!st.Usage.TryGetValue(s.Id, out var u) || u.Today.Tokens == 0) return null;
         var cost = new TextBlock { Text = Usage.FormatCost(u.Today), FontSize = 12, HorizontalAlignment = HorizontalAlignment.Right };
@@ -100,7 +101,7 @@ internal static class AgentsViews
         return g;
     }
 
-    public static UIElement Row(AgentsModule module, AgentsState st, AgentSession s)
+    public static UIElement Row(AgentsModule module, AgentsState st, AgentSession s, UIElement? below = null)
     {
         var icon = UiKit.Glyph(s.Status == AgentStatus.Done ? Glyphs.Accept : AgentsModule.Icon, 14, StatusBrush(s.Status));
         icon.HorizontalAlignment = HorizontalAlignment.Center;
@@ -138,17 +139,29 @@ internal static class AgentsViews
             Grid.SetColumn(usage, 2);
             g.Children.Add(usage);
         }
-        return Hover(g);
+        if (below is null) return Hover(g);
+        var all = new StackPanel();
+        all.Children.Add(g);
+        all.Children.Add(below);
+        return Hover(all);
     }
 }
 
-/// <summary>The tab: every session, the ones that need you first.</summary>
+/// <summary>The tab: every session, the ones that need you first, then what agents left running.</summary>
 internal sealed class AgentsTab : Grid
 {
+    const string Expand = "", Collapse = "";
+
     readonly AgentsModule _module;
     readonly AgentsState _st;
     readonly StackPanel _rows = new() { Margin = new Thickness(0, 0, 0, 12) };
     readonly FrameworkElement _empty;
+    // Process numbers change on every walk: update these texts in place while the layout stays the same, so hover and clicks survive.
+    readonly Dictionary<int, TextBlock> _metas = [];
+    readonly Dictionary<string, TextBlock> _summaries = [];
+    string _shape = "";
+    /// <summary>The group whose Stop is asking for confirmation.</summary>
+    int _confirm;
 
     public AgentsTab(AgentsModule module, AgentsState st)
     {
@@ -166,15 +179,126 @@ internal sealed class AgentsTab : Grid
         Children.Add(new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Focusable = false, Content = _rows });
         Children.Add(_empty);
         st.Changed += Render;
+        st.GroupsChanged += () =>
+        {
+            if (Shape() != _shape) { Render(); return; }
+            foreach (var g in _st.Groups) if (_metas.TryGetValue(g.Root, out var t)) t.Text = Meta(g);
+            foreach (var (id, t) in _summaries) t.Text = Summary(Groups(id));
+        };
         Render();
     }
 
+    string Shape() => string.Join(",", _st.Groups.Select(g => $"{g.Session}:{g.Root}:{g.LeftRunning}"));
+
+    IEnumerable<ProcGroup> Groups(string session) => _st.Groups.Where(g => g.Session == session && !g.LeftRunning);
+
     void Render()
     {
-        _empty.Visibility = _st.Sessions.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        _shape = Shape();
+        if (!_st.Groups.Exists(g => g.Root == _confirm)) _confirm = 0; // gone: never arm a stranger that gets its pid
+        _metas.Clear();
+        _summaries.Clear();
+        var left = _st.Groups.Where(g => g.LeftRunning).ToList();
+        _empty.Visibility = _st.Sessions.Count == 0 && left.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         _rows.Children.Clear();
         if (_st.Sessions.Count > 0 && AgentsViews.TodayLine(_st) is { } today) _rows.Children.Add(today);
-        foreach (var s in _st.Sessions) _rows.Children.Add(AgentsViews.Row(_module, _st, s));
+        foreach (var s in _st.Sessions) _rows.Children.Add(AgentsViews.Row(_module, _st, s, Processes(s)));
+        if (left.Count == 0) return;
+        var header = new TextBlock { Text = "Left running", FontSize = 12, FontWeight = FontWeights.SemiBold, Margin = new Thickness(2, 8, 0, 0) };
+        _rows.Children.Add(header);
+        var hint = UiKit.Text("Started by agents whose shell or session has ended. Nothing will stop these for you.", "Muted");
+        hint.Margin = new Thickness(2, 2, 0, 8);
+        _rows.Children.Add(hint);
+        foreach (var g in left) _rows.Children.Add(AgentsViews.Hover(GroupRow(g)));
+    }
+
+    /// <summary>"3 processes · 412 MB · :3000" under a session, and the list while it is open.</summary>
+    UIElement? Processes(AgentSession s)
+    {
+        var groups = Groups(s.Id).ToList();
+        if (groups.Count == 0) return null;
+        var chevron = UiKit.Glyph(s.Expanded ? Collapse : Expand, 10, "TextSecondaryBrush");
+        chevron.VerticalAlignment = VerticalAlignment.Center;
+        chevron.Margin = new Thickness(0, 0, 6, 0);
+        var text = UiKit.Text(Summary(groups), "Muted");
+        text.TextWrapping = TextWrapping.NoWrap;
+        _summaries[s.Id] = text;
+        var line = new StackPanel { Orientation = Orientation.Horizontal };
+        line.Children.Add(chevron);
+        line.Children.Add(text);
+        var toggle = new Button
+        {
+            Content = line, Padding = new Thickness(8, 3, 10, 3), HorizontalAlignment = HorizontalAlignment.Left,
+            ToolTip = s.Expanded ? "Hide processes" : "Show processes",
+        };
+        AutomationProperties.SetName(toggle, toggle.ToolTip as string);
+        toggle.Click += (_, _) => { s.Expanded = !s.Expanded; Render(); };
+
+        var panel = new StackPanel { Margin = new Thickness(32, 4, 0, 0) };
+        panel.Children.Add(toggle);
+        if (s.Expanded)
+            foreach (var g in groups)
+            {
+                var row = GroupRow(g);
+                row.Margin = new Thickness(6, 6, 0, 0);
+                panel.Children.Add(row);
+            }
+        return panel;
+    }
+
+    static string Summary(IEnumerable<ProcGroup> groups)
+    {
+        var list = groups.ToList();
+        var count = list.Sum(g => g.Members.Length);
+        return string.Join(" · ", new[]
+        {
+            count == 1 ? "1 process" : $"{count} processes",
+            ProcessTracker.Size(list.Sum(g => g.Memory)),
+            ProcessTracker.PortText([.. list.SelectMany(g => g.Ports).Distinct().Order()]),
+        }.Where(t => t.Length > 0));
+    }
+
+    static string Meta(ProcGroup g) => g.LeftRunning ? string.Join(" · ", new[] { g.Project, g.Meta }.Where(t => t.Length > 0)) : g.Meta;
+
+    /// <summary>One thing an agent started: its command, what it uses, and Stop, which asks first.</summary>
+    FrameworkElement GroupRow(ProcGroup g)
+    {
+        var label = new TextBlock { Text = g.Label, FontSize = 12, TextTrimming = TextTrimming.CharacterEllipsis, ToolTip = g.Label };
+        var meta = UiKit.Text(Meta(g), "Muted");
+        meta.TextWrapping = TextWrapping.NoWrap;
+        meta.TextTrimming = TextTrimming.CharacterEllipsis;
+        meta.Margin = new Thickness(0, 2, 0, 0);
+        _metas[g.Root] = meta;
+        var text = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+        text.Children.Add(label);
+        text.Children.Add(meta);
+
+        var buttons = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 0) };
+        if (_confirm == g.Root)
+        {
+            var ask = UiKit.Text(g.Members.Length == 1 ? "End this process?" : $"End {g.Members.Length} processes?", "Muted");
+            ask.VerticalAlignment = VerticalAlignment.Center;
+            ask.TextWrapping = TextWrapping.NoWrap;
+            var stop = new Button { Content = "Stop", Margin = new Thickness(8, 0, 0, 0), Padding = new Thickness(12, 2, 12, 2), Style = (Style)Application.Current.FindResource("AccentButton") };
+            stop.Click += (_, _) => { _confirm = 0; _module.Stop(g); Render(); };
+            buttons.Children.Add(ask);
+            buttons.Children.Add(stop);
+            buttons.Children.Add(AgentsViews.IconButton(Glyphs.Close, "Cancel", () => { _confirm = 0; Render(); }));
+        }
+        else
+        {
+            var stop = new Button { Content = "Stop", Padding = new Thickness(12, 2, 12, 2), ToolTip = "End it and everything it started" };
+            stop.Click += (_, _) => { _confirm = g.Root; Render(); };
+            buttons.Children.Add(stop);
+        }
+
+        var grid = new Grid();
+        grid.ColumnDefinitions.Add(new ColumnDefinition());
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        Grid.SetColumn(buttons, 1);
+        grid.Children.Add(text);
+        grid.Children.Add(buttons);
+        return grid;
     }
 }
 

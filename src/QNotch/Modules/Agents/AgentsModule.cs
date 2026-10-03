@@ -26,6 +26,8 @@ internal sealed class AgentSession(string id)
     public int Pid { get; set; }
     /// <summary>The tool a permission prompt or question waits on, so other tools' events leave "needs you" alone.</summary>
     public string? WaitingTool { get; set; }
+    /// <summary>Its processes are listed under the row.</summary>
+    public bool Expanded { get; set; }
     /// <summary>The transcript Claude Code writes, where the token usage comes from.</summary>
     public string Transcript { get; set; } = "";
     /// <summary>Owned by the thread pool while <see cref="UsagePending"/> is true.</summary>
@@ -49,6 +51,15 @@ internal sealed partial class AgentsState : ObservableObject
     /// <summary>Usage by session id, for sessions shown now or earlier today.</summary>
     public Dictionary<string, SessionUsage> Usage { get; } = [];
     public event Action? Changed;
+    /// <summary>What the agents started, from the last process walk.</summary>
+    public List<ProcGroup> Groups { get; private set; } = [];
+    public event Action? GroupsChanged;
+
+    public void SetGroups(List<ProcGroup> groups)
+    {
+        Groups = groups;
+        GroupsChanged?.Invoke();
+    }
 
     public Usage Today => Usage.Values.Aggregate(default(Usage), (a, b) => a + b.Today);
     /// <summary>Today across every session in <paramref name="cwd"/>.</summary>
@@ -97,13 +108,18 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
     readonly AgentsState _st = new();
     readonly HashSet<int> _watched = [];
     readonly HashSet<string> _ended = [];
+    readonly ProcessTracker _procs = new();
     ModuleContext _ctx = null!;
     System.Windows.Threading.DispatcherTimer? _clock;
+    Timer? _walkTimer;
+    bool _fast, _walking, _again;
+    /// <summary>Walk every second until then: a shell tool is running and may start something that outlives the shell.</summary>
+    DateTime _burstUntil;
 
     public void Initialize(ModuleContext ctx)
     {
         _ctx = ctx;
-        ctx.Tabs.Register(new TabDescriptor(TabId, "Agents", Icon, 35, () => new AgentsTab(this, _st), () => _st.Sessions.Count == 0));
+        ctx.Tabs.Register(new TabDescriptor(TabId, "Agents", Icon, 35, () => new AgentsTab(this, _st), () => _st.Sessions.Count == 0 && !_st.Groups.Any(g => g.LeftRunning)));
         ctx.SettingsSections.Register(new SettingsSectionDescriptor(TabId, "Agents", Icon, 45, () => AgentsSettings.Create(ctx.Settings.ReadOnly)));
         ctx.Segments.Register(new SegmentDescriptor("agents.pill", SegmentSlot.PillRight, 6, () => AgentsViews.Segment(_st)));
         ctx.Segments.Register(new SegmentDescriptor("agents.game", SegmentSlot.GameBar, 13, () => AgentsViews.Segment(_st), "Agents", "Working agents, and which one needs you."));
@@ -112,12 +128,15 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
             .Select(s => new SearchHit(s.Name, AgentsViews.Meta(s), () => ctx.Shell.SelectTab(TabId)))));
 
         if (ctx.Settings.ReadOnly) { Seed(); return; }
+        ctx.Shell.TabChanged += _ => { if (Watching) Walk(); };
         Task.Run(Listen);
     }
 
     /// <summary>"4m ago" goes stale only while someone looks: refresh it every 30 s while the panel is open.</summary>
     public void SetCadence(Cadence cadence)
     {
+        _fast = cadence == Cadence.Fast;
+        if (Watching) Walk();
         if (cadence == Cadence.Fast)
         {
             _clock ??= new(TimeSpan.FromSeconds(30), System.Windows.Threading.DispatcherPriority.Background, (_, _) => _st.Raise(), _ctx.Dispatcher);
@@ -138,6 +157,44 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
         _st.Sessions.Remove(s);
         _st.Raise();
     }
+
+    internal void Stop(ProcGroup g) => Task.Run(() =>
+    {
+        try { _procs.Stop(g.Root); }
+        catch (Exception ex) { Log.Warn("Stopping an agent's process failed", ex); }
+        _ctx.Bus.Run(() => Later(300));
+    });
+
+    // ---------- processes ----------
+
+    /// <summary>Memory, CPU and ports are measured only while someone looks at them.</summary>
+    bool Watching => _fast && _ctx.Shell.ActiveTab == TabId;
+
+    /// <summary>Walks the process tree on the thread pool, and again in 2 s while the tab is visible.</summary>
+    void Walk()
+    {
+        if (_ctx.Settings.ReadOnly) return;
+        if (_walking) { _again = true; return; }
+        (_walking, _again) = (true, false);
+        var sessions = _st.Sessions.Where(s => s.Pid > 0).Select(s => (s.Id, s.Name, s.Pid)).ToArray();
+        var measure = Watching;
+        Task.Run(() =>
+        {
+            List<ProcGroup>? groups = null;
+            try { groups = _procs.Walk(sessions, measure); }
+            catch (Exception ex) { Log.Warn("Agents process walk failed", ex); }
+            _ctx.Bus.Run(() =>
+            {
+                _walking = false;
+                if (groups is not null) _st.SetGroups(groups);
+                if (_again) Walk();
+                else if (Watching) Later(2000);
+                else if (DateTime.UtcNow < _burstUntil) Later(1000);
+            });
+        });
+    }
+
+    void Later(int ms) => (_walkTimer ??= new(_ => _ctx.Bus.Run(Walk))).Change(ms, Timeout.Infinite);
 
     // ---------- events ----------
 
@@ -192,6 +249,7 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
             _ended.Add(e.Session); // async hooks race: a Stop that lands after SessionEnd must not bring the row back
             if (_ended.Count > 100) _ended.Clear();
             if (s is not null) Dismiss(s);
+            Later(2000);
             return;
         }
         if (e.Event == "SessionStart") _ended.Remove(e.Session); // a resumed session keeps its id
@@ -203,6 +261,12 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
         if (e.Transcript is { Length: > 0 } tp) s.Transcript = tp;
         if (e.Hwnd != 0) s.Window = (nint)e.Hwnd;
         if (e.Pid > 0 && s.Pid != e.Pid) { s.Pid = e.Pid; Watch(e.Pid); }
+        // "npm run dev &" outlives its shell, which ends before PostToolUse: note its processes while the shell still runs.
+        if (e.Tool is "Bash" or "PowerShell")
+        {
+            if (e.Event == "PreToolUse") { _burstUntil = DateTime.UtcNow.AddSeconds(10); Later(200); }
+            else if (e.Event == "PostToolUse") { _burstUntil = default; Walk(); }
+        }
 
         // While it waits for you, tool events of other tools (subagents share the session id) must not clear the wait:
         // only the tool it asked about, a new prompt or the end of the turn do.
@@ -299,6 +363,8 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
     {
         _watched.Remove(pid);
         if (_st.Sessions.RemoveAll(s => s.Pid == pid) > 0) _st.Raise();
+        Walk(); // what it started now names a dead parent: find it before anything else exits
+
     }
 
     void Seed()
@@ -315,5 +381,11 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
         _st.Usage["2"] = new(@"C:\code\web", new() { [today] = new(612_000, 0.71), [today.AddDays(-1)] = new(3_200_000, 3.80) });
         _st.Usage["3"] = new(@"C:\code\ledge", new() { [today] = new(88_000, 0.09) });
         _st.Raise();
+        _st.SetGroups(
+        [
+            new(11, "2", "web", "node npm-cli.js run dev", [(11, 0), (12, 0), (13, 0)], 388L << 20, 0.4, [3000], false),
+            new(14, "2", "web", "node vitest.mjs --watch", [(14, 0)], 96L << 20, 1.2, [], false),
+            new(15, "9", "docs", "node astro.mjs dev", [(15, 0), (16, 0)], 210L << 20, 0.1, [4321], true),
+        ]);
     }
 }
