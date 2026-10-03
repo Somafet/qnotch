@@ -57,6 +57,7 @@ internal static class AgentHook
             w.WriteString("event", evt);
             w.WriteString("session", Str(e, "session_id") ?? "");
             w.WriteString("cwd", Str(e, "cwd") ?? "");
+            if (Str(e, "transcript_path") is { } tp) w.WriteString("transcript", tp);
             if (message is not null) w.WriteString("message", message);
             if (Str(e, "notification_type") is { } nt) w.WriteString("type", nt);
             if (tool is not null) w.WriteString("tool", tool);
