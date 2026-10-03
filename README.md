@@ -11,6 +11,7 @@ A notch for Windows 11. A slim pill at the top of your screen shows what is play
 - **System stats:** CPU, GPU, RAM, network and battery.
 - **Now playing:** track, artwork and controls for anything that plays media.
 - **Clipboard history:** text, code, links and images you copied, with pins.
+- **Mic and camera:** a glyph in the pill while any app uses your microphone or camera.
 - **Notifications:** any app or script can post one, with buttons. See [docs/notifications.md](docs/notifications.md).
 - **Search** across clipboard, files, notes, notifications and settings.
 - **AI apps:** launch them with Alt+1 to Alt+6 and see your Claude Code and Codex usage limits.
