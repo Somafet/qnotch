@@ -52,6 +52,8 @@ Change them in Settings, Hotkeys.
 
 Settings, notes and logs live in `%APPDATA%\QNotch\`. Tokens (GitHub, notifications) are kept in Windows Credential Manager, never in a file. Clipboard history stays in memory unless you choose to keep it.
 
+Settings, General, Share your setup copies your look, features, card layout, hotkeys and Game mode as one line of text, to paste on another PC. The code leaves out your name and picture, monitor, history, app paths and tokens, and you see what a code changes before it is applied.
+
 QNotch only goes online for two things, both visible in Settings:
 
 - **GitHub:** your contribution graph, once you add a token.

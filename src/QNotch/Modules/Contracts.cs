@@ -43,8 +43,15 @@ public enum SegmentSlot { PillLeft, PillRight, Glance, GameBar }
 public sealed record SegmentDescriptor(string Id, SegmentSlot Slot, int Order, Func<FrameworkElement> Factory,
     string Title = "", string? Hint = null) : IRegistryItem;
 
-/// <summary>One entry of <see cref="ModuleList.All"/>. Create is called only when the module is enabled. Early: registers pill or glance segments, so it initializes before the first frame.</summary>
-public sealed record ModuleInfo(string Id, string Title, string Description, Func<INotchModule> Create, bool Early = false);
+/// <summary>One entry of <see cref="ModuleList.All"/>. Create is called only when the module is enabled. Early: registers pill or glance segments, so it initializes before the first frame.
+/// Shared: the fields of the module's settings file (named Id) that a setup code carries, or null for none.</summary>
+public sealed record ModuleInfo(string Id, string Title, string Description, Func<INotchModule> Create, bool Early = false, SharedSettings? Shared = null);
+
+/// <summary>
+/// Settings fields a setup code may carry (Settings, General, Share your setup). A field is its property name, with "Name:min..max" for a
+/// number. Only plain preferences: never personal data, paths, history, or anything that starts a program or opens a port.
+/// </summary>
+public sealed record SharedSettings(Type Type, params string[] Fields);
 
 /// <summary>A panel tab. Glyph is a Segoe Fluent Icons string (see Theme/Glyphs.cs). Factory is called once, lazily.
 /// IsEmpty: true while the tab has nothing to show; the panel then opens on Home instead of this tab.</summary>
