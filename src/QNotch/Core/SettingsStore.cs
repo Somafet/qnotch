@@ -75,15 +75,18 @@ public sealed class SettingsStore
     /// Replaces whole files now (a setup code, applied right before a restart). Every later Save of them is ignored, so the live
     /// objects of this run cannot write the old values back before it exits.
     /// </summary>
-    public void Replace(IReadOnlyDictionary<string, string> files)
+    /// <returns>False when a file could not be written (logged).</returns>
+    public bool Replace(IReadOnlyDictionary<string, string> files)
     {
         lock (_gate)
             foreach (var id in files.Keys) { _pending.Remove(id); _sealed.Add(id); }
-        if (ReadOnly) return;
-        foreach (var (id, json) in files) Write(id, json);
+        if (ReadOnly) return true;
+        var ok = true;
+        foreach (var (id, json) in files) ok &= Write(id, json);
+        return ok;
     }
 
-    static void Write(string id, string json)
+    static bool Write(string id, string json)
     {
         try
         {
@@ -91,7 +94,8 @@ public sealed class SettingsStore
             var tmp = p + ".tmp";
             File.WriteAllText(tmp, json);
             File.Move(tmp, p, true);
+            return true;
         }
-        catch (Exception ex) { Log.Error($"Saving settings '{id}' failed", ex); }
+        catch (Exception ex) { Log.Error($"Saving settings '{id}' failed", ex); return false; }
     }
 }

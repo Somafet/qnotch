@@ -46,7 +46,7 @@ public static class GeneralSection
             catch (Exception ex) { Log.Warn("Copying the setup code failed", ex); copied.Text = "Could not reach the clipboard. Try again."; }
             copied.Visibility = Visibility.Visible;
         };
-        page.Children.Add(UiKit.Row("Copy setup code", "Your look, features, card layout, hotkeys, Game mode and a few feature preferences as one line of text. Leaves out your name, monitor, history, app paths and tokens.", copy));
+        page.Children.Add(UiKit.Row("Copy setup code", "Your look, features, card layout, hotkeys, Game mode and a few feature preferences as one line of text. Leaves out your name, monitor, game lists, history, app paths and tokens.", copy));
         page.Children.Add(copied);
 
         var box = new TextBox { Width = 260 };
@@ -71,7 +71,8 @@ public static class GeneralSection
         void Check()
         {
             plan = SetupCode.Read(box.Text, store, share, out var error);
-            status.Text = plan is null ? error : $"Replaces your settings for {string.Join(", ", plan.Titles)}. QNotch restarts to apply them.";
+            status.Text = plan is null ? error : $"Replaces your settings for {string.Join(", ", plan.Titles)}."
+                + (plan.TurnsOn.Count > 0 ? $" Turns on {string.Join(", ", plan.TurnsOn)}." : "") + " QNotch restarts to apply them.";
             status.SetResourceReference(TextBlock.ForegroundProperty, plan is null ? "DangerBrush" : "TextPrimaryBrush");
             apply.Visibility = plan is null ? Visibility.Collapsed : Visibility.Visible;
             result.Visibility = Visibility.Visible;
@@ -81,10 +82,14 @@ public static class GeneralSection
         box.TextChanged += (_, _) => { plan = null; result.Visibility = Visibility.Collapsed; };
         apply.Click += (_, _) =>
         {
-            if (plan is null) return;
-            store.Replace(plan.Files);
-            Log.Info($"Applied a setup code: {string.Join(", ", plan.Files.Keys)}");
-            restart();
+            // Read again: a setting changed since Check (the pin, a hotkey) must not be written back with its old value.
+            if (plan is null || SetupCode.Read(box.Text, store, share, out _) is not { } fresh) { Check(); return; }
+            apply.Visibility = Visibility.Collapsed;
+            var saved = store.Replace(fresh.Files);
+            Log.Info($"Applied a setup code: {string.Join(", ", fresh.Files.Keys)}{(saved ? "" : " (some files failed)")}");
+            if (!saved) { status.Text = "Some settings could not be saved, see the log. Restart QNotch to load what was saved."; return; }
+            try { restart(); }
+            catch (Exception ex) { Log.Warn("Restart after a setup code failed", ex); status.Text = "Applied. Restart QNotch to finish."; }
         };
     }
 

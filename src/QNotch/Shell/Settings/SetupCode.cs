@@ -4,6 +4,8 @@ using System.IO.Compression;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
+using System.Windows.Input;
 using QNotch.Core;
 using QNotch.Modules;
 using QNotch.Shell.GameMode;
@@ -22,17 +24,22 @@ public static class SetupCode
 
     public sealed record Section(string Id, string Title, SharedSettings Shared);
 
-    /// <summary>Files to write (current settings with the code's values merged in) and the titles of the sections it changes.</summary>
-    public sealed record Plan(IReadOnlyDictionary<string, string> Files, IReadOnlyList<string> Titles);
+    /// <summary>Files to write (current settings with the code's values merged in), the titles of the sections it changes and the
+    /// features it turns back on (they may record or listen, so the user sees them before applying).</summary>
+    public sealed record Plan(IReadOnlyDictionary<string, string> Files, IReadOnlyList<string> Titles, IReadOnlyList<string> TurnsOn);
 
-    /// <summary>The shell's own shared settings. Left out on purpose: monitor, pin, profile name and picture, Start with Windows, last tab.</summary>
+    /// <summary>Like <see cref="SettingsStore.Json"/>, but an enum must be one of its names: "Theme": 7 would load as an undefined value.</summary>
+    static readonly JsonSerializerOptions Strict = StrictOptions();
+
+    /// <summary>The shell's own shared settings. Left out on purpose: monitor, pin, profile name and picture, Start with Windows, last tab,
+    /// and the Game mode app lists (they name the user's games).</summary>
     public static readonly IReadOnlyList<Section> ShellSections =
     [
         new("general", "Appearance and features", new(typeof(GeneralSettings), "HoverDwellMs:0..600", "LeaveDelayMs:100..1500",
             "AccentColor", "Theme", "ReduceMotion", "DisabledModules", "CardOrder", "CardVisible")),
         new("hotkeys", "Hotkeys", new(typeof(ShortcutSettings), "Keys")),
         new("gamemode", "Game mode", new(typeof(GameModeSettings), "AutoDetect", "Opacity:0.3..1", "Height:16..40",
-            "OffsetX:-1500..1500", "OffsetY:0..400", "Segments", "AlwaysGame", "NeverGame")),
+            "OffsetX:-1500..1500", "OffsetY:0..400", "Segments")),
     ];
 
     /// <summary>Shell sections, then every module that shares settings (on or off: its file is there either way).</summary>
@@ -71,7 +78,8 @@ public static class SetupCode
             int n = 0, read;
             while (n < buf.Length && (read = z.Read(buf, n, buf.Length - n)) > 0) n += read;
             if (n > MaxJson) { error = "This code is too long."; return null; }
-            root = JsonNode.Parse(buf.AsSpan(0, n)) as JsonObject ?? throw new FormatException();
+            root = JsonNode.Parse(buf.AsSpan(0, n), documentOptions: new JsonDocumentOptions { AllowDuplicateProperties = false }) as JsonObject
+                ?? throw new FormatException();
         }
         catch (Exception ex) when (ex is FormatException or InvalidDataException or JsonException)
         {
@@ -81,6 +89,7 @@ public static class SetupCode
 
         var files = new Dictionary<string, string>();
         var titles = new List<string>();
+        var turnsOn = new List<string>();
         foreach (var s in sections)
         {
             if (root[s.Id] is not JsonObject from) continue;
@@ -89,7 +98,8 @@ public static class SetupCode
             foreach (var (name, range) in s.Shared.Fields.Select(Field))
             {
                 if (!from.TryGetPropertyValue(name, out var v) || v is null) continue;
-                if (!Fits(v) || (range is var (min, max) && !(v is JsonValue jv && jv.TryGetValue(out double d) && d >= min && d <= max)))
+                if (!Fits(v) || (range is var (min, max) && !(v is JsonValue jv && jv.TryGetValue(out double d) && d >= min && d <= max))
+                    || (s.Id == "hotkeys" && name == "Keys" && !SafeGestures(v)))
                 {
                     error = $"This code has a value QNotch cannot use ({s.Title}).";
                     return null;
@@ -98,7 +108,7 @@ public static class SetupCode
                 changed = true;
             }
             if (!changed) continue;
-            try { _ = JsonSerializer.Deserialize(merged, s.Shared.Type, SettingsStore.Json); }
+            try { _ = JsonSerializer.Deserialize(merged, s.Shared.Type, Strict); }
             catch (JsonException)
             {
                 error = $"This code has a value QNotch cannot use ({s.Title}).";
@@ -106,9 +116,31 @@ public static class SetupCode
             }
             files[s.Id] = merged.ToJsonString(SettingsStore.Json);
             titles.Add(s.Title);
+            if (s.Id == "general") turnsOn.AddRange(TurnedOn(store, merged));
         }
         if (files.Count == 0) { error = "This code has no settings this version of QNotch knows."; return null; }
-        return new Plan(files, titles);
+        return new Plan(files, titles, turnsOn);
+    }
+
+    /// <summary>Titles of the features that are off now and would be on after the code.</summary>
+    static IEnumerable<string> TurnedOn(SettingsStore store, JsonObject merged)
+    {
+        var off = merged["DisabledModules"]?.AsArray().Select(n => n?.GetValue<string>()).ToHashSet(StringComparer.OrdinalIgnoreCase) ?? [];
+        var now = store.Get<GeneralSettings>("general").DisabledModules;
+        return ModuleList.All.Where(m => now.Contains(m.Id, StringComparer.OrdinalIgnoreCase) && !off.Contains(m.Id)).Select(m => m.Title);
+    }
+
+    /// <summary>Every gesture is empty (off) or parses and holds Alt or Win, so a code cannot take Ctrl+C or a plain key from other apps.</summary>
+    static bool SafeGestures(JsonNode keys) => keys is JsonObject o && o.All(p =>
+        p.Value is JsonValue v && v.TryGetValue(out string? g) && (g.Length == 0
+            || (HotkeyService.TryParse(g, out var mods, out _) && (mods & (ModifierKeys.Alt | ModifierKeys.Windows)) != 0)));
+
+    static JsonSerializerOptions StrictOptions()
+    {
+        var o = new JsonSerializerOptions(SettingsStore.Json);
+        o.Converters.Clear();
+        o.Converters.Add(new JsonStringEnumConverter(allowIntegerValues: false));
+        return o;
     }
 
     static JsonObject Serialize(SettingsStore store, Section s) =>
