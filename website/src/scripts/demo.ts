@@ -1048,8 +1048,9 @@ export function initDemo(root: HTMLElement) {
   });
 
   // A click anywhere else on the page closes a panel opened from the keyboard or a scenario.
+  // composedPath, not contains: a click that re-renders its own button (the clipboard filters) leaves e.target detached.
   document.addEventListener('click', e => {
-    if (root.contains(e.target as Node)) return;
+    if (e.composedPath().includes(root)) return;
     stopPicking();
     desk.closeFlyouts();
     if (s.mode === 'open' && !s.pinned) close();
