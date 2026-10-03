@@ -51,7 +51,7 @@ public sealed class CaptureModule : INotchModule
         _st.Description = string.Join(" ", parts);
     }
 
-    /// <summary>Same shape in the pill and the game bar; the game bar inherits its own font size.</summary>
+    /// <summary>Same element in the pill and the game bar.</summary>
     FrameworkElement Segment()
     {
         var mic = UiKit.BindVisible(UiKit.Glyph(Mic, 12, "WarningBrush"), _st, nameof(CaptureState.MicInUse));
