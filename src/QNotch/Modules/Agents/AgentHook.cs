@@ -96,6 +96,7 @@ internal static class AgentNative
     [DllImport("kernel32.dll")] static extern nint OpenProcess(uint access, bool inherit, uint pid);
     [DllImport("kernel32.dll")] static extern bool CloseHandle(nint handle);
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode)] static extern bool QueryFullProcessImageNameW(nint process, int flags, StringBuilder name, ref int size);
+    [DllImport("winmm.dll", EntryPoint = "PlaySoundW", CharSet = CharSet.Unicode)] static extern bool PlaySoundW(string sound, nint module, uint flags);
     [DllImport("ntdll.dll")] static extern int NtQueryInformationProcess(nint process, int cls, ref PROCESS_BASIC_INFORMATION info, int size, out int returned);
 
     /// <summary>
@@ -155,6 +156,16 @@ internal static class AgentNative
             return false;
         }, 0);
         return found;
+    }
+
+    /// <summary>
+    /// Plays a sound of the user's Windows sound scheme ("Notification.IM"), so a sound they turned off there stays off, at the system
+    /// sounds volume. Asynchronous; resolving the alias reads the registry, so it starts on the thread pool.
+    /// </summary>
+    public static void PlaySound(string alias)
+    {
+        const uint SND_ASYNC = 0x1, SND_NODEFAULT = 0x2, SND_ALIAS = 0x10000, SND_SYSTEM = 0x200000;
+        Task.Run(() => PlaySoundW(alias, 0, SND_ALIAS | SND_ASYNC | SND_NODEFAULT | SND_SYSTEM));
     }
 
     /// <summary>Call from a click handler: Windows lets the process that received the last input set the foreground window.</summary>

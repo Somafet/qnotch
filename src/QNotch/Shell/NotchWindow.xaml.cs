@@ -23,7 +23,7 @@ public partial class NotchWindow : Window
 
     nint _hwnd, _prevForeground;
     HwndSource _src = null!;
-    bool _kb, _gameBar, _pillDirty;
+    bool _kb, _gameBar, _pillDirty, _pillExact;
     int _monitorIndex;
     double _offX, _offY, _gameH = 22, _gameOpacity = 0.7, _gameShift;
 
@@ -200,9 +200,11 @@ public partial class NotchWindow : Window
         Surface.Width = _pillW;
     }
 
-    /// <summary>Data behind the pill changed: re-measure once (coalesced) and grow/shrink the pill with hysteresis.</summary>
-    public void InvalidatePill()
+    /// <summary>Data behind the pill changed: re-measure once (coalesced) and grow/shrink the pill with hysteresis.
+    /// <paramref name="exact"/> skips the hysteresis (the peek ended: back to the segments' own width).</summary>
+    public void InvalidatePill(bool exact = false)
     {
+        _pillExact |= exact;
         if (_pillDirty || _gameBar) return;
         _pillDirty = true;
         Dispatcher.BeginInvoke(DispatcherPriority.Loaded, () =>
@@ -210,8 +212,28 @@ public partial class NotchWindow : Window
             _pillDirty = false;
             if (_gameBar || _open > 0 || _animating) return;
             var w = MeasurePill();
-            if (w > _pillW || w < _pillW - 24) { _pillW = w; SetCollapsedWidth(w, true); }
+            if (w > _pillW || w < _pillW - 24 || (_pillExact && w != _pillW)) { _pillW = w; SetCollapsedWidth(w, true); }
+            _pillExact = false;
         });
+    }
+
+    /// <summary>Shows one line in place of the pill segments (<paramref name="text"/> set), or the segments again (null).</summary>
+    public void ShowPeek(string glyph, string? text, string brushKey)
+    {
+        var on = text is not null;
+        if (on)
+        {
+            PeekGlyph.Text = glyph;
+            PeekGlyph.SetResourceReference(TextBlock.ForegroundProperty, brushKey);
+            PeekText.Text = text;
+            // Always a bit wider than the pill was, however full it is, so the change catches the eye.
+            if (PeekStrip.Visibility != Visibility.Visible) PeekStrip.MinWidth = Math.Clamp(PillStrip.ActualWidth + 48, 200, PanelW - 60);
+            if (Motion.Enabled && PeekStrip.Visibility != Visibility.Visible)
+                PeekStrip.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(180)) { FillBehavior = FillBehavior.Stop });
+        }
+        PeekStrip.Visibility = on ? Visibility.Visible : Visibility.Collapsed;
+        PillStrip.Visibility = on ? Visibility.Collapsed : Visibility.Visible;
+        InvalidatePill(exact: !on);
     }
 
     void SetCollapsedWidth(double w, bool animate)
@@ -313,6 +335,7 @@ public partial class NotchWindow : Window
             PanelLayer.Visibility = Visibility.Collapsed;
             PillLayer.Opacity = 1;
             Surface.Width = _pillW;
+            if (PeekStrip.Visibility == Visibility.Visible) InvalidatePill(); // a peek that began during the close: re-measure was skipped
         }
         else
         {

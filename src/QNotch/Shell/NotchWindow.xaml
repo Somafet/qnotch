@@ -18,6 +18,13 @@
                 <Grid x:Name="PillLayer" Height="38" MinWidth="96" HorizontalAlignment="Center" VerticalAlignment="Top">
                     <!-- Filled by the shell from the registered PillLeft and PillRight segments (ShellController.BuildPill). -->
                     <StackPanel x:Name="PillStrip" Orientation="Horizontal" Margin="16,0,18,1" VerticalAlignment="Center"/>
+                    <!-- Peek (IShell.Peek): one line in place of the segments for a few seconds, wider than the pill usually is -->
+                    <Border x:Name="PeekStrip" Margin="20,0,22,1" VerticalAlignment="Center" Visibility="Collapsed">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <TextBlock x:Name="PeekGlyph" FontFamily="{StaticResource IconFont}" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBlock x:Name="PeekText" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" MaxWidth="320" TextTrimming="CharacterEllipsis"/>
+                        </StackPanel>
+                    </Border>
                 </Grid>
 
                 <!-- Expanded panel content: fixed size, pre-laid-out at startup, only opacity/transform animate -->

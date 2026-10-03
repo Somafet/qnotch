@@ -137,10 +137,10 @@ internal sealed class AgentsTab : Grid
     }
 }
 
-/// <summary>Settings, Agents: connect or disconnect each Claude Code config folder.</summary>
+/// <summary>Settings, Agents: connect or disconnect each Claude Code config folder, and the alert sounds.</summary>
 internal static class AgentsSettings
 {
-    public static FrameworkElement Create(bool readOnly)
+    public static FrameworkElement Create(AgentsModule m, AgentsConfig cfg, bool readOnly)
     {
         var page = UiKit.Page("Agents");
         var intro = UiKit.Text("Claude Code tells QNotch what each session is doing through hooks in its settings.json. Everything stays on this PC.", "Muted");
@@ -189,6 +189,11 @@ internal static class AgentsSettings
             };
             Sync();
         }
+
+        page.Children.Add(UiKit.Row("Sound when an agent needs you", "Your Windows message sound. Never in Game mode or while an app uses the microphone.",
+            UiKit.Toggle(cfg.SoundNeedsYou, on => { cfg.SoundNeedsYou = on; m.SaveSettings(); })));
+        page.Children.Add(UiKit.Row("Sound when an agent finishes", "Your Windows notification sound. Never in Game mode or while an app uses the microphone.",
+            UiKit.Toggle(cfg.SoundDone, on => { cfg.SoundDone = on; m.SaveSettings(); })));
         return page;
     }
 }
