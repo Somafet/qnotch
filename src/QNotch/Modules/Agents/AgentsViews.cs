@@ -68,7 +68,40 @@ internal static class AgentsViews
         return b;
     }
 
-    public static UIElement Row(AgentsModule module, AgentSession s, UIElement? below = null)
+    const string PriceNote = "At API list prices. A Pro or Max plan is not billed per token.";
+
+    /// <summary>Right side of a row: what the session used today. Null before any usage is known.</summary>
+    static FrameworkElement? UsageColumn(AgentsState st, AgentSession s, UIElement? below = null)
+    {
+        if (!st.Usage.TryGetValue(s.Id, out var u) || u.Today.Tokens == 0) return null;
+        var cost = new TextBlock { Text = Usage.FormatCost(u.Today), FontSize = 12, HorizontalAlignment = HorizontalAlignment.Right };
+        var tokens = UiKit.Text($"{Usage.FormatTokens(u.Today.Tokens)} tokens", "Muted");
+        tokens.HorizontalAlignment = HorizontalAlignment.Right;
+        tokens.Margin = new Thickness(0, 2, 0, 0);
+        var tip = $"Today: {u.Today}";
+        if (u.Total.Tokens != u.Today.Tokens) tip += $"\nWhole session: {u.Total}";
+        if (st.ProjectToday(s.Cwd) is var p && p.Tokens != u.Today.Tokens) tip += $"\nToday in {s.Name}: {p}";
+        var col = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 0), Background = Brushes.Transparent, ToolTip = $"{tip}\n{PriceNote}" };
+        col.Children.Add(cost);
+        col.Children.Add(tokens);
+        return col;
+    }
+
+    /// <summary>Top of the tab: today across every session. Null before any usage is known.</summary>
+    public static FrameworkElement? TodayLine(AgentsState st)
+    {
+        var today = st.Today;
+        if (today.Tokens == 0) return null;
+        var label = UiKit.Text("Today", "Muted");
+        var value = UiKit.Text(today.ToString(), "Muted");
+        value.HorizontalAlignment = HorizontalAlignment.Right;
+        var g = new Grid { Margin = new Thickness(10, 0, 10, 6), Background = Brushes.Transparent, ToolTip = $"Every Claude Code session today.\n{PriceNote}" };
+        g.Children.Add(label);
+        g.Children.Add(value);
+        return g;
+    }
+
+    public static UIElement Row(AgentsModule module, AgentsState st, AgentSession s, UIElement? below = null)
     {
         var icon = UiKit.Glyph(s.Status == AgentStatus.Done ? Glyphs.Accept : AgentsModule.Icon, 14, StatusBrush(s.Status));
         icon.HorizontalAlignment = HorizontalAlignment.Center;
@@ -86,7 +119,8 @@ internal static class AgentsViews
         text.Children.Add(name);
         text.Children.Add(meta);
 
-        var buttons = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 0) };
+        // Room for both buttons on every row, so the usage column lines up.
+        var buttons = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 0), MinWidth = 60 };
         if (s.Window != 0) buttons.Children.Add(IconButton(ShowGlyph, "Show its terminal", () => module.Show(s)));
         if (s.Status is AgentStatus.Done or AgentStatus.Ready) buttons.Children.Add(IconButton(Glyphs.Close, "Clear", () => module.Dismiss(s)));
 
@@ -94,11 +128,17 @@ internal static class AgentsViews
         g.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         g.ColumnDefinitions.Add(new ColumnDefinition());
         g.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        g.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         Grid.SetColumn(text, 1);
-        Grid.SetColumn(buttons, 2);
+        Grid.SetColumn(buttons, 3);
         g.Children.Add(tile);
         g.Children.Add(text);
         g.Children.Add(buttons);
+        if (UsageColumn(st, s) is { } usage)
+        {
+            Grid.SetColumn(usage, 2);
+            g.Children.Add(usage);
+        }
         if (below is null) return Hover(g);
         var all = new StackPanel();
         all.Children.Add(g);
@@ -161,7 +201,8 @@ internal sealed class AgentsTab : Grid
         var left = _st.Groups.Where(g => g.LeftRunning).ToList();
         _empty.Visibility = _st.Sessions.Count == 0 && left.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         _rows.Children.Clear();
-        foreach (var s in _st.Sessions) _rows.Children.Add(AgentsViews.Row(_module, s, Processes(s)));
+        if (_st.Sessions.Count > 0 && AgentsViews.TodayLine(_st) is { } today) _rows.Children.Add(today);
+        foreach (var s in _st.Sessions) _rows.Children.Add(AgentsViews.Row(_module, _st, s, Processes(s)));
         if (left.Count == 0) return;
         var header = new TextBlock { Text = "Left running", FontSize = 12, FontWeight = FontWeights.SemiBold, Margin = new Thickness(2, 8, 0, 0) };
         _rows.Children.Add(header);
