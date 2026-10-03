@@ -136,6 +136,7 @@ public sealed class ShellController : IShell
     {
         if (_mode == m) return;
         _mode = m;
+        _peek?.Dispose(); // the panel or the game bar takes over the pill: a peek never comes back afterwards
         UpdateGlance();
         ModeChanged?.Invoke(m);
         NotifyCadence();
@@ -232,6 +233,40 @@ public sealed class ShellController : IShell
         // Nobody hovered: without this the panel would stay open until the pointer visits it.
         if (!_w.IsPointerOver()) StartLeave(Math.Max(lingerMs, _general.LeaveDelayMs));
         return true;
+    }
+
+    public IDisposable? Peek(string glyph, string text, string brushKey, int ms = 4000)
+    {
+        if (_mode == ShellMode.GameBar) return null;
+        if (_mode != ShellMode.Collapsed) return new PeekHandle(null);
+        // A newer peek takes over the shown one in place (no flash back to the segments): the old handle just goes stale.
+        PeekHandle h = null!;
+        h = _peek = new PeekHandle(() =>
+        {
+            if (_peek != h) return;
+            _peekTimer!.Stop();
+            _peek = null;
+            _w.ShowPeek("", null, "");
+        });
+        if (_peekTimer is null)
+        {
+            _peekTimer = new DispatcherTimer(DispatcherPriority.Normal, _w.Dispatcher);
+            _peekTimer.Tick += (_, _) => _peek?.Dispose();
+        }
+        _peekTimer.Stop();
+        _peekTimer.Interval = TimeSpan.FromMilliseconds(Math.Clamp(ms, 1000, 10000));
+        _w.ShowPeek(glyph, text, brushKey);
+        _peekTimer.Start();
+        return h;
+    }
+
+    PeekHandle? _peek;
+    DispatcherTimer? _peekTimer;
+
+    sealed class PeekHandle(Action? end) : IDisposable
+    {
+        Action? _end = end;
+        public void Dispose() { var e = _end; _end = null; e?.Invoke(); }
     }
 
     public bool OpenPanelWithKeyboard(string? tabId = null)

@@ -28,6 +28,12 @@ internal static class Snapshot
             Directory.CreateDirectory(dir);
             await Task.Delay(1800); // first stats sample and idle prebuild
             Save(w.RootElement, new Rect(0, 0, NotchWindow.WinW, 84), Path.Combine(dir, "pill.png"), Desk);
+            using (shell.Peek("\uE756", "api: Needs you", "WarningBrush"))
+            {
+                await Task.Delay(400);
+                Save(w.RootElement, new Rect(0, 0, NotchWindow.WinW, 84), Path.Combine(dir, "pill-peek.png"), Desk);
+            }
+            await Task.Delay(400);
 
             shell.OpenPanel();
             await Task.Delay(600);

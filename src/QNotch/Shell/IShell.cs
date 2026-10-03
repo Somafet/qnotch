@@ -24,6 +24,11 @@ public interface IShell
     void ClosePanel();
     void OpenSettings(string? sectionId = null);
 
+    /// <summary>Widens the collapsed pill for a moment to show one line in place of its segments ("api: Needs you"), for something the
+    /// user should notice whatever app is in front. A newer peek replaces the shown one; disposing the handle ends it early. Shows
+    /// nothing while the panel is open. Returns null in game mode, where the caller should stay quiet too (no sound).</summary>
+    IDisposable? Peek(string glyph, string text, string brushKey, int ms = 4000);
+
     /// <summary>The panel is pinned open (Settings, General).</summary>
     bool IsPinned { get; }
 
