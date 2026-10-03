@@ -27,13 +27,33 @@ internal sealed class AgentSession(string id)
     public int Pid { get; set; }
     /// <summary>The tool a permission prompt or question waits on, so other tools' events leave "needs you" alone.</summary>
     public string? WaitingTool { get; set; }
+    /// <summary>The transcript Claude Code writes, where the token usage comes from.</summary>
+    public string Transcript { get; set; } = "";
+    /// <summary>Owned by the thread pool while <see cref="UsagePending"/> is true.</summary>
+    public UsageReader? Reader { get; set; }
+    public bool UsagePending { get; set; }
+    /// <summary>An event came in while a read ran: read again when it is done.</summary>
+    public bool UsageStale { get; set; }
+}
+
+/// <summary>A session's usage per local day. Kept after its row goes, so Today does not shrink when a terminal closes.</summary>
+internal sealed record SessionUsage(string Cwd, Dictionary<DateOnly, Usage> Days)
+{
+    public Usage Total => Days.Values.Aggregate(default(Usage), (a, b) => a + b);
+    public Usage Today => Days.GetValueOrDefault(DateOnly.FromDateTime(DateTime.Now));
 }
 
 /// <summary>What the views show. The list raises <see cref="Changed"/>; the pill binds to the observable properties.</summary>
 internal sealed partial class AgentsState : ObservableObject
 {
     public List<AgentSession> Sessions { get; } = [];
+    /// <summary>Usage by session id, for sessions shown now or earlier today.</summary>
+    public Dictionary<string, SessionUsage> Usage { get; } = [];
     public event Action? Changed;
+
+    public Usage Today => Usage.Values.Aggregate(default(Usage), (a, b) => a + b.Today);
+    /// <summary>Today across every session in <paramref name="cwd"/>.</summary>
+    public Usage ProjectToday(string cwd) => Usage.Values.Where(u => u.Cwd == cwd).Aggregate(default(Usage), (a, b) => a + b.Today);
 
     /// <summary>"api needs you" or "2 working", empty while nothing runs.</summary>
     [ObservableProperty] string _pillText = "";
@@ -55,6 +75,8 @@ internal sealed partial class AgentsState : ObservableObject
             _ => working > 0 ? $"{working} working" : "",
         };
         PillVisible = PillText.Length > 0;
+        foreach (var id in Usage.Where(u => u.Value.Today.Tokens == 0 && !Sessions.Exists(s => s.Id == u.Key)).Select(u => u.Key).ToList())
+            Usage.Remove(id);
         Changed?.Invoke();
     }
 
@@ -69,7 +91,7 @@ public sealed class AgentsConfig
 }
 
 /// <summary>One line from the hook (see <see cref="AgentHook"/>).</summary>
-internal sealed record AgentEvent(string Agent, string Event, string Session, string Cwd, string? Message, string? Type, string? Tool, int Pid, long Hwnd, long At);
+internal sealed record AgentEvent(string Agent, string Event, string Session, string Cwd, string? Message, string? Type, string? Tool, int Pid, long Hwnd, long At, string? Transcript = null);
 
 /// <summary>
 /// Live Claude Code sessions: working, needs you, done. Claude Code runs <c>QNotch.exe agent</c> on each event and the hook sends one
@@ -200,6 +222,7 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
         else if (e.At < s.At) return;
         s.At = e.At;
         if (e.Cwd.Length > 0) s.Cwd = e.Cwd;
+        if (e.Transcript is { Length: > 0 } tp) s.Transcript = tp;
         if (e.Hwnd != 0) s.Window = (nint)e.Hwnd;
         if (e.Pid > 0 && s.Pid != e.Pid) { s.Pid = e.Pid; Watch(e.Pid); }
 
@@ -233,6 +256,7 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
                 : e.Event == "PreToolUse" ? e.Tool
                 : PermissionTool().Match(s.Message) is { Success: true } m ? m.Groups[1].Value : null;
         }
+        ReadUsage(s);
         _st.Raise();
         if (s.Status == was) return;
         if (s.Status == AgentStatus.NeedsYou) Alert(s, "Needs you", Icon, "WarningBrush", _cfg.SoundNeedsYou ? "Notification.IM" : null);
@@ -278,6 +302,36 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
         }
     }
 
+    /// <summary>
+    /// Every event means the transcript changed: read the new lines a few seconds later, so a burst of tool calls costs one read.
+    /// The first read of a long session parses its whole transcript once; later reads only what was appended.
+    /// </summary>
+    void ReadUsage(AgentSession s)
+    {
+        if (s.Transcript.Length == 0) return;
+        if (s.UsagePending) { s.UsageStale = true; return; }
+        (s.UsagePending, s.UsageStale) = (true, false);
+        var (path, reader) = (s.Transcript, s.Reader ??= new UsageReader());
+        Task.Run(async () =>
+        {
+            await Task.Delay(UsageDelay);
+            Dictionary<DateOnly, Usage>? days = null;
+            try { days = reader.Read(path); }
+            catch (Exception ex) { Log.Warn("Reading agent usage failed", ex); }
+            _ctx.Bus.Run(() =>
+            {
+                s.UsagePending = false;
+                if (s.UsageStale && _st.Sessions.Contains(s)) ReadUsage(s);
+                if (days is null) return;
+                if (reader.BytesRead > 1_000_000) MemoryTrim.AfterActivity();
+                _st.Usage[s.Id] = new SessionUsage(s.Cwd, days);
+                _st.Raise();
+            });
+        });
+    }
+
+    static readonly TimeSpan UsageDelay = TimeSpan.FromSeconds(3);
+
     /// <summary>"Claude needs your permission to use Bash" names the tool it waits on.</summary>
     [System.Text.RegularExpressions.GeneratedRegex(@"permission to use (\S+)$")]
     private static partial System.Text.RegularExpressions.Regex PermissionTool();
@@ -321,6 +375,10 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
             new("2") { Cwd = @"C:\code\web", Status = AgentStatus.Working, Since = now.AddMinutes(-6), Window = 1 },
             new("3") { Cwd = @"C:\code\ledge", Status = AgentStatus.Done, Since = now.AddMinutes(-12), Window = 1 },
         ]);
+        var today = DateOnly.FromDateTime(DateTime.Now);
+        _st.Usage["1"] = new(@"C:\code\api", new() { [today] = new(1_940_000, 2.14) });
+        _st.Usage["2"] = new(@"C:\code\web", new() { [today] = new(612_000, 0.71), [today.AddDays(-1)] = new(3_200_000, 3.80) });
+        _st.Usage["3"] = new(@"C:\code\ledge", new() { [today] = new(88_000, 0.09) });
         _st.Raise();
     }
 }
