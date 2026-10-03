@@ -162,6 +162,9 @@ public partial class NotchWindow : Window
     /// <summary>Monitor scale (physical pixels per DIP).</summary>
     public double Scale => _mon.Scale;
 
+    /// <summary>Horizontal center of the monitor, in physical pixels.</summary>
+    public double CenterPx => _mon.Bounds.Left + _mon.Bounds.Width / 2.0;
+
     /// <summary>The farthest the collapsed pill can go from the monitor center, in DIPs.</summary>
     public double MaxNotchX => Math.Max(0, (_mon.Bounds.Width / _mon.Scale - _pillW) / 2);
 
