@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace QNotch.Modules.NoteGithub;
+namespace QNotch.Modules.Github;
 
 /// <summary>The GitHub token in Windows Credential Manager (generic credential "QNotch/GitHub"). Raw advapi32, no WinRT needed.</summary>
 internal static partial class CredentialStore

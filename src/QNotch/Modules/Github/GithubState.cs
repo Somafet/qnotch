@@ -1,20 +1,12 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 
-namespace QNotch.Modules.NoteGithub;
+namespace QNotch.Modules.Github;
 
-public enum NoteStatus { Saved, Editing, Failed }
 public enum GithubStatus { NoToken, Loading, Ready, Error }
 
-/// <summary>Note and GitHub state. Only touch on the UI thread; providers post results through the bus.</summary>
-public sealed partial class NoteGithubState : ObservableObject
+/// <summary>GitHub state. Only touch on the UI thread; GithubService posts results through the bus.</summary>
+public sealed partial class GithubState : ObservableObject
 {
-    // Note
-    [ObservableProperty] string _noteText = "";
-    [ObservableProperty] string _noteWordsText = "0 words";
-    [ObservableProperty] string _noteDateText = "";
-    [ObservableProperty] NoteStatus _noteStatus = NoteStatus.Saved;
-
-    // GitHub
     [ObservableProperty] GithubStatus _githubStatus = GithubStatus.Loading;
     [ObservableProperty] bool _githubHasToken;
     [ObservableProperty] bool _githubRefreshing;

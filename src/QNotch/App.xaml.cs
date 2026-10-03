@@ -104,6 +104,8 @@ public partial class App : Application
         var shell = _shell;
 
         // Modules the user turned off are never created. A change in Settings, Features applies on the next start.
+        foreach (var (old, ids) in ModuleList.Renamed)
+            if (gs.DisabledModules.RemoveAll(x => string.Equals(x, old, StringComparison.OrdinalIgnoreCase)) > 0) gs.DisabledModules.AddRange(ids);
         var bootDisabled = gs.DisabledModules.ToHashSet(StringComparer.OrdinalIgnoreCase);
         var enabled = ModuleList.All.Where(i => !bootDisabled.Contains(i.Id)).ToList();
         Log.Info($"Modules: {string.Join(", ", enabled.Select(i => i.Id))} (off: {(bootDisabled.Count == 0 ? "none" : string.Join(", ", bootDisabled))})");

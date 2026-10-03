@@ -4,12 +4,12 @@ using System.Windows.Controls;
 using QNotch.Core;
 using QNotch.Theme;
 
-namespace QNotch.Modules.NoteGithub;
+namespace QNotch.Modules.Github;
 
 /// <summary>Settings section: enter, test and clear the GitHub token (stored in Windows Credential Manager).</summary>
 internal static class GithubSection
 {
-    public static FrameworkElement Create(NoteGithubState s, GithubService svc)
+    public static FrameworkElement Create(GithubState s, GithubService svc)
     {
         var page = UiKit.Page("GitHub");
 

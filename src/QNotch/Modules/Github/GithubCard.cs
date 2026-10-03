@@ -6,12 +6,12 @@ using QNotch.Core;
 using QNotch.Shell;
 using QNotch.Theme;
 
-namespace QNotch.Modules.NoteGithub;
+namespace QNotch.Modules.Github;
 
 /// <summary>GitHub card body (spans two columns): totals, contribution grid, and explicit no-token, loading and error states.</summary>
 internal sealed class GithubCard : Grid
 {
-    readonly NoteGithubState _s;
+    readonly GithubState _s;
     readonly GithubService _svc;
     readonly FrameworkElement _ready, _noToken, _loading, _error;
     readonly ContributionGraph _graph = new();
@@ -21,7 +21,7 @@ internal sealed class GithubCard : Grid
     readonly TextBlock _errorText = UiKit.Text("", "Muted");
     readonly Button _refresh = new() { Style = (Style)Application.Current.FindResource("IconButton"), Content = Glyphs.Refresh, Width = 24, Height = 24, ToolTip = "Refresh now" };
 
-    public GithubCard(NoteGithubState state, GithubService service, IShell shell)
+    public GithubCard(GithubState state, GithubService service, IShell shell)
     {
         _s = state;
         _svc = service;

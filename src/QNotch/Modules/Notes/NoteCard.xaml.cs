@@ -3,13 +3,13 @@ using System.Windows;
 using System.Windows.Controls;
 using QNotch.Core;
 
-namespace QNotch.Modules.NoteGithub;
+namespace QNotch.Modules.Notes;
 
 public partial class NoteCard : UserControl
 {
-    readonly NoteGithubState _s;
+    readonly NoteState _s;
 
-    public NoteCard(NoteGithubState state)
+    public NoteCard(NoteState state)
     {
         _s = state;
         DataContext = state;
@@ -21,7 +21,7 @@ public partial class NoteCard : UserControl
 
     void OnChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is nameof(NoteGithubState.NoteText) or nameof(NoteGithubState.NoteWordsText) or nameof(NoteGithubState.NoteDateText)) Update();
+        if (e.PropertyName is nameof(NoteState.NoteText) or nameof(NoteState.NoteWordsText) or nameof(NoteState.NoteDateText)) Update();
     }
 
     void Update()

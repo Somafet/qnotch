@@ -1,4 +1,4 @@
-namespace QNotch.Modules.NoteGithub;
+namespace QNotch.Modules.Github;
 
 /// <summary>One day of the contribution calendar. Level is 0 to 4 (GitHub's own quartiles).</summary>
 public sealed record GithubDay(DateOnly Date, int Count, int Level);

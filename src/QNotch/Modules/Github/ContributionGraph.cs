@@ -3,7 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 
-namespace QNotch.Modules.NoteGithub;
+namespace QNotch.Modules.Github;
 
 /// <summary>
 /// The 53 x 7 contribution grid, drawn in one OnRender pass (retained by WPF until Data, size, theme or accent changes).

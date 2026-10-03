@@ -2,10 +2,10 @@ using System.ComponentModel;
 using System.Windows;
 using QNotch.Core;
 
-namespace QNotch.Modules.NoteGithub;
+namespace QNotch.Modules.Notes;
 
 /// <summary>
-/// Keeps <see cref="NoteGithubState.NoteText"/> in sync with %APPDATA%\QNotch\note.txt. Loads on the thread pool at startup;
+/// Keeps <see cref="NoteState.NoteText"/> in sync with %APPDATA%\QNotch\note.txt. Loads on the thread pool at startup;
 /// each edit arms a one-shot 500 ms timer (re-armed while typing), the write is atomic (temp file then move) and happens on the thread pool.
 /// </summary>
 internal sealed class NoteStore
@@ -14,13 +14,13 @@ internal sealed class NoteStore
     const int DebounceMs = 500;
 
     readonly ModuleContext _ctx;
-    readonly NoteGithubState _s;
+    readonly NoteState _s;
     readonly Timer _timer;
     readonly object _gate = new();
     string? _pending;   // text not yet on disk
     bool _loaded;
 
-    public NoteStore(ModuleContext ctx, NoteGithubState state)
+    public NoteStore(ModuleContext ctx, NoteState state)
     {
         _ctx = ctx;
         _s = state;
@@ -51,7 +51,7 @@ internal sealed class NoteStore
 
     void OnChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName != nameof(NoteGithubState.NoteText)) return;
+        if (e.PropertyName != nameof(NoteState.NoteText)) return;
         var text = _s.NoteText;
         _s.NoteWordsText = WordsText(text);
         if (!_loaded) { _pending = text; return; } // the load callback sets the status

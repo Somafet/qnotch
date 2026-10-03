@@ -1,8 +1,8 @@
-<UserControl x:Class="QNotch.Modules.NoteGithub.NoteCard"
+<UserControl x:Class="QNotch.Modules.Notes.NoteCard"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:QNotch.Modules.NoteGithub">
-    <!-- DataContext: NoteGithubState. The TextBox binds straight to NoteText; NoteStore owns persistence. -->
+             xmlns:local="clr-namespace:QNotch.Modules.Notes">
+    <!-- DataContext: NoteState. The TextBox binds straight to NoteText; NoteStore owns persistence. -->
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>

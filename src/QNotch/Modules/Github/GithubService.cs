@@ -5,7 +5,7 @@ using System.Text;
 using System.Text.Json;
 using QNotch.Core;
 
-namespace QNotch.Modules.NoteGithub;
+namespace QNotch.Modules.Github;
 
 sealed class GithubException(string message, bool offline) : Exception(message)
 {
@@ -13,7 +13,7 @@ sealed class GithubException(string message, bool offline) : Exception(message)
 }
 
 /// <summary>
-/// Contribution calendar provider. All I/O runs on the thread pool; results reach <see cref="NoteGithubState"/> through the bus.
+/// Contribution calendar provider. All I/O runs on the thread pool; results reach <see cref="GithubState"/> through the bus.
 /// One-shot timer (hourly, 10 min after a failure): nothing runs between refreshes. The last response is cached in github-cache.json.
 /// </summary>
 internal sealed class GithubService
@@ -25,12 +25,12 @@ internal sealed class GithubService
     const string CalendarQuery = "query { viewer { login contributionsCollection { contributionCalendar { totalContributions weeks { contributionDays { date contributionCount contributionLevel } } } } } }";
 
     readonly ModuleContext _ctx;
-    readonly NoteGithubState _s;
+    readonly GithubState _s;
     readonly Timer _timer;
     readonly bool _demo = Environment.GetEnvironmentVariable("QNOTCH_GITHUB_DEMO") == "1";
     int _busy;
 
-    public GithubService(ModuleContext ctx, NoteGithubState state)
+    public GithubService(ModuleContext ctx, GithubState state)
     {
         _ctx = ctx;
         _s = state;

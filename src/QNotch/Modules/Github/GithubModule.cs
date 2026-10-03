@@ -1,27 +1,20 @@
 using QNotch.Theme;
 
-namespace QNotch.Modules.NoteGithub;
+namespace QNotch.Modules.Github;
 
-/// <summary>Personal note card and GitHub contribution card (plus the GitHub settings section).</summary>
-public sealed class NoteGithubModule : INotchModule, ICadenceAware
+/// <summary>GitHub contribution card plus its settings section (token in Credential Manager).</summary>
+public sealed class GithubModule : INotchModule, ICadenceAware
 {
     GithubService? _github;
 
     public void Initialize(ModuleContext ctx)
     {
-        var s = new NoteGithubState();
-        var note = new NoteStore(ctx, s);
+        var s = new GithubState();
         var github = _github = new GithubService(ctx, s);
 
-        ctx.Cards.Register(new CardDescriptor("note", "Note", 45, () => new NoteCard(s)));
         ctx.Cards.Register(new CardDescriptor("github", "GitHub", 50, () => new GithubCard(s, github, ctx.Shell), ColumnSpan: 2));
         ctx.SettingsSections.Register(new SettingsSectionDescriptor("github", "GitHub", Glyphs.Github, 50, () => GithubSection.Create(s, github)));
 
-        ctx.Search.Register(new SearchSource("note", "Note", Glyphs.Note, 30, q => s.NoteText.Split('\n')
-            .Where(l => l.Contains(q, StringComparison.OrdinalIgnoreCase))
-            .Select(l => new SearchHit(SearchHit.Snippet(l, q), "", () => ctx.Shell.SelectTab("home")))));
-
-        note.Start();
         github.Start();
     }
 
