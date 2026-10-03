@@ -69,7 +69,7 @@ Limits: titles 80 characters, bodies 300, messages 64 KB. Each app gets one toas
 
 ## Claude Code hook
 
-Get a toast with a button back to the session whenever Claude waits for you. In `~/.claude/settings.json`:
+To see every session live instead, connect Claude Code in Settings, Agents. For a toast with a button back to the session whenever Claude waits for you, add this to `~/.claude/settings.json`:
 
 ```json
 {

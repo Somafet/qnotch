@@ -1,6 +1,6 @@
 # QNotch architecture (contract for feature agents)
 
-QNotch is a **shell** plus thirteen **extensions**. The shell (window, pill, panel, tabs, Home grid, Settings, tray, hotkeys, Game mode, Edit mode) knows no extension by name except the single file `Modules/ModuleList.cs`. An extension (Media, Clipboard, Ai, Notes, Github, FileTray, Stats, Notifications, Scheduled, Volume, Pomodoro, ColorPicker, Search) lives entirely in `Modules/<Name>/`: its state, providers, views, P/Invoke and settings. It plugs in through five registries (cards, tabs, settings sections, segments, search sources) and a small `IShell`. Extensions are compiled in, not loaded at runtime (no DLL plugins: cold start, no WPF unload, no isolation). Each one has an on/off switch in Settings, Features; an extension that is off is never constructed. Game mode and Edit mode are shell features, not extensions: the shell owns the mode enum, click-through, the pill and panel swap and the card grid.
+QNotch is a **shell** plus fourteen **extensions**. The shell (window, pill, panel, tabs, Home grid, Settings, tray, hotkeys, Game mode, Edit mode) knows no extension by name except the single file `Modules/ModuleList.cs`. An extension (Media, Clipboard, Ai, Agents, Notes, Github, FileTray, Stats, Notifications, Scheduled, Volume, Pomodoro, ColorPicker, Search) lives entirely in `Modules/<Name>/`: its state, providers, views, P/Invoke and settings. It plugs in through five registries (cards, tabs, settings sections, segments, search sources) and a small `IShell`. Extensions are compiled in, not loaded at runtime (no DLL plugins: cold start, no WPF unload, no isolation). Each one has an on/off switch in Settings, Features; an extension that is off is never constructed. Game mode and Edit mode are shell features, not extensions: the shell owns the mode enum, click-through, the pill and panel swap and the card grid.
 
 C# on .NET 10, WPF, `net10.0-windows10.0.22621.0`, x64. Only NuGet dependency: CommunityToolkit.Mvvm. No System.Windows.Forms.
 Build: `dotnet build -c Release` from the repo root. Run: `src/QNotch/bin/Release/net10.0-windows10.0.22621.0/win-x64/QNotch.exe`.
@@ -8,7 +8,7 @@ Data folder `%APPDATA%\QNotch`, logs in `%APPDATA%\QNotch\logs` (`qnotch.log`, `
 
 Parallel test runs: set `QNOTCH_INSTANCE` (suffix of the single-instance mutex name) and `QNOTCH_DATA_DIR` (full path that replaces `%APPDATA%\QNotch`) to unique values for every run you start, and only stop processes you started (by PID). `QNotch.exe --restart` waits up to 10 s for the running instance to release the mutex (used by Settings, Features, Restart now).
 
-Command line verbs: `Program.Main` looks the first argument up in `ModuleList.Verbs` and, on a match, runs that function and exits before any WPF type loads (`QNotch.exe notify ...` talks to the running instance over a pipe). A verb lives in its module's folder, must not touch WPF or shell types, and returns the exit code. Everything else starts the app.
+Command line verbs: `Program.Main` looks the first argument up in `ModuleList.Verbs` and, on a match, runs that function and exits before any WPF type loads (`QNotch.exe notify ...` and `QNotch.exe agent`, the Claude Code hook, talk to the running instance over a pipe). A verb lives in its module's folder, must not touch WPF or shell types, and returns the exit code. Everything else starts the app.
 
 ## See your UI without driving the desktop
 
@@ -27,7 +27,7 @@ Accessibility names: `IconButton`, `IconToggle` and `TabButton` take their UI Au
 | `Modules/` | shell | `Contracts.cs` (interfaces, descriptors, registries, ModuleContext), `ModuleList.cs` (the only file that names modules) |
 | `Modules/<Name>/` | that module's agent | everything for one feature, including its state class |
 
-Modules: Stats, Media, Clipboard, Ai, Notes (a `Note` namespace would hide the Notifications `Note` type), Github, FileTray, Notifications, Scheduled, Volume, Pomodoro (the timer; a `Timer` namespace would hide `System.Threading.Timer`), ColorPicker, Search. Game mode and Edit mode are shell features (`Shell/GameMode/`, `Shell/EditMode.cs`).
+Modules: Stats, Media, Clipboard, Ai, Agents, Notes (a `Note` namespace would hide the Notifications `Note` type), Github, FileTray, Notifications, Scheduled, Volume, Pomodoro (the timer; a `Timer` namespace would hide `System.Threading.Timer`), ColorPicker, Search. Game mode and Edit mode are shell features (`Shell/GameMode/`, `Shell/EditMode.cs`).
 
 ## Rules for feature agents
 
