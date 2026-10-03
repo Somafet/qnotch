@@ -14,6 +14,7 @@ A notch for Windows 11. A slim pill at the top of your screen shows what is play
 - **Mic and camera:** a glyph in the pill and the game bar while an app uses your microphone or camera.
 - **Notifications:** any app or script can post one, with buttons. See [docs/notifications.md](docs/notifications.md).
 - **Search** across clipboard, files, notes, notifications and settings.
+- **Agents:** every Claude Code session in the pill and the Agents tab: working, needs you or done. One click in Settings, Agents connects Claude Code.
 - **AI apps:** launch them with Alt+1 to Alt+6 and see your Claude Code and Codex usage limits.
 - **Note, GitHub contribution graph, file tray, volume, timer, color picker** and your **scheduled tasks**.
 - **Game mode:** when a game or fullscreen video is running, the notch shrinks to a one-line status bar.
@@ -23,6 +24,8 @@ Turn off anything you don't use in Settings, Features. A feature that is off is 
 | | |
 | --- | --- |
 | ![Notifications](docs/images/notifications.png) | ![Clipboard history](docs/images/clipboard.png) |
+
+![Agents tab](docs/images/agents.png)
 
 ![Game mode status bar](docs/images/gamebar.png)
 
@@ -60,7 +63,7 @@ QNotch only goes online for two things, both visible in Settings:
 - **GitHub:** your contribution graph, once you add a token.
 - **Claude Code usage:** it sends your local Claude Code sign-in to Anthropic's usage endpoint. That endpoint is undocumented, so it may break. Turn it off in Settings, AI.
 
-Codex usage is read from Codex's local files.
+Codex usage is read from Codex's local files. Agents changes only Claude Code's `settings.json` (with a backup) when you click Connect, and its hook talks to QNotch over a local pipe.
 
 ## Performance
 

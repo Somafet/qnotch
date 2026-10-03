@@ -25,11 +25,12 @@ public sealed class NotificationsModule : INotchModule, ICadenceAware
     readonly NotificationsState _st = new();
     readonly Dictionary<string, long> _lastToast = new(StringComparer.OrdinalIgnoreCase);
     NotifyServer? _server;
+    CaptureWatch? _micWatch; // only while Quiet during calls is on
     DispatcherTimer? _toastTimer, _ageTimer;
     FrameworkElement? _glance;
     Note? _transient;       // the toast that is on its timer; waiting notifications show without one
     volatile string _token = "";
-    bool _fast, _autoOpened, _saveQueued;
+    bool _fast, _autoOpened, _saveQueued, _inCall;
 
     internal NotificationSettings Config => _cfg;
     internal string Token => _token;
@@ -59,6 +60,7 @@ public sealed class NotificationsModule : INotchModule, ICadenceAware
     void Start()
     {
         Load();
+        ApplyQuiet();
         _server = new NotifyServer(HandleAsync, () => _token,
             s => _ctx.Bus.Run(() => _st.PipeStatus = s), s => _ctx.Bus.Run(() => _st.HttpStatus = s));
         _server.StartPipe();
@@ -211,9 +213,10 @@ public sealed class NotificationsModule : INotchModule, ICadenceAware
         _st.Items.Insert(0, n);
         Prune();
         Changed();
-        if (!muted) Toast(n, ttl);
+        var quiet = muted || _inCall;
+        if (!quiet) Toast(n, ttl);
         UpdateToast();
-        if (muted || n.Level != NoteLevel.Error || !_cfg.OpenOnError || _fast) return;
+        if (quiet || n.Level != NoteLevel.Error || !_cfg.OpenOnError || _fast) return;
         // An error opens the panel (never in game mode, never over what the user is doing in an open panel). It stays unread
         // until the pointer reaches the list, so an error nobody saw still shows in the pill after the panel closes again.
         _autoOpened = true;
@@ -245,7 +248,34 @@ public sealed class NotificationsModule : INotchModule, ICadenceAware
         foreach (var n in _st.Items) n.RefreshMeta();
     }
 
+    /// <summary>A notification waiting for an answer shows even during a call: someone is blocked on it.</summary>
     void UpdateToast() => _st.Toast = _transient ?? _st.Items.FirstOrDefault(n => n.Pending && !IsMuted(n.App));
+
+    /// <summary>Starts or stops watching the microphone to match the Quiet during calls setting.</summary>
+    internal void ApplyQuiet()
+    {
+        if (_cfg.QuietDuringCalls)
+        {
+            if (_micWatch is not null) return;
+            CaptureWatch w = null!;
+            // A late report from a watcher that was turned off in the meantime is ignored.
+            w = _micWatch = new CaptureWatch(CaptureWatch.Microphone, apps => _ctx.Bus.Run(() => { if (_micWatch == w) SetCall(apps); }));
+        }
+        else
+        {
+            _micWatch?.Dispose();
+            _micWatch = null;
+            SetCall([]);
+        }
+    }
+
+    void SetCall(IReadOnlyList<string> apps)
+    {
+        _inCall = apps.Count > 0;
+        _st.QuietStatus = _inCall ? $"Quiet now: {string.Join(", ", apps)} {(apps.Count == 1 ? "is" : "are")} using the microphone." : "";
+        if (_inCall) { _transient = null; _toastTimer?.Stop(); }
+        UpdateToast();
+    }
 
     /// <summary>Ends a wait: the sender gets <paramref name="result"/> (unless it already left) and the answer-only buttons go away.</summary>
     void Close(Note n, string status, WaitResult? result = null)

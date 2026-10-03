@@ -1,3 +1,4 @@
+using QNotch.Modules.Agents;
 using QNotch.Modules.Ai;
 using QNotch.Modules.Capture;
 using QNotch.Modules.Clipboard;
@@ -24,11 +25,12 @@ public static class ModuleList
         new("media", "Now playing", "Track, artwork and controls for anything that plays media.", () => new MediaModule(), Early: true),
         new("clipboard", "Clipboard history", "Text and images you copy, kept in memory.", () => new ClipboardModule()),
         new("ai", "AI apps and usage", "Alt+1 to Alt+6 shortcuts and usage limits for Claude Code and Codex.", () => new AiModule(), Shared: new(typeof(AiSettings), "RefreshMinutes:5..60")),
+        new("agents", "Agents", "Live Claude Code sessions: working, needs you or done, in the pill and the Agents tab.", () => new AgentsModule(), Early: true),
         new("note", "Note", "A quick note on a Home card, saved as you type.", () => new NoteModule()),
         new("github", "GitHub", "Your GitHub contribution graph, with a token you add in Settings.", () => new GithubModule()),
         new("filetray", "File tray", "Drop files on the notch to keep them within reach.", () => new FileTrayModule()),
         new("notifications", "Notifications", "Lets apps and scripts post notifications to the notch: QNotch.exe notify, a named pipe or local HTTP.", () => new NotificationsModule(), Early: true,
-            Shared: new(typeof(NotificationSettings), "ToastSeconds:0..60", "RetentionDays:1..30", "OpenOnError")),
+            Shared: new(typeof(NotificationSettings), "ToastSeconds:0..60", "RetentionDays:1..30", "OpenOnError", "QuietDuringCalls")),
         new("capture", "Mic and camera", "A glyph in the pill and the game bar while an app uses your microphone or camera.", () => new CaptureModule(), Early: true),
         new("scheduled", "Scheduled tasks", "Your Windows scheduled tasks (scripts and agents on a timer), with pause and delete.", () => new ScheduledModule()),
         new("volume", "Volume", "System volume and mute on a Home card.", () => new VolumeModule()),
@@ -47,5 +49,6 @@ public static class ModuleList
     public static readonly IReadOnlyDictionary<string, Func<string[], int>> Verbs = new Dictionary<string, Func<string[], int>>
     {
         ["notify"] = NotifyCli.Run,
+        ["agent"] = AgentHook.Run,
     };
 }
