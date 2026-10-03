@@ -11,6 +11,7 @@ namespace QNotch.Shell;
 /// <summary>
 /// Moving the notch sideways, out of the way of tab strips. Grab the pill (or the empty part of the open panel's header) and
 /// fling it: it keeps its momentum, springs into place and snaps to the center or a screen edge when it lands near one.
+/// Carry it onto another display and it moves there (<see cref="GeneralSettings.MonitorIndex"/>).
 /// The spot is remembered per app (<see cref="GeneralSettings.NotchSpots"/>) and restored when that app comes to the front.
 /// Nothing runs while idle: the spring hooks Rendering only while the notch moves, the app lookup runs on foreground change.
 /// </summary>
@@ -83,7 +84,9 @@ internal sealed class NotchNudge
     void OnMove(object s, MouseEventArgs e)
     {
         if (!_armed) return;
-        var dx = (CursorPx() - _grabPx) / _w.Scale;
+        if (!Native.GetCursorPos(out var p)) return;
+        if (_dragging && Native.MonitorFromPoint(p, GameModeNative.MONITOR_DEFAULTTONEAREST) is var mon && mon != _w.MonitorHandle) Hop(mon, p.X);
+        var dx = (p.X - _grabPx) / _w.Scale;
         if (!_dragging)
         {
             if (Math.Abs(dx) < Slop) return;
@@ -110,6 +113,18 @@ internal sealed class NotchNudge
         if (dragged) return;
         _shell.SuppressHover(false);
         if (_shell.Mode == ShellMode.Collapsed) _shell.OpenPanel(); // a plain click opens, no dwell needed
+    }
+
+    /// <summary>The pointer crossed onto another display: the notch moves there and stays where the pointer holds it.</summary>
+    void Hop(nint mon, double cursorPx)
+    {
+        var index = Monitors.List().FindIndex(m => m.Handle == mon);
+        if (index < 0) return;
+        var held = (cursorPx - _w.CenterPx) / _w.Scale - _x;
+        _gs.MonitorIndex = index; // the shell saves it and re-anchors the window
+        _grabPx = cursorPx;
+        _grabX = _x = (cursorPx - _w.CenterPx) / _w.Scale - held;
+        _samples.Clear();
     }
 
     void Drop()

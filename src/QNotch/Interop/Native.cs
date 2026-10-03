@@ -114,6 +114,7 @@ public static unsafe partial class Native
 
     // Monitors
     [LibraryImport("user32.dll")] public static partial nint MonitorFromWindow(nint hwnd, uint flags);
+    [LibraryImport("user32.dll")] public static partial nint MonitorFromPoint(POINT pt, uint flags);
     [LibraryImport("user32.dll", EntryPoint = "GetMonitorInfoW")] [return: MarshalAs(UnmanagedType.Bool)]
     public static partial bool GetMonitorInfo(nint monitor, ref MONITORINFO info);
     [LibraryImport("user32.dll")] [return: MarshalAs(UnmanagedType.Bool)]
