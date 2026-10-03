@@ -11,8 +11,11 @@
         <!-- Background shape: the ONLY thing animated per frame (size and corner radius). Hover and file-drag events come from here. -->
         <Border x:Name="Surface" VerticalAlignment="Top" HorizontalAlignment="Center" Width="420" Height="38" AllowDrop="True"
                 Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource StrokeBrush}"
-                BorderThickness="1,0,1,1" CornerRadius="0,0,16,16" ClipToBounds="True">
-            <Border.RenderTransform><TranslateTransform x:Name="SurfaceShift"/></Border.RenderTransform>
+                BorderThickness="1,0,1,1" CornerRadius="0,0,16,16" ClipToBounds="True" RenderTransformOrigin="0.5,0">
+            <!-- Squash stretches the pill while it is flung sideways (NotchNudge); Shift moves it inside the window. -->
+            <Border.RenderTransform>
+                <TransformGroup><ScaleTransform x:Name="SurfaceSquash"/><TranslateTransform x:Name="SurfaceShift"/></TransformGroup>
+            </Border.RenderTransform>
             <Grid>
                 <!-- Collapsed pill content -->
                 <Grid x:Name="PillLayer" Height="38" MinWidth="96" HorizontalAlignment="Center" VerticalAlignment="Top">
@@ -76,6 +79,7 @@
         <Border x:Name="Glance" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,44,0,0" Height="24" CornerRadius="12" Padding="10,0,12,0"
                 Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource StrokeBrush}" BorderThickness="1"
                 Visibility="{Binding ShowGlance, Converter={StaticResource BoolToVis}}">
+            <Border.RenderTransform><TranslateTransform x:Name="GlanceShift"/></Border.RenderTransform>
             <StackPanel x:Name="GlanceStrip" Orientation="Horizontal" VerticalAlignment="Center"/>
         </Border>
     </Grid>
