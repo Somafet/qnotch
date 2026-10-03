@@ -131,6 +131,12 @@ public static unsafe partial class Native
     // Shell state (game mode)
     [LibraryImport("shell32.dll")] public static partial int SHQueryUserNotificationState(out int state);
 
+    // Registry change notification (mic and camera use)
+    public const int REG_NOTIFY_CHANGE_NAME = 0x1, REG_NOTIFY_CHANGE_LAST_SET = 0x4, REG_NOTIFY_THREAD_AGNOSTIC = 0x10000000;
+    [LibraryImport("advapi32.dll")]
+    public static partial int RegNotifyChangeKeyValue(Microsoft.Win32.SafeHandles.SafeRegistryHandle key, [MarshalAs(UnmanagedType.Bool)] bool subtree,
+        int filter, Microsoft.Win32.SafeHandles.SafeWaitHandle evt, [MarshalAs(UnmanagedType.Bool)] bool async);
+
     [LibraryImport("kernel32.dll")] [return: MarshalAs(UnmanagedType.Bool)]
     public static partial bool SetProcessWorkingSetSize(nint process, nint min, nint max);
 
