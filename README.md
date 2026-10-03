@@ -14,7 +14,7 @@ A notch for Windows 11. A slim pill at the top of your screen shows what is play
 - **Mic and camera:** a glyph in the pill and the game bar while an app uses your microphone or camera.
 - **Notifications:** any app or script can post one, with buttons. See [docs/notifications.md](docs/notifications.md).
 - **Search** across clipboard, files, notes, notifications and settings.
-- **Agents:** every Claude Code session in the pill and the Agents tab: working, needs you or done, with the tokens each one used today and what that would cost at API list prices. When one needs you or finishes, the pill widens for a moment with its name and plays a soft sound (never in Game mode or during a call). One click in Settings, Agents connects Claude Code.
+- **Agents:** every Claude Code session in the pill and the Agents tab: working, needs you or done, with the tokens each one used today and what that would cost at API list prices, plus the dev servers and test runners it started (memory, CPU, ports) and any it left running after its session ended, each with a Stop button. When one needs you or finishes, the pill widens for a moment with its name and plays a soft sound (never in Game mode or during a call). One click in Settings, Agents connects Claude Code.
 - **AI apps:** launch them with Alt+1 to Alt+6 and see your Claude Code and Codex usage limits.
 - **Note, GitHub contribution graph, file tray, volume, timer, color picker** and your **scheduled tasks**.
 - **Game mode:** when a game or fullscreen video is running, the notch shrinks to a one-line status bar.
