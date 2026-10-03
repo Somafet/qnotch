@@ -84,7 +84,7 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
         ctx.Tabs.Register(new TabDescriptor(TabId, "Agents", Icon, 35, () => new AgentsTab(this, _st), () => _st.Sessions.Count == 0));
         ctx.SettingsSections.Register(new SettingsSectionDescriptor(TabId, "Agents", Icon, 45, () => AgentsSettings.Create(ctx.Settings.ReadOnly)));
         ctx.Segments.Register(new SegmentDescriptor("agents.pill", SegmentSlot.PillRight, 6, () => AgentsViews.Segment(_st)));
-        ctx.Segments.Register(new SegmentDescriptor("agents.game", SegmentSlot.GameBar, 12, () => AgentsViews.Segment(_st), "Agents", "Working agents, and which one needs you."));
+        ctx.Segments.Register(new SegmentDescriptor("agents.game", SegmentSlot.GameBar, 13, () => AgentsViews.Segment(_st), "Agents", "Working agents, and which one needs you."));
         ctx.Search.Register(new SearchSource(TabId, "Agents", Icon, 45, q => _st.Sessions
             .Where(s => s.Name.Contains(q, StringComparison.OrdinalIgnoreCase) || s.Cwd.Contains(q, StringComparison.OrdinalIgnoreCase))
             .Select(s => new SearchHit(s.Name, AgentsViews.Meta(s), () => ctx.Shell.SelectTab(TabId)))));
