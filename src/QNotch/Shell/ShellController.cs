@@ -34,7 +34,7 @@ public sealed class ShellController : IShell
     DispatcherTimer? _dwell, _leave;
     ICadenceAware[] _cadenceAware = [];
     ShellMode _mode;
-    bool _hovering, _fileDrag, _built, _wasExpandedBeforeGame;
+    bool _hovering, _fileDrag, _built, _wasExpandedBeforeGame, _hoverQuiet;
     int _holds;
     string _activeTab = "home";
 
@@ -47,6 +47,7 @@ public sealed class ShellController : IShell
         _w.DataContext = _vm;
         GameMode = new GameModeController(this, store, foreground, segments);
         _editMode = new EditModeController(this, layout);
+        Nudge = new NotchNudge(window, this, settings, store, foreground);
     }
 
     readonly ShellViewModel _vm;
@@ -66,6 +67,8 @@ public sealed class ShellController : IShell
 
     /// <summary>Game mode: detection, override and the game bar. Started by App after the first frame.</summary>
     internal GameModeController GameMode { get; }
+    /// <summary>Moving the notch sideways (grab and fling, remembered per app).</summary>
+    internal NotchNudge Nudge { get; }
     internal System.Windows.Threading.Dispatcher Dispatcher => _w.Dispatcher;
 
     public bool IsPinned => _general.Pinned;
@@ -80,6 +83,7 @@ public sealed class ShellController : IShell
         _w.PillStrip.SizeChanged += (_, _) => _w.InvalidatePill(); // content changed (segment data): re-measure once, coalesced
         _w.InitPill();
         _w.SetMonitor(_general.MonitorIndex);
+        Nudge.Start();
         LoadProfile();
         _vm.MotionEnabled = Motion.Enabled;
 
@@ -317,7 +321,14 @@ public sealed class ShellController : IShell
     {
         _hovering = true;
         _leave?.Stop();
-        if (_mode == ShellMode.Collapsed) Start(ref _dwell, _general.HoverDwellMs, OpenPanel);
+        if (_mode == ShellMode.Collapsed && !_hoverQuiet) Start(ref _dwell, _general.HoverDwellMs, OpenPanel);
+    }
+
+    /// <summary>While the pill is pressed or sliding (NotchNudge), the pointer being over it does not open the panel.</summary>
+    internal void SuppressHover(bool on)
+    {
+        _hoverQuiet = on;
+        if (on) _dwell?.Stop();
     }
 
     void OnHoverLeave()

@@ -25,7 +25,8 @@ public partial class NotchWindow : Window
     HwndSource _src = null!;
     bool _kb, _gameBar, _pillDirty, _pillExact;
     int _monitorIndex;
-    double _offX, _offY, _gameH = 22, _gameOpacity = 0.7, _gameShift;
+    double _offX, _offY, _gameH = 22, _gameOpacity = 0.7, _shift, _notchX;
+    MonitorInfo _mon = new(0, default, true, 1);
 
     // Animation state. Frames come from CompositionTarget.Rendering (vsync paced), de-duplicated by RenderingTime because the
     // event fires several times per frame for layered windows. The hook exists only while an animation runs. Measured on a
@@ -50,7 +51,8 @@ public partial class NotchWindow : Window
             if ((bool)e.NewValue && Motion.Enabled)
                 Glance.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(160)) { FillBehavior = FillBehavior.Stop });
         };
-        Surface.SizeChanged += (_, _) => { if (_gameBar) ClampGameShift(); };
+        Surface.SizeChanged += (_, _) => ClampShift();
+        Glance.SizeChanged += (_, _) => ClampShift();
         // OLE drag: mouse events are suspended during a drag, so the drag events stand in for hover.
         Surface.DragEnter += (_, e) => OnDrag(e, enter: true);
         Surface.DragOver += (_, e) => OnDrag(e, enter: false);
@@ -117,34 +119,61 @@ public partial class NotchWindow : Window
     public void ReassertTopmost() =>
         Native.SetWindowPos(_hwnd, Native.HWND_TOPMOST, 0, 0, 0, 0, Native.SWP_NOMOVE | Native.SWP_NOSIZE | Native.SWP_NOACTIVATE);
 
-    /// <summary>
-    /// Anchors the fixed-size window at the top-center of the chosen monitor (full monitor bounds, physical pixels).
-    /// In game bar mode the offsets move the window; whatever the monitor edge prevents is applied as a shift of the bar
-    /// inside the window, so the bar can reach the corners.
-    /// </summary>
+    /// <summary>Re-reads the chosen monitor, then anchors the window on it (see <see cref="Place"/>).</summary>
     public void Reposition()
     {
-        var m = Monitors.Get(_monitorIndex);
-        MonitorHandle = m.Handle;
+        _mon = Monitors.Get(_monitorIndex);
+        MonitorHandle = _mon.Handle;
+        Place();
+    }
+
+    /// <summary>
+    /// Anchors the fixed-size window at the top of the monitor (full monitor bounds, physical pixels), centered plus the
+    /// sideways offset: the game bar's offsets in game bar mode, the notch offset otherwise. Whatever the monitor edge
+    /// prevents is applied as a shift of the surface inside the window, so the pill and the bar can reach the corners.
+    /// </summary>
+    void Place()
+    {
+        var m = _mon;
         var s = m.Scale;
         int w = (int)Math.Round(WinW * s), h = (int)Math.Round(WinH * s);
-        double ox = _gameBar ? _offX : 0, oy = _gameBar ? _offY : 0;
+        double ox = _gameBar ? _offX : _notchX, oy = _gameBar ? _offY : 0;
         var center = m.Bounds.Left + m.Bounds.Width / 2.0 + ox * s;
         var x = Math.Clamp((int)Math.Round(center - w / 2.0), m.Bounds.Left, Math.Max(m.Bounds.Left, m.Bounds.Right - w));
         var y = m.Bounds.Top + Math.Clamp((int)Math.Round(oy * s), 0, Math.Max(0, m.Bounds.Height - (int)Math.Round(_gameH * s)));
-        _gameShift = (center - (x + w / 2.0)) / s;
-        ClampGameShift();
+        _shift = (center - (x + w / 2.0)) / s;
+        ClampShift();
         if (Offscreen) { x = -20000; y = 0; }
         Native.SetWindowPos(_hwnd, Native.HWND_TOPMOST, x, y, w, h, Native.SWP_NOACTIVATE);
     }
 
-    void ClampGameShift()
+    /// <summary>The open panel gets less room than the pill, so it stays on screen wherever the pill was.</summary>
+    void ClampShift()
     {
-        var room = Math.Max(0, (WinW - Surface.ActualWidth) / 2);
-        SurfaceShift.X = _gameBar ? Math.Clamp(_gameShift, -room, room) : 0;
+        static double Fit(double shift, double width) { var room = Math.Max(0, (WinW - width) / 2); return Math.Clamp(shift, -room, room); }
+        SurfaceShift.X = Fit(_shift, Surface.ActualWidth * SurfaceSquash.ScaleX);
+        GlanceShift.X = _gameBar ? 0 : Fit(_shift, Glance.ActualWidth);
     }
 
     public void SetMonitor(int index) { _monitorIndex = index; Reposition(); }
+
+    // ---------- sideways offset (NotchNudge) ----------
+
+    /// <summary>Monitor scale (physical pixels per DIP).</summary>
+    public double Scale => _mon.Scale;
+
+    /// <summary>The farthest the collapsed pill can go from the monitor center, in DIPs.</summary>
+    public double MaxNotchX => Math.Max(0, (_mon.Bounds.Width / _mon.Scale - _pillW) / 2);
+
+    /// <summary>Moves the notch sideways (DIPs from the monitor center; beyond <see cref="MaxNotchX"/> means flush with that edge).
+    /// <paramref name="squash"/> stretches the pill horizontally (1 = none).</summary>
+    public void SetNotchX(double x, double squash = 1)
+    {
+        _notchX = x;
+        SurfaceSquash.ScaleX = squash;
+        SurfaceSquash.ScaleY = 1 / squash;
+        if (!_gameBar) Place();
+    }
 
     /// <summary>True when the pointer is over the pill/panel right now (asks the OS: WPF hover state is stale after a drag).</summary>
     public bool IsPointerOver()
@@ -325,6 +354,7 @@ public partial class NotchWindow : Window
         var po = Clamp01((o - 0.3) / 0.55);
         PanelLayer.Opacity = po;
         PanelShift.Y = (1 - po) * -8;
+        ClampShift();
     }
 
     void Finish()
