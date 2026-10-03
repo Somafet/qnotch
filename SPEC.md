@@ -121,7 +121,7 @@ Status bar behavior
 ## 5. Settings
 
 - General: start with Windows, monitor selection, hover dwell and leave delay, pinned mode, global hotkeys.
-- Features: one switch per module (System stats, Now playing, Clipboard, AI, Note and GitHub, File tray). A module that is off is never loaded; the change applies on restart.
+- Features: one switch per module (System stats, Now playing, Clipboard, AI, Note, GitHub, File tray, Notifications, Scheduled tasks, Volume, Timer, Color picker, Search). A module that is off is never loaded; the change applies on restart.
 - Game mode: auto detection on/off, opacity, height, segment toggles, position offset, per-process allow / deny list.
 - Appearance: card visibility and order, accent color, light / dark / follow system, reduce motion.
 - Integrations: GitHub token, AI provider toggles, clipboard persistence.

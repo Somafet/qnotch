@@ -1,24 +1,38 @@
 # QNotch
 
-A personal, performance-first "notch" overlay for Windows 11. A near-black pill sits at the top edge of your monitor and shows live CPU, GPU, RAM, battery, clock and what is playing. Hover it (or press the hotkey) and it opens into a panel: system stats, now playing with seek and transport controls, clipboard history, AI tool usage and app shortcuts, a quick note, a GitHub contribution graph, a file tray, and notifications that any app or script can post. When a game or fullscreen video owns the screen, the notch turns into a passive one-line status bar. See `SPEC.md` for the full specification and `ARCHITECTURE.md` for the architecture: a small shell plus seven self-contained extensions (Media, Clipboard, Ai, NoteGithub, FileTray, Stats, Notifications), each in `src/QNotch/Modules/<Name>/`.
+A performance-first "notch" overlay for Windows 11. A near-black pill sits at the top edge of your monitor and shows live CPU, GPU, RAM, battery, clock and what is playing. Hover it (or press the hotkey) and it opens into a panel: system stats, now playing with seek and transport controls, clipboard history, search, AI app shortcuts and usage, a quick note, a GitHub contribution graph, a file tray, volume, a timer, a color picker, your scheduled tasks, and notifications that any app or script can post. When a game or fullscreen video owns the screen, the notch turns into a passive one-line status bar.
+
+It is a small shell plus self-contained extensions, one per folder in `src/QNotch/Modules/`. `SPEC.md` is the full specification and `ARCHITECTURE.md` explains the code and how to add an extension.
 
 Stack: C# on .NET 10, WPF, x64. The only NuGet package is CommunityToolkit.Mvvm. Native calls use `LibraryImport`; no WinForms.
 
-## Build, publish, run
+## Install
 
-Requires the .NET 10 SDK and Windows 10 2004 or newer (Windows 11 recommended). The published exe is framework-dependent, so the .NET 10 Desktop Runtime must be installed.
+Windows 10 2004 or newer (Windows 11 recommended), x64. Each release has two downloads:
 
-```powershell
-dotnet build -c Release                                                # development build
-dotnet publish src/QNotch/QNotch.csproj -p:PublishProfile=win-x64      # ReadyToRun, single file, into dist\
-dist\QNotch.exe
-```
+- `QNotch.exe`: small, needs the [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0) installed.
+- `QNotch-self-contained.zip`: about 80 MB, includes the runtime, nothing else to install.
 
 Only one instance runs at a time. Quit from the tray icon menu. The tray icon turns amber while Game mode is forced or the game bar is showing.
 
+## Build
+
+Requires the .NET 10 SDK.
+
+```powershell
+dotnet build -c Release                                                                # development build
+dotnet publish src/QNotch/QNotch.csproj -p:PublishProfile=win-x64                      # framework-dependent, into dist\
+dotnet publish src/QNotch/QNotch.csproj -p:PublishProfile=win-x64-self-contained       # with the runtime, into dist\self-contained\
+dist\QNotch.exe
+```
+
+Both profiles are ReadyToRun and single file. `QNotch.exe --snapshot <dir>` renders every tab and settings page to PNG without touching your settings: CI runs it on every push.
+
 ## Features
 
-Settings, Features has one switch per feature: System stats, Now playing, Clipboard history, AI apps and usage, Note and GitHub, File tray, Notifications, Scheduled tasks. A feature that is off is never loaded and costs nothing (no timers, hooks, hotkeys, cards or tabs). Changes apply after a restart: the page shows "Restart QNotch to apply your changes." with a "Restart now" button. Game mode and Edit mode are part of the shell and always available. `ARCHITECTURE.md` explains how to add an extension.
+Settings, Features has one switch per feature: System stats, Now playing, Clipboard history, AI apps and usage, Note, GitHub, File tray, Notifications, Scheduled tasks, Volume, Timer, Color picker, Search. A feature that is off is never loaded and costs nothing (no timers, hooks, hotkeys, cards or tabs). Changes apply after a restart: the page shows "Restart QNotch to apply your changes." with a "Restart now" button. Game mode and Edit mode are part of the shell and always available.
+
+The Claude Code usage reading sends your local Claude Code sign-in token to Anthropic's usage endpoint, which is undocumented and can change without notice. Turn it off in Settings, AI if you prefer. Codex usage is read from Codex's local logs and sends nothing.
 
 ## Scheduled tasks
 
@@ -95,12 +109,13 @@ Claude Code example (`~/.claude/settings.json`), a toast with a button back to t
 
 | Keys | Action |
 | --- | --- |
-| Ctrl+Alt+N | Toggle the panel (changeable in Settings, General) |
-| Ctrl+Alt+G | Cycle Game mode: Auto, Force on, Force off (changeable) |
-| Alt+1 to Alt+6 | Launch the AI tool bound to that slot (Settings, AI) |
+| Ctrl+Alt+N | Toggle the panel |
+| Ctrl+Alt+G | Cycle Game mode: Auto, Force on, Force off |
+| Ctrl+Alt+F | Open search |
+| Alt+1 to Alt+6 | Launch the AI app bound to that slot (Settings, AI) |
 | Esc | Close the panel |
 
-To change a hotkey, open Settings, General, click the box and press the new shortcut. A shortcut that another app already owns is flagged inline.
+To change a hotkey, open Settings, Hotkeys, click the box and press the new shortcut. A shortcut that another app already owns is flagged inline.
 
 ## Data folder
 
@@ -128,3 +143,11 @@ The idle numbers come from `Get-Process` CPU time over the window, taken 8 s aft
 - Game mode frame-time readout is reserved but not implemented (needs a presentation hook).
 - After Game mode turns on, the GPU segment reads `n/a` for about one sampling interval (5 s) while the GPU counter primes.
 - The media session fix (one entry per session, even for two tabs of one app) and the clipboard worker were verified by build, self-test and a scripted clipboard run, not with several live media sources.
+
+## Contributing
+
+Bug reports, fixes and new extensions are welcome. See `CONTRIBUTING.md`.
+
+## License
+
+MIT, see `LICENSE`.
