@@ -20,7 +20,7 @@ internal static class NotificationsSettingsSection
             Choice(ToastSeconds, cfg.ToastSeconds, s => s == 0 ? "Off" : $"{s} seconds", v => { cfg.ToastSeconds = v; m.SaveSettings(); })));
         page.Children.Add(UiKit.Row("Open the panel on errors", "An error opens the Notifications tab by itself. Never while a game is running.",
             UiKit.Toggle(cfg.OpenOnError, on => { cfg.OpenOnError = on; m.SaveSettings(); })));
-        page.Children.Add(UiKit.Row("Quiet during calls", "While an app uses the microphone, no toasts and the panel never opens by itself. Everything still lands in the history.",
+        page.Children.Add(UiKit.Row("Quiet during calls", "While an app uses the microphone, only questions waiting for your answer show a toast, and the panel never opens by itself. Everything still lands in the history.",
             UiKit.Toggle(cfg.QuietDuringCalls, on => { cfg.QuietDuringCalls = on; m.SaveSettings(); m.ApplyQuiet(); })));
         page.Children.Add(UiKit.BindVisible(Status(st, nameof(NotificationsState.QuietStatus)), st, nameof(NotificationsState.IsQuiet)));
         page.Children.Add(UiKit.Row("Keep history for", "Older notifications are removed. The history holds 500 at most.",

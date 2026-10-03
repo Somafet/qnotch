@@ -2,7 +2,7 @@
 
 Any app, script or agent can post a notification to QNotch. It shows as a toast under the pill, adds to the unread count, and stays in the Notifications tab. Settings, Notifications has the toast time, how long history is kept, quiet during calls, per-app mute and the HTTP token.
 
-While an app uses the microphone (a call, a recording), notifications stay quiet: no toast, and an error does not open the panel. They still land in the history and count as unread. A notification that waits for an answer shows as soon as the call ends. Turn it off in Settings, Notifications, Quiet during calls.
+While an app uses the microphone (a call, a recording), notifications stay quiet: no toast, and an error does not open the panel. They still land in the history and count as unread. A notification that waits for an answer still shows, because someone is waiting on it. Turn it off in Settings, Notifications, Quiet during calls.
 
 ## Command line
 

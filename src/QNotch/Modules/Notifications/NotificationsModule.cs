@@ -248,13 +248,19 @@ public sealed class NotificationsModule : INotchModule, ICadenceAware
         foreach (var n in _st.Items) n.RefreshMeta();
     }
 
-    /// <summary>During a call nothing shows; a notification still waiting for an answer comes back when the call ends.</summary>
-    void UpdateToast() => _st.Toast = _inCall ? null : _transient ?? _st.Items.FirstOrDefault(n => n.Pending && !IsMuted(n.App));
+    /// <summary>A notification waiting for an answer shows even during a call: someone is blocked on it.</summary>
+    void UpdateToast() => _st.Toast = _transient ?? _st.Items.FirstOrDefault(n => n.Pending && !IsMuted(n.App));
 
     /// <summary>Starts or stops watching the microphone to match the Quiet during calls setting.</summary>
     internal void ApplyQuiet()
     {
-        if (_cfg.QuietDuringCalls) _micWatch ??= new CaptureWatch(CaptureWatch.Microphone, apps => _ctx.Bus.Run(() => SetCall(_micWatch is null ? [] : apps)));
+        if (_cfg.QuietDuringCalls)
+        {
+            if (_micWatch is not null) return;
+            CaptureWatch w = null!;
+            // A late report from a watcher that was turned off in the meantime is ignored.
+            w = _micWatch = new CaptureWatch(CaptureWatch.Microphone, apps => _ctx.Bus.Run(() => { if (_micWatch == w) SetCall(apps); }));
+        }
         else
         {
             _micWatch?.Dispose();
