@@ -13,13 +13,14 @@ public sealed unsafe class TrayIcon : IDisposable
     const int CallbackMessage = Native.WM_APP + 1;
     readonly NotchWindow _w;
     readonly ShellController _shell;
+    readonly Shortcuts _shortcuts;
     readonly Action _exit;
     readonly uint _taskbarCreated = Native.RegisterWindowMessage("TaskbarCreated");
     nint _icon, _iconActive; // active (amber pill): Game mode is forced or the game bar is showing
 
-    public TrayIcon(NotchWindow window, ShellController shell, Action exit)
+    public TrayIcon(NotchWindow window, ShellController shell, Shortcuts shortcuts, Action exit)
     {
-        _w = window; _shell = shell; _exit = exit;
+        _w = window; _shell = shell; _shortcuts = shortcuts; _exit = exit;
         var size = Math.Max(16, Native.GetSystemMetrics(Native.SM_CXSMICON));
         _icon = AppIcon.CreateHIcon(size);
         _iconActive = AppIcon.CreateHIcon(size, System.Windows.Media.Color.FromRgb(0xF5, 0xA5, 0x24));
@@ -36,8 +37,7 @@ public sealed unsafe class TrayIcon : IDisposable
             cbSize = (uint)sizeof(NOTIFYICONDATAW), hWnd = _w.Hwnd, uID = 1, uFlags = flags,
             uCallbackMessage = CallbackMessage, hIcon = _shell.Mode == ShellMode.GameBar || _shell.GameMode.Override != GameModeOverride.Auto ? _iconActive : _icon,
         };
-        var mode = _shell.GameMode.Override switch { GameModeOverride.ForceOn => "Force on", GameModeOverride.ForceOff => "Force off", _ => "Auto" };
-        var tip = $"QNotch\nGame mode: {mode}{(_shell.Mode == ShellMode.GameBar ? ", game bar showing" : "")}";
+        var tip = $"QNotch\nGame mode: {Label(_shell.GameMode.Override)}{(_shell.Mode == ShellMode.GameBar ? ", game bar showing" : "")}";
         for (var i = 0; i < Math.Min(tip.Length, 127); i++) d.szTip[i] = tip[i];
         return d;
     }
@@ -61,24 +61,32 @@ public sealed unsafe class TrayIcon : IDisposable
     void ShowMenu()
     {
         _w.EnableKeyboard(); // menus need a foreground owner to dismiss on outside click
-        var m = new ContextMenu { PlacementTarget = _w, Placement = PlacementMode.MousePoint };
-        if (_shell.Mode != ShellMode.GameBar) m.Items.Add(Item("Open panel", () => _shell.OpenPanel()));
+        // No placement target: the menu would take the notch window's DPI, wrong when the notch is on another monitor.
+        var m = new ContextMenu { Placement = PlacementMode.MousePoint };
+        if (_shell.Mode != ShellMode.GameBar)
+        {
+            var open = Item("Open QNotch", () => _shell.OpenPanel());
+            open.InputGestureText = _shortcuts.Find("toggle")?.Gesture ?? "";
+            m.Items.Add(open);
+        }
         m.Items.Add(Item("Settings", () => _shell.OpenSettings()));
         m.Items.Add(new Separator());
+        m.Items.Add(new MenuItem { Header = "Game mode", Style = (Style)Application.Current.FindResource("MenuHeader") });
         foreach (var o in Enum.GetValues<GameModeOverride>())
         {
             var mode = o;
-            var label = o switch { GameModeOverride.Auto => "Game mode: Auto", GameModeOverride.ForceOn => "Game mode: Force on", _ => "Game mode: Force off" };
-            var it = Item(label, () => _shell.GameMode.Override = mode);
+            var it = Item(Label(o), () => _shell.GameMode.Override = mode);
             it.IsChecked = _shell.GameMode.Override == o;
             m.Items.Add(it);
         }
         m.Items.Add(new Separator());
-        m.Items.Add(Item("Exit", _exit));
+        m.Items.Add(Item("Quit QNotch", _exit));
         // Keep keyboard focus if "Open panel" was chosen, so Esc and an outside click dismiss the panel.
         m.Closed += (_, _) => { if (_shell.Mode != ShellMode.Expanded) _w.DisableKeyboard(); };
         m.IsOpen = true;
     }
+
+    static string Label(GameModeOverride o) => o switch { GameModeOverride.ForceOn => "On", GameModeOverride.ForceOff => "Off", _ => "Auto" };
 
     static MenuItem Item(string header, Action click)
     {

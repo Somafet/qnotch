@@ -549,12 +549,16 @@
     <Style TargetType="ContextMenu">
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
         <Setter Property="FontFamily" Value="{StaticResource UiFont}"/>
-        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="FontSize" Value="13"/>
         <Setter Property="HasDropShadow" Value="False"/>
+        <Setter Property="HorizontalOffset" Value="-12"/>
+        <Setter Property="VerticalOffset" Value="-6"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ContextMenu">
-                    <Border Background="{DynamicResource SurfaceRaisedBrush}" BorderBrush="{DynamicResource StrokeStrongBrush}" BorderThickness="1" CornerRadius="10" Padding="4" MinWidth="180">
+                    <!-- The margin leaves room for the shadow inside the transparent popup. -->
+                    <Border Margin="12,6,12,18" Background="{DynamicResource SurfaceRaisedBrush}" BorderBrush="{DynamicResource StrokeStrongBrush}" BorderThickness="1" CornerRadius="10" Padding="6" MinWidth="200">
+                        <Border.Effect><DropShadowEffect BlurRadius="24" ShadowDepth="6" Direction="270" Opacity="0.45"/></Border.Effect>
                         <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Cycle"/>
                     </Border>
                 </ControlTemplate>
@@ -566,11 +570,12 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="MenuItem">
-                    <Border x:Name="Bd" Background="Transparent" CornerRadius="6" Padding="8,7">
+                    <Border x:Name="Bd" Background="Transparent" CornerRadius="6" Padding="10,7">
                         <Grid>
-                            <Grid.ColumnDefinitions><ColumnDefinition Width="22"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="24"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                             <TextBlock x:Name="Check" Text="&#xE73E;" Style="{StaticResource Glyph}" FontSize="12" Foreground="{DynamicResource AccentBrush}" Visibility="Collapsed" VerticalAlignment="Center"/>
                             <ContentPresenter Grid.Column="1" ContentSource="Header" RecognizesAccessKey="True" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="2" Text="{TemplateBinding InputGestureText}" Margin="24,0,0,0" FontSize="11.5" Foreground="{DynamicResource TextTertiaryBrush}" VerticalAlignment="Center"/>
                         </Grid>
                     </Border>
                     <ControlTemplate.Triggers>
@@ -584,7 +589,21 @@
     </Style>
     <Style TargetType="Separator">
         <Setter Property="Template">
-            <Setter.Value><ControlTemplate TargetType="Separator"><Rectangle Height="1" Margin="8,4" Fill="{DynamicResource StrokeBrush}"/></ControlTemplate></Setter.Value>
+            <Setter.Value><ControlTemplate TargetType="Separator"><Rectangle Height="1" Margin="4,6" Fill="{DynamicResource StrokeBrush}"/></ControlTemplate></Setter.Value>
+        </Setter>
+    </Style>
+    <!-- Menus look separators up by this key, not by type. -->
+    <Style x:Key="{x:Static MenuItem.SeparatorStyleKey}" TargetType="Separator" BasedOn="{StaticResource {x:Type Separator}}"/>
+    <!-- A section label inside a menu ("Game mode"): not clickable, skipped by the keyboard. -->
+    <Style x:Key="MenuHeader" TargetType="MenuItem">
+        <Setter Property="Focusable" Value="False"/>
+        <Setter Property="IsHitTestVisible" Value="False"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="MenuItem">
+                    <TextBlock Text="{TemplateBinding Header}" Margin="10,6,10,4" FontSize="11.5" FontWeight="SemiBold" Foreground="{DynamicResource TextTertiaryBrush}"/>
+                </ControlTemplate>
+            </Setter.Value>
         </Setter>
     </Style>
 
