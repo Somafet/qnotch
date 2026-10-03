@@ -1,0 +1,33 @@
+name: Release
+
+# Push a tag like v0.1.0 to build both downloads and publish a GitHub release with generated notes.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Publish both variants
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}".TrimStart('v')
+          dotnet publish src/QNotch/QNotch.csproj -p:PublishProfile=win-x64 -p:Version=$version
+          dotnet publish src/QNotch/QNotch.csproj -p:PublishProfile=win-x64-self-contained -p:Version=$version
+          Compress-Archive -Path dist/self-contained/QNotch.exe -DestinationPath dist/QNotch-self-contained.zip
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "${{ github.ref_name }}" dist/QNotch.exe dist/QNotch-self-contained.zip --generate-notes --verify-tag
