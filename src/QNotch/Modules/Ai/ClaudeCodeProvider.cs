@@ -10,7 +10,8 @@ namespace QNotch.Modules.Ai;
 /// <summary>Claude Code: reads the local OAuth token and asks Anthropic's usage endpoint. The token never leaves this class except to api.anthropic.com and is never logged.</summary>
 internal sealed class ClaudeCodeProvider : IUsageProvider
 {
-    const string Url = "https://api.anthropic.com/api/oauth/usage";
+    // cedar_ember=1 adds the banked resets (the Claude CLI asks the same way); skip_spend=1 leaves out the spend block QNotch does not show.
+    const string Url = "https://api.anthropic.com/api/oauth/usage?cedar_ember=1&skip_spend=1";
 
     static readonly Lazy<HttpClient> Http = new(() => new HttpClient(new SocketsHttpHandler
     {
@@ -99,7 +100,29 @@ internal sealed class ClaudeCodeProvider : IUsageProvider
             DateTime? resets = DateTimeOffset.TryParse(w.GetStringOrNull("resets_at"), out var r) ? r.LocalDateTime : null;
             list.Add(new UsageWindow(label, Math.Clamp(u.GetDouble(), 0, 100), resets));
         }
-        return list.Count > 0 ? UsageResult.Ok(list, plan, DateTime.Now) : UsageResult.Unavailable("Unexpected response from the usage endpoint.");
+        return list.Count > 0 ? UsageResult.Ok(list, plan, DateTime.Now, Banked(body.RootElement)) : UsageResult.Unavailable("Unexpected response from the usage endpoint.");
+    }
+
+    /// <summary>Counts the grants usable right now; the expiry is that of the next grant, the one a reset would spend. Null when nothing is usable.</summary>
+    static BankedResets? Banked(JsonElement root)
+    {
+        if (!root.TryGetProperty("cedar_ember", out var ce) || ce.ValueKind != JsonValueKind.Object
+            || !ce.TryGetProperty("eligible", out var el) || el.ValueKind != JsonValueKind.True
+            || !ce.TryGetProperty("grants", out var grants) || grants.ValueKind != JsonValueKind.Array) return null;
+        var nextId = ce.GetStringOrNull("next_grant_id");
+        var count = 0;
+        DateTime? expires = null;
+        var hasNext = false;
+        foreach (var g in grants.EnumerateArray())
+        {
+            if (g.ValueKind != JsonValueKind.Object || g.TryGetProperty("paused", out var p) && p.ValueKind == JsonValueKind.True
+                || g.TryGetProperty("usable_now", out var u) && u.ValueKind == JsonValueKind.False) continue;
+            DateTime? ends = DateTimeOffset.TryParse(g.GetStringOrNull("ends_at"), out var e) ? e.LocalDateTime : null;
+            if (ends <= DateTime.Now) continue;
+            if (g.TryGetProperty("resets_left", out var n) && n.ValueKind == JsonValueKind.Number && n.TryGetInt32(out var left) && left > 0) count += left;
+            if (g.GetStringOrNull("id") == nextId) { hasNext = true; expires = ends; }
+        }
+        return hasNext && count > 0 ? new BankedResets(count, expires) : null;
     }
 
     static string PlanName(string? sub, string? tier)
