@@ -21,8 +21,16 @@ internal static class AgentsViews
     };
 
     /// <summary>The second line of a row: what it waits for, or how long it has been in its state.</summary>
-    /// <summary>"Working for 6m"; Codex rows say so ("Codex · Working"), a permission prompt already names it.</summary>
-    public static string Meta(AgentSession s) => s.Agent == "codex" && s.Status != AgentStatus.NeedsYou ? "Codex · " + Status(s) : Status(s);
+    /// <summary>
+    /// "Working for 6m", after the folder when the title took the name's place ("api · Working"). Codex rows say so
+    /// ("Codex · Working"); a permission prompt already names the agent.
+    /// </summary>
+    public static string Meta(AgentSession s) => string.Join(" · ", new[]
+    {
+        s.Agent == "codex" && s.Status != AgentStatus.NeedsYou ? "Codex" : "",
+        s.Title.Length > 0 ? s.Name : "",
+        Status(s),
+    }.Where(t => t.Length > 0));
 
     static string Status(AgentSession s) => s.Status switch
     {
@@ -112,7 +120,7 @@ internal static class AgentsViews
         var tile = new Border { Width = 28, Height = 28, CornerRadius = new CornerRadius(6), Child = icon };
         tile.SetResourceReference(Border.BackgroundProperty, "AccentSoftBrush");
 
-        var name = new TextBlock { Text = s.Name, FontSize = 12, FontWeight = FontWeights.SemiBold, TextTrimming = TextTrimming.CharacterEllipsis, ToolTip = s.Cwd.Length > 0 ? s.Cwd : null };
+        var name = new TextBlock { Text = s.Title.Length > 0 ? s.Title : s.Name, FontSize = 12, FontWeight = FontWeights.SemiBold, TextTrimming = TextTrimming.CharacterEllipsis, ToolTip = s.Cwd.Length > 0 ? s.Cwd : null };
         var meta = UiKit.Text(Meta(s), "Muted");
         meta.TextWrapping = TextWrapping.NoWrap;
         meta.TextTrimming = TextTrimming.CharacterEllipsis;
