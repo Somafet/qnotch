@@ -10,10 +10,13 @@ public enum UsageStatus { Pending, Ok, Unavailable }
 /// <summary>One usage window as reported by a provider (for example the 5-hour window).</summary>
 public sealed record UsageWindow(string Label, double UsedPercent, DateTime? ResetsAt);
 
+/// <summary>Usage resets banked on a Claude subscription: how many are usable now, and when the next one (named by Label) expires.</summary>
+public sealed record BankedResets(int Count, DateTime? ExpiresAt, string? Label);
+
 /// <summary>Provider outcome. Unavailable never carries numbers, so it can never render as 0%.</summary>
-public sealed record UsageResult(UsageStatus Status, IReadOnlyList<UsageWindow> Windows, string? Plan, DateTime AsOf, string? Reason)
+public sealed record UsageResult(UsageStatus Status, IReadOnlyList<UsageWindow> Windows, string? Plan, DateTime AsOf, string? Reason, BankedResets? Banked = null)
 {
-    public static UsageResult Ok(IReadOnlyList<UsageWindow> windows, string? plan, DateTime asOf) => new(UsageStatus.Ok, windows, plan, asOf, null);
+    public static UsageResult Ok(IReadOnlyList<UsageWindow> windows, string? plan, DateTime asOf, BankedResets? banked = null) => new(UsageStatus.Ok, windows, plan, asOf, null, banked);
     public static UsageResult Unavailable(string reason) => new(UsageStatus.Unavailable, [], null, DateTime.Now, reason);
 }
 
@@ -118,6 +121,9 @@ public sealed partial class AiProviderItem : ObservableObject
     [ObservableProperty] private string _headlineText = "";
     [ObservableProperty] private double _headlinePercent;
     [ObservableProperty] private string _subText = "";
+    [ObservableProperty] private string _bankedText = "";
+    [ObservableProperty] private string _bankedTip = "";
+    BankedResets? _banked;
 
     public bool IsOk => Status == UsageStatus.Ok;
     public bool IsUnavailable => Status == UsageStatus.Unavailable;
@@ -132,6 +138,8 @@ public sealed partial class AiProviderItem : ObservableObject
     partial void OnPlanChanged(string value) => OnPropertyChanged(nameof(HasPlan));
     partial void OnReasonChanged(string value) => OnPropertyChanged(nameof(Tooltip));
     partial void OnUpdatedTextChanged(string value) => OnPropertyChanged(nameof(Tooltip));
+    partial void OnBankedTextChanged(string value) => OnPropertyChanged(nameof(HasBanked));
+    public bool HasBanked => BankedText.Length > 0;
 
     public void Apply(UsageResult r)
     {
@@ -146,6 +154,7 @@ public sealed partial class AiProviderItem : ObservableObject
             Plan = r.Plan ?? "";
             Reason = "";
             UpdatedText = "Updated " + AiFormat.When(r.AsOf);
+            _banked = r.Banked;
             Status = UsageStatus.Ok;
         }
         else
@@ -154,6 +163,7 @@ public sealed partial class AiProviderItem : ObservableObject
             Plan = "";
             Reason = r.Reason ?? "No data";
             UpdatedText = "";
+            _banked = null;
             Status = UsageStatus.Unavailable;
         }
         RefreshCard();
@@ -167,6 +177,7 @@ public sealed partial class AiProviderItem : ObservableObject
 
     void RefreshCard()
     {
+        RefreshBanked();
         if (Status == UsageStatus.Ok && Windows.Count > 0)
         {
             var w0 = Windows[0];
@@ -181,6 +192,16 @@ public sealed partial class AiProviderItem : ObservableObject
             HeadlinePercent = 0;
             SubText = Status == UsageStatus.Pending ? "" : Reason;
         }
+    }
+
+    void RefreshBanked()
+    {
+        if (_banked is not { Count: > 0 } b) { BankedText = ""; BankedTip = ""; return; }
+        var text = b.Count == 1 ? "1 banked reset" : $"{b.Count} banked resets";
+        if (b.ExpiresAt is { } at && at > DateTime.Now) text += "  ·  expires " + AiFormat.In(at - DateTime.Now);
+        BankedText = text;
+        var when = b.ExpiresAt is { } e ? "Expires " + e.ToString("d MMM HH:mm", UiCulture.Value) : "Does not expire";
+        BankedTip = b.Label is { Length: > 0 } l ? l + "\n" + when : when;
     }
 }
 

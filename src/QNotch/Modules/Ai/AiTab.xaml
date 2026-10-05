@@ -67,6 +67,8 @@
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>
+                                    <TextBlock Text="{Binding BankedText}" ToolTip="{Binding BankedTip}" Style="{StaticResource Muted}" Margin="0,-2,0,2"
+                                               Visibility="{Binding HasBanked, Converter={StaticResource BoolToVis}}"/>
                                 </StackPanel>
 
                                 <!-- Signed out, failed or unsupported: never a number -->
