@@ -17,6 +17,7 @@ A notch for Windows 11. A slim pill at the top of your screen shows what is play
 - **Agents:** every Claude Code session in the pill and the Agents tab: working, needs you or done, with the tokens each one used today and what that would cost at API list prices, plus the dev servers and test runners it started (memory, CPU, ports) and any it left running after its session ended, each with a Stop button. Its Show button brings up the terminal or app it runs in, and in the Claude app opens that session. When one needs you or finishes, the pill widens for a moment with its name and plays a soft sound (never in Game mode or during a call). One click in Settings, Agents connects Claude Code.
 - **AI apps:** launch them with Alt+1 to Alt+6 and see your Claude Code and Codex usage limits.
 - **Note, GitHub contribution graph, file tray, volume, timer, color picker** and your **scheduled tasks**.
+- **Make it yours:** the pencil in the header turns on Edit mode: drag the Home cards and the tabs into the order you like.
 - **Move it aside:** drag the pill (or the open panel's header) sideways and fling it out of the way of your tabs, or carry it onto another display. It springs into place, snaps to the center or an edge, and remembers the spot for each app. Double-click it to center it again.
 - **Game mode:** when a game or fullscreen video is running, the notch shrinks to a one-line status bar.
 

@@ -61,7 +61,7 @@
                         </Border>
                         <!-- Actions -->
                         <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right">
-                            <ToggleButton Style="{StaticResource IconToggle}" Content="&#xE70F;" ToolTip="Edit cards" IsChecked="{Binding IsEditMode}"
+                            <ToggleButton Style="{StaticResource IconToggle}" Content="&#xE70F;" ToolTip="Edit layout" IsChecked="{Binding IsEditMode}"
                                           IsEnabled="{Binding MotionEnabled}" Visibility="{Binding IsHomeSelected, Converter={StaticResource BoolToVis}}"/>
                             <ToggleButton Style="{StaticResource IconToggle}" Content="&#xE718;" ToolTip="Keep panel open" IsChecked="{Binding Settings.Pinned}" Margin="4,0,0,0"/>
                             <Button Style="{StaticResource IconButton}" Content="&#xE713;" ToolTip="Settings" Command="{Binding OpenSettingsCommand}" Margin="4,0,0,0"/>

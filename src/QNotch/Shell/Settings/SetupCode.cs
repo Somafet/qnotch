@@ -36,7 +36,7 @@ public static class SetupCode
     public static readonly IReadOnlyList<Section> ShellSections =
     [
         new("general", "Appearance and features", new(typeof(GeneralSettings), "HoverDwellMs:0..600", "LeaveDelayMs:100..1500",
-            "AccentColor", "Theme", "ReduceMotion", "DisabledModules", "CardOrder", "CardVisible")),
+            "AccentColor", "Theme", "ReduceMotion", "DisabledModules", "CardOrder", "CardVisible", "TabOrder")),
         new("hotkeys", "Hotkeys", new(typeof(ShortcutSettings), "Keys")),
         new("gamemode", "Game mode", new(typeof(GameModeSettings), "AutoDetect", "Opacity:0.3..1", "Height:16..40",
             "OffsetX:-1500..1500", "OffsetY:0..400", "Segments")),

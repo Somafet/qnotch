@@ -30,6 +30,9 @@ public sealed partial class GeneralSettings : ObservableObject
     /// <summary>Card ids in display order, including hidden ones (hidden cards keep their slot).</summary>
     public List<string> CardOrder { get; set; } = new();
 
+    /// <summary>Tab ids in strip order (Edit mode). Tabs not listed follow in their default order; ids of tabs that are gone keep their slot.</summary>
+    public List<string> TabOrder { get; set; } = new();
+
     /// <summary>Where the notch sits while an app is in front: process name ("chrome.exe") to DIPs from the monitor center
     /// (+-10000 means flush with that edge). Missing means centered. Saved by NotchNudge, not through PropertyChanged.</summary>
     public Dictionary<string, double> NotchSpots { get; set; } = new();
