@@ -21,7 +21,18 @@ internal static class AgentsViews
     };
 
     /// <summary>The second line of a row: what it waits for, or how long it has been in its state.</summary>
-    public static string Meta(AgentSession s) => s.Status switch
+    /// <summary>
+    /// "Working for 6m", after the folder when the title took the name's place ("api · Working"). Codex rows say so
+    /// ("Codex · Working"); a permission prompt already names the agent.
+    /// </summary>
+    public static string Meta(AgentSession s) => string.Join(" · ", new[]
+    {
+        s.Agent == "codex" && s.Status != AgentStatus.NeedsYou ? "Codex" : "",
+        s.Title.Length > 0 ? s.Name : "",
+        Status(s),
+    }.Where(t => t.Length > 0));
+
+    static string Status(AgentSession s) => s.Status switch
     {
         AgentStatus.NeedsYou => s.Message,
         AgentStatus.Working => DateTime.UtcNow - s.Since < TimeSpan.FromMinutes(1) ? "Working" : $"Working for {Span(DateTime.UtcNow - s.Since)}",
@@ -109,7 +120,7 @@ internal static class AgentsViews
         var tile = new Border { Width = 28, Height = 28, CornerRadius = new CornerRadius(6), Child = icon };
         tile.SetResourceReference(Border.BackgroundProperty, "AccentSoftBrush");
 
-        var name = new TextBlock { Text = s.Name, FontSize = 12, FontWeight = FontWeights.SemiBold, TextTrimming = TextTrimming.CharacterEllipsis, ToolTip = s.Cwd.Length > 0 ? s.Cwd : null };
+        var name = new TextBlock { Text = s.Title.Length > 0 ? s.Title : s.Name, FontSize = 12, FontWeight = FontWeights.SemiBold, TextTrimming = TextTrimming.CharacterEllipsis, ToolTip = s.Cwd.Length > 0 ? s.Cwd : null };
         var meta = UiKit.Text(Meta(s), "Muted");
         meta.TextWrapping = TextWrapping.NoWrap;
         meta.TextTrimming = TextTrimming.CharacterEllipsis;
@@ -169,7 +180,7 @@ internal sealed class AgentsTab : Grid
         _st = st;
         Margin = new Thickness(19, 2, 19, 0);
         _empty = Placeholder.Create(AgentsModule.Icon, "No agents running",
-            "Claude Code sessions show up here with what they are doing. Connect Claude Code in Settings, Agents, then start a session.");
+            "Claude Code and Codex sessions show up here with what they are doing. Connect them in Settings, Agents, then start a session.");
         if (_empty is Panel p)
         {
             var open = new Button { Content = "Open settings", HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 12, 0, 0), Padding = new Thickness(12, 4, 12, 4) };
@@ -302,20 +313,21 @@ internal sealed class AgentsTab : Grid
     }
 }
 
-/// <summary>Settings, Agents: connect or disconnect each Claude Code config folder, and the alert sounds.</summary>
+/// <summary>Settings, Agents: connect or disconnect each Claude Code config folder and Codex, and the alert sounds.</summary>
 internal static class AgentsSettings
 {
     public static FrameworkElement Create(AgentsModule m, AgentsConfig cfg, bool readOnly)
     {
         var page = UiKit.Page("Agents");
-        var intro = UiKit.Text("Claude Code tells QNotch what each session is doing through hooks in its settings.json. Everything stays on this PC.", "Muted");
+        var intro = UiKit.Text("Claude Code and Codex tell QNotch what each session is doing through hooks in their settings. Everything stays on this PC.", "Muted");
         intro.Margin = new Thickness(0, -8, 0, 16);
         page.Children.Add(intro);
 
-        foreach (var hooks in ClaudeHooks.Discover())
+        // A snapshot shows the Codex row whether or not Codex is installed.
+        foreach (var hooks in ClaudeHooks.Discover().Append<HookFile?>(CodexHooks.Find(always: readOnly)).OfType<HookFile>())
         {
             var button = new Button { MinWidth = 96, IsEnabled = !readOnly };
-            var row = UiKit.Row(hooks.Account == "Default" ? "Claude Code" : $"Claude Code ({hooks.Account})", "", button);
+            var row = UiKit.Row(hooks.Title, "", button);
             var hint = (TextBlock)((StackPanel)row.Children[0]).Children[1];
             page.Children.Add(row);
             var connected = false;
@@ -329,10 +341,10 @@ internal static class AgentsSettings
                 else button.Style = (Style)Application.Current.FindResource("AccentButton");
                 hint.Text = status switch
                 {
-                    HookStatus.Connected => "Connected. Sessions that were already open show up after you restart them.",
+                    HookStatus.Connected => hooks.ConnectedHint,
                     HookStatus.OtherCopy => $"Connected to another copy of QNotch ({detail}).",
-                    HookStatus.Error => $"Could not read settings.json: {detail}",
-                    _ => $"Adds hooks to {System.IO.Path.Combine(hooks.Dir, "settings.json")} and keeps a backup next to it.",
+                    HookStatus.Error => $"Could not read {hooks.FileName}: {detail}",
+                    _ => $"Adds hooks to {hooks.FilePath} and keeps a backup next to it.",
                 };
                 hint.SetResourceReference(TextBlock.ForegroundProperty, status switch
                 {
@@ -348,9 +360,9 @@ internal static class AgentsSettings
                 button.IsEnabled = false;
                 string? error = null;
                 try { await Task.Run(connected ? hooks.Disconnect : hooks.Connect); }
-                catch (Exception ex) { error = ex.Message; Core.Log.Warn("Changing Claude Code hooks failed", ex); }
+                catch (Exception ex) { error = ex.Message; Core.Log.Warn($"Changing {hooks.Title} hooks failed", ex); }
                 Sync();
-                if (error is not null) { hint.Text = $"Could not change settings.json: {error}"; hint.SetResourceReference(TextBlock.ForegroundProperty, "DangerBrush"); }
+                if (error is not null) { hint.Text = $"Could not change {hooks.FileName}: {error}"; hint.SetResourceReference(TextBlock.ForegroundProperty, "DangerBrush"); }
                 button.IsEnabled = true;
             };
             Sync();

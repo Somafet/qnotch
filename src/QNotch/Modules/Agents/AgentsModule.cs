@@ -15,8 +15,12 @@ internal sealed class AgentSession(string id)
 {
     public string Id { get; } = id;
     public string Cwd { get; set; } = "";
-    /// <summary>The project folder name, what the rows and the pill show.</summary>
-    public string Name => Cwd.Length == 0 ? "Claude" : Path.GetFileName(Path.TrimEndingDirectorySeparator(Cwd));
+    /// <summary>"claude" or "codex".</summary>
+    public string Agent { get; set; } = "claude";
+    /// <summary>The thread's title in T3 Code or the Codex app, else the one Claude Code gave the session (or the user's rename); empty until it has one.</summary>
+    public string Title { get; set; } = "";
+    /// <summary>The project folder name, what the pill shows, and the rows when there is no title.</summary>
+    public string Name => Cwd.Length == 0 ? (Agent == "codex" ? "Codex" : "Claude") : Path.GetFileName(Path.TrimEndingDirectorySeparator(Cwd));
     public AgentStatus Status { get; set; }
     /// <summary>What it waits for ("Claude needs your permission to use Bash"), only while it needs you.</summary>
     public string Message { get; set; } = "";
@@ -25,7 +29,7 @@ internal sealed class AgentSession(string id)
     /// <summary>Hook time of the newest event applied: async hooks can arrive out of order.</summary>
     public long At { get; set; }
     public nint Window { get; set; }
-    /// <summary>Opens the session itself in the app it runs in ("claude://code/continue?session=…"), empty in a terminal.</summary>
+    /// <summary>Opens the session itself in the app it runs in ("claude://code/continue?session=…", "codex://threads/…"), empty in a terminal.</summary>
     public string Link { get; set; } = "";
     public int Pid { get; set; }
     /// <summary>The tool a permission prompt or question waits on, so other tools' events leave "needs you" alone.</summary>
@@ -108,7 +112,7 @@ public sealed class AgentsConfig
 internal sealed record AgentEvent(string Agent, string Event, string Session, string Cwd, string? Message, string? Type, string? Tool, int Pid, long Hwnd, long At, string? Transcript = null, string? Link = null);
 
 /// <summary>
-/// Live Claude Code sessions: working, needs you, done. Claude Code runs <c>QNotch.exe agent</c> on each event and the hook sends one
+/// Live Claude Code and Codex sessions: working, needs you, done. The agent runs <c>QNotch.exe agent</c> on each event and the hook sends one
 /// line over a named pipe. Idle cost is one pending pipe accept; a session's end is an OS process-exit event, never a poll.
 /// </summary>
 public sealed partial class AgentsModule : INotchModule, ICadenceAware
@@ -130,6 +134,10 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
     AgentSession? _peekFor;
     Timer? _walkTimer;
     bool _fast, _walking, _again;
+    CodexTitles? _codexTitles;
+    bool _titlesPending, _titlesStale;
+    /// <summary>The latest titles from the apps (T3 Code, Codex): they win over the one in a Claude Code transcript.</summary>
+    Dictionary<string, string> _appTitles = [];
     /// <summary>Walk every second until then: a shell tool is running and may start something that outlives the shell.</summary>
     DateTime _burstUntil;
 
@@ -144,8 +152,8 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
         _needsYouSound = ctx.Sounds.Add("agents.needsyou", "Agent needs you", "An agent waits for your answer.", "Notification.IM", 20);
         _doneSound = ctx.Sounds.Add("agents.done", "Agent finished", "An agent finished its turn.", "Notification.Default", 21);
         ctx.Search.Register(new SearchSource(TabId, "Agents", Icon, 45, q => _st.Sessions
-            .Where(s => s.Name.Contains(q, StringComparison.OrdinalIgnoreCase) || s.Cwd.Contains(q, StringComparison.OrdinalIgnoreCase))
-            .Select(s => new SearchHit(s.Name, AgentsViews.Meta(s), () => ctx.Shell.SelectTab(TabId)))));
+            .Where(s => s.Title.Contains(q, StringComparison.OrdinalIgnoreCase) || s.Cwd.Contains(q, StringComparison.OrdinalIgnoreCase))
+            .Select(s => new SearchHit(s.Title.Length > 0 ? s.Title : s.Name, AgentsViews.Meta(s), () => ctx.Shell.SelectTab(TabId)))));
 
         if (ctx.Settings.ReadOnly) { Seed(); return; }
         _st.Changed += EndStalePeek;
@@ -293,10 +301,13 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
         else if (e.At < s.At) return;
         s.At = e.At;
         if (e.Cwd.Length > 0) s.Cwd = e.Cwd;
+        if (e.Agent is "claude" or "codex") s.Agent = e.Agent;
         if (e.Transcript is { Length: > 0 } tp) s.Transcript = tp;
         if (e.Hwnd != 0) s.Window = (nint)e.Hwnd;
         // Any process of this user can write to the pipe: only open the kind of link the hook makes.
-        if (e.Link is { } link && link.StartsWith("claude://code/continue?session=local_", StringComparison.Ordinal)) s.Link = link;
+        if (e.Link is { } link && (link.StartsWith("claude://code/continue?session=local_", StringComparison.Ordinal)
+            || (link.StartsWith("codex://threads/", StringComparison.Ordinal) && Guid.TryParseExact(link["codex://threads/".Length..], "D", out _))))
+            s.Link = link;
         if (e.Pid > 0 && s.Pid != e.Pid) { s.Pid = e.Pid; Watch(e.Pid); }
         // "npm run dev &" outlives its shell, which ends before PostToolUse: note its processes while the shell still runs.
         if (e.Tool is "Bash" or "PowerShell")
@@ -336,6 +347,7 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
                 : PermissionTool().Match(s.Message) is { Success: true } m ? m.Groups[1].Value : null;
         }
         ReadUsage(s);
+        ReadAppTitles();
         _st.Raise();
         if (s.Status == was) return;
         if (s.Status == AgentStatus.NeedsYou) Alert(s, "Needs you", Icon, "WarningBrush", _cfg.SoundNeedsYou ? _needsYouSound : null);
@@ -395,15 +407,49 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
         {
             await Task.Delay(UsageDelay);
             Dictionary<DateOnly, Usage>? days = null;
-            try { days = reader.Read(path); }
+            string? title = null;
+            try { days = reader.Read(path); title = reader.Title; }
             catch (Exception ex) { Log.Warn("Reading agent usage failed", ex); }
             _ctx.Bus.Run(() =>
             {
                 s.UsagePending = false;
                 if (s.UsageStale && _st.Sessions.Contains(s)) ReadUsage(s);
                 if (days is null) return;
+                if (title is not null && !_appTitles.ContainsKey(s.Id)) s.Title = title;
                 if (reader.BytesRead > 1_000_000) MemoryTrim.AfterActivity();
                 _st.Usage[s.Id] = new SessionUsage(s.Cwd, days);
+                _st.Raise();
+            });
+        });
+    }
+
+    /// <summary>
+    /// Codex keeps the names of all its threads in one file, T3 Code the titles of its threads (Claude Code or Codex) in its database:
+    /// one read serves every row, a few seconds after an event. T3 Code wins, as that is the name the user sees there.
+    /// </summary>
+    void ReadAppTitles()
+    {
+        if (_titlesPending) { _titlesStale = true; return; }
+        (_titlesPending, _titlesStale) = (true, false);
+        var reader = _codexTitles ??= new CodexTitles();
+        Task.Run(async () =>
+        {
+            await Task.Delay(UsageDelay);
+            Dictionary<string, string>? names = null;
+            try
+            {
+                names = reader.Read();
+                foreach (var (id, title) in T3Titles.Read()) names[id] = title;
+            }
+            catch (Exception ex) { Log.Warn("Reading thread titles failed", ex); }
+            _ctx.Bus.Run(() =>
+            {
+                _titlesPending = false;
+                if (_titlesStale) ReadAppTitles();
+                if (names is null) return;
+                _appTitles = names;
+                foreach (var s in _st.Sessions)
+                    if (names.TryGetValue(s.Id, out var title)) s.Title = title;
                 _st.Raise();
             });
         });
@@ -452,9 +498,10 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
         var now = DateTime.UtcNow;
         _st.Sessions.AddRange(
         [
-            new("1") { Cwd = @"C:\code\api", Status = AgentStatus.NeedsYou, Message = "Claude needs your permission to use Bash", Since = now.AddMinutes(-1), Window = 1 },
-            new("2") { Cwd = @"C:\code\web", Status = AgentStatus.Working, Since = now.AddMinutes(-6), Window = 1 },
+            new("1") { Cwd = @"C:\code\api", Title = "Rate limit the login endpoint", Status = AgentStatus.NeedsYou, Message = "Claude needs your permission to use Bash", Since = now.AddMinutes(-1), Window = 1 },
+            new("2") { Cwd = @"C:\code\web", Title = "Dark mode for the settings page", Status = AgentStatus.Working, Since = now.AddMinutes(-6), Window = 1 },
             new("3") { Cwd = @"C:\code\ledge", Status = AgentStatus.Done, Since = now.AddMinutes(-12), Window = 1 },
+            new("4") { Cwd = @"C:\code\infra", Agent = "codex", Title = "Upgrade the Terraform providers", Status = AgentStatus.Working, Since = now.AddMinutes(-3), Window = 1 },
         ]);
         var today = DateOnly.FromDateTime(DateTime.Now);
         _st.Usage["1"] = new(@"C:\code\api", new() { [today] = new(1_940_000, 2.14) });
