@@ -17,7 +17,9 @@ internal sealed class AgentSession(string id)
     public string Cwd { get; set; } = "";
     /// <summary>"claude" or "codex".</summary>
     public string Agent { get; set; } = "claude";
-    /// <summary>The project folder name, what the rows and the pill show.</summary>
+    /// <summary>The title Claude Code gave the session (or the user's rename), empty until it has one.</summary>
+    public string Title { get; set; } = "";
+    /// <summary>The project folder name, what the pill shows, and the rows when there is no title.</summary>
     public string Name => Cwd.Length == 0 ? (Agent == "codex" ? "Codex" : "Claude") : Path.GetFileName(Path.TrimEndingDirectorySeparator(Cwd));
     public AgentStatus Status { get; set; }
     /// <summary>What it waits for ("Claude needs your permission to use Bash"), only while it needs you.</summary>
@@ -146,8 +148,8 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
         _needsYouSound = ctx.Sounds.Add("agents.needsyou", "Agent needs you", "An agent waits for your answer.", "Notification.IM", 20);
         _doneSound = ctx.Sounds.Add("agents.done", "Agent finished", "An agent finished its turn.", "Notification.Default", 21);
         ctx.Search.Register(new SearchSource(TabId, "Agents", Icon, 45, q => _st.Sessions
-            .Where(s => s.Name.Contains(q, StringComparison.OrdinalIgnoreCase) || s.Cwd.Contains(q, StringComparison.OrdinalIgnoreCase))
-            .Select(s => new SearchHit(s.Name, AgentsViews.Meta(s), () => ctx.Shell.SelectTab(TabId)))));
+            .Where(s => s.Title.Contains(q, StringComparison.OrdinalIgnoreCase) || s.Cwd.Contains(q, StringComparison.OrdinalIgnoreCase))
+            .Select(s => new SearchHit(s.Title.Length > 0 ? s.Title : s.Name, AgentsViews.Meta(s), () => ctx.Shell.SelectTab(TabId)))));
 
         if (ctx.Settings.ReadOnly) { Seed(); return; }
         _st.Changed += EndStalePeek;
@@ -400,13 +402,15 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
         {
             await Task.Delay(UsageDelay);
             Dictionary<DateOnly, Usage>? days = null;
-            try { days = reader.Read(path); }
+            string? title = null;
+            try { days = reader.Read(path); title = reader.Title; }
             catch (Exception ex) { Log.Warn("Reading agent usage failed", ex); }
             _ctx.Bus.Run(() =>
             {
                 s.UsagePending = false;
                 if (s.UsageStale && _st.Sessions.Contains(s)) ReadUsage(s);
                 if (days is null) return;
+                if (title is not null) s.Title = title;
                 if (reader.BytesRead > 1_000_000) MemoryTrim.AfterActivity();
                 _st.Usage[s.Id] = new SessionUsage(s.Cwd, days);
                 _st.Raise();
@@ -457,8 +461,8 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
         var now = DateTime.UtcNow;
         _st.Sessions.AddRange(
         [
-            new("1") { Cwd = @"C:\code\api", Status = AgentStatus.NeedsYou, Message = "Claude needs your permission to use Bash", Since = now.AddMinutes(-1), Window = 1 },
-            new("2") { Cwd = @"C:\code\web", Status = AgentStatus.Working, Since = now.AddMinutes(-6), Window = 1 },
+            new("1") { Cwd = @"C:\code\api", Title = "Rate limit the login endpoint", Status = AgentStatus.NeedsYou, Message = "Claude needs your permission to use Bash", Since = now.AddMinutes(-1), Window = 1 },
+            new("2") { Cwd = @"C:\code\web", Title = "Dark mode for the settings page", Status = AgentStatus.Working, Since = now.AddMinutes(-6), Window = 1 },
             new("3") { Cwd = @"C:\code\ledge", Status = AgentStatus.Done, Since = now.AddMinutes(-12), Window = 1 },
             new("4") { Cwd = @"C:\code\infra", Agent = "codex", Status = AgentStatus.Working, Since = now.AddMinutes(-3), Window = 1 },
         ]);
