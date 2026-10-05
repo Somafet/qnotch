@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using QNotch.Core;
 
 namespace QNotch.Modules.Ai;
 
@@ -7,6 +8,7 @@ namespace QNotch.Modules.Ai;
 /// Codex: no documented usage endpoint, so nothing is sent over the network and no token is read. Codex writes the account
 /// rate limits it received into its local session logs (rate_limits on token_count events); this reads the newest reading.
 /// The figures are as fresh as the last Codex turn, and windows that have already reset are dropped.
+/// Banked resets are not in the logs: the installed Codex CLI is asked for them (its app server, with its own login).
 /// </summary>
 internal sealed class CodexProvider : IUsageProvider
 {
@@ -15,7 +17,82 @@ internal sealed class CodexProvider : IUsageProvider
     public string Id => "codex";
     public string Name => "Codex";
 
-    public Task<UsageResult> FetchAsync(CancellationToken ct) => Task.Run(() => Read(ct), ct);
+    public async Task<UsageResult> FetchAsync(CancellationToken ct)
+    {
+        var r = await Task.Run(() => Read(ct), ct);
+        return r.Status == UsageStatus.Ok ? r with { Banked = await ResetCreditsAsync(ct) } : r;
+    }
+
+    /// <summary>codex.exe on PATH, or where the Windows installer puts it. Null when Codex CLI is not installed.</summary>
+    static readonly Lazy<string?> CodexExe = new(() =>
+    {
+        var dirs = (Environment.GetEnvironmentVariable("PATH") ?? "").Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries)
+            .Append(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", "OpenAI", "Codex", "bin"));
+        foreach (var d in dirs)
+        {
+            try { var f = Path.Combine(d.Trim('"'), "codex.exe"); if (File.Exists(f)) return f; } catch { }
+        }
+        return null;
+    });
+
+    /// <summary>One short-lived `codex app-server`: initialize, then account/rateLimits/read. Null on any failure, so the windows still show.</summary>
+    static async Task<BankedResets?> ResetCreditsAsync(CancellationToken ct)
+    {
+        if (CodexExe.Value is not { } exe) return null;
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        cts.CancelAfter(TimeSpan.FromSeconds(15));
+        try
+        {
+            using var p = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(exe, "app-server")
+            {
+                UseShellExecute = false, CreateNoWindow = true,
+                RedirectStandardInput = true, RedirectStandardOutput = true, RedirectStandardError = true,
+                StandardInputEncoding = new UTF8Encoding(false), StandardOutputEncoding = Encoding.UTF8,
+            });
+            if (p is null) return null;
+            p.ErrorDataReceived += (_, _) => { }; // drained so a chatty stderr never blocks it
+            p.BeginErrorReadLine();
+            try
+            {
+                await p.StandardInput.WriteAsync("""
+                    {"jsonrpc":"2.0","id":1,"method":"initialize","params":{"clientInfo":{"name":"qnotch","version":"1.0"},"capabilities":{"experimentalApi":true}}}
+                    {"jsonrpc":"2.0","method":"initialized"}
+                    {"jsonrpc":"2.0","id":2,"method":"account/rateLimits/read","params":null}
+
+                    """.AsMemory(), cts.Token);
+                await p.StandardInput.FlushAsync(cts.Token);
+                while (await p.StandardOutput.ReadLineAsync(cts.Token) is { } line)
+                {
+                    if (!line.Contains("\"id\":2")) continue;
+                    using var doc = JsonDocument.Parse(line);
+                    return doc.RootElement.TryGetProperty("result", out var res) && res.TryGetProperty("rateLimitResetCredits", out var rc) ? ParseCredits(rc) : null;
+                }
+                return null;
+            }
+            finally { try { p.Kill(true); } catch { } }
+        }
+        catch (OperationCanceledException) when (!ct.IsCancellationRequested) { return null; }
+        catch (Exception ex) when (ex is not OperationCanceledException) { Log.Warn("Reading Codex reset credits failed", ex); return null; }
+    }
+
+    /// <summary>Available credits only; the expiry and title are those of the one that expires first.</summary>
+    static BankedResets? ParseCredits(JsonElement rc)
+    {
+        if (rc.ValueKind != JsonValueKind.Object || !rc.TryGetProperty("credits", out var list) || list.ValueKind != JsonValueKind.Array) return null;
+        var count = 0;
+        DateTime? first = null;
+        string? title = null;
+        foreach (var c in list.EnumerateArray())
+        {
+            if (c.GetStringOrNull("status") != "available") continue;
+            count++;
+            DateTime? at = c.TryGetProperty("expiresAt", out var e) && e.ValueKind == JsonValueKind.Number && e.TryGetInt64(out var s) ? DateTimeOffset.FromUnixTimeSeconds(s).LocalDateTime : null;
+            if (count == 1 || at is not null && (first is null || at < first)) { first = at; title = c.GetStringOrNull("title"); }
+        }
+        // The list may be capped below the real count.
+        if (rc.TryGetProperty("availableCount", out var n) && n.ValueKind == JsonValueKind.Number && n.TryGetInt32(out var total)) count = Math.Max(count, total);
+        return count > 0 ? new BankedResets(count, first, title) : null;
+    }
 
     static UsageResult Read(CancellationToken ct)
     {
