@@ -17,7 +17,7 @@ internal sealed class AgentSession(string id)
     public string Cwd { get; set; } = "";
     /// <summary>"claude" or "codex".</summary>
     public string Agent { get; set; } = "claude";
-    /// <summary>The title Claude Code gave the session (or the user's rename), or the Codex thread's name; empty until it has one.</summary>
+    /// <summary>The thread's title in T3 Code or the Codex app, else the one Claude Code gave the session (or the user's rename); empty until it has one.</summary>
     public string Title { get; set; } = "";
     /// <summary>The project folder name, what the pill shows, and the rows when there is no title.</summary>
     public string Name => Cwd.Length == 0 ? (Agent == "codex" ? "Codex" : "Claude") : Path.GetFileName(Path.TrimEndingDirectorySeparator(Cwd));
@@ -136,6 +136,8 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
     bool _fast, _walking, _again;
     CodexTitles? _codexTitles;
     bool _titlesPending, _titlesStale;
+    /// <summary>The latest titles from the apps (T3 Code, Codex): they win over the one in a Claude Code transcript.</summary>
+    Dictionary<string, string> _appTitles = [];
     /// <summary>Walk every second until then: a shell tool is running and may start something that outlives the shell.</summary>
     DateTime _burstUntil;
 
@@ -345,7 +347,7 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
                 : PermissionTool().Match(s.Message) is { Success: true } m ? m.Groups[1].Value : null;
         }
         ReadUsage(s);
-        if (s.Agent == "codex") ReadCodexTitles();
+        ReadAppTitles();
         _st.Raise();
         if (s.Status == was) return;
         if (s.Status == AgentStatus.NeedsYou) Alert(s, "Needs you", Icon, "WarningBrush", _cfg.SoundNeedsYou ? _needsYouSound : null);
@@ -413,7 +415,7 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
                 s.UsagePending = false;
                 if (s.UsageStale && _st.Sessions.Contains(s)) ReadUsage(s);
                 if (days is null) return;
-                if (title is not null) s.Title = title;
+                if (title is not null && !_appTitles.ContainsKey(s.Id)) s.Title = title;
                 if (reader.BytesRead > 1_000_000) MemoryTrim.AfterActivity();
                 _st.Usage[s.Id] = new SessionUsage(s.Cwd, days);
                 _st.Raise();
@@ -421,8 +423,11 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
         });
     }
 
-    /// <summary>Codex keeps the names of all its threads in one file: one read serves every Codex row, a few seconds after an event.</summary>
-    void ReadCodexTitles()
+    /// <summary>
+    /// Codex keeps the names of all its threads in one file, T3 Code the titles of its threads (Claude Code or Codex) in its database:
+    /// one read serves every row, a few seconds after an event. T3 Code wins, as that is the name the user sees there.
+    /// </summary>
+    void ReadAppTitles()
     {
         if (_titlesPending) { _titlesStale = true; return; }
         (_titlesPending, _titlesStale) = (true, false);
@@ -431,15 +436,20 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
         {
             await Task.Delay(UsageDelay);
             Dictionary<string, string>? names = null;
-            try { names = reader.Read(); }
-            catch (Exception ex) { Log.Warn("Reading Codex thread names failed", ex); }
+            try
+            {
+                names = reader.Read();
+                foreach (var (id, title) in T3Titles.Read()) names[id] = title;
+            }
+            catch (Exception ex) { Log.Warn("Reading thread titles failed", ex); }
             _ctx.Bus.Run(() =>
             {
                 _titlesPending = false;
-                if (_titlesStale) ReadCodexTitles();
+                if (_titlesStale) ReadAppTitles();
                 if (names is null) return;
+                _appTitles = names;
                 foreach (var s in _st.Sessions)
-                    if (s.Agent == "codex" && names.TryGetValue(s.Id, out var title)) s.Title = title;
+                    if (names.TryGetValue(s.Id, out var title)) s.Title = title;
                 _st.Raise();
             });
         });
