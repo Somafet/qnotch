@@ -3,6 +3,7 @@ using System.IO.Pipes;
 using System.Text.Json;
 using CommunityToolkit.Mvvm.ComponentModel;
 using QNotch.Core;
+using QNotch.Shell;
 using QNotch.Theme;
 
 namespace QNotch.Modules.Agents;
@@ -123,6 +124,7 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
     CaptureWatch? _micWatch; // only while a sound is on: no sounds during calls
     bool _inCall;
     IDisposable? _peek;
+    Sound _needsYouSound = null!, _doneSound = null!;
     AgentSession? _peekFor;
     Timer? _walkTimer;
     bool _fast, _walking, _again;
@@ -137,6 +139,8 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
         ctx.SettingsSections.Register(new SettingsSectionDescriptor(TabId, "Agents", Icon, 45, () => AgentsSettings.Create(this, _cfg, ctx.Settings.ReadOnly)));
         ctx.Segments.Register(new SegmentDescriptor("agents.pill", SegmentSlot.PillRight, 6, () => AgentsViews.Segment(_st)));
         ctx.Segments.Register(new SegmentDescriptor("agents.game", SegmentSlot.GameBar, 13, () => AgentsViews.Segment(_st), "Agents", "Working agents, and which one needs you."));
+        _needsYouSound = ctx.Sounds.Add("agents.needsyou", "Agent needs you", "An agent waits for your answer.", "Notification.IM", 20);
+        _doneSound = ctx.Sounds.Add("agents.done", "Agent finished", "An agent finished its turn.", "Notification.Default", 21);
         ctx.Search.Register(new SearchSource(TabId, "Agents", Icon, 45, q => _st.Sessions
             .Where(s => s.Name.Contains(q, StringComparison.OrdinalIgnoreCase) || s.Cwd.Contains(q, StringComparison.OrdinalIgnoreCase))
             .Select(s => new SearchHit(s.Name, AgentsViews.Meta(s), () => ctx.Shell.SelectTab(TabId)))));
@@ -323,21 +327,21 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
         ReadUsage(s);
         _st.Raise();
         if (s.Status == was) return;
-        if (s.Status == AgentStatus.NeedsYou) Alert(s, "Needs you", Icon, "WarningBrush", _cfg.SoundNeedsYou ? "Notification.IM" : null);
+        if (s.Status == AgentStatus.NeedsYou) Alert(s, "Needs you", Icon, "WarningBrush", _cfg.SoundNeedsYou ? _needsYouSound : null);
         // Only a finished turn: Done after an interrupt (Esc) is something the user just did themselves.
         else if (s.Status == AgentStatus.Done && e.Event == "Stop" && was == AgentStatus.Working)
-            Alert(s, "Done", Glyphs.Accept, "SuccessBrush", _cfg.SoundDone ? "Notification.Default" : null);
+            Alert(s, "Done", Glyphs.Accept, "SuccessBrush", _cfg.SoundDone ? _doneSound : null);
     }
 
     // ---------- alerts ----------
 
     /// <summary>Widens the pill for a moment ("api: Needs you") and plays the sound, unless in game mode (Peek returns null) or a call.</summary>
-    void Alert(AgentSession s, string what, string glyph, string brush, string? sound)
+    void Alert(AgentSession s, string what, string glyph, string brush, Sound? sound)
     {
         _peek?.Dispose();
         _peek = _ctx.Shell.Peek(glyph, $"{s.Name}: {what}", brush);
         _peekFor = s.Status == AgentStatus.NeedsYou ? s : null;
-        if (_peek is not null && sound is not null && !_inCall) AgentNative.PlaySound(sound);
+        if (_peek is not null && sound is not null && !_inCall) _ctx.Sounds.Play(sound);
     }
 
     /// <summary>Answered in the terminal (or gone): the peek about it goes at once instead of lingering.</summary>

@@ -100,6 +100,7 @@ public partial class App : Application
         _foreground.Start();
         var layout = new CardLayout(cards, gs);
         var shortcuts = new Shortcuts(_hotkeys, _store);
+        var sounds = new Sounds(_store);
         _shell = new ShellController(window, gs, _store, shortcuts, _foreground, layout, tabs, sections, segments);
         var shell = _shell;
 
@@ -116,12 +117,13 @@ public partial class App : Application
         sections.Register(new SettingsSectionDescriptor("general", "General", Glyphs.Settings, 0, () => GeneralSection.Create(gs, _store!, SetupCode.All(ModuleList.All), Restart, shell.Nudge.ResetAll)));
         sections.Register(new SettingsSectionDescriptor("appearance", "Appearance", Glyphs.Color, 10, () => AppearanceSection.Create(gs, layout)));
         sections.Register(new SettingsSectionDescriptor("hotkeys", "Hotkeys", "", 7, () => HotkeysSection.Create(shortcuts)));
+        sections.Register(new SettingsSectionDescriptor("sounds", "Sounds", Glyphs.Volume, 8, () => SoundsSection.Create(sounds)));
         sections.Register(new SettingsSectionDescriptor("gamemode", "Game mode", Glyphs.Game, 20, () => GameModeSection.Create(shell.GameMode, shortcuts, segments)));
 
         var ctx = new ModuleContext
         {
             Bus = bus, Settings = _store, Hotkeys = _hotkeys, Shell = shell, Dispatcher = Dispatcher,
-            Cards = cards, Tabs = tabs, SettingsSections = sections, Segments = segments, Search = new(), Shortcuts = shortcuts,
+            Cards = cards, Tabs = tabs, SettingsSections = sections, Segments = segments, Search = new(), Shortcuts = shortcuts, Sounds = sounds,
         };
         List<INotchModule> Init(IEnumerable<ModuleInfo> list)
         {

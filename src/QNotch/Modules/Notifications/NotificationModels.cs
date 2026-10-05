@@ -86,6 +86,8 @@ public sealed class NotificationSettings
     public int ToastSeconds { get; set; } = 6;
     public int RetentionDays { get; set; } = 7;
     public bool OpenOnError { get; set; } = true;
+    /// <summary>Play a sound when a toast shows (Settings, Sounds picks which one).</summary>
+    public bool Sound { get; set; }
     /// <summary>While an app uses the microphone: no toasts (except for notifications waiting for an answer) and no automatic panel. The history and unread count still update.</summary>
     public bool QuietDuringCalls { get; set; } = true;
     public bool HttpEnabled { get; set; } = true;

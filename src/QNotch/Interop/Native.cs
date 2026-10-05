@@ -99,6 +99,8 @@ public static unsafe partial class Native
     public const int SM_CXSMICON = 49;
     [LibraryImport("user32.dll", EntryPoint = "RegisterWindowMessageW", StringMarshalling = StringMarshalling.Utf16)]
     public static partial uint RegisterWindowMessage(string name);
+    [LibraryImport("winmm.dll", EntryPoint = "PlaySoundW", StringMarshalling = StringMarshalling.Utf16)]
+    [return: MarshalAs(UnmanagedType.Bool)] public static partial bool PlaySound(string sound, nint module, uint flags);
 
     // Hotkeys
     [LibraryImport("user32.dll", SetLastError = true)] [return: MarshalAs(UnmanagedType.Bool)]

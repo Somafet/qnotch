@@ -53,6 +53,10 @@ Quit from the tray icon.
 
 Change them in Settings, Hotkeys.
 
+## Sounds
+
+Agent alerts, the timer and (when you turn it on in Settings, Notifications) new notifications play one of your Windows sounds. To use your own, pick an audio file (WAV, MP3, WMA, M4A, AAC or FLAC) for each in Settings, Sounds.
+
 ## Privacy and data
 
 Settings, notes and logs live in `%APPDATA%\QNotch\`. Tokens (GitHub, notifications) are kept in Windows Credential Manager, never in a file. Clipboard history stays in memory unless you choose to keep it.

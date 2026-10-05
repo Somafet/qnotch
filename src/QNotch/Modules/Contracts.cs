@@ -110,6 +110,8 @@ public sealed class ModuleContext
     public required HotkeyService Hotkeys { get; init; }
     /// <summary>Global hotkeys the user can change in Settings, Hotkeys: declare each with <c>Shortcuts.Add</c> in <c>Initialize</c>.</summary>
     public required Shortcuts Shortcuts { get; init; }
+    /// <summary>Sounds the user can replace with a file in Settings, Sounds: declare each with <c>Sounds.Add</c> in <c>Initialize</c>, play with <c>Sounds.Play</c>.</summary>
+    public required Sounds Sounds { get; init; }
     public required IShell Shell { get; init; }
     public required Dispatcher Dispatcher { get; init; }
     public required Registry<CardDescriptor> Cards { get; init; }

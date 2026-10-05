@@ -3,6 +3,7 @@ using System.Text;
 using System.Windows;
 using System.Windows.Threading;
 using QNotch.Core;
+using QNotch.Shell;
 
 namespace QNotch.Modules.Notifications;
 
@@ -28,6 +29,7 @@ public sealed class NotificationsModule : INotchModule, ICadenceAware
     CaptureWatch? _micWatch; // only while Quiet during calls is on
     DispatcherTimer? _toastTimer, _ageTimer;
     FrameworkElement? _glance;
+    Sound _sound = null!;
     Note? _transient;       // the toast that is on its timer; waiting notifications show without one
     volatile string _token = "";
     bool _fast, _autoOpened, _saveQueued, _inCall;
@@ -43,6 +45,7 @@ public sealed class NotificationsModule : INotchModule, ICadenceAware
         ctx.Tabs.Register(new TabDescriptor(TabId, "Notifications", NotifyIcons.Bell, 50, () => new NotificationsTab(this, _st), () => _st.IsEmpty));
         ctx.Cards.Register(new CardDescriptor("notifications", "Notifications", 60, () => new NotificationsCard(_st, ctx.Shell)));
         ctx.SettingsSections.Register(new SettingsSectionDescriptor("notifications", "Notifications", NotifyIcons.Bell, 60, () => NotificationsSettingsSection.Create(this, _st)));
+        _sound = ctx.Sounds.Add("notifications.toast", "New notification", "A notification shows a toast. Turn it on in Settings, Notifications.", "Notification.Default", 10);
         ctx.Segments.Register(new SegmentDescriptor("notifications.pill", SegmentSlot.PillRight, 5, () => NotificationSegments.Unread(_st)));
         ctx.Segments.Register(new SegmentDescriptor("notifications.glance", SegmentSlot.Glance, 20, () => _glance = NotificationSegments.Glance(_st)));
         ctx.Segments.Register(new SegmentDescriptor("notifications.game", SegmentSlot.GameBar, 15, () => NotificationSegments.Unread(_st),
@@ -233,6 +236,7 @@ public sealed class NotificationsModule : INotchModule, ICadenceAware
         if (_lastToast.Count > 64) _lastToast.Clear();
         _lastToast[n.App] = now;
         _transient = n;
+        if (_cfg.Sound) _ctx.Sounds.Play(_sound);
         if (_toastTimer is null)
         {
             _toastTimer = new DispatcherTimer(DispatcherPriority.Background, _ctx.Dispatcher);

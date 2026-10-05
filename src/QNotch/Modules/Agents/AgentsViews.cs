@@ -356,9 +356,9 @@ internal static class AgentsSettings
             Sync();
         }
 
-        page.Children.Add(UiKit.Row("Sound when an agent needs you", "Your Windows message sound. Never in Game mode or while an app uses the microphone.",
+        page.Children.Add(UiKit.Row("Sound when an agent needs you", "Never in Game mode or while an app uses the microphone. Choose the sound in Settings, Sounds.",
             UiKit.Toggle(cfg.SoundNeedsYou, on => { cfg.SoundNeedsYou = on; m.SaveSettings(); })));
-        page.Children.Add(UiKit.Row("Sound when an agent finishes", "Your Windows notification sound. Never in Game mode or while an app uses the microphone.",
+        page.Children.Add(UiKit.Row("Sound when an agent finishes", "Never in Game mode or while an app uses the microphone. Choose the sound in Settings, Sounds.",
             UiKit.Toggle(cfg.SoundDone, on => { cfg.SoundDone = on; m.SaveSettings(); })));
         return page;
     }
