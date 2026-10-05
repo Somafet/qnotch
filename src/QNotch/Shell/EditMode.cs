@@ -125,12 +125,15 @@ internal sealed class EditModeController
 
     // ---- Jiggle ----
 
-    static void Jiggle(CardHost h, Fx f)
+    static void Jiggle(CardHost h, Fx f) => Jiggle(f.Rot, h.CardId, 0.7);
+
+    /// <summary>Endless small wobble around +-<paramref name="angle"/> degrees, desynced per <paramref name="id"/>.</summary>
+    internal static void Jiggle(RotateTransform rot, string id, double angle)
     {
         if (!Motion.Enabled) return;
         var seed = 0;
-        foreach (var c in h.CardId) seed += c;
-        var a = new DoubleAnimation(-(0.7 + seed % 3 * 0.1), 0.7 + seed % 3 * 0.1, TimeSpan.FromMilliseconds(120 + seed % 5 * 12))
+        foreach (var c in id) seed += c;
+        var a = new DoubleAnimation(-(angle + seed % 3 * 0.1), angle + seed % 3 * 0.1, TimeSpan.FromMilliseconds(120 + seed % 5 * 12))
         {
             AutoReverse = true,
             RepeatBehavior = RepeatBehavior.Forever,
@@ -138,7 +141,7 @@ internal sealed class EditModeController
             BeginTime = TimeSpan.FromMilliseconds(-(seed % 7) * 17), // desync neighbours
         };
         Timeline.SetDesiredFrameRate(a, 30); // each frame repaints the whole notch surface
-        f.Rot.BeginAnimation(RotateTransform.AngleProperty, a);
+        rot.BeginAnimation(RotateTransform.AngleProperty, a);
     }
 
     // ---- Mouse handling (on the Home ScrollViewer, so capture survives card rebuilds) ----
@@ -286,7 +289,7 @@ internal sealed class EditModeController
     // ---- Helpers ----
 
     /// <summary>Animates a transform property to <paramref name="to"/>; the final value is set locally so the animation can simply stop. Without motion it jumps.</summary>
-    static void Tween(Animatable t, DependencyProperty p, double from, double to, int ms, IEasingFunction? ease = null, Action? done = null)
+    internal static void Tween(Animatable t, DependencyProperty p, double from, double to, int ms, IEasingFunction? ease = null, Action? done = null)
     {
         t.SetValue(p, to);
         if (!Motion.Enabled || from == to)
@@ -305,14 +308,14 @@ internal sealed class EditModeController
     }
 
     /// <summary>Freezes a property at its current animated value and removes the animation.</summary>
-    static void Snap(Animatable t, DependencyProperty p)
+    internal static void Snap(Animatable t, DependencyProperty p)
     {
         var v = t.GetValue(p);
         ((IAnimatable)t).BeginAnimation(p, null);
         t.SetValue(p, v);
     }
 
-    static T? Ancestor<T>(DependencyObject? d) where T : DependencyObject
+    internal static T? Ancestor<T>(DependencyObject? d) where T : DependencyObject
     {
         while (d != null)
         {

@@ -289,9 +289,10 @@ public partial class NotchWindow : Window
 
     // ---------- tab indicator ----------
 
-    public void MoveTabIndicator(int index, bool animate)
+    public void MoveTabIndicator(int index, bool animate) => MoveTabIndicator(index * (TabW + TabGap), animate);
+
+    public void MoveTabIndicator(double x, bool animate)
     {
-        var x = index * (TabW + TabGap);
         TabIndicatorShift.BeginAnimation(TranslateTransform.XProperty, null);
         var from = TabIndicatorShift.X;
         TabIndicatorShift.X = x;

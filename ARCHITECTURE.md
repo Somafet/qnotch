@@ -122,7 +122,7 @@ Everything else (mode, keyboard focus, foreground watcher, monitor, general sett
 ### Shell features (not modules)
 
 - Game mode (`Shell/GameMode/GameModeController.cs`): detects a fullscreen app (foreground hook, WM_DISPLAYCHANGE, a scoped location hook), debounces entry by 250 ms, and switches the shell to `ShellMode.GameBar` (hover, hotkey, tray and file-drag opening off, window click-through, pill and panel hidden, glance hidden). The bar is built on first entry from the registered `GameBar` segments, each wrapped in a Border whose Visibility is the user toggle (`gamemode.json`, `Segments`: id to bool, missing means on; ). The Ctrl+Alt+G hotkey and the tray menu drive `GameMode.Override` (Auto, ForceOn, ForceOff). `Start()` runs after the first frame.
-- Edit mode (`Shell/EditMode.cs`): the header pencil toggles `IsEditMode` (only while the panel is open and `Motion.Enabled`; the panel never auto-closes while it is on). `CardLayout.Hosts` is the live ordered list of `CardHost`; a reorder is persisted with `CardLayout.Move(id, targetId)`, visibility with `SetVisible(id, bool)`.
+- Edit mode (`Shell/EditMode.cs`): the header pencil toggles `IsEditMode` (only while the panel is open and `Motion.Enabled`; the panel never auto-closes while it is on). `CardLayout.Hosts` is the live ordered list of `CardHost`; a reorder is persisted with `CardLayout.Move(id, targetId)`, visibility with `SetVisible(id, bool)`. The tab strip reorders in the same mode (`Shell/TabReorder.cs`): tabs jiggle, drag sideways, and `ShellController.MoveTab(id, targetId)` saves `GeneralSettings.TabOrder` (unlisted tabs follow by `TabDescriptor.Order`; ids of tabs that are gone keep their slot); a press without a drag still opens the tab.
 
 ### Enable switch
 
@@ -161,7 +161,7 @@ var s = ctx.Settings.Get<MediaSettings>("media");   // cached live instance, def
 s.ShowArtwork = false;
 ctx.Settings.Save("media", s);                       // debounced 500 ms, atomic (temp file then move)
 ```
-Enums serialize as strings. The shell's own settings are `GeneralSettings` (`general.json`): monitor index, hover dwell 120 ms, leave delay 400 ms, pinned, hotkeys, accent, theme, reduce motion, profile, card order/visibility, last tab, start with Windows, `DisabledModules`. It is an ObservableObject persisted by the shell. Secrets (tokens) never go in JSON: use `Windows.Security.Credentials.PasswordVault`.
+Enums serialize as strings. The shell's own settings are `GeneralSettings` (`general.json`): monitor index, hover dwell 120 ms, leave delay 400 ms, pinned, hotkeys, accent, theme, reduce motion, profile, card order/visibility, tab order, last tab, start with Windows, `DisabledModules`. It is an ObservableObject persisted by the shell. Secrets (tokens) never go in JSON: use `Windows.Security.Credentials.PasswordVault`.
 
 Setup codes (Settings, General, Share your setup) carry chosen fields of these files to another PC. A module opts in with `Shared` on its `ModuleInfo` in `ModuleList.cs`, naming the fields of its settings file: `Shared: new(typeof(TimerSettings), "Minutes:1..180")` (a number gets a range). Share only plain preferences: never personal data, paths, history, or anything that starts a program or opens a port. Reading a code drops unknown files and fields, checks ranges and sizes, and requires each file to still load as its type; applying writes the files and restarts. The shell's own shared fields are in `Shell/Settings/SetupCode.cs`.
 

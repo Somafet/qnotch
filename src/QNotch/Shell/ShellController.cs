@@ -29,6 +29,7 @@ public sealed class ShellController : IShell
     readonly Registry<SegmentDescriptor> _segments;
     // Kept alive for their event subscriptions.
     readonly EditModeController _editMode;
+    readonly TabReorderController _tabReorder;
     readonly Dictionary<string, Border> _tabViews = new();
     readonly Dictionary<string, RadioButton> _tabButtons = new();
     DispatcherTimer? _dwell, _leave;
@@ -47,6 +48,7 @@ public sealed class ShellController : IShell
         _w.DataContext = _vm;
         GameMode = new GameModeController(this, store, foreground, segments);
         _editMode = new EditModeController(this, layout);
+        _tabReorder = new TabReorderController(this, window);
         Nudge = new NotchNudge(window, this, settings, store, foreground);
     }
 
@@ -415,16 +417,16 @@ public sealed class ShellController : IShell
         if (_built) return;
         _built = true;
         var strip = _w.TabStrip;
-        foreach (var t in _tabs.Items)
+        foreach (var t in OrderedTabs())
         {
             var id = t.Id;
-            var rb = new RadioButton { Style = (Style)Application.Current.FindResource("TabButton"), Content = t.Glyph, ToolTip = t.Title, GroupName = "tabs" };
+            var rb = new RadioButton { Style = (Style)Application.Current.FindResource("TabButton"), Content = t.Glyph, ToolTip = t.Title, GroupName = "tabs", Tag = id };
             System.Windows.Automation.AutomationProperties.SetAutomationId(rb, $"tab-{id}");
             rb.Checked += (_, _) => SelectTab(id);
-            if (strip.Children.Count > 0) rb.Margin = new Thickness(2, 0, 0, 0);
             strip.Children.Add(rb);
             _tabButtons[id] = rb;
         }
+        SpaceTabs();
         SelectTab(_tabs.Find(_general.LastTab) is not null ? _general.LastTab : "home");
         _w.WarmUpPanel();
         _w.Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, PrebuildNext);
@@ -464,8 +466,7 @@ public sealed class ShellController : IShell
         var changed = id != _activeTab || slot.Visibility != Visibility.Visible;
         foreach (var (k, el) in _tabViews) el.Visibility = k == id ? Visibility.Visible : Visibility.Hidden;
         if (_tabButtons.TryGetValue(id, out var rb) && rb.IsChecked != true) rb.IsChecked = true;
-        var index = _tabs.Items.ToList().FindIndex(x => x.Id == id);
-        _w.MoveTabIndicator(Math.Max(0, index), changed);
+        _w.MoveTabIndicator(rb is null ? 0 : Math.Max(0, _w.TabStrip.Children.IndexOf(rb)), changed);
         if (changed && _mode == ShellMode.Expanded && Motion.Enabled) FadeIn(slot);
         _vm.IsHomeSelected = id == "home";
         if (id != "home") IsEditMode = false;
@@ -473,6 +474,44 @@ public sealed class ShellController : IShell
         if (id == _activeTab) return;
         _activeTab = id;
         TabChanged?.Invoke(id);
+    }
+
+    /// <summary>Registered tabs in strip order: the saved order first, then the rest by their default Order.</summary>
+    IEnumerable<TabDescriptor> OrderedTabs()
+    {
+        var byId = _tabs.Items.ToDictionary(t => t.Id);
+        foreach (var id in _general.TabOrder)
+            if (byId.Remove(id, out var t)) yield return t;
+        foreach (var t in _tabs.Items)
+            if (byId.ContainsKey(t.Id)) yield return t;
+    }
+
+    void SpaceTabs()
+    {
+        var children = _w.TabStrip.Children;
+        for (var i = 0; i < children.Count; i++) ((FrameworkElement)children[i]).Margin = new Thickness(i == 0 ? 0 : 2, 0, 0, 0);
+    }
+
+    /// <summary>Edit mode: moves tab <paramref name="id"/> into the slot held by <paramref name="targetId"/> and saves the order
+    /// (ids of tabs that are gone, module off, keep their slot).</summary>
+    internal void MoveTab(string id, string targetId)
+    {
+        var order = _general.TabOrder.ToList();
+        foreach (var t in OrderedTabs()) if (!order.Contains(t.Id)) order.Add(t.Id);
+        var from = order.IndexOf(id);
+        var to = order.IndexOf(targetId);
+        if (from < 0 || to < 0 || from == to) return;
+        order.RemoveAt(from);
+        order.Insert(to, id);
+        _general.TabOrder = order;
+        _store.Save("general", _general);
+
+        var strip = _w.TabStrip.Children;
+        var rb = _tabButtons[id];
+        var slot = strip.IndexOf(_tabButtons[targetId]);
+        strip.Remove(rb);
+        strip.Insert(slot, rb);
+        SpaceTabs();
     }
 
     static void FadeIn(Border slot)
