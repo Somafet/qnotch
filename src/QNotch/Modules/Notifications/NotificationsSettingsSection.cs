@@ -18,6 +18,8 @@ internal static class NotificationsSettingsSection
 
         page.Children.Add(UiKit.Row("Show a toast for", "How long a notification stays under the pill. A sender can set its own time.",
             Choice(ToastSeconds, cfg.ToastSeconds, s => s == 0 ? "Off" : $"{s} seconds", v => { cfg.ToastSeconds = v; m.SaveSettings(); })));
+        page.Children.Add(UiKit.Row("Play a sound", "When a toast shows. Choose the sound in Settings, Sounds.",
+            UiKit.Toggle(cfg.Sound, on => { cfg.Sound = on; m.SaveSettings(); })));
         page.Children.Add(UiKit.Row("Open the panel on errors", "An error opens the Notifications tab by itself. Never while a game is running.",
             UiKit.Toggle(cfg.OpenOnError, on => { cfg.OpenOnError = on; m.SaveSettings(); })));
         page.Children.Add(UiKit.Row("Quiet during calls", "While an app uses the microphone, only questions waiting for your answer show a toast, and the panel never opens by itself. Everything still lands in the history.",

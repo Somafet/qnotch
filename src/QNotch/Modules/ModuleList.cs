@@ -31,7 +31,7 @@ public static class ModuleList
         new("github", "GitHub", "Your GitHub contribution graph, with a token you add in Settings.", () => new GithubModule()),
         new("filetray", "File tray", "Drop files on the notch to keep them within reach.", () => new FileTrayModule()),
         new("notifications", "Notifications", "Lets apps and scripts post notifications to the notch: QNotch.exe notify, a named pipe or local HTTP.", () => new NotificationsModule(), Early: true,
-            Shared: new(typeof(NotificationSettings), "ToastSeconds:0..60", "RetentionDays:1..30", "OpenOnError", "QuietDuringCalls")),
+            Shared: new(typeof(NotificationSettings), "ToastSeconds:0..60", "RetentionDays:1..30", "OpenOnError", "Sound", "QuietDuringCalls")),
         new("capture", "Mic and camera", "A glyph in the pill and the game bar while an app uses your microphone or camera.", () => new CaptureModule(), Early: true),
         new("scheduled", "Scheduled tasks", "Your Windows scheduled tasks (scripts and agents on a timer), with pause and delete.", () => new ScheduledModule()),
         new("volume", "Volume", "System volume and mute on a Home card.", () => new VolumeModule()),

@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
+using QNotch.Shell;
 using QNotch.Theme;
 
 namespace QNotch.Modules.Pomodoro; // not "Timer": that name would hide System.Threading.Timer in every module
@@ -36,6 +37,7 @@ public sealed class PomodoroModule : INotchModule, ICadenceAware
     ModuleContext _ctx = null!;
     TimerSettings _s = null!;
     DispatcherTimer _tick = null!;
+    Sound _sound = null!;
     TimeSpan _left;   // while not running
     DateTime _end;    // while running
     bool _fast, _done;
@@ -48,6 +50,7 @@ public sealed class PomodoroModule : INotchModule, ICadenceAware
         _tick.Tick += (_, _) => Refresh();
 
         ctx.Cards.Register(new CardDescriptor(Id, "Timer", 26, Card));
+        _sound = ctx.Sounds.Add("timer.done", "Timer is up", "A timer reached zero.", "SystemExclamation", 30);
         ctx.Segments.Register(new SegmentDescriptor("timer.pill", SegmentSlot.PillRight, 7, () => Segment(gap: true)));
         ctx.Segments.Register(new SegmentDescriptor("timer.game", SegmentSlot.GameBar, 65, () => Segment(gap: false), "Timer", "Time left, only while a timer runs."));
 
@@ -99,7 +102,7 @@ public sealed class PomodoroModule : INotchModule, ICadenceAware
         _left = TimeSpan.FromMinutes(_st.Minutes);
         _st.Status = _st.ShortText = "Time is up";
         _st.Text = Long(_left);
-        System.Media.SystemSounds.Exclamation.Play();
+        _ctx.Sounds.Play(_sound);
         _ctx.Shell.TryOpenPanel("home", 5000);
     }
 
