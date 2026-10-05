@@ -55,7 +55,7 @@ Change them in Settings, Hotkeys.
 
 ## Sounds
 
-Agent alerts, the timer and (when you turn it on in Settings, Notifications) new notifications play one of your Windows sounds. To use your own, pick an audio file (WAV, MP3, WMA, M4A, AAC or FLAC) for each in Settings, Sounds.
+Agent alerts, the timer and (when you turn it on in Settings, Notifications) new notifications play one of your Windows sounds. To use your own, pick an audio file (WAV, MP3, WMA, M4A, AAC or FLAC) for each in Settings, Sounds, or drop one on its row.
 
 ## Privacy and data
 
