@@ -10,8 +10,8 @@ public enum UsageStatus { Pending, Ok, Unavailable }
 /// <summary>One usage window as reported by a provider (for example the 5-hour window).</summary>
 public sealed record UsageWindow(string Label, double UsedPercent, DateTime? ResetsAt);
 
-/// <summary>Usage resets banked on a Claude subscription: how many are usable now, and when the next one expires.</summary>
-public sealed record BankedResets(int Count, DateTime? ExpiresAt);
+/// <summary>Usage resets banked on a Claude subscription: how many are usable now, and when the next one (named by Label) expires.</summary>
+public sealed record BankedResets(int Count, DateTime? ExpiresAt, string? Label);
 
 /// <summary>Provider outcome. Unavailable never carries numbers, so it can never render as 0%.</summary>
 public sealed record UsageResult(UsageStatus Status, IReadOnlyList<UsageWindow> Windows, string? Plan, DateTime AsOf, string? Reason, BankedResets? Banked = null)
@@ -200,7 +200,8 @@ public sealed partial class AiProviderItem : ObservableObject
         var text = b.Count == 1 ? "1 banked reset" : $"{b.Count} banked resets";
         if (b.ExpiresAt is { } at && at > DateTime.Now) text += "  ·  expires " + AiFormat.In(at - DateTime.Now);
         BankedText = text;
-        BankedTip = b.ExpiresAt is { } e ? "Next one expires " + e.ToString("d MMM HH:mm", UiCulture.Value) : "Does not expire";
+        var when = b.ExpiresAt is { } e ? "Expires " + e.ToString("d MMM HH:mm", UiCulture.Value) : "Does not expire";
+        BankedTip = b.Label is { Length: > 0 } l ? l + "\n" + when : when;
     }
 }
 
