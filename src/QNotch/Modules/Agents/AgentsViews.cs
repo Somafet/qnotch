@@ -121,7 +121,7 @@ internal static class AgentsViews
 
         // Room for both buttons on every row, so the usage column lines up.
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 0), MinWidth = 60 };
-        if (s.Window != 0) buttons.Children.Add(IconButton(ShowGlyph, "Show its terminal", () => module.Show(s)));
+        if (s.Window != 0 || s.Link.Length > 0) buttons.Children.Add(IconButton(ShowGlyph, s.Link.Length > 0 ? "Open the session" : "Show its terminal", () => module.Show(s)));
         if (s.Status is AgentStatus.Done or AgentStatus.Ready) buttons.Children.Add(IconButton(Glyphs.Close, "Clear", () => module.Dismiss(s)));
 
         var g = new Grid();

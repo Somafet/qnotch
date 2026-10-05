@@ -25,6 +25,8 @@ internal sealed class AgentSession(string id)
     /// <summary>Hook time of the newest event applied: async hooks can arrive out of order.</summary>
     public long At { get; set; }
     public nint Window { get; set; }
+    /// <summary>Opens the session itself in the app it runs in ("claude://code/continue?session=…"), empty in a terminal.</summary>
+    public string Link { get; set; } = "";
     public int Pid { get; set; }
     /// <summary>The tool a permission prompt or question waits on, so other tools' events leave "needs you" alone.</summary>
     public string? WaitingTool { get; set; }
@@ -103,7 +105,7 @@ public sealed class AgentsConfig
 }
 
 /// <summary>One line from the hook (see <see cref="AgentHook"/>).</summary>
-internal sealed record AgentEvent(string Agent, string Event, string Session, string Cwd, string? Message, string? Type, string? Tool, int Pid, long Hwnd, long At, string? Transcript = null);
+internal sealed record AgentEvent(string Agent, string Event, string Session, string Cwd, string? Message, string? Type, string? Tool, int Pid, long Hwnd, long At, string? Transcript = null, string? Link = null);
 
 /// <summary>
 /// Live Claude Code sessions: working, needs you, done. Claude Code runs <c>QNotch.exe agent</c> on each event and the hook sends one
@@ -168,7 +170,14 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
 
     // ---------- commands (UI thread) ----------
 
-    internal void Show(AgentSession s) { if (s.Window != 0) AgentNative.Focus(s.Window); }
+    internal void Show(AgentSession s)
+    {
+        if (s.Window != 0) AgentNative.Focus(s.Window);
+        if (s.Link.Length == 0) return;
+        // The app is already up front; the link makes it switch to this session.
+        try { Process.Start(new ProcessStartInfo(s.Link) { UseShellExecute = true }); }
+        catch (Exception ex) { Log.Warn("Opening the agent session failed", ex); }
+    }
 
     internal void OpenSettings() => _ctx.Shell.OpenSettings(TabId);
 
@@ -286,6 +295,8 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
         if (e.Cwd.Length > 0) s.Cwd = e.Cwd;
         if (e.Transcript is { Length: > 0 } tp) s.Transcript = tp;
         if (e.Hwnd != 0) s.Window = (nint)e.Hwnd;
+        // Any process of this user can write to the pipe: only open the kind of link the hook makes.
+        if (e.Link is { } link && link.StartsWith("claude://code/continue?session=local_", StringComparison.Ordinal)) s.Link = link;
         if (e.Pid > 0 && s.Pid != e.Pid) { s.Pid = e.Pid; Watch(e.Pid); }
         // "npm run dev &" outlives its shell, which ends before PostToolUse: note its processes while the shell still runs.
         if (e.Tool is "Bash" or "PowerShell")

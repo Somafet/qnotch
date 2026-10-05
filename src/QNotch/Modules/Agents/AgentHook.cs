@@ -35,6 +35,19 @@ internal static class AgentHook
         return 0;
     }
 
+    /// <summary>
+    /// The Claude app runs the CLI with its own id for the session, which its <c>claude:</c> links take. Checked character by
+    /// character: the button hands this string to the shell.
+    /// </summary>
+    static string? AppLink()
+    {
+        var id = Environment.GetEnvironmentVariable("CLAUDE_CODE_HOST_SESSION_ID");
+        if (id is not { Length: > 6 and <= 70 } || !id.StartsWith("local_", StringComparison.Ordinal) || id.AsSpan(6).ContainsAnyExcept(UrlSafe)) return null;
+        return "claude://code/continue?session=" + id;
+    }
+
+    static readonly System.Buffers.SearchValues<char> UrlSafe = System.Buffers.SearchValues.Create("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-");
+
     static byte[] Line(JsonElement e)
     {
         string? Str(JsonElement o, string name) => o.ValueKind == JsonValueKind.Object && o.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() : null;
@@ -64,6 +77,7 @@ internal static class AgentHook
             if (agent > 0) w.WriteNumber("pid", agent);
             // Only the first event of a session needs the window, but the hook cannot know which one that is. A few ms.
             w.WriteNumber("hwnd", (long)AgentNative.Window(agent > 0 ? agent : Environment.ProcessId));
+            if (AppLink() is { } link) w.WriteString("link", link);
             w.WriteNumber("at", DateTime.UtcNow.Ticks);
             w.WriteEndObject();
         }
