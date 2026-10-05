@@ -15,8 +15,10 @@ internal sealed class AgentSession(string id)
 {
     public string Id { get; } = id;
     public string Cwd { get; set; } = "";
+    /// <summary>"claude" or "codex".</summary>
+    public string Agent { get; set; } = "claude";
     /// <summary>The project folder name, what the rows and the pill show.</summary>
-    public string Name => Cwd.Length == 0 ? "Claude" : Path.GetFileName(Path.TrimEndingDirectorySeparator(Cwd));
+    public string Name => Cwd.Length == 0 ? (Agent == "codex" ? "Codex" : "Claude") : Path.GetFileName(Path.TrimEndingDirectorySeparator(Cwd));
     public AgentStatus Status { get; set; }
     /// <summary>What it waits for ("Claude needs your permission to use Bash"), only while it needs you.</summary>
     public string Message { get; set; } = "";
@@ -25,7 +27,7 @@ internal sealed class AgentSession(string id)
     /// <summary>Hook time of the newest event applied: async hooks can arrive out of order.</summary>
     public long At { get; set; }
     public nint Window { get; set; }
-    /// <summary>Opens the session itself in the app it runs in ("claude://code/continue?session=…"), empty in a terminal.</summary>
+    /// <summary>Opens the session itself in the app it runs in ("claude://code/continue?session=…", "codex://threads/…"), empty in a terminal.</summary>
     public string Link { get; set; } = "";
     public int Pid { get; set; }
     /// <summary>The tool a permission prompt or question waits on, so other tools' events leave "needs you" alone.</summary>
@@ -108,7 +110,7 @@ public sealed class AgentsConfig
 internal sealed record AgentEvent(string Agent, string Event, string Session, string Cwd, string? Message, string? Type, string? Tool, int Pid, long Hwnd, long At, string? Transcript = null, string? Link = null);
 
 /// <summary>
-/// Live Claude Code sessions: working, needs you, done. Claude Code runs <c>QNotch.exe agent</c> on each event and the hook sends one
+/// Live Claude Code and Codex sessions: working, needs you, done. The agent runs <c>QNotch.exe agent</c> on each event and the hook sends one
 /// line over a named pipe. Idle cost is one pending pipe accept; a session's end is an OS process-exit event, never a poll.
 /// </summary>
 public sealed partial class AgentsModule : INotchModule, ICadenceAware
@@ -293,10 +295,13 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
         else if (e.At < s.At) return;
         s.At = e.At;
         if (e.Cwd.Length > 0) s.Cwd = e.Cwd;
+        if (e.Agent is "claude" or "codex") s.Agent = e.Agent;
         if (e.Transcript is { Length: > 0 } tp) s.Transcript = tp;
         if (e.Hwnd != 0) s.Window = (nint)e.Hwnd;
         // Any process of this user can write to the pipe: only open the kind of link the hook makes.
-        if (e.Link is { } link && link.StartsWith("claude://code/continue?session=local_", StringComparison.Ordinal)) s.Link = link;
+        if (e.Link is { } link && (link.StartsWith("claude://code/continue?session=local_", StringComparison.Ordinal)
+            || (link.StartsWith("codex://threads/", StringComparison.Ordinal) && Guid.TryParseExact(link["codex://threads/".Length..], "D", out _))))
+            s.Link = link;
         if (e.Pid > 0 && s.Pid != e.Pid) { s.Pid = e.Pid; Watch(e.Pid); }
         // "npm run dev &" outlives its shell, which ends before PostToolUse: note its processes while the shell still runs.
         if (e.Tool is "Bash" or "PowerShell")
@@ -455,6 +460,7 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
             new("1") { Cwd = @"C:\code\api", Status = AgentStatus.NeedsYou, Message = "Claude needs your permission to use Bash", Since = now.AddMinutes(-1), Window = 1 },
             new("2") { Cwd = @"C:\code\web", Status = AgentStatus.Working, Since = now.AddMinutes(-6), Window = 1 },
             new("3") { Cwd = @"C:\code\ledge", Status = AgentStatus.Done, Since = now.AddMinutes(-12), Window = 1 },
+            new("4") { Cwd = @"C:\code\infra", Agent = "codex", Status = AgentStatus.Working, Since = now.AddMinutes(-3), Window = 1 },
         ]);
         var today = DateOnly.FromDateTime(DateTime.Now);
         _st.Usage["1"] = new(@"C:\code\api", new() { [today] = new(1_940_000, 2.14) });

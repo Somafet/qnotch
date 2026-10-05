@@ -12,7 +12,7 @@ internal static class AgentWire
 }
 
 /// <summary>
-/// <c>QNotch.exe agent</c>: the hook Claude Code runs on every session event. Reads the event JSON from stdin, keeps the few fields the
+/// <c>QNotch.exe agent [codex]</c>: the hook Claude Code (or Codex) runs on every session event. Reads the event JSON from stdin, keeps the few fields the
 /// notch needs, adds the agent's process id and the window it runs in, sends one line to the running instance and exits. Runs from
 /// Program.Main before WPF starts, so it must not touch any WPF or shell type. Always exits 0: a hook must never get in the agent's way.
 /// </summary>
@@ -26,7 +26,7 @@ internal static class AgentHook
         {
             if (!File.Exists($@"\\.\pipe\{AgentWire.PipeName}")) return 0; // QNotch or the module is off: exit at once
             using var input = JsonDocument.Parse(Console.OpenStandardInput());
-            var line = Line(input.RootElement);
+            var line = Line(input.RootElement, args is ["codex", ..]);
             using var pipe = new NamedPipeClientStream(".", AgentWire.PipeName, PipeDirection.Out, PipeOptions.CurrentUserOnly);
             pipe.Connect(500);
             pipe.Write(line);
@@ -36,14 +36,17 @@ internal static class AgentHook
     }
 
     /// <summary>
-    /// The Claude app runs the CLI with its own id for the session, which its <c>claude:</c> links take. Only when the app itself
-    /// started the agent: a session started from inside one (a terminal tab, a tool) inherits the variable. Checked character by
-    /// character: the button hands this string to the shell.
+    /// A link that opens the session in the app it runs in. Checked character by character: the button hands this string to the shell.
+    /// The Codex app opens a thread by the id its hooks get, and runs its own codex.exe from its package folder. The Claude app runs the
+    /// CLI with its own id for the session, which its <c>claude:</c> links take; only when the app itself started the agent, since a
+    /// session started from inside one (a terminal tab, a tool) inherits the variable.
     /// </summary>
-    static string? AppLink(int agent)
+    static string? AppLink(bool codex, string session, int agent)
     {
         if (agent <= 0) return null;
         var (parent, path) = AgentNative.PathInfo((uint)agent);
+        if (codex)
+            return Guid.TryParseExact(session, "D", out _) && path.Contains(@"\WindowsApps\OpenAI.Codex_", StringComparison.OrdinalIgnoreCase) ? "codex://threads/" + session : null;
         var app = AgentNative.PathInfo(parent).Path;
         if (!Path.GetFileName(app).Equals("claude.exe", StringComparison.OrdinalIgnoreCase) || app.Equals(path, StringComparison.OrdinalIgnoreCase)) return null;
         var id = Environment.GetEnvironmentVariable("CLAUDE_CODE_HOST_SESSION_ID");
@@ -53,7 +56,7 @@ internal static class AgentHook
 
     static readonly System.Buffers.SearchValues<char> UrlSafe = System.Buffers.SearchValues.Create("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-");
 
-    static byte[] Line(JsonElement e)
+    static byte[] Line(JsonElement e, bool codex)
     {
         string? Str(JsonElement o, string name) => o.ValueKind == JsonValueKind.Object && o.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() : null;
 
@@ -64,6 +67,10 @@ internal static class AgentHook
         if (tool == "AskUserQuestion" && e.TryGetProperty("tool_input", out var ti) && ti.TryGetProperty("questions", out var qs)
             && qs.ValueKind == JsonValueKind.Array && qs.GetArrayLength() > 0)
             message = Str(qs[0], "question");
+        string? type = Str(e, "notification_type");
+        // Codex has no Notification event: say the same things in Claude Code's words, so the module needs no second vocabulary.
+        if (codex && evt == "PermissionRequest") (evt, type, message) = ("Notification", "permission_prompt", $"Codex needs your permission to use {tool}");
+        else if (codex && evt == "Interrupt") (evt, type) = ("Notification", "idle_prompt");
         if (message?.Length > MaxMessage) message = message[..MaxMessage] + "…";
 
         var agent = AgentNative.AgentProcess(Environment.ProcessId);
@@ -71,18 +78,19 @@ internal static class AgentHook
         using (var w = new Utf8JsonWriter(ms))
         {
             w.WriteStartObject();
-            w.WriteString("agent", "claude");
+            w.WriteString("agent", codex ? "codex" : "claude");
             w.WriteString("event", evt);
             w.WriteString("session", Str(e, "session_id") ?? "");
             w.WriteString("cwd", Str(e, "cwd") ?? "");
-            if (Str(e, "transcript_path") is { } tp) w.WriteString("transcript", tp);
+            // Token usage is read from Claude Code's transcripts only: a Codex rollout file has another format.
+            if (!codex && Str(e, "transcript_path") is { } tp) w.WriteString("transcript", tp);
             if (message is not null) w.WriteString("message", message);
-            if (Str(e, "notification_type") is { } nt) w.WriteString("type", nt);
+            if (type is not null) w.WriteString("type", type);
             if (tool is not null) w.WriteString("tool", tool);
             if (agent > 0) w.WriteNumber("pid", agent);
             // Only the first event of a session needs the window, but the hook cannot know which one that is. A few ms.
             w.WriteNumber("hwnd", (long)AgentNative.Window(agent > 0 ? agent : Environment.ProcessId));
-            if (AppLink(agent) is { } link) w.WriteString("link", link);
+            if (AppLink(codex, Str(e, "session_id") ?? "", agent) is { } link) w.WriteString("link", link);
             w.WriteNumber("at", DateTime.UtcNow.Ticks);
             w.WriteEndObject();
         }
@@ -119,7 +127,7 @@ internal static class AgentNative
     [DllImport("ntdll.dll")] static extern int NtQueryInformationProcess(nint process, int cls, ref PROCESS_BASIC_INFORMATION info, int size, out int returned);
 
     /// <summary>
-    /// The nearest ancestor of <paramref name="pid"/> that is the agent (claude.exe, or node.exe for an npm install), so the notch can
+    /// The nearest ancestor of <paramref name="pid"/> that is the agent (claude.exe or codex.exe, or node.exe for an npm install), so the notch can
     /// tell when the session ends without a SessionEnd event (terminal closed). 0 when there is none within a few hops.
     /// </summary>
     public static int AgentProcess(int pid)
@@ -128,7 +136,7 @@ internal static class AgentNative
         for (var hop = 0; hop < 6 && id > 4; hop++)
         {
             var (parent, name) = Info(id);
-            if (hop > 0 && name is "claude.exe" or "node.exe") return (int)id;
+            if (hop > 0 && name is "claude.exe" or "codex.exe" or "node.exe") return (int)id;
             id = parent;
         }
         return 0;
