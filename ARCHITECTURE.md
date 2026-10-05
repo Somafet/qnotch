@@ -8,7 +8,7 @@ Data folder `%APPDATA%\QNotch`, logs in `%APPDATA%\QNotch\logs` (`qnotch.log`, `
 
 Parallel test runs: set `QNOTCH_INSTANCE` (suffix of the single-instance mutex name) and `QNOTCH_DATA_DIR` (full path that replaces `%APPDATA%\QNotch`) to unique values for every run you start, and only stop processes you started (by PID). `QNotch.exe --restart` waits up to 10 s for the running instance to release the mutex (used by Settings, Features, Restart now).
 
-Command line verbs: `Program.Main` looks the first argument up in `ModuleList.Verbs` and, on a match, runs that function and exits before any WPF type loads (`QNotch.exe notify ...` and `QNotch.exe agent`, the Claude Code hook, talk to the running instance over a pipe). A verb lives in its module's folder, must not touch WPF or shell types, and returns the exit code. Everything else starts the app.
+Command line verbs: `Program.Main` looks the first argument up in `ModuleList.Verbs` and, on a match, runs that function and exits before any WPF type loads (`QNotch.exe notify ...` and `QNotch.exe agent [codex]`, the Claude Code and Codex hook, talk to the running instance over a pipe). A verb lives in its module's folder, must not touch WPF or shell types, and returns the exit code. Everything else starts the app.
 
 ## See your UI without driving the desktop
 
