@@ -17,7 +17,7 @@ internal sealed class AgentSession(string id)
     public string Cwd { get; set; } = "";
     /// <summary>"claude" or "codex".</summary>
     public string Agent { get; set; } = "claude";
-    /// <summary>The title Claude Code gave the session (or the user's rename), empty until it has one.</summary>
+    /// <summary>The title Claude Code gave the session (or the user's rename), or the Codex thread's name; empty until it has one.</summary>
     public string Title { get; set; } = "";
     /// <summary>The project folder name, what the pill shows, and the rows when there is no title.</summary>
     public string Name => Cwd.Length == 0 ? (Agent == "codex" ? "Codex" : "Claude") : Path.GetFileName(Path.TrimEndingDirectorySeparator(Cwd));
@@ -134,6 +134,8 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
     AgentSession? _peekFor;
     Timer? _walkTimer;
     bool _fast, _walking, _again;
+    CodexTitles? _codexTitles;
+    bool _titlesPending, _titlesStale;
     /// <summary>Walk every second until then: a shell tool is running and may start something that outlives the shell.</summary>
     DateTime _burstUntil;
 
@@ -343,6 +345,7 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
                 : PermissionTool().Match(s.Message) is { Success: true } m ? m.Groups[1].Value : null;
         }
         ReadUsage(s);
+        if (s.Agent == "codex") ReadCodexTitles();
         _st.Raise();
         if (s.Status == was) return;
         if (s.Status == AgentStatus.NeedsYou) Alert(s, "Needs you", Icon, "WarningBrush", _cfg.SoundNeedsYou ? _needsYouSound : null);
@@ -418,6 +421,30 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
         });
     }
 
+    /// <summary>Codex keeps the names of all its threads in one file: one read serves every Codex row, a few seconds after an event.</summary>
+    void ReadCodexTitles()
+    {
+        if (_titlesPending) { _titlesStale = true; return; }
+        (_titlesPending, _titlesStale) = (true, false);
+        var reader = _codexTitles ??= new CodexTitles();
+        Task.Run(async () =>
+        {
+            await Task.Delay(UsageDelay);
+            Dictionary<string, string>? names = null;
+            try { names = reader.Read(); }
+            catch (Exception ex) { Log.Warn("Reading Codex thread names failed", ex); }
+            _ctx.Bus.Run(() =>
+            {
+                _titlesPending = false;
+                if (_titlesStale) ReadCodexTitles();
+                if (names is null) return;
+                foreach (var s in _st.Sessions)
+                    if (s.Agent == "codex" && names.TryGetValue(s.Id, out var title)) s.Title = title;
+                _st.Raise();
+            });
+        });
+    }
+
     static readonly TimeSpan UsageDelay = TimeSpan.FromSeconds(3);
 
     /// <summary>"Claude needs your permission to use Bash" names the tool it waits on.</summary>
@@ -464,7 +491,7 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
             new("1") { Cwd = @"C:\code\api", Title = "Rate limit the login endpoint", Status = AgentStatus.NeedsYou, Message = "Claude needs your permission to use Bash", Since = now.AddMinutes(-1), Window = 1 },
             new("2") { Cwd = @"C:\code\web", Title = "Dark mode for the settings page", Status = AgentStatus.Working, Since = now.AddMinutes(-6), Window = 1 },
             new("3") { Cwd = @"C:\code\ledge", Status = AgentStatus.Done, Since = now.AddMinutes(-12), Window = 1 },
-            new("4") { Cwd = @"C:\code\infra", Agent = "codex", Status = AgentStatus.Working, Since = now.AddMinutes(-3), Window = 1 },
+            new("4") { Cwd = @"C:\code\infra", Agent = "codex", Title = "Upgrade the Terraform providers", Status = AgentStatus.Working, Since = now.AddMinutes(-3), Window = 1 },
         ]);
         var today = DateOnly.FromDateTime(DateTime.Now);
         _st.Usage["1"] = new(@"C:\code\api", new() { [today] = new(1_940_000, 2.14) });
