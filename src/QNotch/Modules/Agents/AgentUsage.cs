@@ -71,7 +71,9 @@ internal static class AgentPrices
 internal sealed class UsageReader
 {
     const int Chunk = 256 * 1024;
-    static readonly byte[] AssistantMark = "\"type\":\"assistant\""u8.ToArray();
+    static readonly byte[] AssistantMark = "\"type\":\"assistant\""u8.ToArray(), AiTitleMark = "\"type\":\"ai-title\""u8.ToArray(),
+        CustomTitleMark = "\"type\":\"custom-title\""u8.ToArray();
+    string? _aiTitle, _customTitle;
 
     /// <summary>
     /// Per file: where the next read starts, and the reply counted last. Each content block of a reply is its own line with the same
@@ -80,6 +82,9 @@ internal sealed class UsageReader
     readonly Dictionary<string, (long Offset, string? Id, DateOnly Day, Usage Usage)> _files = [];
     readonly Dictionary<DateOnly, Usage> _days = [];
 
+    /// <summary>The session's title: a rename (by the user or the Claude app) wins over the one Claude Code generated.</summary>
+    public string? Title => _customTitle ?? _aiTitle;
+
     /// <summary>Bytes the last <see cref="Read"/> went through: the first read of a long session can be megabytes.</summary>
     public long BytesRead { get; private set; }
 
@@ -87,14 +92,14 @@ internal sealed class UsageReader
     public Dictionary<DateOnly, Usage> Read(string transcript)
     {
         BytesRead = 0;
-        ReadFile(transcript);
+        ReadFile(transcript, main: true);
         var subagents = Path.Combine(Path.ChangeExtension(transcript, null), "subagents");
         if (Directory.Exists(subagents))
-            foreach (var f in Directory.EnumerateFiles(subagents, "*.jsonl")) ReadFile(f);
+            foreach (var f in Directory.EnumerateFiles(subagents, "*.jsonl")) ReadFile(f, main: false);
         return new(_days);
     }
 
-    void ReadFile(string path)
+    void ReadFile(string path, bool main)
     {
         try
         {
@@ -108,7 +113,12 @@ internal sealed class UsageReader
                 var data = buf.AsSpan(0, carry + n);
                 var done = 0;
                 for (int nl; (nl = data[done..].IndexOf((byte)'\n')) >= 0; done += nl + 1)
-                    if (data.Slice(done, nl).IndexOf(AssistantMark) >= 0) Add(data.Slice(done, nl), ref state);
+                {
+                    var line = data.Slice(done, nl);
+                    if (line.IndexOf(AssistantMark) >= 0) Add(line, ref state);
+                    else if (main && line.IndexOf(AiTitleMark) >= 0) _aiTitle = TitleOf(line, "aiTitle") ?? _aiTitle;
+                    else if (main && line.IndexOf(CustomTitleMark) >= 0) _customTitle = TitleOf(line, "customTitle") ?? _customTitle;
+                }
                 state.Offset += done; // a line still being written waits for the next read
                 BytesRead += done;
                 carry = data.Length - done;
@@ -118,6 +128,16 @@ internal sealed class UsageReader
             _files[path] = state;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { /* gone or locked: try again on the next change */ }
+    }
+
+    static string? TitleOf(ReadOnlySpan<byte> line, string name)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(line.ToArray());
+            return doc.RootElement.TryGetProperty(name, out var t) && t.GetString() is { Length: > 0 } s ? s.Trim() : null;
+        }
+        catch (Exception ex) when (ex is JsonException or InvalidOperationException) { return null; }
     }
 
     void Add(ReadOnlySpan<byte> line, ref (long Offset, string? Id, DateOnly Day, Usage Usage) last)
