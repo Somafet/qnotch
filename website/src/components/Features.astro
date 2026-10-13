@@ -1,5 +1,6 @@
 ---
 import Icon from './Icon.astro';
+import { shareQr } from '../scripts/shareqr';
 
 const extras = [
   { icon: 'note', label: 'Note' },
@@ -103,6 +104,26 @@ const extras = [
         </div>
       </article>
 
+      <article class="card f-share">
+        <div class="viz">
+          <div class="v-share">
+            <div class="v-qr" set:html={shareQr} />
+            <div class="v-session">
+              <b>Ends in 14 min</b>
+              <span>Phone connected.</span>
+              <div class="v-xfer"><Icon name="arrow" class="i acc" /><div><b>screenshot-0927.png</b><small class="ok">Sent</small></div></div>
+              <div class="v-xfer"><Icon name="download" class="i acc" /><div><b>IMG_2044.jpg</b><small class="ok">Saved to Downloads\QNotch</small></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="txt">
+          <h3>Send files to your phone and back.</h3>
+          <p>Scan the code with your phone's camera. Its browser downloads files from the tray and sends photos and files to Downloads\QNotch. No app or account needed.</p>
+          <p>Your phone connects over the local network. The link works only while you share, for 15 minutes unless you extend it. The connection is plain HTTP, not encrypted.</p>
+          <button class="try" data-try="share">Try it <Icon name="arrow" /></button>
+        </div>
+      </article>
+
       <article class="card f-ai">
         <div class="viz">
           <div class="v-usage"><span>Claude Code · 5h</span><i class="v-track"><i style="width:62%"></i></i><small>62%</small></div>
@@ -145,7 +166,11 @@ const extras = [
 
   document.querySelectorAll<HTMLElement>('[data-try]').forEach(b => b.addEventListener('click', () => {
     document.getElementById('demo')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    setTimeout(() => document.querySelector<HTMLElement>(`[data-scenario="${b.dataset.try}"]`)?.click(), 500);
+    setTimeout(() => {
+      const chip = document.querySelector<HTMLElement>(`[data-scenario="${b.dataset.try}"]`);
+      if (chip) chip.click();
+      else document.getElementById('demo')?.dispatchEvent(new CustomEvent('scenario', { detail: b.dataset.try }));
+    }, 500);
   }));
 </script>
 
@@ -168,8 +193,8 @@ const extras = [
   .f-notify { grid-column: span 2; }
   .f-media, .f-clip, .f-search { grid-column: span 2; }
   .f-game, .f-mic { grid-column: span 3; }
-  .f-ai { grid-column: span 2; }
-  .f-extras { grid-column: span 4; justify-content: center; }
+  .f-share, .f-ai { grid-column: span 3; }
+  .f-extras { grid-column: 1 / -1; justify-content: center; }
 
   .txt {
     padding: 0 12px 12px;
@@ -502,6 +527,40 @@ const extras = [
   .v-usage span { color: var(--t2); font-size: 12.5px; }
   .v-usage .v-track { grid-column: 1 / -1; margin: 0; order: 3; }
   .v-usage small { font-weight: 600; }
+
+  .v-share {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+  }
+
+  .v-qr {
+    width: 128px;
+    height: 128px;
+    flex: none;
+    padding: 2px;
+    overflow: hidden;
+    border-radius: 10px;
+    background: #fff;
+  }
+
+  .v-qr :global(svg) { display: block; width: 100%; height: 100%; }
+
+  .v-session { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .v-session > b { font-weight: 600; }
+  .v-session > span { margin-bottom: 8px; color: var(--t2); font-size: 12.5px; }
+
+  .v-xfer {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 0;
+  }
+
+  .v-xfer > div { min-width: 0; display: flex; flex-direction: column; }
+  .v-xfer b { overflow: hidden; font-size: 12.5px; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
+  .v-xfer small { font-size: 11.5px; }
+  .v-xfer .ok { color: #4cd98c; }
 
   .f-extras .txt { padding: 18px; gap: 16px; }
 

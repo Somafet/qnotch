@@ -44,6 +44,7 @@ export const icons = {
   note: '<path d="M5 4.5h14v10l-5 5H5z"/><path d="M14 19.5v-5h5M8.5 9h7M8.5 12h4"/>',
   calendar: '<rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/>',
   globe: '<circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.5 2.6 3.7 5.4 3.7 8.5s-1.2 5.9-3.7 8.5c-2.5-2.6-3.7-5.4-3.7-8.5S9.5 6.1 12 3.5z"/>',
+  phone: '<rect x="6.5" y="3" width="11" height="18" rx="2.5"/><path d="M10.5 17.5h3"/>',
   power: '<path d="M12 3.5V12"/><path d="M7 6.5a7.5 7.5 0 1 0 10 0"/>',
   chevron: '<path d="m9 6 6 6-6 6"/>',
   up: '<path d="m6 15 6-6 6 6"/>',
