@@ -33,8 +33,8 @@ const steps = [
   <div class="wrap">
     <div class="section-head">
       <span class="eyebrow">Open source · MIT</span>
-      <h2>A feature is a folder.</h2>
-      <p class="lead">QNotch is a small shell and fifteen extensions. Each one lives in its own folder and plugs into five slots. Read every line, change what you don't like, or add the thing you wish it did.</p>
+      <h2>Add your own extension.</h2>
+      <p class="lead">QNotch has a shell and fifteen extensions. Each extension keeps its code in one folder. It can add cards, tabs, status segments, search results and settings through the registries below.</p>
     </div>
 
     <div class="os-grid">
@@ -67,8 +67,8 @@ const steps = [
 
     <div class="off">
       <div class="off-txt">
-        <h3>Off means off.</h3>
-        <p>Every extension has a switch in Settings, Features. One that is off is never constructed: no timers, no hooks, no memory. Try it.</p>
+        <h3>Disabled extensions do not load.</h3>
+        <p>Turn off an extension in Settings, Features, then restart QNotch. It will skip that extension at startup, including its timers and hooks. Try the switches below.</p>
         <div class="toggles" role="group" aria-label="Extensions">
           {toggles.map(t => (
             <label class="tg"><input type="checkbox" data-mod={t.id} checked={t.on} /><span class="sw"></span>{t.label}</label>
@@ -89,7 +89,7 @@ const steps = [
     </div>
 
     <div class="contribute">
-      <h3>From idea to merged.</h3>
+      <h3>Contribute an extension.</h3>
       <ol class="steps">
         {steps.map((s, i) => (
           <li><span class="num">{i + 1}</span><b>{s.t}</b><p>{s.d}</p></li>
@@ -104,8 +104,8 @@ const steps = [
 
     <div class="script">
       <div>
-        <h3>No C# needed.</h3>
-        <p>Anything that can run a program can talk to the notch. Post from a build script, a hook or a cron job, add buttons, and read back which one was clicked.</p>
+        <h3>Post notifications without C#.</h3>
+        <p>Send a notification from a build script, hook or scheduled job. Add buttons and read back which button the user clicked.</p>
         <a class="more" href={`${gh}/blob/main/docs/notifications.md`}>Notifications reference <Icon name="arrow" /></a>
       </div>
       <div class="ways">
@@ -124,7 +124,7 @@ const steps = [
   function sync() {
     for (const b of boxes) pill.querySelector<HTMLElement>(`[data-seg="${b.dataset.mod}"]`)!.classList.toggle('gone', !b.checked);
     const off = boxes.filter(b => !b.checked).map(b => b.parentElement!.textContent!.trim());
-    mem.textContent = off.length ? `${off.join(', ')}: never loaded, nothing running.` : 'Everything on, and still about 42 MB while idle.';
+    mem.textContent = off.length ? `QNotch skips these extensions at startup: ${off.join(', ')}.` : 'With all extensions on, QNotch uses about 42 MB while idle.';
   }
   boxes.forEach(b => b.addEventListener('change', sync));
   sync();

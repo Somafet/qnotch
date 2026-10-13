@@ -8,7 +8,8 @@ type Tone = 'accent' | 'warn' | 'ok' | 'danger';
 type Scenario = 'open' | 'agent' | 'notify' | 'files' | 'clipboard' | 'search' | 'game';
 
 interface Clip { id: number; kind: 'link' | 'code' | 'image' | 'text' | 'color'; text: string; at: number; pinned?: boolean }
-interface Agent { id: string; status: 'working' | 'needs' | 'done'; since: number; procs?: [string, string, string][]; cost: string; tokens: string; expanded?: boolean }
+type TermTab = 'claude' | 'web' | 'pwsh';
+interface Agent { id: string; title: string; status: 'working' | 'needs' | 'done'; since: number; procs?: [string, string, string][]; cost?: string; tokens?: string; tab?: TermTab; codex?: boolean; expanded?: boolean }
 interface Action { id: string; label: string; url?: string; focus?: boolean }
 interface Note { id: number; title: string; body: string; app: string; at: number; icon: IconName; tone: Tone; actions?: Action[]; answered?: string; answerVar?: string }
 interface TrayFile extends FileItem { id: number; at: number }
@@ -37,7 +38,7 @@ const touch = typeof matchMedia === 'function' && !matchMedia('(hover: hover)').
 const CAPTIONS: Record<Scenario | 'idle', string> = {
   idle: touch ? 'It is live, and every button works. Tap the pill, or pick a moment below.' : 'It is live, and every button works. Hover the pill, or pick a moment below.',
   open: touch ? 'Tap the pill and it opens. Tap outside and it tucks back in.' : 'Hover the pill and it opens. Move away and it tucks back in.',
-  agent: 'Claude stops to ask. The pill widens and chimes, whatever app you are in.',
+  agent: 'Claude stops to ask while you work in another session. The pill chimes, and Answer takes you to the one that asked.',
   notify: 'Any script can post to the notch, with buttons, and wait for your answer. Type your own in the pwsh tab.',
   files: touch ? 'Tap a file in Downloads to drop it on the notch. It stays within reach on the Files tab.' : 'Drag a file from Downloads onto the pill. The notch keeps it within reach on the Files tab.',
   clipboard: 'Copy any text on this page and it lands here. Click an entry to copy it again.',
@@ -130,7 +131,7 @@ export function initDemo(root: HTMLElement) {
     toastId: 0,
     query: '',
     sound: true,
-    termTab: 'claude' as 'claude' | 'pwsh',
+    termTab: 'claude' as TermTab,
     claude: [
       `<span class="t-dim">Claude Code · ~/code/api</span>`,
       `<span class="t-user">&gt; add rate limiting to the upload endpoint</span>`,
@@ -138,6 +139,13 @@ export function initDemo(root: HTMLElement) {
       `<span class="t-dot">●</span> <b>Update</b>(src/middleware/limit.ts)`,
       `<span class="t-dim">  ⎿  Added 42 lines</span>`,
       `<span class="t-warn">✻</span> Running the test suite…`,
+    ],
+    web: [
+      `<span class="t-dim">Claude Code · ~/code/web</span>`,
+      `<span class="t-user">&gt; move the upload form to the new design</span>`,
+      `<span class="t-dot">●</span> <b>Update</b>(app/upload/page.tsx)`,
+      `<span class="t-dim">  ⎿  Added 18 lines, removed 31 lines</span>`,
+      `<span class="t-warn">✻</span> Checking the page in the browser…`,
     ],
     prompt: false,
     pwsh: [`<span class="t-dim">PowerShell 7.5. Try: QNotch.exe notify "Hello" "From my terminal" --action ok=Nice</span>`],
@@ -148,14 +156,15 @@ export function initDemo(root: HTMLElement) {
   };
 
   const newApi = (status: Agent['status'] = 'working'): Agent => ({
-    id: 'api', status, since: Date.now() - 3 * 60e3, cost: '$2.14', tokens: '820K',
+    id: 'api', title: 'Rate limit the upload endpoint', tab: 'claude', status, since: Date.now() - 3 * 60e3, cost: '$2.14', tokens: '820K',
     procs: [['node server.js', ':8080', '212 MB'], ['tsc --watch', '', '89 MB']],
   });
   s.agents = [
     newApi(),
-    { id: 'web', status: 'working', since: T0 - 6 * 60e3, cost: '$1.72', tokens: '610K',
+    { id: 'web', title: 'Upload form in the new design', tab: 'web', status: 'working', since: T0 - 6 * 60e3, cost: '$1.72', tokens: '610K',
       procs: [['next dev', ':3000', '312 MB'], ['node (worker)', '', '98 MB'], ['esbuild', '', '44 MB'], ['playwright chrome', '', '30 MB']] },
-    { id: 'ledge', status: 'done', since: T0 - 12 * 60e3, cost: '$0.35', tokens: '470K' },
+    { id: 'shop', title: 'Fix the flaky checkout test', codex: true, status: 'working', since: T0 - 2 * 60e3 },
+    { id: 'ledge', title: 'Dark mode for the settings page', status: 'done', since: T0 - 12 * 60e3, cost: '$0.35', tokens: '470K' },
   ];
   const api = () => s.agents.find(a => a.id === 'api') ?? (s.agents.unshift(newApi()), s.agents[0]);
   const procLine = (a: Agent) => a.procs ? `${a.procs.length} processes · ${a.procs.reduce((n, p) => n + parseInt(p[2]), 0)} MB${a.procs.map(p => p[1] ? ` · ${p[1]}` : '').join('')}` : '';
@@ -174,20 +183,37 @@ export function initDemo(root: HTMLElement) {
   });
 
   /* ---------- terminal ---------- */
+  let renderedTermTab: TermTab | undefined;
+  let renderedLines: string[] = [];
   function renderTerm() {
     term.querySelectorAll<HTMLElement>('[data-act="term"]').forEach(b => b.classList.toggle('on', b.dataset.arg === s.termTab));
-    const claude = s.termTab === 'claude';
-    q('[data-lines]').innerHTML = (claude ? s.claude : s.pwsh).map(l => `<div>${l}</div>`).join('') + (claude && s.prompt
-      ? `<div class="t-box"><div class="t-warn"><b>Bash command</b></div><div>  npm test</div><div class="t-dim">  Run the test suite</div>` +
+    const claude = s.termTab === 'claude', agent = s.termTab !== 'pwsh';
+    const lines = (claude ? s.claude : agent ? s.web : s.pwsh).map(l => `<div>${l}</div>`);
+    if (claude && s.prompt) lines.push(
+        `<div class="t-box"><div class="t-warn"><b>Bash command</b></div><div>  npm test</div><div class="t-dim">  Run the test suite</div>` +
         `<div style="margin-top:6px">Do you want to proceed?</div>` +
         `<button class="t-opt" data-act="answer" data-arg="yes">❯ 1. Yes</button>` +
-        `<button class="t-opt" data-act="answer" data-arg="no">  2. No, and tell Claude what to do differently</button></div>`
-      : '');
-    q('[data-ps]').innerHTML = claude ? '<span class="t-user">&gt; </span>' : PS;
-    q('[data-inline]').hidden = claude && s.prompt;
-    termIn.placeholder = claude ? 'Ask Claude something' : '';
+        `<button class="t-opt" data-act="answer" data-arg="no">  2. No, and tell Claude what to do differently</button></div>`);
+    const output = q('[data-lines]');
     const body = q('[data-termbody]');
-    body.scrollTop = body.scrollHeight;
+    const tabChanged = renderedTermTab !== s.termTab;
+    const atBottom = body.scrollHeight - body.scrollTop - body.clientHeight <= 4;
+    // Keep existing text nodes so selection survives new output and redundant renders.
+    let unchanged = 0;
+    if (!tabChanged) {
+      while (unchanged < lines.length && lines[unchanged] === renderedLines[unchanged]) unchanged++;
+    }
+    const changed = tabChanged || unchanged !== lines.length || unchanged !== renderedLines.length;
+    if (changed) {
+      while (output.children.length > unchanged) output.lastElementChild!.remove();
+      output.insertAdjacentHTML('beforeend', lines.slice(unchanged).join(''));
+      renderedLines = lines;
+      renderedTermTab = s.termTab;
+    }
+    put(q('[data-ps]'), agent ? '<span class="t-user">&gt; </span>' : PS);
+    q('[data-inline]').hidden = claude && s.prompt;
+    termIn.placeholder = agent ? 'Ask Claude something' : '';
+    if (changed && (tabChanged || atBottom)) body.scrollTop = body.scrollHeight;
   }
 
   function runClaude(text: string) {
@@ -197,6 +223,10 @@ export function initDemo(root: HTMLElement) {
     renderTerm();
     render();
     window.setTimeout(askPermission, 1100);
+  }
+
+  function runWeb(text: string) {
+    s.web.push(`<span class="t-user">&gt; ${esc(text)}</span>`, `<span class="t-dot">●</span> Sure. I'll fold that into the new upload form.`);
   }
 
   function askPermission() {
@@ -289,14 +319,32 @@ export function initDemo(root: HTMLElement) {
     if (line) { s.history.push(line); s.histAt = s.history.length; }
     run++;
     if (s.termTab === 'claude') { if (line) runClaude(line); }
+    else if (s.termTab === 'web') { if (line) runWeb(line); }
     else { if (line) runPwsh(line); else out(PS); }
     renderTerm();
   });
   term.addEventListener('keydown', e => {
     if (s.termTab === 'claude' && s.prompt && (e.key === '1' || e.key === '2')) { e.preventDefault(); answer(e.key === '1'); }
   });
-  q('[data-termbody]').addEventListener('click', () => {
-    if (!getSelection()?.toString() && !q('[data-inline]').hidden) termIn.focus({ preventScroll: true });
+  const termBody = q('[data-termbody]');
+  let termPointerStart: { x: number; y: number } | null = null;
+  let termPointerMoved = false;
+  termBody.addEventListener('pointerdown', e => {
+    termPointerStart = e.button === 0 ? { x: e.clientX, y: e.clientY } : null;
+    termPointerMoved = false;
+  });
+  termBody.addEventListener('pointermove', e => {
+    if (termPointerStart && Math.hypot(e.clientX - termPointerStart.x, e.clientY - termPointerStart.y) > 3) {
+      termPointerMoved = true;
+    }
+  });
+  termBody.addEventListener('click', e => {
+    const dragged = termPointerMoved || (termPointerStart !== null &&
+      Math.hypot(e.clientX - termPointerStart.x, e.clientY - termPointerStart.y) > 3);
+    termPointerStart = null;
+    // A selection drag also ends with a click. Focusing the input clears that selection.
+    if (dragged || !getSelection()?.isCollapsed || (e.target as HTMLElement).closest('button, input, a')) return;
+    if (!q('[data-inline]').hidden) termIn.focus({ preventScroll: true });
   });
 
   /* ---------- static scaffold ---------- */
@@ -463,15 +511,15 @@ export function initDemo(root: HTMLElement) {
       const needs = a.status === 'needs', done = a.status === 'done';
       return `<div class="qn-row">
         <div class="qn-ico ${needs ? 'warn' : 'ok'}">${svg(done ? 'check' : 'terminal')}</div>
-        <div class="qn-row-mid"><b>${a.id}</b>
-          ${needs ? `<span class="warn">Claude needs your permission to use Bash</span>`
-            : `<span data-since="${a.since}" data-fmt="${a.status}"></span>`}
+        <div class="qn-row-mid"><b>${a.title}</b>
+          ${needs ? `<span class="warn">${a.id} · Claude needs your permission to use Bash</span>`
+            : `<span>${a.codex ? 'Codex · ' : ''}${a.id} · <span data-since="${a.since}" data-fmt="${a.status}"></span></span>`}
           ${a.procs && !done ? `<button class="qn-chip" data-act="procs" data-arg="${a.id}" aria-expanded="${!!a.expanded}">${svg(a.expanded ? 'down' : 'chevron')} ${procLine(a)}</button>` : ''}
           ${a.procs && !done && a.expanded ? `<div class="qn-procs">${a.procs.map(p => `<div><span>${p[0]}</span><em>${p[1]}</em><small>${p[2]}</small></div>`).join('')}</div>` : ''}
         </div>
-        <div class="qn-cost"><b>${a.cost}</b><small>${a.tokens} tokens</small></div>
-        ${needs ? `<button class="qn-btn warn" data-act="goterm">Answer</button>`
-          : `<button class="qn-icon" data-act="goterm" title="Open terminal" aria-label="Open terminal">${svg('external')}</button>`}
+        ${a.cost ? `<div class="qn-cost"><b>${a.cost}</b><small>${a.tokens} tokens</small></div>` : ''}
+        ${needs ? `<button class="qn-btn warn" data-act="goterm" data-arg="${a.id}">Answer</button>`
+          : a.tab || a.codex ? `<button class="qn-icon" data-act="goterm" data-arg="${a.id}" title="Open the session" aria-label="Open the session">${svg('external')}</button>` : ''}
         ${done ? `<button class="qn-icon" data-act="dismissAgent" data-arg="${a.id}" title="Dismiss" aria-label="Dismiss">${svg('x')}</button>` : ''}
       </div>`;
     }).join('');
@@ -480,7 +528,7 @@ export function initDemo(root: HTMLElement) {
       : `<p class="qn-empty-line">${svg('check', 'i ok')} Nothing left running.</p>`;
     tabBody('agents').innerHTML = `
       <div class="qn-sum">Today <b>1.9M tokens</b> · <b>$4.21</b> at API list prices</div>
-      ${rows || `<p class="qn-empty-line">No Claude Code sessions right now. Type in the claude tab to start one.</p>`}
+      ${rows || `<p class="qn-empty-line">No Claude Code or Codex sessions right now. Type in the claude · api tab to start one.</p>`}
       <div class="qn-sub"><b>Left running</b><span>Started by agents whose session has ended. Nothing will stop these for you.</span></div>
       ${left}`;
     binds();
@@ -748,8 +796,8 @@ export function initDemo(root: HTMLElement) {
     setCaption(CAPTIONS[name ?? 'idle']);
   }
 
-  function setTermTab(tab: 'claude' | 'pwsh') { s.termTab = tab; renderTerm(); }
-  function goTerm(tab: 'claude' | 'pwsh' = 'claude') {
+  function setTermTab(tab: TermTab) { s.termTab = tab; renderTerm(); }
+  function goTerm(tab: TermTab = 'claude') {
     desk.show('term');
     setTermTab(tab);
     term.classList.remove('flash');
@@ -869,6 +917,9 @@ export function initDemo(root: HTMLElement) {
       termIn.value = '';
       s.history.push('now add a test for the 429 response');
       runClaude('now add a test for the 429 response');
+      // You move on to the other session while this one runs: Answer has to bring you back to the right one.
+      await sleep(500);
+      if (alive() && !s.prompt) setTermTab('web');
       return;
     }
     if (name === 'notify') {
@@ -942,12 +993,18 @@ export function initDemo(root: HTMLElement) {
       case 'dismissNote': s.notes = s.notes.filter(n => n.id !== num); renderNotes(); render(); return;
       case 'openNotes': s.toastId = 0; open('notifications', 'scenario'); return;
       case 'hit': hits[num]?.(); return;
-      case 'goterm': close(); goTerm('claude'); return;
+      case 'goterm': {
+        const a = s.agents.find(x => x.id === arg);
+        if (a?.codex) { flashCaption('In QNotch this opens the thread in the Codex app.'); return; }
+        close();
+        goTerm(a?.tab ?? 'claude');
+        return;
+      }
       case 'procs': { const a = s.agents.find(x => x.id === arg); if (a) a.expanded = !a.expanded; renderAgents(); return; }
       case 'dismissAgent': s.agents = s.agents.filter(a => a.id !== arg); renderAgents(); render(); return;
       case 'stop': s.leftover.splice(num, 1); renderAgents(); return;
       case 'answer': answer(arg === 'yes'); return;
-      case 'term': setTermTab(arg as 'claude' | 'pwsh'); termIn.focus({ preventScroll: true }); return;
+      case 'term': setTermTab(arg as TermTab); termIn.focus({ preventScroll: true }); return;
       case 'trayOpen': {
         const f = s.tray.find(x => x.id === num);
         if (f?.file) window.open(URL.createObjectURL(f.file), '_blank', 'noopener');

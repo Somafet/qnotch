@@ -4,6 +4,7 @@ import Icon from '../components/Icon.astro';
 import Demo from '../components/Demo.astro';
 import Features from '../components/Features.astro';
 import OpenSource from '../components/OpenSource.astro';
+import ThemeSwitch from '../components/ThemeSwitch.astro';
 
 const GH = 'https://github.com/Somafet/qnotch';
 const DL = `${GH}/releases/latest`;
@@ -12,7 +13,7 @@ const numbers = [
   { v: '0.08%', l: 'of one core, idle' },
   { v: '42 MB', l: 'of memory, idle' },
   { v: '1 exe', l: 'native WPF, no web view' },
-  { v: '0', l: 'cost for what you turn off' },
+  { v: '0', l: 'disabled extensions loaded' },
 ];
 
 const keys = [
@@ -24,27 +25,28 @@ const keys = [
 ];
 
 const privacy = [
-  { icon: 'shield', t: 'No account, no cloud.', d: 'Settings, notes and logs live in %APPDATA%\\QNotch on your PC.' },
-  { icon: 'bolt', t: 'Secrets stay secret.', d: 'Tokens go in Windows Credential Manager, never in a file.' },
-  { icon: 'copy', t: 'Clipboard in memory.', d: 'History is kept in memory unless you choose to keep it.' },
-  { icon: 'link', t: 'Online for two things.', d: 'Your GitHub graph once you add a token, and Claude Code usage limits. Both are in Settings, and both can be turned off.' },
+  { icon: 'shield', t: 'Local settings and notes', d: 'Settings, notes and logs live in %APPDATA%\\QNotch on your PC. You do not need an account.' },
+  { icon: 'bolt', t: 'Tokens in Credential Manager', d: 'QNotch stores tokens in Windows Credential Manager, never in a file.' },
+  { icon: 'copy', t: 'Clipboard history in memory', d: 'QNotch keeps clipboard history in memory unless you choose to save it.' },
+  { icon: 'link', t: 'Two optional online requests', d: 'QNotch fetches your GitHub contribution graph and Claude Code usage limits. You can turn off both in Settings.' },
 ] as const;
 
 const faq = [
-  { q: 'Is it really free?', a: 'Yes. QNotch is MIT licensed: no account, no subscription, no trial. The whole source is on GitHub.' },
+  { q: 'Is it free?', a: 'Yes. QNotch is free under the MIT license. It needs no account or subscription. The source is on GitHub.' },
   { q: 'Windows says "Windows protected your PC". Is that normal?', a: 'The exe is not code-signed yet, so SmartScreen does not know it. Click More info, then Run anyway. Or build it yourself from source with the .NET 10 SDK.' },
   { q: 'Which download do I need?', a: 'QNotch-self-contained.zip (80 MB) runs as is. QNotch.exe (27 MB) is smaller but needs the .NET 10 Desktop Runtime.' },
   { q: 'Does it work on Windows 10?', a: 'Yes. It needs Windows 10 version 2004 or newer, on x64.' },
   { q: 'Will it get in the way of my games?', a: 'No. When a game or fullscreen video is in front, Game mode shrinks the notch to one line of status, turns off hover and lets clicks pass straight through. Ctrl+Alt+G cycles Auto, On and Off.' },
-  { q: 'How does the Agents tab know what Claude Code is doing?', a: "One click in Settings, Agents adds a hook to Claude Code's settings.json, with a backup. The hook talks to QNotch over a local pipe. Token counts come from the transcripts Claude Code already keeps on your PC." },
-  { q: 'Is the cost what I am billed?', a: 'It is what those tokens would cost at API list prices. A Pro or Max plan is not billed per token, so think of it as a gauge.' },
-  { q: 'Can I put it on my other monitor?', a: 'Yes. Pick the monitor in Settings, General. It follows DPI changes without a restart.' },
+  { q: 'How does the Agents tab know what Claude Code and Codex are doing?', a: "One click in Settings, Agents adds a hook to Claude Code's settings.json or Codex's hooks.json, with a backup. Codex then asks you to trust it once. The hook talks to QNotch over a local pipe. Token counts come from the transcripts Claude Code already keeps on your PC." },
+  { q: 'Where does the button on an agent take me?', a: 'It opens that session or thread in the Claude or Codex app. For a terminal session, it brings the terminal to the front.' },
+  { q: 'Is the cost what I am billed?', a: 'QNotch estimates what the tokens would cost at API list prices. Pro and Max plans do not bill per token, so this estimate is not your bill.' },
+  { q: 'Can I put it on my other monitor?', a: 'Yes. Drag the pill onto it, or pick the monitor in Settings, General. It follows DPI changes without a restart.' },
   { q: 'How do I add a feature of my own?', a: 'Open an issue with a sentence on what it does and where it shows, then build it in its own folder under src/QNotch/Modules. The contributing guide walks through it.' },
 ];
 ---
 <Base
   title="QNotch: a notch for Windows 11"
-  description="A slim pill at the top of your screen with what's playing, system stats and your coding agents. Hover it for everything else. Free and open source."
+  description="QNotch shows music, system stats and coding agent status at the top of your screen. Hover to open the panel. Free and open source for Windows."
 >
   <header class="nav">
     <div class="wrap nav-in">
@@ -56,6 +58,7 @@ const faq = [
         <a href="#faq">FAQ</a>
       </nav>
       <div class="nav-cta">
+        <ThemeSwitch />
         <a class="gh-link" href={GH} aria-label="QNotch on GitHub"><Icon name="github" /></a>
         <a class="btn btn-primary btn-sm" href={DL}><Icon name="download" />Download</a>
       </div>
@@ -66,8 +69,8 @@ const faq = [
     <section class="hero">
       <div class="wrap center">
         <a class="badge" href={GH}><span class="badge-dot"></span>Free and open source<span class="sep">·</span>MIT</a>
-        <h1>Windows 11 has no <span class="grad">notch</span>.<br />Now it does.</h1>
-        <p class="lead hero-lead">A slim pill at the top of your screen shows what's playing, your system stats and your coding agents. Hover it and it opens into a panel with everything else.</p>
+        <h1>A <span class="grad">notch</span> for<br />your Windows desktop.</h1>
+        <p class="lead hero-lead">See what's playing, your system stats and your coding agents in a pill at the top of your screen. Hover to open the panel for clipboard history, files and more.</p>
         <div class="hero-cta">
           <a class="btn btn-primary" href={DL}><Icon name="windows" />Download for Windows</a>
           <a class="btn btn-ghost" href={GH}><Icon name="github" />Star on GitHub</a>
@@ -82,8 +85,8 @@ const faq = [
     <section class="numbers-sec">
       <div class="wrap">
         <div class="numbers-head">
-          <h2 class="h2-sm">Built to stay out of the way.</h2>
-          <p>Measured on Windows 11, collapsed and idle. No Electron, no browser engine, no polling.</p>
+          <h2 class="h2-sm">42 MB of memory while idle.</h2>
+          <p>Measured on Windows 11 with the panel closed. QNotch is a native WPF app.</p>
         </div>
         <ul class="numbers">
           {numbers.map(n => <li><b>{n.v}</b><span>{n.l}</span></li>)}
@@ -97,8 +100,8 @@ const faq = [
       <div class="wrap keys-grid">
         <div>
           <span class="eyebrow">Hotkeys</span>
-          <h2 class="h2-sm">Keyboard first, if you like.</h2>
-          <p class="lead">Every shortcut works from any app, and you can change them in Settings, Hotkeys. They work on the demo above too.</p>
+          <h2 class="h2-sm">Open the panel with a shortcut.</h2>
+          <p class="lead">Use these shortcuts from any app. Change them in Settings, Hotkeys, or try them in the demo above.</p>
         </div>
         <ul class="keys">
           {keys.map(r => (
@@ -114,8 +117,8 @@ const faq = [
       <div class="wrap">
         <div class="section-head center">
           <span class="eyebrow">Privacy</span>
-          <h2>Stays on your PC.</h2>
-          <p class="lead">QNotch shows you your own machine. Apart from the two things below, nothing leaves it, and the code is there to check.</p>
+          <h2>Your data stays on your PC.</h2>
+          <p class="lead">QNotch stores your data locally. It goes online for the GitHub graph and Claude Code usage limits. You can check the source on GitHub.</p>
         </div>
         <ul class="priv">
           {privacy.map(p => <li class="card"><Icon name={p.icon} /><b>{p.t}</b><p>{p.d}</p></li>)}
@@ -127,8 +130,8 @@ const faq = [
       <div class="wrap faq-grid">
         <div>
           <span class="eyebrow">Questions</span>
-          <h2 class="h2-sm">Good to know.</h2>
-          <p class="lead">Anything else? <a class="inline" href={`${GH}/issues`}>Ask on GitHub</a>.</p>
+          <h2 class="h2-sm">Common questions.</h2>
+          <p class="lead">For other questions, <a class="inline" href={`${GH}/issues`}>ask on GitHub</a>.</p>
         </div>
         <div class="faq">
           {faq.map(f => (
@@ -144,7 +147,7 @@ const faq = [
     <section class="final">
       <div class="wrap center">
         <div class="final-pill" aria-hidden="true"><span></span></div>
-        <h2>Give the top of your screen<br />something to do.</h2>
+        <h2>Try QNotch on<br />your desktop.</h2>
         <div class="hero-cta">
           <a class="btn btn-primary" href={DL}><Icon name="windows" />Download for Windows</a>
           <a class="btn btn-ghost" href={GH}><Icon name="github" />View the source</a>
@@ -163,6 +166,7 @@ const faq = [
         <a href={`${GH}/blob/main/CONTRIBUTING.md`}>Contributing</a>
         <a href={`${GH}/blob/main/SECURITY.md`}>Security</a>
         <a href={`${GH}/blob/main/LICENSE`}>MIT license</a>
+        <ThemeSwitch />
       </nav>
     </div>
   </footer>
@@ -532,6 +536,7 @@ const faq = [
 
   .foot nav {
     display: flex;
+    align-items: center;
     flex-wrap: wrap;
     gap: 8px 24px;
     font-size: 14px;
@@ -553,6 +558,8 @@ const faq = [
   }
 
   @media (max-width: 560px) {
+    .nav-in { gap: 8px; }
+    .nav-cta .gh-link { display: none; }
     .priv { grid-template-columns: 1fr; }
     .hero-cta .btn { width: 100%; justify-content: center; }
     .kk { min-width: 120px; }

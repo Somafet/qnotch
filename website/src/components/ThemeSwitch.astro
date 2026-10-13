@@ -1,0 +1,65 @@
+---
+import Icon from './Icon.astro';
+---
+<button class="theme-switch" type="button" data-theme-switch aria-label="Dark theme" aria-pressed="false" title="Switch to dark theme">
+  <span class="moon"><Icon name="moon" /></span>
+  <span class="sun"><Icon name="sun" /></span>
+</button>
+
+<script>
+  const systemTheme = window.matchMedia('(prefers-color-scheme: dark)');
+  const switches = [...document.querySelectorAll<HTMLButtonElement>('[data-theme-switch]')];
+
+  function sync() {
+    const dark = document.documentElement.dataset.theme === 'dark';
+    for (const button of switches) {
+      button.setAttribute('aria-pressed', String(dark));
+      button.title = `Switch to ${dark ? 'light' : 'dark'} theme`;
+    }
+    document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')!.content = dark ? '#0a0a0c' : '#f5f4f0';
+  }
+
+  function savedTheme() {
+    try { return localStorage.getItem('qnotch-theme'); } catch { return null; }
+  }
+
+  function apply(theme: string | null) {
+    document.documentElement.dataset.theme = theme === 'light' || theme === 'dark'
+      ? theme : systemTheme.matches ? 'dark' : 'light';
+    sync();
+  }
+
+  for (const button of switches) {
+    button.addEventListener('click', () => {
+      const theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+      try { localStorage.setItem('qnotch-theme', theme); } catch { /* Switching still works without storage. */ }
+      apply(theme);
+    });
+  }
+  systemTheme.addEventListener('change', () => {
+    const saved = savedTheme();
+    if (saved !== 'light' && saved !== 'dark') apply(null);
+  });
+  window.addEventListener('storage', event => {
+    if (event.key === 'qnotch-theme' || event.key === null) apply(savedTheme());
+  });
+  sync();
+</script>
+
+<style>
+  .theme-switch {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    flex: none;
+    border-radius: 50%;
+    color: var(--ink-2);
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .theme-switch:hover { background: var(--bg-2); color: var(--ink); }
+  .theme-switch :global(.i) { width: 20px; height: 20px; }
+  .sun { display: none; }
+  :global([data-theme='dark']) .moon { display: none; }
+  :global([data-theme='dark']) .sun { display: block; }
+</style>

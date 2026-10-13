@@ -39,7 +39,7 @@ const apps = [
         </div>
         <div class="qn-page">
           <h5>Upload</h5>
-          <p>Files go to the api you are building. Nothing leaves your browser.</p>
+          <p>Try a file upload here. Demo files stay in your browser.</p>
           <button class="qn-drop" data-act="upload" data-upload>
             <Icon name="download" />
             <span>Drop files here, or click to choose</span>
@@ -75,6 +75,7 @@ const apps = [
       <div role="group" class="qn-win qn-term" data-win="term" data-term aria-label="Terminal">
         <div class="qn-titlebar" data-drag>
           <button class="qn-ttab" data-act="term" data-arg="claude"><Icon name="terminal" /> claude · api</button>
+          <button class="qn-ttab" data-act="term" data-arg="web"><Icon name="terminal" /> claude · web</button>
           <button class="qn-ttab" data-act="term" data-arg="pwsh"><Icon name="terminal" /> pwsh</button>
           <span class="qn-winbtns">
             <button data-act="win" data-arg="min" aria-label="Minimize"></button><button data-act="win" data-arg="max" aria-label="Maximize"></button><button data-act="win" data-arg="closed" aria-label="Close"></button>
@@ -82,7 +83,7 @@ const apps = [
         </div>
         <div class="qn-term-body" data-termbody>
           <div data-lines></div>
-          <label class="t-in" data-inline><span data-ps></span><input data-termin spellcheck="false" autocomplete="off" aria-label="Terminal input" /></label>
+          <div class="t-in" data-inline><span data-ps></span><input data-termin spellcheck="false" autocomplete="off" aria-label="Terminal input" /></div>
         </div>
       </div>
 
@@ -135,7 +136,7 @@ const apps = [
     ))}
   </div>
   <p class="demo-caption" data-caption aria-live="polite"></p>
-  <p class="demo-keys">Everything on the desktop works. Try <kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>N</kbd>, or type <code>QNotch.exe notify "Hi"</code> in the pwsh tab.</p>
+  <p class="demo-keys">Try <kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>N</kbd> to open the panel, or type <code>QNotch.exe notify "Hi"</code> in the pwsh tab to send a demo notification.</p>
 </div>
 
 <script>
