@@ -18,6 +18,6 @@ Rule for the demo: anything that looks clickable must work. If a control can't b
 | `src/components/Features.astro` | The feature grid |
 | `src/components/OpenSource.astro` | Extensions, the five slots, contributing |
 | `src/icons.ts` | Stroke icons used everywhere |
-| `og/og.html` | Source of the social preview `public/og.png`; rerender with `node og/render.mjs` (needs Edge or Chrome) |
+| `og/og.html` | Source of the social preview `src/assets/og.png`; rerender with `node og/render.mjs` (needs Edge or Chrome) |
 
 Keep claims on the page in line with the repo README: numbers, hotkeys and privacy statements come from there.
