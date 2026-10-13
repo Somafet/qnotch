@@ -1,0 +1,194 @@
+<!doctype html>
+<!-- Source of public/og.png (1200x630). Render it with: node og/render.mjs -->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<style>
+  @font-face {
+    font-family: 'Inter Variable';
+    font-weight: 100 900;
+    src: url('../node_modules/@fontsource-variable/inter/files/inter-latin-wght-normal.woff2') format('woff2');
+  }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { width: 1200px; height: 630px; overflow: hidden; }
+  body {
+    position: relative;
+    background: #f5f4f0;
+    color: #0c0c0f;
+    font-family: 'Inter Variable', 'Segoe UI', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  svg.i { display: block; width: 1em; height: 1em; flex: none; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+  .abs { position: absolute; inset: 0; }
+
+  .paper {
+    background-image: radial-gradient(rgba(12,12,15,0.07) 1px, transparent 1.2px);
+    background-size: 22px 22px;
+    mask-image: linear-gradient(180deg, transparent, #000 30%, #000 70%, transparent);
+  }
+  /* Ink smudge where the panel lands */
+  .dust {
+    background:
+      radial-gradient(16% 9% at 50% 66%, rgba(12,12,15,0.16), transparent 70%),
+      radial-gradient(34% 12% at 50% 67%, rgba(12,12,15,0.07), transparent 72%);
+  }
+
+  .speed span {
+    position: absolute; top: 0; width: 3px; border-radius: 3px;
+    background: linear-gradient(180deg, transparent, rgba(12,12,15,0.55));
+  }
+
+  .panel {
+    position: absolute; top: 0; left: 50%; width: 330px; height: 392px;
+    transform: translateX(-50%);
+    padding: 16px 14px 14px;
+    display: flex; flex-direction: column; gap: 10px;
+    background: #0b0b0d; color: #f4f4f7;
+    border-radius: 0 0 34px 34px;
+    box-shadow: 0 30px 40px -16px rgba(12,12,15,0.5);
+    z-index: 3;
+  }
+  .panel::before, .panel::after { content: ''; position: absolute; top: 0; width: 26px; height: 26px; }
+  .panel::before { left: -26px; background: radial-gradient(circle at 0 100%, transparent 25.5px, #0b0b0d 26px); }
+  .panel::after { right: -26px; background: radial-gradient(circle at 100% 100%, transparent 25.5px, #0b0b0d 26px); }
+
+  .tabs { display: flex; gap: 4px; padding: 2px; font-size: 18px; color: #6f6f7b; }
+  .tabs span { display: grid; place-items: center; width: 38px; height: 32px; border-radius: 9px; }
+  .tabs .on { background: #1c1c22; color: #f4f4f7; }
+  .tabs .grow { flex: 1; }
+  .cam { width: 12px !important; height: 12px !important; margin: auto 8px auto 0; border-radius: 50% !important; background: #5b9dff; box-shadow: 0 0 10px 2px rgba(91,157,255,0.8); }
+  .card { background: #16161b; border: 1px solid rgba(255,255,255,0.07); border-radius: 16px; padding: 12px; }
+  .np { display: flex; gap: 12px; align-items: center; }
+  .art { width: 54px; height: 54px; border-radius: 12px; flex: none;
+    background: linear-gradient(140deg, #ff6aa2, #8a5cff 50%, #1e2a6e); }
+  .np b { display: block; font-size: 16px; font-weight: 650; }
+  .np small { font-size: 13px; color: #8a8a94; }
+  .bar { height: 4px; border-radius: 4px; background: #2a2a31; margin-top: 8px; overflow: hidden; }
+  .bar i { display: block; height: 100%; background: #f4f4f7; border-radius: 4px; }
+  .ag { display: flex; align-items: center; gap: 9px; font-size: 14px; padding: 4px 0; }
+  .ag .d { width: 8px; height: 8px; border-radius: 50%; }
+  .ag .s { margin-left: auto; font-size: 12.5px; color: #8a8a94; }
+  .clip { display: flex; align-items: center; gap: 10px; font-size: 13.5px; color: #d6d6de; }
+  .clip svg { font-size: 16px; color: #5b9dff; }
+  .clip code { font-family: 'Cascadia Code', Consolas, monospace; font-size: 13px; }
+  .clip .s { margin-left: auto; font-size: 12px; color: #6f6f7b; }
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stats .card { padding: 10px 12px; }
+  .stats small { font-size: 12px; color: #8a8a94; }
+  .stats b { display: block; font-size: 17px; font-weight: 650; }
+  .stats .bar i { background: #5b9dff; }
+
+  /* The broken headline */
+  .half {
+    position: absolute; top: 324px;
+    font-size: 71px; font-weight: 830; letter-spacing: -0.055em; line-height: 1; white-space: nowrap;
+    z-index: 2;
+  }
+  .half.l { right: 790px; transform-origin: 0% 100%; transform: rotate(6deg); }
+  .half.r { left: 790px; transform-origin: 100% 100%; transform: rotate(-6deg); }
+  .dot { color: #2f6fe4; }
+
+  .crack { z-index: 1; }
+  .shard { position: absolute; z-index: 1; }
+
+  .foot {
+    position: absolute; left: 60px; right: 60px; bottom: 44px;
+    display: flex; align-items: flex-end; justify-content: space-between;
+  }
+  .tag { font-size: 26px; font-weight: 650; letter-spacing: -0.025em; line-height: 1.22; }
+  .tag span { color: #8a8a94; }
+  .logo { display: flex; align-items: center; gap: 12px; font-size: 26px; font-weight: 700; letter-spacing: -0.03em; }
+  .mark { width: 40px; height: 40px; }
+</style>
+</head>
+<body>
+  <div class="abs paper"></div>
+  <div class="abs dust"></div>
+  <div class="abs speed" id="speed"></div>
+
+  <svg class="abs crack" width="1200" height="630" viewBox="0 0 1200 630">
+    <g fill="none" stroke="#0c0c0f" stroke-linecap="round" stroke-linejoin="round">
+      <path stroke-width="3.2" d="M600 414 L562 420 L530 413 L492 426 L446 421 L404 436 L340 431 L272 446 L196 441" opacity="0.85" />
+      <path stroke-width="3.2" d="M600 414 L640 421 L672 413 L712 427 L758 421 L800 437 L864 432 L932 447 L1008 442" opacity="0.85" />
+      <path stroke-width="1.6" d="M530 413 L510 440 L476 450 M446 421 L428 446 L392 452 M672 413 L692 440 L726 451 M758 421 L776 446 L812 452" opacity="0.6" />
+      <path stroke-width="1.3" d="M562 420 L552 438 M640 421 L652 437 M340 431 L316 412 M864 432 L888 413" opacity="0.5" />
+    </g>
+  </svg>
+
+  <div class="panel">
+    <div class="tabs">
+      <span class="on"><svg class="i" viewBox="0 0 24 24"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/></svg></span>
+      <span><svg class="i" viewBox="0 0 24 24"><path d="M9 18V5.5l11-2V16"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/></svg></span>
+      <span><svg class="i" viewBox="0 0 24 24"><rect x="4" y="7" width="16" height="12" rx="3"/><path d="M12 3v4M9 12h.01M15 12h.01M9.5 15.5h5"/></svg></span>
+      <span><svg class="i" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg></span>
+      <span><svg class="i" viewBox="0 0 24 24"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/></svg></span>
+      <span class="grow"></span>
+      <span class="cam"></span>
+    </div>
+    <div class="card np">
+      <span class="art"></span>
+      <div style="flex:1">
+        <b>Midnight City</b><small>M83</small>
+        <div class="bar"><i style="width:62%"></i></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ag"><i class="d" style="background:#5b9dff;box-shadow:0 0 8px #5b9dff"></i>claude · api<span class="s">Working</span></div>
+      <div class="ag"><i class="d" style="background:#ffb74d;box-shadow:0 0 8px #ffb74d"></i>codex · web<span class="s" style="color:#ffb74d">Needs you</span></div>
+    </div>
+    <div class="card clip"><svg class="i" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg><code>npm run build</code><span class="s">Copied</span></div>
+    <div class="stats">
+      <div class="card"><small>CPU</small><b>13%</b><div class="bar"><i style="width:13%"></i></div></div>
+      <div class="card"><small>RAM</small><b>21.3 GB</b><div class="bar"><i style="width:67%"></i></div></div>
+    </div>
+  </div>
+
+  <div class="half l">Windows 11</div>
+  <div class="half r">has a notch<span class="dot">.</span></div>
+  <div id="shards"></div>
+
+  <div class="foot">
+    <p class="tag">A notch for your Windows desktop.<br /><span>Free and open source.</span></p>
+    <div class="logo">
+      <svg class="mark" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#0B0B0D"/><rect x="7" y="9" width="18" height="7" rx="3.5" fill="#F4F4F7"/><circle cx="21.5" cy="12.5" r="1.6" fill="#5B9DFF"/></svg>
+      QNotch
+    </div>
+  </div>
+
+<script>
+  // Deterministic random so every render looks the same
+  let seed = 11;
+  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+
+  const speed = document.getElementById('speed');
+  for (const [x, h, o] of [[390, 250, .35], [406, 170, .6], [422, 300, .25], [778, 280, .3], [794, 190, .6], [810, 240, .35], [370, 120, .2], [830, 130, .2]]) {
+    const s = document.createElement('span');
+    Object.assign(s.style, { left: x + 'px', height: h + 'px', opacity: o });
+    speed.appendChild(s);
+  }
+
+  // Ink chips thrown out of the impact point
+  const shards = document.getElementById('shards');
+  const colors = ['#0c0c0f', '#0c0c0f', '#0c0c0f', '#4f4f59', '#2f6fe4'];
+  for (let k = 0; k < 26; k++) {
+    const side = k % 2 ? 1 : -1;
+    const ang = (rnd() * 70 - 50) * Math.PI / 180;
+    const dist = 60 + rnd() * 230;
+    const x = 600 + side * (172 + Math.cos(ang) * dist * 0.6);
+    const y = 404 + Math.sin(ang) * dist * 0.55;
+    const w = 5 + rnd() * 15, h = 4 + rnd() * 11;
+    const p = () => Math.round(rnd() * 100) + '%';
+    const el = document.createElement('i');
+    el.className = 'shard';
+    Object.assign(el.style, {
+      left: x + 'px', top: y + 'px', width: w + 'px', height: h + 'px',
+      background: colors[Math.floor(rnd() * colors.length)],
+      opacity: (0.45 + rnd() * 0.55).toFixed(2),
+      clipPath: `polygon(${p()} 0, 100% ${p()}, ${p()} 100%, 0 ${p()})`,
+      transform: `rotate(${Math.round(rnd() * 360)}deg)`,
+    });
+    shards.appendChild(el);
+  }
+</script>
+</body>
+</html>
