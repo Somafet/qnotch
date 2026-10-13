@@ -19,6 +19,9 @@ jobs:
       - name: Build
         run: dotnet build src/QNotch/QNotch.csproj -c Release -warnaserror
 
+      - name: Updater checks
+        run: dotnet run --project tests/QNotch.UpdateTests -c Release
+
       # Renders every tab and settings page off-screen in a clean data folder. Fails if a page throws or it hangs.
       - name: Snapshot smoke test
         shell: pwsh

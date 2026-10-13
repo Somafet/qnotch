@@ -3,6 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using QNotch.Core;
+using QNotch.Core.Updates;
 using QNotch.Modules;
 using QNotch.Shell;
 using QNotch.Shell.GameMode;
@@ -46,6 +47,7 @@ public partial class App : Application
     TrayIcon? _tray;
     SettingsStore? _store;
     ShellController? _shell;
+    UpdateService? _updates;
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -103,6 +105,10 @@ public partial class App : Application
         var sounds = new Sounds(_store);
         _shell = new ShellController(window, gs, _store, shortcuts, _foreground, layout, tabs, sections, segments);
         var shell = _shell;
+        _updates = new UpdateService(gs, Dispatcher, _store, () => Shutdown());
+        var updates = _updates;
+        segments.Register(new SegmentDescriptor("updates.pill", SegmentSlot.PillRight, 2,
+            () => UpdatesSection.Indicator(updates, () => shell.OpenSettings("updates"))));
 
         // Modules the user turned off are never created. A change in Settings, Features applies on the next start.
         foreach (var (old, ids) in ModuleList.Renamed)
@@ -115,6 +121,7 @@ public partial class App : Application
         tabs.Register(new TabDescriptor("home", "Home", Glyphs.Home, 0, () => new HomeView(layout, shell)));
         sections.Register(new SettingsSectionDescriptor("features", "Features", Glyphs.Apps, 5, () => FeaturesSection.Create(gs, _store!, ModuleList.All, bootDisabled, Restart)));
         sections.Register(new SettingsSectionDescriptor("general", "General", Glyphs.Settings, 0, () => GeneralSection.Create(gs, _store!, SetupCode.All(ModuleList.All), Restart, shell.Nudge.ResetAll)));
+        sections.Register(new SettingsSectionDescriptor("updates", "Updates", UpdatesSection.UpdateGlyph, 6, () => UpdatesSection.Create(gs, updates)));
         sections.Register(new SettingsSectionDescriptor("appearance", "Appearance", Glyphs.Color, 10, () => AppearanceSection.Create(gs, layout)));
         sections.Register(new SettingsSectionDescriptor("hotkeys", "Hotkeys", "", 7, () => HotkeysSection.Create(shortcuts)));
         sections.Register(new SettingsSectionDescriptor("sounds", "Sounds", Glyphs.Volume, 8, () => SoundsSection.Create(sounds)));
@@ -160,7 +167,21 @@ public partial class App : Application
         EventManager.RegisterClassHandler(typeof(PasswordBox), UIElement.PreviewMouseDownEvent, handler);
 
         if (snapDir is not null) { Snapshot.Run(snapDir, window, shell, tabs, sections, () => Shutdown()); return; }
-        _tray = new TrayIcon(window, shell, shortcuts, () => Shutdown());
+        _tray = new TrayIcon(window, shell, shortcuts, () => Shutdown(), updates);
+        updates.Start();
+        if (updates.State.NeedsPreferenceChoice)
+        {
+            var promptPending = true;
+            void PromptUpdateChoice(ShellMode mode)
+            {
+                if (!promptPending || mode == ShellMode.GameBar) return;
+                promptPending = false;
+                shell.ModeChanged -= PromptUpdateChoice;
+                if (updates.State.NeedsPreferenceChoice) shell.OpenSettings("updates");
+            }
+            shell.ModeChanged += PromptUpdateChoice;
+            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ApplicationIdle, () => PromptUpdateChoice(shell.Mode));
+        }
         Log.Info($"Started in {(DateTime.Now - System.Diagnostics.Process.GetCurrentProcess().StartTime).TotalMilliseconds:0} ms");
     }
 
@@ -182,6 +203,7 @@ public partial class App : Application
     {
         try
         {
+            _updates?.Dispose();
             _tray?.Dispose();
             _hotkeys?.UnregisterAll();
             _foreground?.Dispose();

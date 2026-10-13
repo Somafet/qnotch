@@ -22,6 +22,10 @@ public sealed partial class GeneralSettings : ObservableObject
     [ObservableProperty] string _profileName = Environment.UserName;
     [ObservableProperty] string _profileImagePath = "";
     [ObservableProperty] bool _startWithWindows;
+    // Local preferences only: setup codes never carry update choices or notification history.
+    [ObservableProperty] bool _checkForUpdates = true;
+    [ObservableProperty] bool _updateChecksChoiceMade;
+    [ObservableProperty] string _lastNotifiedUpdateVersion = "";
     [ObservableProperty] string _lastTab = "home";
 
     /// <summary>Ids of modules the user turned off (Settings, Features). They are never created; a change applies on restart.</summary>
