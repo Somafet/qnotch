@@ -12,17 +12,35 @@ public partial class FileTrayView : UserControl
     readonly FileTrayService _svc;
     readonly FileTrayState _state;
     readonly IShell _shell;
+    readonly PhoneShareService _share;
     IDisposable? _menuHold;
     Point? _dragStart;
 
-    public FileTrayView(FileTrayService svc, FileTrayState state, IShell shell)
+    public FileTrayView(FileTrayService svc, FileTrayState state, IShell shell, PhoneShareService share)
     {
         _svc = svc;
         _state = state;
         _shell = shell;
+        _share = share;
         DataContext = state;
         InitializeComponent();
+        // The sharing view is built the first time it opens, keeping the tab factory cheap.
+        if (state.Share.IsOpen) EnsureShareView();
+        else state.Share.PropertyChanged += OnShareChanged;
     }
+
+    void OnShareChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(PhoneShareState.IsOpen) || !_state.Share.IsOpen) return;
+        _state.Share.PropertyChanged -= OnShareChanged;
+        EnsureShareView();
+    }
+
+    void EnsureShareView() => ShareHost.Child ??= new PhoneShareView(_share, _state.Share);
+
+    void OnShare(object sender, RoutedEventArgs e) => _share.Open();
+    void OnShareBack(object sender, RoutedEventArgs e) => _share.Close();
+    void OnShareStop(object sender, RoutedEventArgs e) => _share.Stop();
 
     // ---------- drop target (events stay unhandled so the shell keeps its own drop logic) ----------
 
@@ -76,6 +94,7 @@ public partial class FileTrayView : UserControl
     void OnOpen(object sender, RoutedEventArgs e) { if (Item(sender) is { IsMissing: false } it) _svc.Open(it); }
     void OnReveal(object sender, RoutedEventArgs e) { if (Item(sender) is { IsMissing: false } it) _svc.Reveal(it); }
     void OnExport(object sender, RoutedEventArgs e) { if (Item(sender) is { IsMissing: false } it) ExportTo([it]); }
+    void OnShareOne(object sender, RoutedEventArgs e) { if (Item(sender) is { IsMissing: false, IsFolder: false } it) _share.OpenWith(it); }
     void OnRemove(object sender, RoutedEventArgs e) { if (Item(sender) is { } it) _svc.Remove(it); }
 
     void OnCopyPath(object sender, RoutedEventArgs e)

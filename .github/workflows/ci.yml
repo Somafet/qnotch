@@ -22,6 +22,9 @@ jobs:
       - name: Updater checks
         run: dotnet run --project tests/QNotch.UpdateTests -c Release
 
+      - name: Phone sharing checks
+        run: dotnet run --project tests/QNotch.PhoneShareTests -c Release
+
       # Renders every tab and settings page off-screen in a clean data folder. Fails if a page throws or it hangs.
       - name: Snapshot smoke test
         shell: pwsh

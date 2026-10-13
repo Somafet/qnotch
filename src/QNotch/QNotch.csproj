@@ -41,6 +41,7 @@
   <ItemGroup>
     <EmbeddedResource Include="Core/Updates/ApplyUpdate.ps1" />
     <InternalsVisibleTo Include="QNotch.UpdateTests" />
+    <InternalsVisibleTo Include="QNotch.PhoneShareTests" />
   </ItemGroup>
   <!-- Evaluate after the publish profile, so the updater preserves the installed runtime variant. -->
   <Target Name="UpdateBuildMetadata" BeforeTargets="GetAssemblyAttributes">

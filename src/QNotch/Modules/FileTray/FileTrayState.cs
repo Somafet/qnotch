@@ -33,6 +33,8 @@ public sealed partial class FileTrayState : ObservableObject
     public ObservableCollection<TrayItem> Items { get; } = new();
     /// <summary>Latest few items for the Home card.</summary>
     public ObservableCollection<TrayItem> Recent { get; } = new();
+    /// <summary>Phone sharing, shown in the Files tab in place of the tray while open.</summary>
+    public PhoneShareState Share { get; } = new();
 
     [ObservableProperty] int _count;
     [ObservableProperty] string _countText = "No files";
