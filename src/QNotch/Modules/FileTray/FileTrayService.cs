@@ -216,7 +216,8 @@ public sealed class FileTrayService
             File.Copy(f, Path.Combine(dest, Path.GetRelativePath(src, f)));
     }
 
-    static string Unique(string folder, string name, bool isDir)
+    /// <summary>A free path in <paramref name="folder"/>: the name itself, or "name (2).ext", "name (3).ext", ...</summary>
+    internal static string Unique(string folder, string name, bool isDir)
     {
         var stem = isDir ? name : Path.GetFileNameWithoutExtension(name);
         var ext = isDir ? "" : Path.GetExtension(name);
