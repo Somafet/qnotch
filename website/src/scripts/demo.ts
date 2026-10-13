@@ -1,11 +1,12 @@
 import { svg, type IconName } from '../icons';
 import { initDesktop, put, fmtSize, fileIcon, setDrag, isFileDrag, readDrop, FILES, type FileItem, type GameSetting } from './desktop';
+import { shareQr } from './shareqr';
 
 type Mode = 'collapsed' | 'open' | 'game';
 type OpenedBy = 'hover' | 'scenario' | 'keys';
 type Tab = 'home' | 'search' | 'clipboard' | 'agents' | 'files' | 'notifications';
 type Tone = 'accent' | 'warn' | 'ok' | 'danger';
-type Scenario = 'open' | 'agent' | 'notify' | 'files' | 'clipboard' | 'search' | 'game';
+type Scenario = 'open' | 'agent' | 'notify' | 'files' | 'share' | 'clipboard' | 'search' | 'game';
 
 interface Clip { id: number; kind: 'link' | 'code' | 'image' | 'text' | 'color'; text: string; at: number; pinned?: boolean }
 type TermTab = 'claude' | 'web' | 'pwsh';
@@ -34,6 +35,10 @@ const NOTE_TEXT = 'Deploy checklist: tag, release notes, then the game bar scree
 const PS = `<span class="t-acc">PS C:\\code\\api&gt;</span> `;
 const LEVELS: Record<string, [IconName, Tone]> = { success: ['check', 'ok'], error: ['xcircle', 'danger'], warning: ['bolt', 'warn'], info: ['bell', 'accent'] };
 
+// Phone sharing: the address the app would show (the QR code in shareqr.ts goes elsewhere), and the session length in minutes.
+const SHARE_URL = 'http://192.168.1.42:51327/s/dQw4w9WgXcQ/';
+const SHARE_MIN = 15, SHARE_MAX = 120;
+
 const touch = typeof matchMedia === 'function' && !matchMedia('(hover: hover)').matches;
 const CAPTIONS: Record<Scenario | 'idle', string> = {
   idle: touch ? 'It is live, and every button works. Tap the pill, or pick a moment below.' : 'It is live, and every button works. Hover the pill, or pick a moment below.',
@@ -43,6 +48,7 @@ const CAPTIONS: Record<Scenario | 'idle', string> = {
   files: touch ? 'Tap a file in Downloads to drop it on the notch. It stays within reach on the Files tab.' : 'Drag a file from Downloads onto the pill. The notch keeps it within reach on the Files tab.',
   clipboard: 'Copy any text on this page and it lands here. Click an entry to copy it again.',
   search: 'One box searches your clipboard, notifications, notes, tabs and settings.',
+  share: 'Tick the files your phone may download, then Start sharing. The phone scans the code, no app needed.',
   game: 'A game goes fullscreen and the notch shrinks to one quiet line. Esc quits the game.',
 };
 
@@ -127,6 +133,8 @@ export function initDemo(root: HTMLElement) {
       { id: 1, title: 'Deploy to staging failed', body: 'Health check timed out after 60 s.', app: 'Deploy', at: T0 - 29 * 60e3, icon: 'xcircle', tone: 'danger' },
     ] as Note[],
     tray: [] as TrayFile[],
+    // ends is 0 while not sharing. files is the set frozen at start, skip the tray files unticked before it.
+    share: { open: false, ends: 0, files: [] as TrayFile[], skip: new Set<number>(), status: '' },
     unread: 0,
     toastId: 0,
     query: '',
@@ -430,6 +438,13 @@ export function initDemo(root: HTMLElement) {
       const since = Number(e.dataset.since);
       e.textContent = e.dataset.fmt === 'done' ? `Done ${ago(since)}` : `Working for ${dur(since)}`;
     });
+    set('shareSel', shareSelection());
+    if (sharing()) {
+      const left = s.share.ends - Date.now(), mins = Math.max(1, Math.ceil(left / 60e3));
+      set('shareLeft', mins === 1 ? 'Ends in 1 min' : `Ends in ${mins} min`);
+      const extend = q<HTMLButtonElement>('[data-act="shareExtend"]');
+      if (extend) extend.disabled = left >= (SHARE_MAX - 1) * 60e3;
+    }
     desk.renderMusic({ ...t, pos: s.pos, playing: s.playing, track: s.track, tracks: TRACKS });
   }
 
@@ -555,8 +570,12 @@ export function initDemo(root: HTMLElement) {
   }
 
   function renderFiles() {
+    if (s.share.open) { renderShare(); return; }
+    const share = sharing()
+      ? `<button class="qn-btn accent" data-act="shareOpen" title="Phone sharing is on: show the code">${svg('phone')} Sharing</button>`
+      : `<button class="qn-btn" data-act="shareOpen" title="Send tray files to your phone, or receive files from it, over Wi-Fi">${svg('phone')} ${s.tray.length ? 'Share with phone' : 'Receive from your phone'}</button>`;
     tabBody('files').innerHTML = s.tray.length
-      ? `<div class="qn-filters"><small>${s.tray.length} ${s.tray.length === 1 ? 'file' : 'files'} · drag one out to use it</small><span class="sp"></span><button class="qn-btn" data-act="trayClear">Clear all</button></div>
+      ? `<div class="qn-filters"><small>${s.tray.length} ${s.tray.length === 1 ? 'file' : 'files'} · drag one out to use it</small><span class="sp"></span>${share}<button class="qn-btn" data-act="trayClear">Clear all</button></div>
         ${s.tray.map(f => `<div class="qn-row file" draggable="true" data-tray="${f.id}">
           ${f.art ? `<div class="qn-thumb" style="background:${f.art}"></div>` : `<div class="qn-ico acc">${svg(fileIcon(f.kind))}</div>`}
           <div class="qn-row-mid"><b>${esc(f.name)}</b><small>${fmtSize(f.size)} · ${f.file ? 'from your computer' : 'Downloads'} · ${ago(f.at)}</small></div>
@@ -564,7 +583,52 @@ export function initDemo(root: HTMLElement) {
           <button class="qn-icon" data-act="trayRemove" data-arg="${f.id}" title="Remove" aria-label="Remove">${svg('x')}</button>
         </div>`).join('')}`
       : `<div class="qn-dropzone">${svg('folder')}<b>Drop files on the notch</b><span>They stay within reach here. Nothing is copied or uploaded.</span>
-          <button class="qn-btn" data-act="showFiles">Open Downloads</button></div>`;
+          <div class="qn-actions"><button class="qn-btn" data-act="showFiles">Open Downloads</button>${share}</div></div>`;
+  }
+
+  const sharing = () => s.share.ends > 0;
+  function shareSelection() {
+    if (sharing()) {
+      const n = s.share.files.length;
+      return n === 0 ? 'Receiving only' : n === 1 ? 'Sharing 1 file' : `Sharing ${n} files`;
+    }
+    const n = s.tray.filter(f => !s.share.skip.has(f.id)).length;
+    return s.tray.length ? `${n} of ${s.tray.length} files selected` : 'No files in the tray';
+  }
+
+  // The app's PhoneShareView: the files on the left, then Start, or the code and the time left.
+  function renderShare() {
+    const on = sharing();
+    const file = (f: TrayFile) => `<span><b>${esc(f.name)}</b><small>${fmtSize(f.size)}</small></span>`;
+    const files = on
+      ? s.share.files.map(f => `<div class="qn-share-file">${svg(fileIcon(f.kind))}${file(f)}</div>`).join('')
+      : s.tray.map(f => `<label class="qn-share-file"><input type="checkbox" data-share="${f.id}"${s.share.skip.has(f.id) ? '' : ' checked'} />${file(f)}</label>`).join('');
+    tabBody('files').innerHTML = `
+      <div class="qn-filters"><b>Share with phone</b><small>over Wi-Fi, no app needed</small><span class="sp"></span>
+        ${on ? `<button class="qn-btn" data-act="shareStop" title="Stop sharing: the link stops working">${svg('x')} Stop sharing</button>` : ''}
+        <button class="qn-btn" data-act="shareBack" title="Back to the file tray${on ? ' (sharing keeps running)' : ''}">Back to tray</button></div>
+      <div class="qn-share">
+        <div class="qn-share-files">
+          <div class="qn-share-sel"><span data-k="shareSel"></span>${!on && s.tray.length ? `<button data-act="shareAll" title="Select every file">All</button><button data-act="shareNone" title="Receive only: share no files">None</button>` : ''}</div>
+          <div class="qn-share-list">${files || (on ? '' : '<p>The tray is empty. You can still receive files from your phone.</p>')}</div>
+        </div>
+        ${on ? `<div class="qn-share-on">
+          <div class="qn-share-code"><div class="qn-qr">${shareQr}</div><small>${SHARE_URL}</small></div>
+          <div class="qn-share-side">
+            <div class="qn-share-time"><b data-k="shareLeft"></b><button data-act="shareExtend" title="Keep sharing 15 minutes longer">+15 min</button></div>
+            <p>${esc(s.share.status)}</p>
+            <p class="qn-share-empty">Transfers show up here. Received files are added to the tray.</p>
+            <p class="qn-share-help">Not connecting? Use the same network (no guest Wi-Fi) and allow QNotch in the Windows firewall. Plain HTTP: not encrypted.</p>
+          </div>
+        </div>` : `<div class="qn-share-side">
+          <b>Send files to your phone and back</b>
+          <p>Start sharing and scan the code with your phone's camera. Its browser can download the files on the left and send photos and files to Downloads\\QNotch on this PC. No app or account needed.</p>
+          <div class="qn-share-start"><button class="qn-btn accent" data-act="shareStart" title="Start a sharing session">${svg('phone')} Start sharing</button><span>${esc(s.share.status)}</span></div>
+          <p class="qn-share-help">The phone must be on the same network as this PC (Ethernet on the PC is fine). Guest Wi-Fi often keeps devices apart. If Windows asks, allow QNotch on private networks. Sharing ends after 15 minutes.</p>
+          <p class="qn-share-help">The connection is plain HTTP and not encrypted: others on the network could see what you transfer. The code only controls who can connect.</p>
+        </div>`}
+      </div>`;
+    binds();
   }
 
   function renderNotes() {
@@ -747,6 +811,25 @@ export function initDemo(root: HTMLElement) {
     if (fresh.length) flashCaption(`${fresh.map(f => f.name).join(', ')} is in the file tray. Drag it out to the browser to use it.`);
   }
 
+  function showShare(open: boolean) {
+    s.share.open = open;
+    if (open && !sharing()) s.share.status = '';
+    renderFiles();
+  }
+  function startShare() {
+    s.share.files = s.tray.filter(f => !s.share.skip.has(f.id));
+    s.share.ends = Date.now() + SHARE_MIN * 60e3;
+    s.share.status = 'Waiting for your phone. Point its camera at the code.';
+    renderFiles();
+    flashCaption('Go on, scan it with your phone. In the app it opens a page with these files and an upload button.');
+  }
+  function endShare(reason: string) {
+    s.share.ends = 0;
+    s.share.files = [];
+    s.share.status = reason;
+    if (s.tab === 'files') renderFiles();
+  }
+
   function setTimer(len: number) {
     s.timer = { len, left: len, running: true };
     render();
@@ -893,6 +976,15 @@ export function initDemo(root: HTMLElement) {
 
     if (name === 'open') { open('home'); return; }
     if (name === 'clipboard') { open('clipboard'); return; }
+    if (name === 'share') {
+      if (!s.tray.length) s.tray.unshift(...FILES.slice(0, 2).map(f => ({ ...f, id: fileId++, at: Date.now() })));
+      open('files');
+      showShare(true);
+      if (sharing()) return;
+      await sleep(900);
+      if (alive()) startShare();
+      return;
+    }
     if (name === 'game') { close(); s.gaming = true; render(); return; }
     if (name === 'files') { close(); desk.show('files'); desk.flashFile(FILES[0].name); return; }
     if (name === 'search') {
@@ -946,6 +1038,8 @@ export function initDemo(root: HTMLElement) {
     if (name === 'game' && s.gaming) { s.gaming = false; setActive(null); render(); return; }
     scenario(name);
   }));
+  // Moments without a chip, started from elsewhere on the page (the feature cards).
+  root.addEventListener('scenario', e => scenario((e as CustomEvent<Scenario>).detail));
 
   stage.addEventListener('click', e => {
     const target = e.target as HTMLElement;
@@ -1014,6 +1108,13 @@ export function initDemo(root: HTMLElement) {
       case 'trayRemove': s.tray = s.tray.filter(x => x.id !== num); renderFiles(); render(); return;
       case 'trayClear': s.tray = []; renderFiles(); render(); return;
       case 'showFiles': close(); desk.show('files'); return;
+      case 'shareOpen': showShare(true); return;
+      case 'shareBack': showShare(false); return;
+      case 'shareStart': startShare(); return;
+      case 'shareStop': endShare('Sharing stopped.'); return;
+      case 'shareExtend': s.share.ends = Math.min(s.share.ends + SHARE_MIN * 60e3, Date.now() + SHARE_MAX * 60e3); binds(); return;
+      case 'shareAll': s.share.skip.clear(); renderFiles(); return;
+      case 'shareNone': s.share.skip = new Set(s.tray.map(f => f.id)); renderFiles(); return;
       case 'openPill':
         if (s.mode === 'collapsed') open(s.peek?.tab ?? s.tab, 'scenario');
         return;
@@ -1035,6 +1136,13 @@ export function initDemo(root: HTMLElement) {
     clearTimeout(dragTimer);
     const files = readDrop(e);
     if (files.length) addToTray(files);
+  });
+  tabBody('files').addEventListener('change', e => {
+    const box = e.target as HTMLInputElement;
+    if (!box.dataset.share) return;
+    const id = Number(box.dataset.share);
+    if (box.checked) s.share.skip.delete(id); else s.share.skip.add(id);
+    binds();
   });
   tabBody('files').addEventListener('dragstart', e => {
     const row = (e.target as HTMLElement).closest<HTMLElement>('[data-tray]');
@@ -1188,6 +1296,7 @@ export function initDemo(root: HTMLElement) {
     if (s.playing) s.pos++;
     if (s.pos >= TRACKS[s.track].len) { s.track = (s.track + 1) % TRACKS.length; s.pos = 0; }
     if (s.timer.running && --s.timer.left <= 0) { s.timer.left = 0; s.timer.running = false; peek('timer', 'Time is up', 'accent', 3000); chime([784, 1046.5, 784]); }
+    if (sharing() && Date.now() >= s.share.ends) endShare('Sharing ended after the time ran out.');
     if (s.gaming) { lap += 1; set('lap', `${String(Math.floor(lap / 60)).padStart(2, '0')}:${(lap % 60).toFixed(3).padStart(6, '0')}`); }
     if (inView()) render();
   }, 1000);
