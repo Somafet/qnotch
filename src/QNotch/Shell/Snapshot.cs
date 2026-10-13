@@ -68,6 +68,9 @@ internal static class Snapshot
 
             foreach (var g in new[] { "Ctrl+Alt+N", "Ctrl+Alt+G", "Alt+1", "Alt+6" })
                 report.Add($"hotkey parse {g}: {(HotkeyService.TryParse(g, out var mods, out var key) ? $"{mods}+{key}" : "FAILED")}");
+            report.Add($"version: {typeof(Snapshot).Assembly.GetName().Version}");
+            report.Add("self-contained: " + System.Reflection.CustomAttributeExtensions.GetCustomAttributes<System.Reflection.AssemblyMetadataAttribute>(typeof(Snapshot).Assembly)
+                .FirstOrDefault(a => a.Key == "QNotchSelfContained")?.Value);
             report.Add("done");
         }
         catch (Exception ex) { report.Add($"FAILED: {ex}"); Log.Error("Snapshot failed", ex); }

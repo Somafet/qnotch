@@ -27,6 +27,9 @@ jobs:
           dotnet publish src/QNotch/QNotch.csproj -p:PublishProfile=win-x64-self-contained -p:Version=$version
           Compress-Archive -Path dist/self-contained/QNotch.exe -DestinationPath dist/QNotch-self-contained.zip
 
+      - name: Verify published runtime configurations
+        run: dotnet run --project tests/QNotch.UpdateTests -c Release -- --verify-publish
+
       - name: Create release
         env:
           GH_TOKEN: ${{ github.token }}

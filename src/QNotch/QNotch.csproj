@@ -15,6 +15,8 @@
     <StartupObject>QNotch.Program</StartupObject>
     <RootNamespace>QNotch</RootNamespace>
     <AssemblyName>QNotch</AssemblyName>
+    <!-- Baseline for local builds. The tagged release workflow supplies the release version. -->
+    <Version>0.4.0</Version>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
     <ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
     <ServerGarbageCollector>false</ServerGarbageCollector>
@@ -35,5 +37,16 @@
     <Using Include="System.Threading.Tasks" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
   </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Core/Updates/ApplyUpdate.ps1" />
+    <InternalsVisibleTo Include="QNotch.UpdateTests" />
+  </ItemGroup>
+  <!-- Evaluate after the publish profile, so the updater preserves the installed runtime variant. -->
+  <Target Name="UpdateBuildMetadata" BeforeTargets="GetAssemblyAttributes">
+    <ItemGroup>
+      <AssemblyMetadata Include="QNotchSelfContained" Value="$(SelfContained)" />
+    </ItemGroup>
+  </Target>
 
 </Project>
