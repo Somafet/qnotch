@@ -1,0 +1,33 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+---
+<Base
+  title="Page not found · QNotch"
+  description="This page does not exist. QNotch is a free, open source notch for Windows 11."
+  noindex
+>
+  <main class="missing">
+    <div class="wrap center">
+      <span class="eyebrow">404</span>
+      <h1>Nothing up here.</h1>
+      <p class="lead">This page does not exist. The notch is on the home page.</p>
+      <a class="btn btn-primary" href="/"><Icon name="windows" />Go to QNotch</a>
+    </div>
+  </main>
+</Base>
+
+<style>
+  .missing {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+  }
+
+  h1 {
+    font-size: clamp(40px, 6vw, 72px);
+    letter-spacing: -0.045em;
+  }
+
+  .lead { margin: 20px auto 34px; }
+</style>

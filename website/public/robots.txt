@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://qnot.ch/sitemap-index.xml

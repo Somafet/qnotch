@@ -364,13 +364,13 @@ export function initDemo(root: HTMLElement) {
 
   tabBody('home').innerHTML = `
     <div class="qn-grid">
-      <div class="qn-card"><h4>System</h4>
+      <div class="qn-card"><div class="qn-h">System</div>
         <div class="qn-stat"><span>CPU</span><b data-k="cpu"></b></div><div class="qn-track"><i data-w="cpu"></i></div>
         <div class="qn-stat"><span>RAM</span><b data-k="ram"></b></div><div class="qn-track"><i data-w="ram"></i></div>
         <div class="qn-stat"><span>GPU</span><b data-k="gpu"></b></div>
         <div class="qn-stat"><span>NET</span><b data-k="net"></b></div>
       </div>
-      <div class="qn-card span2"><h4>Now playing</h4>
+      <div class="qn-card span2"><div class="qn-h">Now playing</div>
         <div class="qn-media">
           <div class="qn-art" data-art></div>
           <div class="qn-media-mid">
@@ -385,17 +385,17 @@ export function initDemo(root: HTMLElement) {
           </div>
         </div>
       </div>
-      <div class="qn-card"><h4>Volume</h4>
+      <div class="qn-card"><div class="qn-h">Volume</div>
         <div class="qn-vol"><button class="qn-icon" data-act="mute" title="Mute" aria-label="Mute">${svg('volume')}</button><b data-k="vol"></b></div>
         <input class="qn-range" type="range" min="0" max="100" data-vol aria-label="Volume" />
       </div>
-      <div class="qn-card"><h4>Timer</h4>
+      <div class="qn-card"><div class="qn-h">Timer</div>
         <div class="qn-timer"><b data-k="timer"></b><span data-k="timerState"></span>
           <button class="qn-icon" data-act="timer" data-timerbtn title="Start or pause" aria-label="Start or pause"></button>
           <button class="qn-icon" data-act="timerReset" title="Restart" aria-label="Restart">${svg('restart')}</button></div>
         <div class="qn-presets">${[5, 15, 25, 50].map(m => `<button data-act="preset" data-arg="${m}">${m}</button>`).join('')}</div>
       </div>
-      <div class="qn-card"><h4>Color picker</h4>
+      <div class="qn-card"><div class="qn-h">Color picker</div>
         <button class="qn-btn wide" data-act="pick">${svg('pipette')} <span data-k="pickLabel">Pick a color</span></button>
         <div class="qn-swatches" data-swatches></div>
         <div class="qn-swatch-note" data-k="swatchNote"></div>

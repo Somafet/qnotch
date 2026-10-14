@@ -19,5 +19,10 @@ Rule for the demo: anything that looks clickable must work. If a control can't b
 | `src/components/OpenSource.astro` | Extensions, the five slots, contributing |
 | `src/icons.ts` | Stroke icons used everywhere |
 | `og/og.html` | Source of the social preview `src/assets/og.png`; rerender with `node og/render.mjs` (needs Edge or Chrome) |
+| `src/layouts/Base.astro` | The head: title, description, canonical, Open Graph and Twitter tags. Pass `noindex` for pages search engines should skip |
+| `src/pages/404.astro` | The not-found page (`noindex`, left out of the sitemap) |
+| `public/robots.txt` | Points crawlers at `sitemap-index.xml`, which `@astrojs/sitemap` writes on every build |
+
+Search engines read the structured data (JSON-LD) at the top of `index.astro`: the app, the site and the FAQ. The FAQ part is built from the same `faq` list the page shows, so the two stay in sync. Only real page headings should use `<h1>` to `<h6>`; titles inside the demo's mock UI use `.qn-h`.
 
 Keep claims on the page in line with the repo README: numbers, hotkeys and privacy statements come from there.
