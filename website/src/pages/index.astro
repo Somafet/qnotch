@@ -34,13 +34,13 @@ const privacy = [
 
 const faq = [
   { q: 'Is it free?', a: 'Yes. QNotch is free under the MIT license. It needs no account or subscription. The source is on GitHub.' },
-  { q: 'Windows says "Windows protected your PC". Is that normal?', a: 'The exe is not code-signed yet, so SmartScreen does not know it. Click More info, then Run anyway. Or build it yourself from source with the .NET 10 SDK.' },
+  { q: 'Windows says "Windows protected your PC". Is that normal?', a: "Yep, for now. The exe isn't code-signed yet, so SmartScreen has no clue who I am. Click More info, then Run anyway. Or if you'd rather not run a random exe from the internet (fair), build it from source with the .NET 10 SDK." },
   { q: 'Which download do I need?', a: 'QNotch-self-contained.zip (80 MB) runs as is. QNotch.exe (27 MB) is smaller but needs the .NET 10 Desktop Runtime.' },
   { q: 'Does it work on Windows 10?', a: 'Yes. It needs Windows 10 version 2004 or newer, on x64.' },
   { q: 'Will it get in the way of my games?', a: 'No. When a game or fullscreen video is in front, Game mode shrinks the notch to one line of status, turns off hover and lets clicks pass straight through. Ctrl+Alt+G cycles Auto, On and Off.' },
   { q: 'How does the Agents tab know what Claude Code and Codex are doing?', a: "One click in Settings, Agents adds a hook to Claude Code's settings.json or Codex's hooks.json, with a backup. Codex then asks you to trust it once. The hook talks to QNotch over a local pipe. Token counts come from the transcripts Claude Code already keeps on your PC." },
   { q: 'Where does the button on an agent take me?', a: 'It opens that session or thread in the Claude or Codex app. For a terminal session, it brings the terminal to the front.' },
-  { q: 'Is the cost what I am billed?', a: 'QNotch estimates what the tokens would cost at API list prices. Pro and Max plans do not bill per token, so this estimate is not your bill.' },
+  { q: 'Is the cost what I am billed?', a: "No. It's what those tokens would cost at API list prices. Pro and Max plans don't bill per token, so think of it as a 'look how much I'm getting out of my plan' number, not your bill." },
   { q: 'Can I put it on my other monitor?', a: 'Yes. Drag the pill onto it, or pick the monitor in Settings, General. It follows DPI changes without a restart.' },
   { q: 'How do I add a feature of my own?', a: 'Open an issue with a sentence on what it does and where it shows, then build it in its own folder under src/QNotch/Modules. The contributing guide walks through it.' },
 ];
@@ -118,7 +118,7 @@ const jsonLd = {
       <div class="wrap center">
         <a class="badge" href={GH}><span class="badge-dot"></span>Free and open source<span class="sep">·</span>MIT</a>
         <h1>A <span class="grad">notch</span> for<br />your Windows desktop.</h1>
-        <p class="lead hero-lead">See what's playing, your system stats and your coding agents in a pill at the top of your screen. Hover to open the panel for clipboard history, files and more.</p>
+        <p class="lead hero-lead">Your music, system stats and coding agents in a little pill at the top of your screen. Hover over it and you get clipboard history, files and quite a bit more.</p>
         <div class="hero-cta">
           <a class="btn btn-primary" href={DL}><Icon name="windows" />Download for Windows</a>
           <a class="btn btn-ghost" href={GH}><Icon name="github" />Star on GitHub</a>
@@ -134,7 +134,7 @@ const jsonLd = {
       <div class="wrap">
         <div class="numbers-head">
           <h2 class="h2-sm">42 MB of memory while idle.</h2>
-          <p>Measured on Windows 11 with the panel closed. QNotch is a native WPF app.</p>
+          <p>Measured on Windows 11 with the panel closed. It's native WPF, not a browser in a trench coat.</p>
         </div>
         <ul class="numbers">
           {numbers.map(n => <li><b>{n.v}</b><span>{n.l}</span></li>)}
@@ -166,7 +166,7 @@ const jsonLd = {
         <div class="section-head center">
           <span class="eyebrow">Privacy</span>
           <h2>Your data stays on your PC.</h2>
-          <p class="lead">QNotch stores your data locally. It goes online for the GitHub graph and Claude Code usage limits. You can check the source on GitHub.</p>
+          <p class="lead">Everything's stored locally. QNotch only goes online for two things, your GitHub graph and Claude Code usage limits, and you can switch both off. Don't take my word for it, the source is on GitHub.</p>
         </div>
         <ul class="priv">
           {privacy.map(p => <li class="card"><Icon name={p.icon} /><b>{p.t}</b><p>{p.d}</p></li>)}
@@ -196,6 +196,7 @@ const jsonLd = {
       <div class="wrap center">
         <div class="final-pill" aria-hidden="true"><span></span></div>
         <h2>Try QNotch on<br />your desktop.</h2>
+        <p class="lead final-lead">I saw a really nice notch app on Reddit, but it was Mac only. Well, I'm on Windows. So I built one.</p>
         <div class="hero-cta">
           <a class="btn btn-primary" href={DL}><Icon name="windows" />Download for Windows</a>
           <a class="btn btn-ghost" href={GH}><Icon name="github" />View the source</a>
@@ -543,6 +544,7 @@ const jsonLd = {
   .final .wrap { border-top: 1px solid var(--line-2); }
 
   .final h2 { font-size: clamp(36px, 6vw, 72px); letter-spacing: -0.045em; }
+  .final-lead { margin-top: 22px; }
 
   .final-pill {
     width: 168px;
