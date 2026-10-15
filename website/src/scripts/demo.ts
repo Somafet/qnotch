@@ -1,6 +1,7 @@
 import { svg, type IconName } from '../icons';
 import { initDesktop, put, fmtSize, fileIcon, setDrag, isFileDrag, readDrop, FILES, type FileItem, type GameSetting } from './desktop';
 import { shareQr } from './shareqr';
+import { WX, wxDays } from './weather';
 
 type Mode = 'collapsed' | 'open' | 'game';
 type OpenedBy = 'hover' | 'scenario' | 'keys';
@@ -30,7 +31,7 @@ const TABS: [Tab, IconName, string][] = [
   ['notifications', 'bell', 'Notifications'],
 ];
 
-const SETTINGS = ['General', 'Features', 'Hotkeys', 'Appearance', 'Game mode', 'Clipboard', 'AI', 'GitHub', 'Notifications'];
+const SETTINGS = ['General', 'Features', 'Hotkeys', 'Appearance', 'Game mode', 'Clipboard', 'AI', 'GitHub', 'Weather', 'Notifications'];
 const NOTE_TEXT = 'Deploy checklist: tag, release notes, then the game bar screenshots.';
 const PS = `<span class="t-acc">PS C:\\code\\api&gt;</span> `;
 const LEVELS: Record<string, [IconName, Tone]> = { success: ['check', 'ok'], error: ['xcircle', 'danger'], warning: ['bolt', 'warn'], info: ['bell', 'accent'] };
@@ -370,6 +371,17 @@ export function initDemo(root: HTMLElement) {
         <div class="qn-stat"><span>GPU</span><b data-k="gpu"></b></div>
         <div class="qn-stat"><span>NET</span><b data-k="net"></b></div>
       </div>
+      <div class="qn-card span2"><div class="qn-h">Weather</div>
+        <div class="qn-wx">
+          <div class="qn-wx-now">
+            <div class="qn-wx-top"><img src="${WX.icon}" width="44" height="44" alt="" /><div><b>${WX.temp}</b><span>${WX.condition}</span></div></div>
+            <div class="qn-wx-place">${WX.place} · ${WX.detail}</div>
+          </div>
+          <div class="qn-wx-days">${wxDays().map(d =>
+            `<div title="${d.tip}"><span>${d.name}</span><img src="${d.icon}" width="30" height="30" alt="${d.tip}" /><b>${d.high}</b> <i>${d.low}</i></div>`).join('')}</div>
+          <a class="qn-icon" href="${WX.url}" target="_blank" rel="noopener" title="Open on yr.no" aria-label="Open on yr.no">${svg('link')}</a>
+        </div>
+      </div>
       <div class="qn-card span2"><div class="qn-h">Now playing</div>
         <div class="qn-media">
           <div class="qn-art" data-art></div>
@@ -461,6 +473,10 @@ export function initDemo(root: HTMLElement) {
     return show ? `<span class="seg">${svg('timer', 'i acc')}<b>${mmss(s.timer.left)}</b></span>` : '';
   }
 
+  function wxSeg() {
+    return `<span class="seg"><img class="qn-wx-ico" src="${WX.icon}" width="16" height="16" alt="${WX.condition}" /><b>${WX.temp}</b></span>`;
+  }
+
   function renderPill() {
     const t = TRACKS[s.track];
     put(pill, `
@@ -469,6 +485,7 @@ export function initDemo(root: HTMLElement) {
       ${agentSeg()}
       ${s.unread ? `<span class="seg">${svg('bell', 'i acc')}<b>${s.unread}</b></span>` : ''}
       ${timerSeg()}
+      ${wxSeg()}
       <span class="seg"><span class="dim">CPU</span>${Math.round(s.cpu)}%</span>
       <span class="seg"><span class="dim">GPU</span>${Math.round(s.gpu)}%</span>
       <span class="seg"><span class="dim">RAM</span>${s.ram.toFixed(1)}/31.9 GB</span>
@@ -482,6 +499,7 @@ export function initDemo(root: HTMLElement) {
       <span class="seg"><span class="dim">RAM</span>${s.ram.toFixed(1)}/31.9 GB</span>
       <span class="seg"><span class="dim">↓</span>${Math.round(s.down)} KB/s <span class="dim">↑</span>${Math.round(s.up)} KB/s</span>
       ${timerSeg(true)}
+      ${wxSeg()}
       <span class="seg"><b>${clock()}</b></span>`);
   }
 

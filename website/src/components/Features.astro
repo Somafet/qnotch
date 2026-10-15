@@ -1,6 +1,7 @@
 ---
 import Icon from './Icon.astro';
 import { shareQr } from '../scripts/shareqr';
+import { WX, wxDays } from '../scripts/weather';
 
 const extras = [
   { icon: 'note', label: 'Note' },
@@ -94,16 +95,6 @@ const extras = [
         </div>
       </article>
 
-      <article class="card f-mic">
-        <div class="viz">
-          <div class="v-pill"><Icon name="mic" class="i warn" /><Icon name="camera" class="i warn" /><span class="dim">In a call</span><span><em>CPU</em> 9%</span><b>10:02</b></div>
-        </div>
-        <div class="txt">
-          <h3>See when apps use your mic or camera.</h3>
-          <p>The pill shows an icon while an app uses your microphone or camera. QNotch silences notification alerts during calls.</p>
-        </div>
-      </article>
-
       <article class="card f-share">
         <div class="viz">
           <div class="v-share">
@@ -124,6 +115,16 @@ const extras = [
         </div>
       </article>
 
+      <article class="card f-mic">
+        <div class="viz">
+          <div class="v-pill"><Icon name="mic" class="i warn" /><Icon name="camera" class="i warn" /><span class="dim">In a call</span><span><em>CPU</em> 9%</span><b>10:02</b></div>
+        </div>
+        <div class="txt">
+          <h3>See when apps use your mic or camera.</h3>
+          <p>The pill shows an icon while an app uses your microphone or camera. QNotch silences notification alerts during calls.</p>
+        </div>
+      </article>
+
       <article class="card f-ai">
         <div class="viz">
           <div class="v-usage"><span>Claude Code · 5h</span><i class="v-track"><i style="width:62%"></i></i><small>62%</small></div>
@@ -133,6 +134,26 @@ const extras = [
         <div class="txt">
           <h3>Launch AI apps with a shortcut.</h3>
           <p>Use <kbd>Alt</kbd> <kbd>1</kbd> through <kbd>Alt</kbd> <kbd>6</kbd> to launch your AI apps. Check Claude Code and Codex usage limits and your remaining banked resets.</p>
+        </div>
+      </article>
+
+      <article class="card f-weather">
+        <div class="viz">
+          <div class="v-wx">
+            <img src={WX.icon} width="48" height="48" alt="" />
+            <div><b>{WX.temp}</b><span>{WX.condition}</span></div>
+          </div>
+          <div class="v-wx-place">{WX.place} · {WX.detail}</div>
+          <div class="v-wx-days">
+            {wxDays().map((d, i) => (
+              <div title={d.tip}><span data-wxday={i}>{d.name}</span><img src={d.icon} width="28" height="28" alt={d.tip} /><b>{d.high}</b> <em>{d.low}</em></div>
+            ))}
+          </div>
+        </div>
+        <div class="txt">
+          <h3>Check the weather.</h3>
+          <p>Pick your town and get the yr.no forecast: right now and the next three days on Home, plus the temperature in the pill and the game bar. No account or API key.</p>
+          <button class="try" data-try="open">Try it <Icon name="arrow" /></button>
         </div>
       </article>
 
@@ -151,6 +172,8 @@ const extras = [
 </section>
 
 <script>
+  import { wxDayName } from '../scripts/weather';
+
   // The small app pieces in these cards work too.
   document.querySelector('[data-v="stop"]')?.addEventListener('click', e => {
     const b = e.currentTarget as HTMLButtonElement;
@@ -162,6 +185,7 @@ const extras = [
     document.getElementById('demo')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     setTimeout(() => document.querySelector<HTMLElement>('[data-scenario="agent"]')?.click(), 500);
   });
+  document.querySelectorAll<HTMLElement>('[data-wxday]').forEach(e => (e.textContent = wxDayName(Number(e.dataset.wxday))));
   document.querySelector('[data-v="play"]')?.addEventListener('click', e => (e.currentTarget as HTMLElement).classList.toggle('paused'));
 
   document.querySelectorAll<HTMLElement>('[data-try]').forEach(b => b.addEventListener('click', () => {
@@ -192,8 +216,8 @@ const extras = [
   .f-agents { grid-column: span 4; }
   .f-notify { grid-column: span 2; }
   .f-media, .f-clip, .f-search { grid-column: span 2; }
-  .f-game, .f-mic { grid-column: span 3; }
-  .f-share, .f-ai { grid-column: span 3; }
+  .f-game, .f-share { grid-column: span 3; }
+  .f-mic, .f-ai, .f-weather { grid-column: span 2; }
   .f-extras { grid-column: 1 / -1; justify-content: center; }
 
   .txt {
@@ -504,8 +528,6 @@ const extras = [
   .v-pill :global(.i) { font-size: 16px; }
   .v-pill b { font-weight: 600; }
 
-  .f-mic .viz, .f-game .viz { min-height: 150px; }
-
   .f-mic .viz::after {
     content: '';
     position: absolute;
@@ -562,6 +584,25 @@ const extras = [
   .v-xfer small { font-size: 11.5px; }
   .v-xfer .ok { color: #4cd98c; }
 
+  .v-wx { display: flex; align-items: center; gap: 10px; }
+  .v-wx div { display: flex; flex-direction: column; }
+  .v-wx b { font-size: 28px; line-height: 32px; font-weight: 600; }
+  .v-wx span { color: var(--t2); font-size: 12.5px; }
+  .v-wx-place { margin: 0 0 6px; color: var(--t3); font-size: 12px; }
+
+  .v-wx-days {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .v-wx-days div { display: flex; flex-direction: column; align-items: center; font-size: 12px; }
+  .v-wx-days span { color: var(--t2); }
+  .v-wx-days img { margin: 3px 0; }
+  .v-wx-days b { font-weight: 600; }
+  .v-wx-days em { font-style: normal; color: var(--t3); }
+
   .f-extras .txt { padding: 18px; gap: 16px; }
 
   .extras {
@@ -591,7 +632,7 @@ const extras = [
   @media (max-width: 960px) {
     .bento { grid-template-columns: repeat(2, 1fr); }
     .bento .card { grid-column: span 1; }
-    .f-agents, .f-extras { grid-column: 1 / -1 !important; }
+    .f-agents, .f-weather, .f-extras { grid-column: 1 / -1 !important; }
   }
 
   @media (max-width: 620px) {

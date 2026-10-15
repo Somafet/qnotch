@@ -20,7 +20,7 @@ const toggles = [
   { id: 'stats', label: 'System stats', on: true },
 ] as const;
 
-const csharp = "<span class=\"k\">public sealed class</span> <span class=\"t\">WeatherModule</span> : <span class=\"t\">INotchModule</span>\n{\n    <span class=\"k\">public void</span> <span class=\"m\">Initialize</span>(<span class=\"t\">ModuleContext</span> ctx)\n    {\n        <span class=\"c\">// A tile on the Home grid</span>\n        ctx.Cards.<span class=\"m\">Register</span>(<span class=\"k\">new</span>(<span class=\"s\">\"weather\"</span>, <span class=\"s\">\"Weather\"</span>,\n            DefaultOrder: <span class=\"n\">35</span>, () =&gt; <span class=\"k\">new</span> <span class=\"t\">WeatherCard</span>()));\n\n        <span class=\"c\">// Today's temperature in the pill</span>\n        ctx.Segments.<span class=\"m\">Register</span>(<span class=\"k\">new</span>(<span class=\"s\">\"weather.pill\"</span>,\n            <span class=\"t\">SegmentSlot</span>.PillRight, Order: <span class=\"n\">8</span>, <span class=\"t\">WeatherSegments</span>.Pill));\n    }\n}";
+const csharp = "<span class=\"k\">public sealed class</span> <span class=\"t\">WeatherModule</span> : <span class=\"t\">INotchModule</span>, <span class=\"t\">ICadenceAware</span>\n{\n    <span class=\"t\">WeatherService</span>? _svc;\n\n    <span class=\"k\">public void</span> <span class=\"m\">Initialize</span>(<span class=\"t\">ModuleContext</span> ctx)\n    {\n        <span class=\"k\">var</span> s = <span class=\"k\">new</span> <span class=\"t\">WeatherState</span>();\n        <span class=\"k\">var</span> set = ctx.Settings.<span class=\"m\">Get</span>&lt;<span class=\"t\">WeatherSettings</span>&gt;(<span class=\"s\">\"weather\"</span>);\n        <span class=\"k\">var</span> svc = _svc = <span class=\"k\">new</span> <span class=\"t\">WeatherService</span>(ctx, s, set);\n\n        <span class=\"c\">// A wide tile on the Home grid</span>\n        ctx.Cards.<span class=\"m\">Register</span>(<span class=\"k\">new</span> <span class=\"t\">CardDescriptor</span>(<span class=\"s\">\"weather\"</span>, <span class=\"s\">\"Weather\"</span>, <span class=\"n\">15</span>,\n            () =&gt; <span class=\"k\">new</span> <span class=\"t\">WeatherCard</span>(s, svc, ctx.Shell), ColumnSpan: <span class=\"n\">2</span>));\n\n        <span class=\"c\">// The temperature in the pill</span>\n        ctx.Segments.<span class=\"m\">Register</span>(<span class=\"k\">new</span> <span class=\"t\">SegmentDescriptor</span>(<span class=\"s\">\"weather.pill\"</span>,\n            <span class=\"t\">SegmentSlot</span>.PillRight, <span class=\"n\">9</span>, () =&gt; <span class=\"t\">WeatherSegments</span>.<span class=\"m\">Pill</span>(s)));\n\n        <span class=\"c\">// ...a game bar segment and a settings page, then fetch</span>\n        svc.<span class=\"m\">Start</span>();\n    }\n\n    <span class=\"c\">// The panel opened: fetch if the forecast expired meanwhile</span>\n    <span class=\"k\">public void</span> <span class=\"m\">SetCadence</span>(<span class=\"t\">Cadence</span> cadence)\n    {\n        <span class=\"k\">if</span> (cadence == <span class=\"t\">Cadence</span>.Fast) _svc?.<span class=\"m\">Wake</span>();\n    }\n}";
 
 const steps = [
   { t: 'Open an issue', d: 'Say what it does and where it shows: a card, a tab, the pill or the game bar. Space is limited, so agree on that first.' },
@@ -34,7 +34,7 @@ const steps = [
     <div class="section-head">
       <span class="eyebrow">Open source · MIT</span>
       <h2>Add your own extension.</h2>
-      <p class="lead">QNotch has a shell and fifteen extensions. Each extension keeps its code in one folder. It can add cards, tabs, status segments, search results and settings through the registries below.</p>
+      <p class="lead">QNotch has a shell and sixteen extensions. Each extension keeps its code in one folder. It can add cards, tabs, status segments, search results and settings through the registries below. On the right is the newest one, Weather.</p>
     </div>
 
     <div class="os-grid">
@@ -49,11 +49,12 @@ const steps = [
    <span class="d">├─</span> Media/
    <span class="d">├─</span> Notifications/
    <span class="d">├─</span> Stats/
+   <span class="d">├─</span> <span class="h">Weather/</span>        <span class="c">the newest, on the right</span>
    <span class="d">├─</span> <span class="c">10 more</span>
-   <span class="d">└─</span> <span class="new">Weather/</span>        <span class="new-c">yours</span></pre>
+   <span class="d">└─</span> <span class="new">YourExtension/</span>  <span class="new-c">yours</span></pre>
       </div>
 
-      <div class="panel code" aria-label="A minimal extension">
+      <div class="panel code" aria-label="The Weather extension's entry point">
         <div class="panel-bar"><Icon name="code" /> Modules/Weather/WeatherModule.cs</div>
 <pre set:html={csharp} />
       </div>
