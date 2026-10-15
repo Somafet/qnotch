@@ -13,6 +13,7 @@ using QNotch.Modules.Scheduled;
 using QNotch.Modules.Search;
 using QNotch.Modules.Stats;
 using QNotch.Modules.Volume;
+using QNotch.Modules.Weather;
 
 namespace QNotch.Modules;
 
@@ -37,6 +38,8 @@ public static class ModuleList
         new("volume", "Volume", "System volume and mute on a Home card.", () => new VolumeModule()),
         new("timer", "Timer", "Countdown with Pomodoro presets on a Home card, in the pill and in the game bar.", () => new PomodoroModule(), Early: true, Shared: new(typeof(TimerSettings), "Minutes:1..180")),
         new("colorpicker", "Color picker", "Pick a color anywhere on screen and copy its hex code.", () => new ColorPickerModule()),
+        new("weather", "Weather", "The yr.no forecast for a place you pick, on a Home card, in the pill and in the game bar.", () => new WeatherModule(), Early: true,
+            Shared: new(typeof(WeatherSettings), "Units", "ShowInPill")),
         new("search", "Search", "One search box for clipboard history, files, notes, notifications, tasks, tabs and settings, with its own hotkey.", () => new SearchModule()),
     ];
 

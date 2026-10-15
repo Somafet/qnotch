@@ -11,6 +11,7 @@ A notch for Windows 11. A slim pill at the top of your screen shows what is play
 - **System stats:** CPU, GPU, RAM, network and battery.
 - **Now playing:** track, artwork and controls for anything that plays media.
 - **Clipboard history:** text, code, links and images you copied, with pins.
+- **Weather:** the [yr.no](https://www.yr.no/en) forecast for a place you pick: now and the next days on a Home card, and the temperature in the pill and the game bar.
 - **Mic and camera:** a glyph in the pill and the game bar while an app uses your microphone or camera.
 - **Notifications:** any app or script can post one, with buttons. See [docs/notifications.md](docs/notifications.md).
 - **Search** across clipboard, files, notes, notifications and settings.
@@ -76,6 +77,7 @@ QNotch only goes online for these features, all visible in Settings:
 
 - **GitHub:** your contribution graph, once you add a token.
 - **Claude Code usage:** it sends your local Claude Code sign-in to Anthropic's usage endpoint. That endpoint is undocumented, so it may break. Turn it off in Settings, AI.
+- **Weather:** once you pick a place, it fetches that place's forecast from MET Norway (the source behind yr.no) about every 30 minutes. Searching for a place sends what you type to yr.no.
 - **Updates:** automatic checks are on by default, with a first-run choice to keep them enabled or turn them off. Checks the public QNotch releases on GitHub without a token. The update download starts only when you click Update and restart.
 
 Codex usage is read from Codex's local files. Agents changes only Claude Code's `settings.json` or Codex's `hooks.json` (with a backup) when you click Connect, and its hook talks to QNotch over a local pipe. Token counts come from the transcripts Claude Code already keeps on your PC.
