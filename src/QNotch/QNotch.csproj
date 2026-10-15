@@ -40,6 +40,7 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Core/Updates/ApplyUpdate.ps1" />
+    <Resource Include="Modules/Weather/Icons/*.png" />
     <InternalsVisibleTo Include="QNotch.UpdateTests" />
     <InternalsVisibleTo Include="QNotch.PhoneShareTests" />
   </ItemGroup>
