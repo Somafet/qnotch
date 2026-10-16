@@ -1,0 +1,22 @@
+{
+  "app_draw_callbacks_delta" : 0,
+  "app_version" : "0.1.0",
+  "architecture" : "arm64",
+  "cpu_percent_one_core" : 0.000243747756077687,
+  "hardware_model" : "Mac14,2",
+  "interrupt_wakeups_delta" : 8,
+  "interval_seconds" : 31.471469208336202,
+  "launch_method" : "mach_absolute_time minus ri_proc_start_abstime; panel ordered front, before compositor presentation",
+  "method" : "proc_pid_rusage RUSAGE_INFO_V2; app draw counters; one 30-second interval after 3-second warmup",
+  "os" : "Version 26.3 (Build 25D125)",
+  "panel_expanded_at_end" : false,
+  "physical_memory_bytes" : 8589934592,
+  "platform" : "macOS",
+  "process_start_to_panel_ordered_seconds" : 0.099718291666666667,
+  "resident_bytes_end" : 74006528,
+  "resident_bytes_start" : 74285056,
+  "source_dirty" : false,
+  "source_revision" : "87403d570ab4e0ad6880a18e544dc0f17ec5673e",
+  "state" : "collapsed, timer not running",
+  "surface_rebuilds_delta" : 0
+}

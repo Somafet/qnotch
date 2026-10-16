@@ -1,24 +1,83 @@
 # QNotch for macOS
 
-Status: planned. There is no Mac executable, supported macOS version, installation command, or build target yet. Windows releases and screenshots do not establish Mac feature support.
+Status: functional development milestone, not a public release. A native Swift/AppKit menu-bar app provides a display-anchored pill, hover panel, and countdown timer. The notch surface shares the Windows visual language (near-black surface, bordered cards, icon tab strip, soft-accent chips) built from AppKit: SF Symbols, system typography, the macOS accent color, native focus, accessibility, and Core Animation. Settings is a System Settings–style sidebar window that follows the system appearance. Windows remains independently released.
 
-## Source and contribution scope
+## Requirements and commands
 
-`src/QNotch.Mac/` is the reserved source location. The UI framework is undecided: a native Swift implementation and a Rust/GPUI implementation remain options. Do not add a placeholder project or require the .NET Windows SDK merely to work on this port.
+- Apple silicon (arm64), macOS 13 or newer. Intel and universal downloads are not supported by this milestone.
+- Xcode 15 or newer, including its macOS SDK and XCTest; Swift 5.9 or newer. No package dependencies or Windows tooling.
+- A logged-in graphical macOS session for the native UI smoke test and interactive app. Headless geometry/state/settings tests run through XCTest.
+- The deployment target is macOS 13. CI runs on macOS 14; development evidence also records the local OS. Compatibility on a physical macOS 13 machine still needs validation before a public release.
 
-Start with [shared principles](../../spec/README.md), [architecture](../../ARCHITECTURE.md), and [contributing](../../CONTRIBUTING.md). Keep OS providers, credential storage, window behavior, permissions, and packaging inside the Mac implementation. Share protocol specifications and fixtures where there is an actual compatibility requirement.
+From the repository root:
 
-The first implementation should document:
+```sh
+bash scripts/macos/build.sh
+bash scripts/macos/test.sh
+bash scripts/macos/smoke.sh
+open dist/macos/QNotch.app
+```
 
-- Toolchain, build/test/launch commands, minimum macOS version, and supported architectures.
-- Module availability and differences from Windows, especially media sessions, clipboard monitoring, scheduled jobs, fullscreen behavior, and mic/camera attribution.
-- Data and log locations, permission prompts, and how to run tests without touching a user's settings.
-- Snapshot or equivalent UI checks, accessibility checks, and measured launch time, idle CPU, wakeups, and memory footprint. Windows working-set numbers are not Mac benchmarks.
+Builds produce `dist/macos/QNotch.app` with release optimization and warnings treated as errors. No signing account, certificate, provisioning profile, or network service is needed. The development app bundle has no Developer ID signature or notarization. The toolchain may emit a local ad hoc executable signature; that is not distribution signing. Do not distribute this build as a public download.
 
-## CI and first release
+If Command Line Tools are selected, the build/test scripts use `/Applications/Xcode.app` when available, for that process only. For a different Xcode installation, set `DEVELOPER_DIR` to its `Contents/Developer` directory. They report a missing full Xcode installation explicitly. They never change the machine-wide developer directory. Use `xcrun swift --version` to inspect an explicitly selected toolchain.
 
-Add a real macOS runner job with the first build target and include it in the required `build` aggregate. Keep pull-request builds unsigned and independent of signing credentials. Do not create a permanently skipped or empty job to imply a working port.
+For an isolated interactive session:
 
-Reserve `macos-vX.Y.Z` tags and `QNotch-macos-{arm64,x64,universal}.{dmg,zip}` artifact names. These are conventions, not promises to ship every architecture or format. Mac releases must use the [guarded publisher and release policy](../releases.md), never become GitHub's global latest release, and have an explicit platform update feed. Sparkle is an option, not yet a dependency.
+```sh
+QNOTCH_MAC_DATA_DIR="$(mktemp -d)" open -n dist/macos/QNotch.app
+```
 
-Before a public download, configure Developer ID signing, hardened runtime, notarization, and stapling where applicable; validate the downloaded app on a clean Mac. Store signing identities and credentials privately in release secrets. Do not put personal account details in the repository or issues. Signing setup belongs with the real release workflow, not this preparation.
+Alternatively, launch the executable with `--data-dir /absolute/temporary/directory`. Each data directory has its own advisory instance lock. Quit only the test instance you started, using its menu or PID. A second instance with the same directory exits instead of silently overwriting settings.
+
+## Behavior and availability
+
+- Choose the main display or a specific connected display in Settings. If the selected display disconnects, QNotch falls back to the main display and reports the unavailable selection; reconnecting restores it. With no display, the panel is hidden.
+- Placement uses `NSScreen.safeAreaInsets` and its auxiliary top areas. On a notched display, the black surface joins the top bezel and wraps the physical camera housing. The occluded center is reserved: the app icon and status segments live in the clear side wings, while panel controls start below the housing. The panel uses the status-window level so the menu bar cannot hide the wings. If macOS cannot report valid housing geometry, it explicitly falls back to a pill below the safe boundary. Displays without a notch use a pill six points below the menu-bar working area. Coordinates are points, including negative display origins; no model-name or fixed notch-width heuristics.
+- Idle, the surface exactly covers the camera housing. Status (a running or paused timer) grows symmetric wings beside it; the panel springs out of the notch on open (about 3% overshoot) and settles quickly on close. Shape morphs are Core Animation path animations rendered by the compositor; during a morph the window briefly covers both shapes plus overshoot room, then returns to the exact surface. Tab changes slide the indicator and content; buttons and chips have hover and press feedback.
+- Hover opens after 120 ms and collapses 400 ms after leaving. Hover never activates the app or accepts keyboard input. Clicking the pill/panel or choosing **Open Panel** explicitly grants keyboard focus. A keyboard-opened panel stays open on pointer leave; Escape, outside click, or key-window loss closes it. Closing never forces focus back after the user has already switched apps.
+- The panel header shows the user's first name, the date, the Home / Search / module tabs, and Settings. Home hosts the countdown card; Timer is a registered tab. Search is a tab: with keyboard control, typing anywhere (or ⌘F) jumps to it, and Return runs the first result. Search finds the timer through a registered in-memory search source. Buttons, tabs, chips, the search field, switches, and pop-ups have accessibility labels. The menu-bar item provides keyboard access without a global event-tap permission or global shortcut.
+- Presets are 5, 15, 25, and 50 minutes. Start, pause/resume, and reset work locally; scrolling over the Home card changes the length while stopped. A running timer continues across sleep and refreshes on wake. It stops on quit; only preferences persist. Completion shows Done in the notch until the panel is next opened and optionally plays a system sound, without taking focus or prompting for notification permission.
+- Turning Countdown off takes effect immediately, stops its scheduler, and removes all five contributions. The panel explains how to enable it instead of showing a fake timer.
+- Reduced motion follows both the user's local setting and the OS setting and turns every animation off. All animations are finite Core Animation transactions. No display link, frame loop, repeating idle timer, or hidden countdown animation runs.
+- Media sessions, clipboard history, scheduled jobs, fullscreen/game detection, mic/camera attribution, file sharing, autostart, and automatic updates are unavailable. Fullscreen auxiliary panel presentation is requested from macOS, but game-mode behavior is not ported. No parity with Windows is claimed.
+
+## Module and platform boundaries
+
+`Sources/QNotchMac/Shell/` owns AppKit windows, focus, hover, display events, navigation, search hosting, and general settings. `Modules/Contracts.swift` defines five local registries: **cards, tabs, status segments, search sources, and settings sections**. `ModuleList.swift` is the only composition file naming concrete modules. A disabled module is never constructed. Each module owns its state, providers, views, and preferences; it receives visibility and active-tab changes rather than inspecting window internals.
+
+`Modules/Timer/` supplies the real countdown module. A visible running countdown refreshes at most once per second; collapsed or hidden content schedules only its completion deadline. A stopped or paused timer has no scheduled work. Its collapsed segments (a progress ring and the time left) show whole minutes, so a running collapsed timer wakes once per minute and once per second only during its final minute, as on Windows. Completion is a justified one-shot background wake. Sleep/wake and clock-change events reconcile the wall-clock deadline; changing the system clock can change the remaining duration.
+
+`QNotchMacCore` contains Mac-local, testable geometry, countdown, shell-state, settings, and update-channel rules. It is not a cross-platform runtime and is not referenced by Windows. macOS APIs and future credential-store integrations stay inside this implementation.
+
+## Data, permissions, and diagnostics
+
+Default local root: `~/Library/Application Support/QNotch.Mac/`. `general.json` stores the selected display, reduced motion, and module enablement; `timer.json` stores duration and completion sound. Writes are atomic. Missing files use defaults. Corrupt files remain intact until the user explicitly saves replacement preferences; Settings reports unavailable storage and session-only changes. Display IDs are supplied by macOS and may change after hardware/system reconfiguration; fallback is explicit.
+
+`logs/session.log` contains bounded startup timing only and is replaced each launch. It contains no account identity, display names, credentials, or user data. `QNOTCH_MAC_DATA_DIR` and `--data-dir` replace the entire root, including logs and the instance lock. Secrets must go in Keychain when a module eventually needs them. This milestone has no network requests, analytics, Accessibility permission, Screen Recording permission, or notification authorization prompt.
+
+`smoke.sh` uses a unique temporary data root, exercises the actual AppKit shell and timer scheduler, exports idle/running pill, Home, Search, Timer, unavailable, and one PNG per Settings page, and requires a final `done` in `dist/macos/smoke/smoke.txt`. It fails without a graphical display or on a timeout. Inspect the PNGs after UI changes; snapshots do not capture another application's screen. CI uploads them as `macos-smoke`. The smoke test checks the actual AppKit window frame and view bounds against the bezel, camera exclusion, and side wings. Geometry tests cover bezel attachment, camera-safe placement, non-notched external displays with negative origins, and clamping; physically reconnecting multiple displays still needs a manual hardware check.
+
+## Performance: targets and evidence
+
+See the [recorded Mac measurements](performance.md) for the dated build, hardware, results, and limitations.
+
+Mac development targets: collapsed stopped-timer CPU at or below 0.1% of one core, zero app draw callbacks after settling, no app-scheduled repeating idle work, process-start-to-panel-ordering below 500 ms, and resident memory below 80 MiB. These are targets, not guarantees or imported Windows benchmarks. A collapsed running timer wakes once per minute (once per second in its final minute); an expanded running timer can wake once per second.
+
+Run the release build, keep the pointer away from the pill, and measure an isolated process:
+
+```sh
+bash scripts/macos/measure.sh
+```
+
+This waits three seconds, then records one 30-second collapsed-idle interval using `proc_pid_rusage` CPU time, resident size, and interrupt wakeups, plus app view draw counters. The two interval endpoints add no sampling loop. `dist/macos/measure/performance.json` records the source revision/dirty flag, app version, hardware model, physical memory, OS, state, method, elapsed interval, process-start-to-panel-ordering, and measurements. The launch metric uses the kernel process start timestamp and `mach_absolute_time`, and ends just after the panel is ordered front. It includes process startup and app initialization, but excludes waiting in Launch Services and first compositor presentation; it is not a click-to-visible benchmark. Draw callbacks do not establish compositor/GPU repaint counts, and interrupt wakeups are not total thread wakeups. Use Instruments/Energy Log for those measurements before making stronger claims. Include commit/build, hardware, memory, OS, state, interval, and method in any recorded evidence; keep results separate from targets.
+
+## CI and future releases
+
+The `macos` CI job uses an Apple silicon `macos-14` runner to build the real target, run XCTest regressions, and run native UI smoke validation. It is part of the required `build` aggregate alongside Windows, repository, and website validation; any failure, cancellation, or skipped dependency rejects the gate. PR builds do not use signing secrets. No release is published by these scripts or CI changes.
+
+The Mac update channel is reserved separately in `QNotchMacCore/UpdateChannel.swift`: filter the releases collection for valid `macos-vX.Y.Z` tags, never GitHub's global `/releases/latest`. Automatic updates and an appcast are unavailable in this milestone; adopting Sparkle remains a later decision.
+
+Mac release tags use `macos-vX.Y.Z`; artifacts use the supported `QNotch-macos-arm64.{dmg,zip}` convention. Use the existing [guarded publisher](../releases.md) with `--platform macos`, which always keeps `--latest=false`. Do not create a Mac release through an unguarded command. Windows tags, updater endpoint, filenames, ZIP layout, and publish profiles remain unchanged.
+
+Before a public download, configure Developer ID signing, hardened runtime, notarization, and stapling where applicable, then verify installation on a clean Mac. Store all actual identities and credentials privately. No release or signing setup is part of this milestone.
