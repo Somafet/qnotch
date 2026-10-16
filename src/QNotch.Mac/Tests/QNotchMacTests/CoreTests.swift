@@ -841,3 +841,23 @@ final class LaunchAgentTests: XCTestCase {
         XCTAssertEqual(LaunchAgentJob.parseDisabled("\tdisabled services = {\n\t\t\"me.backup\" => disabled\n\t\t\"x\" => enabled\n\t}"), ["me.backup"])
     }
 }
+
+final class NowPlayingTests: XCTestCase {
+    func testNotificationsAndInterpolation() throws {
+        let now = Date(timeIntervalSince1970: 1000)
+        let spotify = try XCTUnwrap(NowPlaying.from(notification: ["Name": "Hey Jude", "Artist": "The Beatles", "Album": "1", "Player State": "Playing",
+                                                                   "Duration": 431_000, "Playback Position": 12.5, "Track ID": "spotify:track:1"], source: .spotify, now: now))
+        XCTAssertEqual(spotify.duration, 431)
+        XCTAssertEqual(spotify.position(at: now.addingTimeInterval(10)), 22.5)
+        XCTAssertEqual(spotify.position(at: now.addingTimeInterval(1000)), 431)
+        XCTAssertEqual(spotify.trackID, "spotify:track:1")
+        let music = try XCTUnwrap(NowPlaying.from(notification: ["Name": "Song", "Player State": "Paused", "Total Time": 200_000, "PersistentID": 42], source: .music, now: now))
+        XCTAssertFalse(music.playing)
+        XCTAssertEqual(music.subtitle, "Music")
+        XCTAssertNil(music.position(at: now))
+        XCTAssertEqual(music.trackID, "42")
+        XCTAssertNil(NowPlaying.from(notification: ["Name": "x", "Player State": "Stopped"], source: .music))
+        XCTAssertEqual(NowPlaying.time(83), "1:23")
+        XCTAssertEqual(NowPlaying.time(3725), "1:02:05")
+    }
+}
