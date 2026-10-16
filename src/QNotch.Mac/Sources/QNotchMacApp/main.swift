@@ -1,5 +1,6 @@
 import QNotchMac
 
-// `QNotch notify …` sends a notification and exits before AppKit starts.
-NotifyClient.runIfRequested()
+// Command-line verbs run and exit before AppKit starts.
+NotifyClient.runIfRequested()   // QNotch notify …
+AgentHookCommand.runIfRequested() // QNotch agent [codex], run by Claude Code and Codex hooks
 QNotchApplication.run()

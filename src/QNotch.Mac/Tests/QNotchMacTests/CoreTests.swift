@@ -525,3 +525,93 @@ final class NotifyTests: XCTestCase {
         XCTAssertEqual(settings.toastSeconds, 60)
     }
 }
+
+final class AgentsTests: XCTestCase {
+    func testOrderedJSONKeepsOrderCommentsAndNumbers() throws {
+        let text = """
+        {
+          // user comment
+          "model": "opus",
+          "cleanupPeriodDays": 30.0,
+          "env": {"B": "2", "A": "1",},
+          "list": [1, true, null, "x\\"y\\u00e9"]
+        }
+        """
+        let value = try OrderedJSON.parse(text)
+        XCTAssertEqual(value.objectPairs?.map(\.0), ["model", "cleanupPeriodDays", "env", "list"])
+        XCTAssertEqual(value["env"]?.objectPairs?.map(\.0), ["B", "A"])
+        XCTAssertTrue(value.text().contains("\"cleanupPeriodDays\": 30.0"))
+        XCTAssertEqual(try OrderedJSON.parse(value.text()), value)
+        XCTAssertEqual(value["list"]?.arrayValue?.last?.stringValue, "x\"yé")
+        XCTAssertThrowsError(try OrderedJSON.parse("{\"a\": }"))
+    }
+
+    func testHookFilesConnectAndDisconnectOnlyTheirOwnEntries() throws {
+        let file = AgentHookFile(kind: .claude, executable: "/Applications/QNotch.app/Contents/MacOS/QNotch")
+        let user = #"{"theme": "dark", "hooks": {"Stop": [{"hooks": [{"type": "command", "command": "say done"}]}]}}"#
+        XCTAssertEqual(file.status(of: user), .notInstalled)
+        let connected = try file.connect(user)
+        XCTAssertEqual(file.status(of: connected), .connected)
+        let root = try OrderedJSON.parse(connected)
+        XCTAssertEqual(root.objectPairs?.first?.0, "theme")
+        XCTAssertEqual(root["hooks"]?["Stop"]?.arrayValue?.count, 2)
+        XCTAssertEqual(root["hooks"]?["PreToolUse"]?.arrayValue?.first?["matcher"]?.stringValue, "*")
+        XCTAssertEqual(try file.connect(connected), connected, "Connecting twice changes nothing")
+        let other = AgentHookFile(kind: .claude, executable: "/Users/me/code/qnotch/dist/macos/QNotch.app/Contents/MacOS/QNotch")
+        XCTAssertEqual(other.status(of: connected), .otherCopy("/Applications/QNotch.app/Contents/MacOS/QNotch"))
+        let disconnected = try file.disconnect(connected)
+        XCTAssertEqual(try OrderedJSON.parse(disconnected), try OrderedJSON.parse(user))
+        let codex = AgentHookFile(kind: .codex, executable: "/Applications/QNotch.app/Contents/MacOS/QNotch")
+        let codexText = try codex.connect(nil)
+        XCTAssertEqual(codex.status(of: codexText), .connected)
+        XCTAssertTrue(codexText.contains("\"timeout\": 3"))
+        XCTAssertEqual(file.status(of: codexText), .notInstalled, "Claude and Codex hooks are told apart")
+        if case .error = file.status(of: "[1]") {} else { XCTFail("A non-object file is an error") }
+    }
+
+    func testHookInputIsTranslatedAndLinksValidated() throws {
+        let ask = #"{"hook_event_name":"PreToolUse","session_id":"s1","cwd":"/code/api","tool_name":"AskUserQuestion","tool_input":{"questions":[{"question":"Which database?"}]},"transcript_path":"/t.jsonl"}"#
+        let event = try XCTUnwrap(AgentEvent.from(hookInput: Data(ask.utf8), codex: false, pid: 7, link: nil, at: 1))
+        XCTAssertEqual(event.message, "Which database?")
+        XCTAssertEqual(event.transcript, "/t.jsonl")
+        let codex = try XCTUnwrap(AgentEvent.from(hookInput: Data(#"{"hook_event_name":"PermissionRequest","session_id":"c","tool_name":"shell"}"#.utf8), codex: true, pid: nil, link: nil, at: 1))
+        XCTAssertEqual(codex.event, "Notification")
+        XCTAssertEqual(codex.type, "permission_prompt")
+        XCTAssertNil(codex.transcript)
+        XCTAssertTrue(AgentEvent.isValidLink("claude://code/continue?session=local_abc-123"))
+        XCTAssertTrue(AgentEvent.isValidLink("codex://threads/6F9619FF-8B86-D011-B42D-00CF4FC964FF"))
+        XCTAssertFalse(AgentEvent.isValidLink("claude://code/continue?session=local_a;rm"))
+        XCTAssertFalse(AgentEvent.isValidLink("https://evil.example"))
+    }
+
+    func testStatusMachineMatchesWindows() throws {
+        var board = AgentBoard()
+        func event(_ name: String, _ at: Double, tool: String? = nil, type: String? = nil, message: String? = nil, session: String = "s") -> AgentEvent {
+            AgentEvent(agent: "claude", event: name, session: session, cwd: "/code/api", message: message, type: type, tool: tool, pid: 42, at: at)
+        }
+        XCTAssertNil(board.apply(event("SessionStart", 1)))
+        XCTAssertEqual(board.sessions.first?.status, .ready)
+        board.apply(event("UserPromptSubmit", 2))
+        XCTAssertEqual(board.pillText, "1 working")
+        let alert = board.apply(event("Notification", 3, type: "permission_prompt", message: "Claude needs your permission to use Bash"))
+        guard case .needsYou(let s)? = alert else { return XCTFail("needs you") }
+        XCTAssertEqual(s.waitingTool, "Bash")
+        XCTAssertEqual(board.pillText, "api needs you")
+        board.apply(event("PostToolUse", 4, tool: "Read"))
+        XCTAssertEqual(board.sessions.first?.status, .needsYou, "Another tool's event does not clear the wait")
+        board.apply(event("PostToolUse", 5, tool: "Bash"))
+        XCTAssertEqual(board.sessions.first?.status, .working)
+        XCTAssertNil(board.apply(event("Stop", 3)), "Out-of-order events are ignored")
+        guard case .done? = board.apply(event("Stop", 6)) else { return XCTFail("done") }
+        board.apply(event("UserPromptSubmit", 7))
+        XCTAssertNil(board.apply(event("Notification", 8, type: "idle_prompt")), "An interrupt is not announced")
+        XCTAssertEqual(board.sessions.first?.status, .done)
+        board.apply(event("SessionEnd", 9))
+        XCTAssertTrue(board.sessions.isEmpty)
+        board.apply(event("Stop", 10))
+        XCTAssertTrue(board.sessions.isEmpty, "A late Stop after SessionEnd does not bring the row back")
+        board.apply(event("SessionStart", 11, session: "t"))
+        XCTAssertTrue(board.processEnded(42))
+        XCTAssertNil(board.pillText)
+    }
+}

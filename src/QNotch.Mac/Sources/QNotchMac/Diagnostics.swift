@@ -148,15 +148,18 @@ enum NativeSmokeTest {
                         shell.close(restoreFocus: false)
                         exerciseNotifications(shell: shell, output: output) { problem in
                         if let problem { return fail(problem, output: output) }
+                        exerciseAgents(shell: shell, output: output) { problem in
+                        if let problem { return fail(problem, output: output) }
                         shell.openSettings()
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                             do {
                                 try shell.settings?.snapshotPages(to: output)
                                 shell.settings?.window.close()
-                                let report = "Native UI smoke: actual window placement verified; camera center reserved; hover preserves focus; explicit summon grants keyboard; Escape collapses; running timer shows its status wing; toggle and search hotkeys work; timer completes hidden with one wake and opens Home; disabled module not constructed; every Home card rendered; notify command, waiting answer and loopback HTTP work; clipboard skips concealed content; file tray accepts drops and lists files; pin, card hiding and accent applied; mic and camera segment shown; system stats sampled; note saved after its debounce; interactive controls named; every settings page rendered.\nstartup_seconds=\(ready)\n\(screenLocked ? "note=screen locked; window-server key status not checked\n" : "")done\n"
+                                let report = "Native UI smoke: actual window placement verified; camera center reserved; hover preserves focus; explicit summon grants keyboard; Escape collapses; running timer shows its status wing; toggle and search hotkeys work; timer completes hidden with one wake and opens Home; disabled module not constructed; every Home card rendered; notify command, waiting answer and loopback HTTP work; agent hooks update the board; clipboard skips concealed content; file tray accepts drops and lists files; pin, card hiding and accent applied; mic and camera segment shown; system stats sampled; note saved after its debounce; interactive controls named; every settings page rendered.\nstartup_seconds=\(ready)\n\(screenLocked ? "note=screen locked; window-server key status not checked\n" : "")done\n"
                                 try Data(report.utf8).write(to: output.appendingPathComponent("smoke.txt"))
                                 NSApp.terminate(nil)
                             } catch { fail(error, output: output) }
+                        }
                         }
                         }
                     } catch { fail(error, output: output) }
@@ -164,6 +167,50 @@ enum NativeSmokeTest {
             } catch { fail(error, output: output) }
         }
     }
+    /// Hook events through the real `QNotch agent` binary, then sample sessions for the snapshots.
+    private static func exerciseAgents(shell: ShellController, output: URL, done: @escaping (Error?) -> Void) {
+        guard let module = shell.modules.lazy.compactMap({ $0 as? AgentsModule }).first else { return done(nil) }
+        let directory = shell.store.directory.path
+        let events = [#"{"hook_event_name":"UserPromptSubmit","session_id":"smoke","cwd":"/tmp/demo-app"}"#,
+                      #"{"hook_event_name":"Notification","session_id":"smoke","cwd":"/tmp/demo-app","notification_type":"permission_prompt","message":"Claude needs your permission to use Bash"}"#]
+        func send(_ index: Int) {
+            guard index < events.count else {
+                // Hooks are async: give the socket a moment.
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    guard module.board.sessions.first(where: { $0.id == "smoke" })?.status == .needsYou, module.board.pillText == "demo-app needs you" else {
+                        return done(Failure("Agent hook events did not reach the board (\(module.board.sessions))"))
+                    }
+                    try? shell.snapshot(to: output.appendingPathComponent("pill-agent.png"))
+                    module.seed()
+                    shell.open(keyboard: false)
+                    shell.selectTab("agents")
+                    try? shell.snapshot(to: output.appendingPathComponent("agents.png"))
+                    shell.close(restoreFocus: false)
+                    done(nil)
+                }
+                return
+            }
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: Bundle.main.executablePath!)
+            process.arguments = ["agent"]
+            process.environment = ["QNOTCH_MAC_DATA_DIR": directory]
+            let input = Pipe()
+            process.standardInput = input
+            process.terminationHandler = { process in
+                DispatchQueue.main.async {
+                    guard process.terminationStatus == 0 else { return done(Failure("QNotch agent exited with \(process.terminationStatus)")) }
+                    send(index + 1)
+                }
+            }
+            do {
+                try process.run()
+                input.fileHandleForWriting.write(Data(events[index].utf8))
+                try input.fileHandleForWriting.close()
+            } catch { done(error) }
+        }
+        send(0)
+    }
+
     /// The real `QNotch notify` binary and loopback HTTP against this isolated instance.
     private static func exerciseNotifications(shell: ShellController, output: URL, done: @escaping (Error?) -> Void) {
         guard let module = shell.modules.lazy.compactMap({ $0 as? NotificationsModule }).first else { return done(nil) }

@@ -30,7 +30,9 @@ enum ModuleList {
         ModuleInfo(id: "clipboard", title: "Clipboard history", detail: "Text and images you copy, kept in memory. Concealed content from password managers is never captured.",
                    symbol: "doc.on.clipboard.fill", tint: .systemIndigo) { ClipboardModule() },
         ModuleInfo(id: "notifications", title: "Notifications", detail: "Lets apps and scripts post notifications to the notch: QNotch notify, a local socket or loopback HTTP.",
-                   symbol: "bell.badge.fill", tint: .systemRed) { NotificationsModule() }
+                   symbol: "bell.badge.fill", tint: .systemRed) { NotificationsModule() },
+        ModuleInfo(id: "agents", title: "Agents", detail: "Live Claude Code and Codex sessions: working, needs you or done, beside the notch and in the Agents tab.",
+                   symbol: "sparkles", tint: .systemOrange) { AgentsModule() }
     ]
 
     static func make(disabled: [String]) -> [NotchModule] {
