@@ -1,5 +1,14 @@
 # Mac milestone measurements
 
+## All parity modules enabled
+
+Measured 2026-10-16 on the same Mac14,2, 8 GiB, macOS 26.3 configuration with all 15 modules enabled (media, stats, timer, volume, note, colorpicker, capture, filetray, clipboard, notifications, agents, weather, github, ai, scheduled).
+
+- **Enabled, nothing active** (no stats in the wings): **0 app draw callbacks**, **0.0012% of one core**, **33 interrupt wakeups** in 30.3 seconds, resident **70.4 MiB**, footprint **10.9 MiB**. The remaining wakes are the agreed 1-second clipboard check; T3 Code database reads also count when a T3 conversation is active during the run, as it was here.
+- **Default stats wings**: **0 app draw callbacks**, **0.0025% of one core**, **42 interrupt wakeups**, resident **71.0 MiB**, footprint **11.1 MiB**.
+
+Both stay within the targets (0 draws, under 0.1% of one core, under 80 MiB resident). Repeating work while collapsed is limited to the clipboard check (while Clipboard history is on) and the 5-second stats sample (while a sampled stat is in the wings). Everything else is event driven or runs only while its view is on screen: weather, GitHub and AI usage use one-shot timers of 10 minutes or more. [Raw sample](performance-2026-10-16-all-modules.json).
+
 ## Parity modules: Timer, Volume, Note, Color picker, Mic and camera, System stats
 
 Measured 2026-10-16 on the same Mac14,2, 8 GiB, macOS 26.3 configuration (release/arm64, built from the working tree that this commit records). `measure.sh` now records two 30-second collapsed intervals with every module enabled:

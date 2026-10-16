@@ -77,6 +77,12 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
             return opening
         }
         panel.escaped = { [weak self] in self?.close() }
+        panel.canNudge = { [weak self] in
+            guard let self, let layout = self.layout else { return false }
+            return !layout.integratesCameraHousing && !self.state.expanded && !self.gameActive
+        }
+        panel.nudged = { [weak self] dx in self?.nudge(by: dx) }
+        panel.nudgeEnded = { [weak self] doubleClick in self?.endNudge(center: doubleClick) }
         panel.typed = { [weak self] text in self?.typeToSearch(text) }
         registerShellSearch()
         shortcuts.add("toggle", title: "Toggle panel", hint: "Opens or closes the panel, ready for typing.", gesture: "ctrl+opt+n", order: 0) { [weak self] in
@@ -320,7 +326,9 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
             gap = CGRect(x: left.maxX, y: screen.frame.maxY - screen.safeAreaInsets.top,
                          width: max(0, right.minX - left.maxX), height: screen.safeAreaInsets.top)
         } else { gap = nil }
-        return DisplayLayout(frame: screen.frame, visibleFrame: screen.visibleFrame, safeTop: screen.safeAreaInsets.top, cameraGap: gap)
+        var layout = DisplayLayout(frame: screen.frame, visibleFrame: screen.visibleFrame, safeTop: screen.safeAreaInsets.top, cameraGap: gap)
+        layout.offset = nudgeStart.map { $0 + nudgeDelta } ?? CGFloat(general.pillOffsets[String(Self.displayID(screen))] ?? 0)
+        return layout
     }
 
     /// The settled window frame for the current presentation.
@@ -686,6 +694,28 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
             let size = pill.fittingSize
             surface.place(pill, at: CGRect(x: rect.midX - size.width / 2, y: rect.midY - size.height / 2, width: size.width, height: size.height))
         }
+    }
+
+    // MARK: Nudge (floating pill only)
+
+    private var nudgeStart: CGFloat?
+    private var nudgeDelta: CGFloat = 0
+
+    private func nudge(by dx: CGFloat) {
+        if nudgeStart == nil, let screen { nudgeStart = CGFloat(general.pillOffsets[String(Self.displayID(screen))] ?? 0) }
+        nudgeDelta = dx
+        present(.none)
+    }
+
+    /// Settles the pill at the center or an edge when close to one, and remembers the spot per display.
+    private func endNudge(center: Bool) {
+        guard let screen, let layout else { return }
+        let width = layout.surface(expanded: false, wing: wing).width
+        let target = center ? 0 : layout.snapped(offset: layout.offset, width: width)
+        nudgeStart = nil
+        nudgeDelta = 0
+        updateGeneral { $0.pillOffsets[String(Self.displayID(screen))] = target == 0 ? nil : Double(target) }
+        present(.nudge)
     }
 
     // MARK: Profile

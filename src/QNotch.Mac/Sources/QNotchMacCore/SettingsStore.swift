@@ -30,6 +30,8 @@ public struct GeneralSettings: Codable, Equatable {
     /// Edit mode: the user's order of Home cards and of module tabs (see LayoutOrder).
     public var cardOrder: [String] = []
     public var tabOrder: [String] = []
+    /// Floating-pill offsets by display id (points from the display's center).
+    public var pillOffsets: [String: Double] = [:]
     public init() {}
 
     public func isEnabled(_ module: String) -> Bool { !disabledModules.contains(module) }
@@ -50,7 +52,7 @@ public struct GeneralSettings: Codable, Equatable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case displayID, reduceMotion, disabledModules, timerEnabled, hoverDelayMs, closeDelayMs, pinned, accent, profileName, hiddenCards, cardOrder, tabOrder
+        case displayID, reduceMotion, disabledModules, timerEnabled, hoverDelayMs, closeDelayMs, pinned, accent, profileName, hiddenCards, cardOrder, tabOrder, pillOffsets
     }
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -67,6 +69,7 @@ public struct GeneralSettings: Codable, Equatable {
         hiddenCards = c.value(.hiddenCards, [])
         cardOrder = c.value(.cardOrder, [])
         tabOrder = c.value(.tabOrder, [])
+        pillOffsets = c.value(.pillOffsets, [:])
     }
     public func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
@@ -81,6 +84,7 @@ public struct GeneralSettings: Codable, Equatable {
         try c.encode(hiddenCards, forKey: .hiddenCards)
         try c.encode(cardOrder, forKey: .cardOrder)
         try c.encode(tabOrder, forKey: .tabOrder)
+        try c.encode(pillOffsets, forKey: .pillOffsets)
     }
 }
 

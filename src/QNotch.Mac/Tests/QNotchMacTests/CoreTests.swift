@@ -937,3 +937,20 @@ final class SetupCodeTests: XCTestCase {
         XCTAssertThrowsError(try SetupCode.read(outOfRange, current: base, modules: []))
     }
 }
+
+final class NudgeTests: XCTestCase {
+    func testFloatingPillSnapsAndNotchNeverMoves() {
+        var pill = DisplayLayout(frame: CGRect(x: 0, y: 0, width: 1920, height: 1080), visibleFrame: CGRect(x: 0, y: 0, width: 1920, height: 1055), safeTop: 0, cameraGap: nil)
+        XCTAssertEqual(pill.snapped(offset: 40, width: 96), 0)
+        XCTAssertEqual(pill.snapped(offset: 400, width: 96), 400)
+        XCTAssertEqual(pill.snapped(offset: 880, width: 96), 904)
+        XCTAssertEqual(pill.snapped(offset: -5000, width: 96), -904)
+        pill.offset = 400
+        XCTAssertEqual(pill.surface(expanded: false).midX, 1360)
+        var notch = DisplayLayout(frame: CGRect(x: 0, y: 0, width: 1470, height: 956), visibleFrame: CGRect(x: 0, y: 0, width: 1470, height: 919), safeTop: 37,
+                                  cameraGap: CGRect(x: 650, y: 919, width: 170, height: 37))
+        let before = notch.surface(expanded: false)
+        notch.offset = 300
+        XCTAssertEqual(notch.surface(expanded: false), before)
+    }
+}

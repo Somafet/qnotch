@@ -8,6 +8,10 @@ enum RenderDiagnostics {
 final class NotchPanel: NSPanel {
     var keyboardAllowed = false
     var clicked: (() -> Bool)?
+    /// Sideways drags of a floating pill: whether one may start, then each move and the release.
+    var canNudge: (() -> Bool)?
+    var nudged: ((CGFloat) -> Void)?
+    var nudgeEnded: ((_ doubleClick: Bool) -> Void)?
     var escaped: (() -> Void)?
     /// Printable keys typed while no text field has focus (type-to-search).
     var typed: ((String) -> Void)?
@@ -18,10 +22,27 @@ final class NotchPanel: NSPanel {
     override func constrainFrameRect(_ frameRect: NSRect, to screen: NSScreen?) -> NSRect { frameRect }
     override func sendEvent(_ event: NSEvent) {
         // Consume the opening click so it cannot also hit a newly revealed control.
+        if event.type == .leftMouseDown, canNudge?() == true, trackNudge(event) { return }
         if event.type == .leftMouseDown, clicked?() == true { return }
         super.sendEvent(event)
     }
     override func cancelOperation(_ sender: Any?) { escaped?() }
+
+    /// A press that moves 5 points sideways drags the pill; a double-click re-centers it.
+    /// Returns false for a plain click, which then opens the panel as usual.
+    private func trackNudge(_ down: NSEvent) -> Bool {
+        if down.clickCount == 2 { nudgeEnded?(true); return true }
+        let start = NSEvent.mouseLocation
+        var dragging = false
+        while let event = nextEvent(matching: [.leftMouseDragged, .leftMouseUp], until: .distantFuture, inMode: .eventTracking, dequeue: true) {
+            let dx = NSEvent.mouseLocation.x - start.x
+            if !dragging, abs(dx) > 5 { dragging = true }
+            if dragging { nudged?(dx) }
+            if event.type == .leftMouseUp { break }
+        }
+        if dragging { nudgeEnded?(false) }
+        return dragging
+    }
     override func keyDown(with event: NSEvent) {
         let modifiers = event.modifierFlags.intersection([.command, .control, .option])
         if modifiers == .command, event.charactersIgnoringModifiers == "f" { typed?(""); return }
