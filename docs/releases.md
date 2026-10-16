@@ -1,6 +1,6 @@
 # Releases and CI
 
-QNotch has one repository and independent platform channels. Windows is available; macOS is planned and has no build target or download yet. Preserve the compatibility contract below for already-installed Windows versions.
+QNotch has one repository and independent platform channels. Windows is available; macOS has a native development target and no public download yet. Preserve the compatibility contract below for already-installed Windows versions.
 
 ## Windows compatibility contract
 
@@ -53,11 +53,12 @@ Do not publish a Mac release until a real app target, supported-platform documen
 The CI workflow runs on every pull request and every push to `main`, without top-level path filters:
 
 - `windows`: existing warning-free .NET build, updater tests, phone-sharing tests, and isolated snapshot smoke test. Snapshot artifacts retain the name `snapshots`.
+- `macos`: real Apple silicon Swift/AppKit release build without signing credentials, XCTest regressions, and isolated native UI smoke checks with PNG artifacts named `macos-smoke`.
 - `repository`: Node.js 24+, `npm ci`, and `npm test` at the root, followed by pinned actionlint in Docker on the Linux runner. One development dependency parses workflow/issue YAML; it is not an app runtime dependency. Checks cover release channels, upload/promotion failure paths, workflow ordering, documentation links, and forms.
 - `website`: its own Node.js 24+ install and static Astro build under `website/`. Its lockfile and dependencies are separate from repository tooling.
 - `build`: the existing required branch-protection check. It always evaluates after the jobs above and succeeds only if all succeeded. A failed, cancelled, or skipped dependency cannot silently turn it green.
 
-The Windows job intentionally runs even for documentation and website pull requests for now. This keeps the existing protection reliable without introducing change-detection logic. Contributors can run only their affected local checks; CI verifies the full repository. Do not add empty Mac jobs or rename the required `build` check. When the first Mac target exists, add its real validation job to both the aggregate dependencies and success gate, and update the workflow contract tests.
+The Windows job intentionally runs even for documentation and website pull requests for now. This keeps the existing protection reliable without introducing change-detection logic. Contributors can run only their affected local checks; CI verifies the full repository. The real Mac validation job is included in both the aggregate dependencies and success gate, with workflow contract tests. Do not rename the required `build` check or replace platform validation with empty jobs.
 
 Repository label definitions live in [.github/labels.yml](../.github/labels.yml). They are a small managed subset; unrelated existing labels should be preserved. Updating that file does not itself change GitHub labels.
 

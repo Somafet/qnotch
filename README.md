@@ -7,7 +7,7 @@ Free and open source under the [MIT license](LICENSE). No account required.
 ## Platforms
 
 - **Windows: available.** The existing C#/.NET 10 WPF app stays in `src/QNotch/`. [Download Windows](https://github.com/Somafet/qnotch/releases/latest) · [Windows guide](docs/windows/README.md) · [Build and test](docs/windows/development.md).
-- **macOS: planned.** No download, build target, minimum OS version, or framework has been selected. [Mac port status and contribution scope](docs/macos/README.md).
+- **macOS: development milestone.** Native Swift/AppKit menu-bar shell and countdown timer for Apple silicon, macOS 13+. No public download yet. [Build, run, test, and limitations](docs/macos/README.md).
 
 Both ports belong in this repository and can release independently. A feature being available on Windows does not imply Mac support. The landing page and interactive demo currently describe Windows.
 
@@ -47,7 +47,7 @@ Windows defaults include Ctrl+Alt+N to toggle the panel, Ctrl+Alt+F to search, a
 
 ## Privacy and data
 
-The Windows app stores settings, notes, and logs locally, and secrets in Windows Credential Manager. Clipboard history stays in memory unless you choose to save it. Optional integrations and update checks make network requests. [Data locations and network behavior](docs/windows/README.md#privacy-and-data). Mac data locations and permissions will be documented with its implementation.
+The Windows app stores settings, notes, and logs locally, and secrets in Windows Credential Manager. Clipboard history stays in memory unless you choose to save it. Optional integrations and update checks make network requests. [Data locations and network behavior](docs/windows/README.md#privacy-and-data). The Mac milestone keeps preferences and bounded startup logs in `~/Library/Application Support/QNotch.Mac/` and makes no network requests. [Mac data and permissions](docs/macos/README.md#data-permissions-and-diagnostics).
 
 ## Performance
 
@@ -58,7 +58,7 @@ The existing Windows measurements are about 0.08% of one core and 42 MB resident
 Choose the area you are working on:
 
 - [Windows development](docs/windows/development.md): .NET 10 build, updater/phone-sharing tests, snapshots, and both publish profiles.
-- [macOS development status](docs/macos/README.md): no executable target yet.
+- [macOS development](docs/macos/README.md): native build, tests, UI smoke checks, and launch commands.
 - [Website](website/README.md): independent Astro project.
 - [Repository tooling and CI](docs/releases.md#required-checks): Node.js 24+, `npm ci`, then `npm test` from the root.
 

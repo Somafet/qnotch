@@ -1,18 +1,18 @@
 # Contributing to QNotch
 
-Bug reports, fixes, documentation, and extensions are welcome. One repository hosts the released Windows app, its website, and preparation for a Mac port. You can contribute to one area without owning both operating systems.
+Bug reports, fixes, documentation, and extensions are welcome. One repository hosts the released Windows app, its website, and a native Mac development milestone. You can contribute to one area without owning both operating systems.
 
 ## Before you start
 
 - **Bugs:** include the platform/area, OS and architecture, app version or commit, reproduction steps, and relevant logs. Remove personal details, tokens, and signing/account information.
 - **Small fixes:** send a focused pull request directly.
 - **New extensions or larger changes:** open an issue describing the behavior and where it appears: card, tab, pill, game bar, settings, or platform integration. Space is limited, so agree on scope first.
-- **Mac work:** read [its status and scope](docs/macos/README.md). No framework, app target, download, or feature parity is implied yet.
+- **Mac work:** read [its status and scope](docs/macos/README.md). Its Swift/AppKit target currently supports Apple silicon on macOS 13+; no public download or feature parity is implied.
 
 ## Choose an area
 
 - `src/QNotch/` and `tests/QNotch.*Tests/`: Windows C#/WPF implementation and tests. Existing paths and solution stay intact.
-- `src/QNotch.Mac/`: reserved future Mac source location; do not add an empty application project.
+- `src/QNotch.Mac/`: native Swift/AppKit shell, platform-local contracts, countdown module, and XCTest regressions.
 - `website/`: static Astro landing page and interactive Windows demo.
 - `scripts/`, `tests/repository/`, and `.github/`: cross-platform repository checks and publishing policy.
 - `spec/` and `tests/fixtures/`: shared behavior and concrete compatibility examples. Avoid speculative shared runtime code.
@@ -36,7 +36,16 @@ Follow [Windows development](docs/windows/development.md) for isolated snapshots
 
 ### macOS
 
-There are no Mac build or test commands yet. Add real commands, supported OS/architectures, isolated settings/log locations, and validation with the first implementation. Do not require Windows tools for Mac-only work or report unrun checks as passing.
+Use Apple silicon and Xcode 15+ (Swift 5.9+). From the repository root:
+
+```sh
+bash scripts/macos/build.sh
+bash scripts/macos/test.sh
+bash scripts/macos/smoke.sh
+open dist/macos/QNotch.app
+```
+
+See [Mac development](docs/macos/README.md) for toolchain selection, isolated data/log locations, accessibility and snapshot checks, limitations, and performance measurement. Inspect native smoke PNGs after UI changes. Do not require Windows tools for Mac-only work or report unrun checks as passing.
 
 ### Website
 
@@ -63,7 +72,7 @@ These tests run on Windows, macOS, and Linux and never publish a release. They v
 
 For release or shared-protocol changes, also run affected Windows regressions. If packaging changes, publish both variants and run `--verify-publish` as described in [Windows development](docs/windows/development.md). Keep tags, asset names, ZIP layout, and the latest endpoint compatible with installed clients. Read [release policy](docs/releases.md) before editing workflows or publishing.
 
-CI's required check remains named `build`. It aggregates `windows`, `repository`, and `website`, and rejects failed, cancelled, or skipped dependencies. Add a Mac job to the gate only when there is a real target.
+CI's required check remains named `build`. It aggregates `windows`, `macos`, `repository`, and `website`, and rejects failed, cancelled, or skipped dependencies. The Mac job builds the real unsigned app, runs regressions, and validates the native UI.
 
 ## Extensions and platform boundaries
 

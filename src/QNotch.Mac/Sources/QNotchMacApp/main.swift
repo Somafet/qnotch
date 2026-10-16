@@ -1,0 +1,3 @@
+import QNotchMac
+
+QNotchApplication.run()

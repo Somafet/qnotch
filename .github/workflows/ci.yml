@@ -55,6 +55,24 @@ jobs:
           path: snapshots
           if-no-files-found: ignore
 
+  macos:
+    runs-on: macos-14
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build native Mac app without signing credentials
+        run: bash scripts/macos/build.sh
+      - name: Mac regression tests
+        run: bash scripts/macos/test.sh
+      - name: Native Mac UI smoke test
+        run: bash scripts/macos/smoke.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: macos-smoke
+          path: dist/macos/smoke
+          if-no-files-found: error
+
   repository:
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -89,16 +107,18 @@ jobs:
   build:
     name: build
     if: always()
-    needs: [windows, repository, website]
+    needs: [windows, macos, repository, website]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - name: Require every validation job to succeed
         env:
           WINDOWS_RESULT: ${{ needs.windows.result }}
+          MACOS_RESULT: ${{ needs.macos.result }}
           REPOSITORY_RESULT: ${{ needs.repository.result }}
           WEBSITE_RESULT: ${{ needs.website.result }}
         run: |
           test "$WINDOWS_RESULT" = success
+          test "$MACOS_RESULT" = success
           test "$REPOSITORY_RESULT" = success
           test "$WEBSITE_RESULT" = success

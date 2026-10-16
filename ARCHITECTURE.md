@@ -2,7 +2,7 @@
 
 ## Repository and shared principles
 
-One repository hosts the Windows app, the website, and preparation for a macOS port. Windows remains in `src/QNotch/`; `src/QNotch.Mac/` is reserved for the future Mac implementation. No Mac build target or framework has been selected. [The platform guides](docs/README.md) describe what exists and how to contribute.
+One repository hosts the Windows app, the website, and a native Swift/AppKit macOS development milestone. Windows remains in `src/QNotch/`; `src/QNotch.Mac/` contains the Mac shell and countdown module. The [Mac guide](docs/macos/README.md) defines its independent module and lifecycle contracts. [The platform guides](docs/README.md) describe what exists and how to contribute.
 
 The common product contract is in [spec/README.md](spec/README.md): a small shell, independently enabled modules, explicit unavailable states, local data, bounded memory, and work driven by events and visibility. Share behavior and protocol fixtures where useful; UI controls, providers, credentials, launch behavior, and packaging belong to their platform. Do not promise matching features until both implementations support them.
 

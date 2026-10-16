@@ -54,6 +54,24 @@ test('Windows release workflow validates tags and both packages before guarded p
   assert.ok(runs.some(run => run.includes('npm test')));
 });
 
+test('Mac validation builds a real native app, runs regressions and UI smoke, without signing secrets or publishing', () => {
+  const mac = yaml('.github/workflows/ci.yml').jobs.macos;
+  assert.equal(mac['runs-on'], 'macos-14');
+  const runs = mac.steps.filter(step => step.run).map(step => step.run);
+  assert.deepEqual(runs, ['bash scripts/macos/build.sh', 'bash scripts/macos/test.sh', 'bash scripts/macos/smoke.sh']);
+  assert.ok(!JSON.stringify(mac).includes('secrets.'));
+  assert.ok(!JSON.stringify(mac).includes('publish-release'));
+  const artifact = mac.steps.find(step => step.uses?.startsWith('actions/upload-artifact@'));
+  assert.equal(artifact.with.name, 'macos-smoke');
+  assert.equal(artifact.with['if-no-files-found'], 'error');
+  assert.ok(existsSync(resolve(root, 'src/QNotch.Mac/Package.swift')));
+  assert.ok(existsSync(resolve(root, 'src/QNotch.Mac/Sources/QNotchMacApp/main.swift')));
+  const build = readFileSync(resolve(root, 'scripts/macos/build.sh'), 'utf8');
+  assert.ok(build.includes('-warnings-as-errors'));
+  assert.ok(build.includes('--arch arm64'));
+  assert.ok(!build.includes('dist/QNotch.exe'));
+});
+
 test('issue forms and labels are valid YAML and use existing managed label names', () => {
   const labels = yaml('.github/labels.yml').map(label => label.name);
   for (const path of ['.github/ISSUE_TEMPLATE/bug_report.yml', '.github/ISSUE_TEMPLATE/feature_request.yml']) {
