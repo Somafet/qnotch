@@ -19,6 +19,7 @@ enum NativeSmokeTest {
                     throw Failure("Hover took keyboard focus")
                 }
                 try shell.snapshot(to: output.appendingPathComponent("home.png"))
+                try snapshotCards(shell: shell, output: output)
                 shell.selectTab("search")
                 try shell.snapshot(to: output.appendingPathComponent("search.png"))
                 shell.selectTab("timer")
@@ -63,7 +64,7 @@ enum NativeSmokeTest {
                             do {
                                 try shell.settings?.snapshotPages(to: output)
                                 shell.settings?.window.close()
-                                let report = "Native UI smoke: actual window placement verified; camera center reserved; hover preserves focus; explicit summon grants keyboard; Escape collapses; running timer shows its status wing; toggle and search hotkeys work; timer completes hidden with one wake; disabled module not constructed; interactive controls named; every settings page rendered.\nstartup_seconds=\(ready)\ndone\n"
+                                let report = "Native UI smoke: actual window placement verified; camera center reserved; hover preserves focus; explicit summon grants keyboard; Escape collapses; running timer shows its status wing; toggle and search hotkeys work; timer completes hidden with one wake; disabled module not constructed; every Home card rendered; interactive controls named; every settings page rendered.\nstartup_seconds=\(ready)\ndone\n"
                                 try Data(report.utf8).write(to: output.appendingPathComponent("smoke.txt"))
                                 NSApp.terminate(nil)
                             } catch { fail(error, output: output) }
@@ -73,6 +74,21 @@ enum NativeSmokeTest {
             } catch { fail(error, output: output) }
         }
     }
+    /// One PNG per Home card (cards past the first rows are scrolled out of home.png).
+    private static func snapshotCards(shell: ShellController, output: URL) throws {
+        guard let root = shell.panel.contentView else { return }
+        var found: [String: NSView] = [:]
+        func walk(_ view: NSView) {
+            if let id = view.identifier?.rawValue, id.hasPrefix("card-") { found[String(id.dropFirst(5))] = view }
+            view.subviews.forEach(walk)
+        }
+        walk(root)
+        for card in shell.registries.cards.items {
+            guard let view = found[card.id] else { throw Failure("Home card \(card.id) is not on Home") }
+            try ShellController.snapshot(view: view, to: output.appendingPathComponent("card-\(card.id).png"))
+        }
+    }
+
     private static func checkPlacement(shell: ShellController, layout: DisplayLayout) throws {
         guard let expected = shell.expectedFrame else { throw Failure("No expected surface") }
         guard abs(shell.panel.frame.maxY - expected.maxY) <= 0.5,

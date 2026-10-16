@@ -517,3 +517,81 @@ final class ActionPopUp: NSPopUpButton {
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
     @objc private func pick() { changed(indexOfSelectedItem) }
 }
+
+/// Horizontal level slider for the dark notch (Windows Slider style): soft track, accent fill and a
+/// light knob. Native NSSlider renders inactive in a non-key panel, which is how the notch usually
+/// is while hovered. Click or drag anywhere on the track; arrow keys step; VoiceOver sees a slider.
+final class LevelSlider: NSControl {
+    var value: Double = 0 { didSet { value = min(maxValue, max(0, value)); needsLayout = true } }
+    var maxValue: Double = 100
+    var step: Double = 2
+    var changed: ((Double) -> Void)?
+    var dimmed = false { didSet { if oldValue != dimmed { Motion.animate(0.14) { fill.animator().alphaValue = dimmed ? 0.4 : 1 } } } }
+    private let track = FillView(fill: Palette.control, radius: 2)
+    private let fill = FillView(fill: Palette.accent, radius: 2)
+    private let knob = FillView(fill: Palette.textPrimary, radius: 7)
+
+    init(label: String) {
+        super.init(frame: .zero)
+        wantsLayer = true
+        [track, fill, knob].forEach(addSubview)
+        knob.layer?.shadowOpacity = 0.35
+        knob.layer?.shadowRadius = 2
+        knob.layer?.shadowOffset = CGSize(width: 0, height: -1)
+        heightAnchor.constraint(equalToConstant: 18).isActive = true
+        setAccessibilityElement(true)
+        setAccessibilityRole(.slider)
+        setAccessibilityLabel(label)
+    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override var acceptsFirstResponder: Bool { isEnabled }
+    override var isEnabled: Bool { didSet { alphaValue = isEnabled ? 1 : 0.4 } }
+
+    override func layout() {
+        super.layout()
+        let inset: CGFloat = 7, y = bounds.midY
+        let width = max(0, bounds.width - inset * 2)
+        let x = inset + width * CGFloat(maxValue > 0 ? value / maxValue : 0)
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        track.frame = NSRect(x: inset, y: y - 2, width: width, height: 4)
+        fill.frame = NSRect(x: inset, y: y - 2, width: x - inset, height: 4)
+        knob.frame = NSRect(x: x - 7, y: y - 7, width: 14, height: 14)
+        CATransaction.commit()
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        guard isEnabled else { return }
+        track(event)
+        while let next = window?.nextEvent(matching: [.leftMouseDragged, .leftMouseUp]) {
+            track(next)
+            if next.type == .leftMouseUp { break }
+        }
+    }
+
+    private func track(_ event: NSEvent) {
+        let point = convert(event.locationInWindow, from: nil)
+        let fraction = Double((point.x - 7) / max(1, bounds.width - 14))
+        set((fraction * maxValue).rounded())
+    }
+
+    override func keyDown(with event: NSEvent) {
+        switch event.specialKey {
+        case .leftArrow?, .downArrow?: set(value - step)
+        case .rightArrow?, .upArrow?: set(value + step)
+        default: super.keyDown(with: event)
+        }
+    }
+
+    private func set(_ next: Double) {
+        let clamped = min(maxValue, max(0, next))
+        guard clamped != value else { return }
+        value = clamped
+        changed?(clamped)
+    }
+
+    override func accessibilityValue() -> Any? { "\(Int(value))%" }
+    override func accessibilityPerformIncrement() -> Bool { set(value + step); return true }
+    override func accessibilityPerformDecrement() -> Bool { set(value - step); return true }
+}

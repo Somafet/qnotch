@@ -229,3 +229,19 @@ final class CoreTests: XCTestCase {
         XCTAssertEqual(CardGrid.rows([]), 0)
     }
 }
+
+final class VolumeLevelTests: XCTestCase {
+    func testStepsClampAndRaisingUnmutes() {
+        let muted = VolumeLevel(scalar: 0.5, muted: true)
+        XCTAssertEqual(muted.text, "Muted")
+        XCTAssertEqual(muted.symbol, "speaker.slash.fill")
+        XCTAssertEqual(muted.stepped(by: 1), VolumeLevel(scalar: 0.52, muted: false))
+        XCTAssertEqual(VolumeLevel(scalar: 0.99, muted: false).stepped(by: 3).percent, 100)
+        XCTAssertEqual(VolumeLevel(scalar: 0.01, muted: false).stepped(by: -1).percent, 0)
+        XCTAssertTrue(VolumeLevel(scalar: 0, muted: false).isSilent)
+        XCTAssertEqual(VolumeLevel(scalar: 0.333, muted: false).text, "33%")
+        XCTAssertEqual(VolumeLevel(scalar: 0.8, muted: false).symbol, "speaker.wave.3.fill")
+        XCTAssertEqual(VolumeLevel(scalar: 2, muted: false).scalar, 1)
+        XCTAssertTrue(muted.setting(percent: 0).muted)
+    }
+}
