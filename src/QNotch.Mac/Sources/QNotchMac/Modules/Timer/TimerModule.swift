@@ -106,6 +106,14 @@ final class TimerModule: NotchModule {
         if countdown.refresh(at: now) {
             completionUnseen = !visible
             if preferences.playSound { context.sounds.play("timer.done") }
+            let minutes = Int(countdown.duration / 60)
+            if countdown.duration.truncatingRemainder(dividingBy: 60) == 0 {
+                countdown.lineUp(duration: TimeInterval(Countdown.nextBlock(after: minutes) * 60))
+            }
+            if preferences.openWhenDone, !visible {
+                // Opening makes the card visible, which refreshes the views and the wings.
+                DispatchQueue.main.async { [weak self] in self?.context.shell?.tryOpenPanel(tab: "home", linger: 5) }
+            }
         }
         if visible {
             for case let view as TimerDisplay in displays.allObjects { view.update(countdown: countdown, now: now, animated: animated || countdown.isRunning) }
@@ -158,10 +166,16 @@ final class TimerModule: NotchModule {
         let length = ActionPopUp("Default length", items: titles, selected: values.firstIndex(of: preferences.minutes) ?? 0) { [weak self] index in
             self?.choose(minutes: values[index])
         }
+        let open = ActionSwitch("Open the panel when time is up", value: preferences.openWhenDone) { [weak self] value in
+            guard let self else { return }
+            self.preferences.openWhenDone = value
+            self.context.settings.save("timer", self.preferences)
+        }
         return settingsGroup([
+            settingsRow("Open the panel when time is up", detail: "Shows Home for five seconds without taking the keyboard. Off: the notch shows Done until you open the panel.", control: open, width: width),
             settingsRow("Play a sound", detail: "When the countdown finishes. Pick the sound in Settings, Sounds. QNotch never takes focus.", control: sound, width: width),
             settingsRow("Length", detail: "Also set from the presets in the panel, or scroll over the Home card.", control: length, width: width)
-        ], footer: "The length is saved on this Mac. A running timer keeps going through sleep and stops when QNotch quits.", width: width)
+        ], footer: "After a 25 or 50 minute block, a 5 minute break is lined up; after a break, 25 minutes. The length is saved on this Mac. A running timer keeps going through sleep and stops when QNotch quits.", width: width)
     }
 
     func status(at now: Date) -> String {

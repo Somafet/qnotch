@@ -209,6 +209,25 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
 
     func closePanel() { close() }
 
+    private var lingerTask: DispatchWorkItem?
+
+    @discardableResult
+    func tryOpenPanel(tab: String, linger: TimeInterval) -> Bool {
+        guard screen != nil else { return false }
+        guard !state.expanded else { return true }
+        if tabs.contains(where: { $0.id == tab }) { activeTab = tab }
+        open(keyboard: false)
+        lingerTask?.cancel()
+        let task = DispatchWorkItem { [weak self] in
+            guard let self, self.state.presentation == .hover, !self.general.pinned,
+                  !self.panel.frame.contains(NSEvent.mouseLocation) else { return }
+            self.close(restoreFocus: false)
+        }
+        lingerTask = task
+        DispatchQueue.main.asyncAfter(deadline: .now() + max(linger, Double(general.closeDelayMs) / 1000), execute: task)
+        return true
+    }
+
     func openSettings() { openSettings(page: nil) }
     func openSettings(section: String) { openSettings(page: "module." + section) }
 

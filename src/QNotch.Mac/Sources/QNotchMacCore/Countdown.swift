@@ -36,6 +36,23 @@ public struct Countdown {
         finished = false
     }
 
+    /// Windows Pomodoro chaining: a 25 or 50 minute focus block is followed by a 5 minute break,
+    /// a 5 minute break by 25 minutes of focus; other lengths repeat.
+    public static func nextBlock(after minutes: Int) -> Int {
+        switch minutes {
+        case 25, 50: return 5
+        case 5: return 25
+        default: return minutes
+        }
+    }
+
+    /// After finishing: the next length is ready to start while "Time is up" still shows.
+    public mutating func lineUp(duration next: TimeInterval) {
+        guard finished, deadline == nil else { return }
+        duration = max(1, next)
+        remaining = duration
+    }
+
     @discardableResult public mutating func refresh(at now: Date) -> Bool {
         guard deadline != nil, secondsLeft(at: now) <= 0 else { return false }
         deadline = nil

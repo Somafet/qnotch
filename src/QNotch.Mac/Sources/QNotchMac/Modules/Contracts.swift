@@ -82,6 +82,9 @@ protocol ModuleShell: AnyObject {
     func openSettings()
     /// Opens Settings on a module's section (its `settingsSections` id).
     func openSettings(section: String)
+    /// Opens the panel on `tab` without taking the keyboard. If the pointer is elsewhere it closes
+    /// again after `linger` seconds. For something the user must see now, never routine updates.
+    @discardableResult func tryOpenPanel(tab: String, linger: TimeInterval) -> Bool
     /// Collapses the panel (e.g. before picking from the screen under it).
     func closePanel()
     /// A segment became visible, hidden, or changed width.

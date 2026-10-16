@@ -55,6 +55,7 @@ enum NativeSmokeTest {
                             let saved = try? String(contentsOf: shell.store.directory.appendingPathComponent("note.txt"), encoding: .utf8)
                             guard saved == "Smoke note\nsecond line", note?.status == .saved else { throw Failure("Note was not saved atomically after the debounce") }
                         }
+                        guard shell.state.presentation == .hover, shell.activeTab == "home" else { throw Failure("Finishing did not open the panel on Home without the keyboard") }
                         guard timer.countdown.finished, timer.wakeCount == 1 else { throw Failure("Collapsed deadline did not finish with one wake (finished=\(timer.countdown.finished), wakes=\(timer.wakeCount))") }
                         shell.open(keyboard: true)
                         guard shell.panel.canBecomeKey, shell.panel.isKeyWindow, shell.state.acceptsKeyboard else { throw Failure("Explicit summon did not grant keyboard") }
@@ -108,7 +109,7 @@ enum NativeSmokeTest {
                             do {
                                 try shell.settings?.snapshotPages(to: output)
                                 shell.settings?.window.close()
-                                let report = "Native UI smoke: actual window placement verified; camera center reserved; hover preserves focus; explicit summon grants keyboard; Escape collapses; running timer shows its status wing; toggle and search hotkeys work; timer completes hidden with one wake; disabled module not constructed; every Home card rendered; pin, card hiding and accent applied; mic and camera segment shown; system stats sampled; note saved after its debounce; interactive controls named; every settings page rendered.\nstartup_seconds=\(ready)\ndone\n"
+                                let report = "Native UI smoke: actual window placement verified; camera center reserved; hover preserves focus; explicit summon grants keyboard; Escape collapses; running timer shows its status wing; toggle and search hotkeys work; timer completes hidden with one wake and opens Home; disabled module not constructed; every Home card rendered; pin, card hiding and accent applied; mic and camera segment shown; system stats sampled; note saved after its debounce; interactive controls named; every settings page rendered.\nstartup_seconds=\(ready)\ndone\n"
                                 try Data(report.utf8).write(to: output.appendingPathComponent("smoke.txt"))
                                 NSApp.terminate(nil)
                             } catch { fail(error, output: output) }

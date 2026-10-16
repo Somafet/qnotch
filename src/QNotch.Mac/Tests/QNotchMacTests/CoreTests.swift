@@ -362,3 +362,24 @@ final class RegistryOwnershipTests: XCTestCase {
         XCTAssertEqual(registries.cards.ids(owner: "timer"), ["timer"])
     }
 }
+
+final class TimerChainingTests: XCTestCase {
+    func testNextBlockIsLinedUpAfterFinishing() {
+        XCTAssertEqual(Countdown.nextBlock(after: 25), 5)
+        XCTAssertEqual(Countdown.nextBlock(after: 50), 5)
+        XCTAssertEqual(Countdown.nextBlock(after: 5), 25)
+        XCTAssertEqual(Countdown.nextBlock(after: 15), 15)
+        var countdown = Countdown(duration: 60)
+        countdown.lineUp(duration: 300)
+        XCTAssertEqual(countdown.duration, 60, "Only a finished countdown lines up the next block")
+        let start = Date(timeIntervalSince1970: 0)
+        countdown.toggle(at: start)
+        XCTAssertTrue(countdown.refresh(at: start.addingTimeInterval(61)))
+        countdown.lineUp(duration: 300)
+        XCTAssertTrue(countdown.finished)
+        XCTAssertEqual(countdown.duration, 300)
+        countdown.toggle(at: start.addingTimeInterval(70))
+        XCTAssertFalse(countdown.finished)
+        XCTAssertEqual(countdown.secondsLeft(at: start.addingTimeInterval(70)), 300)
+    }
+}

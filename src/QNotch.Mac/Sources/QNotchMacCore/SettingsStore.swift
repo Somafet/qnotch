@@ -80,12 +80,15 @@ public struct GeneralSettings: Codable, Equatable {
 public struct TimerSettings: Codable, Equatable {
     public var minutes = 25
     public var playSound = true
+    /// Open the panel on Home for a few seconds when time is up (Windows behavior).
+    public var openWhenDone = true
     public init() {}
-    private enum CodingKeys: String, CodingKey { case minutes, playSound }
+    private enum CodingKeys: String, CodingKey { case minutes, playSound, openWhenDone }
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         minutes = c.value(.minutes, 25)
         playSound = c.value(.playSound, true)
+        openWhenDone = c.value(.openWhenDone, true)
     }
 }
 
