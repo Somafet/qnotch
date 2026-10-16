@@ -44,14 +44,30 @@ public struct Countdown {
         return true
     }
 
+    /// Wakes just after the shown text goes stale. Visible content shows seconds. The collapsed
+    /// pill shows whole minutes ("24m") and switches to seconds only for the final minute.
     public func nextWake(at now: Date, visible: Bool) -> TimeInterval? {
         guard isRunning else { return nil }
         let left = secondsLeft(at: now)
-        return max(0.01, visible ? min(1, left) : left)
+        guard left > 0 else { return 0.01 }
+        let unit: TimeInterval = visible || left <= 60 ? 1 : 60
+        let shown = ceil(left / unit)
+        return max(0.01, left - (shown - 1) * unit)
     }
 
     public func text(at now: Date) -> String {
         let seconds = Int(ceil(secondsLeft(at: now)))
         return String(format: "%d:%02d", seconds / 60, seconds % 60)
+    }
+
+    /// Compact status text: minutes while more than one remains and the timer runs, otherwise m:ss.
+    public func shortText(at now: Date) -> String {
+        let left = secondsLeft(at: now)
+        guard isRunning, left > 60 else { return text(at: now) }
+        return "\(Int(ceil(left / 60)))m"
+    }
+
+    public func progress(at now: Date) -> Double {
+        min(1, max(0, secondsLeft(at: now) / duration))
     }
 }

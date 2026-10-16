@@ -7,12 +7,29 @@ struct ViewContribution: Contribution {
     let id: String
     let title: String
     let order: Int
+    /// SF Symbol for tab buttons and the Settings sidebar.
+    var symbol = "square.grid.2x2"
+    /// Settings sidebar icon background.
+    var tint = NSColor.systemGray
+    let makeView: () -> NSView
+}
+
+enum SegmentSlot { case leading, trailing }
+
+/// Collapsed status content. With a camera housing, leading content sits in the left wing and
+/// trailing content in the right wing; a floating pill shows them side by side. A segment shows
+/// only while its view is not hidden; call `ModuleShell.segmentsChanged()` after toggling it.
+struct SegmentContribution: Contribution {
+    let id: String
+    let order: Int
+    let slot: SegmentSlot
     let makeView: () -> NSView
 }
 
 struct SearchHit {
     let title: String
     let detail: String
+    var symbol = "arrow.forward.circle"
     let run: () -> Void
 }
 
@@ -34,7 +51,7 @@ final class Registry<T: Contribution> {
 final class ModuleRegistries {
     let cards = Registry<ViewContribution>()
     let tabs = Registry<ViewContribution>()
-    let segments = Registry<ViewContribution>()
+    let segments = Registry<SegmentContribution>()
     let searchSources = Registry<SearchSource>()
     let settingsSections = Registry<ViewContribution>()
     func removeAll() {
@@ -46,6 +63,8 @@ final class ModuleRegistries {
 protocol ModuleShell: AnyObject {
     func selectTab(_ id: String)
     func openSettings()
+    /// A segment became visible, hidden, or changed width.
+    func segmentsChanged()
 }
 
 struct ModuleContext {

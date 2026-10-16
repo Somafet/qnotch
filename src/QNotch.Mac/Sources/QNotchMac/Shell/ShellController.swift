@@ -1,8 +1,9 @@
 import AppKit
 import QNotchMacCore
 
-final class ShellController: NSObject, ModuleShell, NSWindowDelegate, NSSearchFieldDelegate {
+final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     let panel: NotchPanel
+    let surface = NotchSurfaceView()
     let store: SettingsStore
     let registries = ModuleRegistries()
     private(set) var general: GeneralSettings
@@ -11,6 +12,8 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate, NSSearchFi
     private(set) var modules: [NotchModule] = []
     private(set) var displayMessage = ""
     private(set) var surfaceRevision = 0
+    /// Width of each status wing beside the camera, or the floating pill's content width.
+    private(set) var wing: CGFloat = 0
     private var hoverTask: DispatchWorkItem?
     private var leaveTask: DispatchWorkItem?
     private var globalClick: Any?
@@ -20,16 +23,20 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate, NSSearchFi
     private var previousApp: NSRunningApplication?
     private var settingsController: SettingsController?
     private var contentCache: [String: NSView] = [:]
-    private var bodyHost: NSView?
-    private var navigation: NSSegmentedControl?
-    private var search: NSSearchField?
-    private var searchQuery = ""
+    private var panelView: PanelView?
+    private var closingPanel: PanelView?
+    private var searchView: SearchView?
+    private var leading = NSStackView()
+    private var trailing = NSStackView()
+    private var pill = NSStackView()
+    private var pillIdle = NSView()
     private var screen: NSScreen?
     var statusChanged: (() -> Void)?
 
     init(store: SettingsStore) {
         self.store = store
         general = store.load("general", default: GeneralSettings())
+        Motion.userReduced = general.reduceMotion
         panel = NotchPanel(contentRect: .zero, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
         super.init()
         panel.isFloatingPanel = true
@@ -39,12 +46,19 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate, NSSearchFi
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
         panel.isOpaque = false
         panel.backgroundColor = .clear
-        panel.hasShadow = true
+        panel.hasShadow = false
         panel.isMovable = false
         panel.isReleasedWhenClosed = false
+        panel.appearance = Palette.dark
         panel.delegate = self
         panel.title = "QNotch"
         panel.setAccessibilityLabel("QNotch panel")
+        panel.contentView = surface
+        surface.entered = { [weak self] in self?.pointerEntered() }
+        surface.exited = { [weak self] in self?.pointerLeft() }
+        surface.setAccessibilityElement(true)
+        surface.setAccessibilityRole(.group)
+        surface.setAccessibilityLabel("QNotch. Hover or click to open the panel, or use the menu-bar item.")
         panel.clicked = { [weak self] in
             guard let self else { return false }
             let opening = !self.state.expanded
@@ -52,6 +66,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate, NSSearchFi
             return opening
         }
         panel.escaped = { [weak self] in self?.close() }
+        panel.typed = { [weak self] text in self?.typeToSearch(text) }
         composeModules()
         store.problemChanged = { [weak self] in
             self?.settingsController?.refreshIssue()
@@ -71,10 +86,12 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate, NSSearchFi
         observers.append(center.addObserver(forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main) { [weak self] _ in
             self?.resolveDisplay(); self?.rebuildSurface(); self?.updateVisibility(); self?.settingsController?.refreshDisplays()
         })
+        observers.append(center.addObserver(forName: NSColor.systemColorsDidChangeNotification, object: nil, queue: .main) { [weak self] _ in
+            self?.accentChanged()
+        })
         let workspace = NSWorkspace.shared.notificationCenter
         workspaceObservers.append(workspace.addObserver(forName: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil, queue: .main) { [weak self] _ in
-            self?.panel.animations = [:]
-            self?.panel.alphaValue = 1
+            self?.present(.none)
         })
         workspaceObservers.append(workspace.addObserver(forName: NSWorkspace.didWakeNotification, object: nil, queue: .main) { [weak self] _ in
             self?.systemDidWake()
@@ -105,26 +122,44 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate, NSSearchFi
         panel.orderOut(nil)
     }
 
+    // MARK: Modules and settings
+
     private func composeModules() {
         modules.forEach { $0.stop() }
         registries.removeAll()
         contentCache.removeAll()
+        searchView = nil
         modules = ModuleList.make(timerEnabled: general.timerEnabled)
         let context = ModuleContext(settings: store, registries: registries, shell: self)
         modules.forEach { $0.initialize(context) }
-        if activeTab != "home", !registries.tabs.items.contains(where: { $0.id == activeTab }) { activeTab = "home" }
+        if !tabs.contains(where: { $0.id == activeTab }) { activeTab = "home" }
+        buildStatus()
     }
 
     func updateGeneral(_ change: (inout GeneralSettings) -> Void) {
         let enabled = general.timerEnabled
         change(&general)
         store.save("general", general)
-        if enabled != general.timerEnabled { composeModules() }
+        Motion.userReduced = general.reduceMotion
+        if enabled != general.timerEnabled {
+            composeModules()
+            if let panelView { panelView.removeFromSuperview(); self.panelView = nil }
+        }
         resolveDisplay()
         rebuildSurface()
         updateVisibility()
         statusChanged?()
     }
+
+    func openSettings() {
+        close(restoreFocus: false)
+        if settingsController == nil { settingsController = SettingsController(shell: self) }
+        settingsController?.show()
+    }
+
+    var settings: SettingsController? { settingsController }
+
+    // MARK: Display
 
     static func displayID(_ screen: NSScreen) -> UInt32 {
         (screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value ?? 0
@@ -138,7 +173,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate, NSSearchFi
         displayMessage = screen == nil ? "No display available. The panel is hidden." :
             general.displayID != nil && selected == nil ? "Selected display unavailable. Using the main display." : ""
         if let layout, layout.hasCameraHousing, !layout.integratesCameraHousing {
-            displayMessage += " Camera geometry unavailable. Using a pill below the safe area."
+            displayMessage += (displayMessage.isEmpty ? "" : " ") + "Camera geometry unavailable. Using a pill below the safe area."
         }
         if screen == nil { state.close(); panel.orderOut(nil); updateVisibility() }
         statusChanged?()
@@ -154,12 +189,10 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate, NSSearchFi
         return DisplayLayout(frame: screen.frame, visibleFrame: screen.visibleFrame, safeTop: screen.safeAreaInsets.top, cameraGap: gap)
     }
 
-    private func reposition() {
-        guard let layout else { return }
-        panel.level = layout.integratesCameraHousing ? .statusBar : .floating
-        panel.setFrame(layout.surface(expanded: state.expanded), display: true)
-        if !panel.isVisible { panel.orderFrontRegardless() }
-    }
+    /// The settled window frame for the current presentation.
+    var expectedFrame: CGRect? { layout?.surface(expanded: state.expanded, wing: wing) }
+
+    // MARK: Hover, open and close
 
     func pointerEntered() {
         leaveTask?.cancel()
@@ -180,7 +213,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate, NSSearchFi
         let task = DispatchWorkItem { [weak self] in
             guard let self, !self.panel.frame.contains(NSEvent.mouseLocation) else { return }
             self.state.pointerLeft()
-            self.rebuildSurface()
+            self.present(.close)
             self.updateVisibility()
         }
         leaveTask = task
@@ -194,19 +227,12 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate, NSSearchFi
         if keyboard, !state.acceptsKeyboard { previousApp = NSWorkspace.shared.frontmostApplication }
         state.open(keyboard: keyboard)
         panel.keyboardAllowed = state.acceptsKeyboard
-        if !wasExpanded { rebuildSurface() }
+        if !wasExpanded { present(.open) }
         updateVisibility()
         if keyboard {
             panel.makeKeyAndOrderFront(nil)
-            panel.makeFirstResponder(search)
+            if activeTab == "search" { searchView?.focus(appending: "") } else { panel.makeFirstResponder(nil) }
         } else { panel.orderFrontRegardless() }
-        if !wasExpanded, !general.reduceMotion, !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
-            panel.alphaValue = 0.8
-            NSAnimationContext.runAnimationGroup { context in
-                context.duration = 0.12
-                panel.animator().alphaValue = 1
-            }
-        }
     }
 
     func close(restoreFocus: Bool = true) {
@@ -216,8 +242,8 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate, NSSearchFi
         state.close()
         panel.keyboardAllowed = false
         panel.resignKey()
-        searchQuery = ""
-        rebuildSurface()
+        searchView?.clear()
+        present(.close)
         updateVisibility()
         if restore, let previousApp, !previousApp.isTerminated,
            NSWorkspace.shared.frontmostApplication?.processIdentifier == ProcessInfo.processInfo.processIdentifier {
@@ -230,156 +256,81 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate, NSSearchFi
         if state.acceptsKeyboard { close(restoreFocus: false) }
     }
 
+    // MARK: Tabs and search
+
+    private var tabs: [PanelView.Tab] {
+        [PanelView.Tab(id: "home", symbol: "house", title: "Home"),
+         PanelView.Tab(id: "search", symbol: "magnifyingglass", title: "Search")] +
+        registries.tabs.items.map { PanelView.Tab(id: $0.id, symbol: $0.symbol, title: $0.title) }
+    }
+
     func selectTab(_ id: String) {
-        guard id == "home" || registries.tabs.items.contains(where: { $0.id == id }) else { return }
+        let ids = tabs.map(\.id)
+        guard let next = ids.firstIndex(of: id) else { return }
+        let previous = ids.firstIndex(of: activeTab) ?? 0
+        guard id != activeTab else {
+            if id == "search", state.acceptsKeyboard { searchView?.focus(appending: "") }
+            return
+        }
         activeTab = id
-        searchQuery = ""
-        search?.stringValue = ""
-        showBody()
+        panelView?.select(id, animated: true)
+        showBody(direction: next > previous ? 1 : -1, animated: true)
         updateVisibility()
+        if id == "search", state.acceptsKeyboard { searchView?.focus(appending: "") }
+        else if state.acceptsKeyboard, panel.firstResponder is NSTextView { panel.makeFirstResponder(nil) }
+    }
+
+    private func typeToSearch(_ text: String) {
+        guard state.acceptsKeyboard else { return }
+        selectTab("search")
+        searchView?.focus(appending: text)
+    }
+
+    private func search(_ query: String) -> [SearchHit] {
+        var hits = registries.searchSources.items.flatMap { Array($0.find(query).prefix(5)) }
+        if "settings preferences display motion".localizedCaseInsensitiveContains(query) {
+            hits.append(SearchHit(title: "Settings", detail: "Display, motion and features", symbol: "gearshape") { [weak self] in self?.openSettings() })
+        }
+        return hits
     }
 
     private func updateVisibility() {
-        modules.forEach { $0.setVisibility(panel: state.expanded && searchQuery.isEmpty, activeTab: activeTab) }
+        modules.forEach { $0.setVisibility(panel: state.expanded, activeTab: activeTab) }
     }
 
-    private func rebuildSurface() {
-        surfaceRevision += 1
-        let integrated = layout?.integratesCameraHousing == true
-        let topBand = layout?.topBandHeight ?? 0
-        let surface = TrackingSurface()
-        surface.wantsLayer = true
-        surface.layer?.cornerRadius = state.expanded ? 18 : 14
-        if integrated { surface.layer?.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner] }
-        surface.layer?.masksToBounds = true
-        surface.entered = { [weak self] in self?.pointerEntered() }
-        surface.exited = { [weak self] in self?.pointerLeft() }
-        panel.contentView = surface
-        bodyHost = nil; navigation = nil; search = nil
-        if state.expanded {
-            if integrated { addPill(to: surface, topBandOnly: true) }
-            let content = NSView()
-            content.identifier = NSUserInterfaceItemIdentifier("notch-panel-body")
-            content.translatesAutoresizingMaskIntoConstraints = false
-            surface.addSubview(content)
-            NSLayoutConstraint.activate([
-                content.leadingAnchor.constraint(equalTo: surface.leadingAnchor), content.trailingAnchor.constraint(equalTo: surface.trailingAnchor),
-                content.topAnchor.constraint(equalTo: surface.topAnchor, constant: topBand), content.bottomAnchor.constraint(equalTo: surface.bottomAnchor)
-            ])
-            // The material exists only while expanded. Collapsed idle has no backdrop effect.
-            let material = NSVisualEffectView()
-            material.material = .popover
-            material.blendingMode = .behindWindow
-            material.state = .active
-            material.translatesAutoresizingMaskIntoConstraints = false
-            content.addSubview(material)
-            NSLayoutConstraint.activate([
-                material.leadingAnchor.constraint(equalTo: content.leadingAnchor), material.trailingAnchor.constraint(equalTo: content.trailingAnchor),
-                material.topAnchor.constraint(equalTo: content.topAnchor), material.bottomAnchor.constraint(equalTo: content.bottomAnchor)
-            ])
-            let header = label("QNotch", size: 13)
-            header.font = .systemFont(ofSize: 13, weight: .semibold)
-            let settings = ActionButton("Settings…", symbol: "gearshape") { [weak self] in self?.openSettings() }
-            settings.controlSize = .small
-            let heading = row([header, NSView(), settings])
-            let field = NSSearchField()
-            field.placeholderString = "Search QNotch"
-            field.setAccessibilityLabel("Search QNotch")
-            field.delegate = self
-            search = field
-            let tabs = NSSegmentedControl(labels: ["Home"] + registries.tabs.items.map(\.title), trackingMode: .selectOne, target: self, action: #selector(tabChanged))
-            tabs.setAccessibilityLabel("Panel tabs")
-            navigation = tabs
-            let body = NSView()
-            bodyHost = body
-            body.heightAnchor.constraint(greaterThanOrEqualToConstant: 208).isActive = true
-            let stack = column([heading, field, tabs, body], spacing: 12)
-            embed(stack, in: content)
-            for view in [heading, field, tabs, body] { view.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true }
-            showBody()
-        } else {
-            addPill(to: surface, topBandOnly: false)
-        }
-        panel.alphaValue = 1
-        reposition()
-        surface.layoutSubtreeIfNeeded()
-    }
-
-    private func addPill(to surface: NSView, topBandOnly: Bool) {
-        let pill = PillView()
-        let integrated = layout?.integratesCameraHousing == true
-        pill.flatTop = integrated
-        pill.cornerRadius = topBandOnly ? 0 : 14
-        pill.pressed = { [weak self] in self?.open(keyboard: true) }
-        pill.translatesAutoresizingMaskIntoConstraints = false
-        surface.addSubview(pill)
-        NSLayoutConstraint.activate([
-            pill.leadingAnchor.constraint(equalTo: surface.leadingAnchor), pill.trailingAnchor.constraint(equalTo: surface.trailingAnchor),
-            pill.topAnchor.constraint(equalTo: surface.topAnchor)
-        ])
-        if topBandOnly {
-            pill.heightAnchor.constraint(equalToConstant: layout?.topBandHeight ?? 0).isActive = true
-        } else { pill.bottomAnchor.constraint(equalTo: surface.bottomAnchor).isActive = true }
-        let icon = NSImageView(image: NSImage(systemSymbolName: "circle.lefthalf.filled", accessibilityDescription: "QNotch")!)
-        icon.contentTintColor = .white
-        icon.widthAnchor.constraint(equalToConstant: 16).isActive = true
-        icon.heightAnchor.constraint(equalToConstant: 16).isActive = true
-        let segments = row(registries.segments.items.map { $0.makeView() })
-        if let layout, let wings = layout.wings(expanded: state.expanded) {
-            let window = layout.surface(expanded: state.expanded)
-            for (view, area, id) in [(icon as NSView, wings.left, "notch-left-wing"), (segments as NSView, wings.right, "notch-right-wing")] {
-                view.identifier = NSUserInterfaceItemIdentifier(id)
-                view.translatesAutoresizingMaskIntoConstraints = false
-                pill.addSubview(view)
-                NSLayoutConstraint.activate([
-                    view.centerXAnchor.constraint(equalTo: surface.leadingAnchor, constant: area.midX - window.minX),
-                    view.centerYAnchor.constraint(equalTo: surface.topAnchor, constant: area.height / 2),
-                    view.widthAnchor.constraint(lessThanOrEqualToConstant: max(0, area.width - 16))
-                ])
-            }
-        } else {
-            let stack = row([icon, label("QNotch", size: 12, color: .white), segments])
-            stack.translatesAutoresizingMaskIntoConstraints = false
-            pill.addSubview(stack)
-            NSLayoutConstraint.activate([stack.centerXAnchor.constraint(equalTo: pill.centerXAnchor), stack.centerYAnchor.constraint(equalTo: pill.centerYAnchor)])
-        }
-        pill.setAccessibilityElement(true)
-        pill.setAccessibilityLabel("QNotch. Click to open panel, or use the menu-bar item.")
-        pill.setAccessibilityRole(.button)
-    }
-
-    @objc private func tabChanged() {
-        guard let navigation else { return }
-        selectTab((["home"] + registries.tabs.items.map(\.id))[navigation.selectedSegment])
-    }
-
-    func controlTextDidChange(_ notification: Notification) {
-        searchQuery = search?.stringValue.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        showBody()
-        updateVisibility()
-    }
-
-    private func showBody() {
-        guard let bodyHost else { return }
-        bodyHost.subviews.forEach { $0.removeFromSuperview() }
-        navigation?.selectedSegment = (["home"] + registries.tabs.items.map(\.id)).firstIndex(of: activeTab) ?? 0
+    private func showBody(direction: Int = 0, animated: Bool = false) {
+        guard let panelView else { return }
         let content: NSView
-        if !searchQuery.isEmpty {
-            let hits = registries.searchSources.items.flatMap { Array($0.find(searchQuery).prefix(5)) }.prefix(10)
-            content = column(hits.isEmpty ? [label("No results", color: .secondaryLabelColor)] : hits.map { hit in
-                ActionButton(hit.title) { hit.run() }
-            })
-        } else if activeTab == "home" {
-            let cards: [NSView] = registries.cards.items.map { item in
-                let title = label(item.title, size: 11, color: .secondaryLabelColor)
-                return column([title, cached("card." + item.id, item.makeView)], spacing: 6)
+        switch activeTab {
+        case "search":
+            let view = searchView ?? SearchView { [weak self] in self?.search($0) ?? [] }
+            searchView = view
+            content = view
+        case "home":
+            content = cached("home") { [unowned self] in self.makeHome() }
+        default:
+            if let tab = registries.tabs.items.first(where: { $0.id == activeTab }) {
+                content = cached("tab." + tab.id, tab.makeView)
+            } else {
+                content = placeholder(symbol: "exclamationmark.triangle", title: "Unavailable", detail: "This module is not available.")
             }
-            content = cards.isEmpty ? column([label("Timer is turned off", size: 17), label("Enable Countdown in Settings to use this panel.", color: .secondaryLabelColor), ActionButton("Open Settings…") { [weak self] in self?.openSettings() }]) : column(cards)
-        } else if let tab = registries.tabs.items.first(where: { $0.id == activeTab }) {
-            content = cached("tab." + tab.id, tab.makeView)
-        } else { content = label("This module is unavailable.") }
-        embed(content, in: bodyHost, inset: 0)
-        content.widthAnchor.constraint(equalTo: bodyHost.widthAnchor).isActive = true
+        }
+        panelView.show(content, direction: direction, animated: animated)
+    }
+
+    private func makeHome() -> NSView {
+        let cards = registries.cards.items
+        guard !cards.isEmpty else {
+            return placeholder(symbol: "timer", title: "Countdown is off", detail: "Turn it on in Settings to use the timer here.",
+                               action: ("Open Settings", { [weak self] in self?.openSettings() }))
+        }
+        let views = cards.map { CardView(title: $0.title, content: cached("card." + $0.id, $0.makeView)) }
+        let stack = NSStackView(views: views)
+        stack.orientation = .horizontal
+        stack.distribution = .fillEqually
+        stack.alignment = .height
+        stack.spacing = 10
+        return stack
     }
 
     private func cached(_ id: String, _ factory: () -> NSView) -> NSView {
@@ -389,10 +340,151 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate, NSSearchFi
         return view
     }
 
-    func openSettings() {
-        close(restoreFocus: false)
-        if settingsController == nil { settingsController = SettingsController(shell: self) }
-        settingsController?.show()
+    // MARK: Status segments
+
+    private func buildStatus() {
+        for view in [leading, trailing, pill] { view.removeFromSuperview() }
+        let segments = registries.segments.items
+        leading = row(segments.filter { $0.slot == .leading }.map { $0.makeView() }, spacing: 6)
+        trailing = row(segments.filter { $0.slot == .trailing }.map { $0.makeView() }, spacing: 6)
+        leading.identifier = NSUserInterfaceItemIdentifier("notch-left-wing")
+        trailing.identifier = NSUserInterfaceItemIdentifier("notch-right-wing")
+        let glyph = symbol("circle.lefthalf.filled", size: 13, weight: .medium, color: Palette.textSecondary)
+        pillIdle = row([glyph, line("QNotch", size: 12, weight: .semibold, color: Palette.textSecondary)], spacing: 6)
+        pill = NSStackView()
+        pill.orientation = .horizontal
+        pill.spacing = 8
+        for view in [leading, trailing, pill] { view.detachesHiddenViews = true; view.wantsLayer = true }
+        wing = measureWing()
+    }
+
+    private func visibleWidth(_ stack: NSStackView) -> CGFloat {
+        stack.arrangedSubviews.contains { !$0.isHidden } ? stack.fittingSize.width : 0
+    }
+
+    private func measureWing() -> CGFloat {
+        let left = visibleWidth(leading), right = visibleWidth(trailing)
+        guard left > 0 || right > 0 else { return 0 }
+        if layout?.integratesCameraHousing == true {
+            // Symmetric wings; rounded so a one-character change does not resize the notch.
+            return min(100, ceil((max(left, right) + 24) / 8) * 8)
+        }
+        return min(300, left + right + (left > 0 && right > 0 ? 8 : 0))
+    }
+
+    func segmentsChanged() {
+        let next = measureWing()
+        guard next != wing else { layoutStatus(); return }
+        let appearing = wing == 0
+        wing = next
+        if state.expanded { layoutStatus() } else { present(.nudge) }
+        if appearing, !state.expanded {
+            for view in [leading, trailing, pill] { Motion.reveal(view, delay: 0.08, duration: 0.28) }
+        }
+    }
+
+    /// Places status content. With a camera housing it sits in the side wings (also while expanded,
+    /// so nothing jumps); a floating pill shows it centered and hides it under the open panel.
+    private func layoutStatus() {
+        guard let layout else { return }
+        let active = wing > 0
+        if let wings = layout.wings(expanded: false, wing: wing) {
+            pill.isHidden = true
+            for (stack, area) in [(leading, wings.left), (trailing, wings.right)] {
+                stack.isHidden = !active
+                let size = stack.fittingSize
+                surface.place(stack, at: CGRect(x: area.midX - size.width / 2, y: area.midY - size.height / 2, width: size.width, height: size.height))
+            }
+        } else {
+            if pill.arrangedSubviews.isEmpty { [pillIdle, leading, trailing].forEach(pill.addArrangedSubview) }
+            pillIdle.isHidden = active
+            leading.isHidden = !active || visibleWidth(leading) == 0
+            trailing.isHidden = !active || visibleWidth(trailing) == 0
+            pill.isHidden = state.expanded
+            let rect = layout.surface(expanded: false, wing: wing)
+            let size = pill.fittingSize
+            surface.place(pill, at: CGRect(x: rect.midX - size.width / 2, y: rect.midY - size.height / 2, width: size.width, height: size.height))
+        }
+    }
+
+    // MARK: Surface
+
+    private func accentChanged() {
+        contentCache.removeAll()
+        searchView = nil
+        buildStatus()
+        if let panelView { panelView.removeFromSuperview(); self.panelView = nil }
+        rebuildSurface()
+    }
+
+    /// Full rebuild for a display, module, or accent change. No animation.
+    private func rebuildSurface() {
+        guard let layout else { return }
+        surface.configure(world: layout.surface(expanded: true).union(layout.surface(expanded: false, wing: 120)).insetBy(dx: -40, dy: -40),
+                          integrated: layout.integratesCameraHousing, band: layout.topBandHeight)
+        panel.level = layout.integratesCameraHousing ? .statusBar : .floating
+        wing = measureWing()
+        if let panelView { surface.place(panelView, at: layout.panelBody) }
+        present(.none)
+    }
+
+    /// Morphs the surface to the current presentation. While animating, the window temporarily
+    /// covers both shapes plus overshoot room; it returns to the exact surface when settled.
+    private func present(_ style: NotchSurfaceView.Morph) {
+        guard let layout else { return }
+        surfaceRevision += 1
+        let expanded = state.expanded
+        let target = layout.surface(expanded: expanded, wing: wing)
+        let animated = style != .none && Motion.enabled && panel.isVisible
+        if expanded, panelView == nil {
+            closingPanel?.removeFromSuperview()
+            closingPanel = nil
+            let view = PanelView(tabs: tabs, selected: activeTab, select: { [weak self] in self?.selectTab($0) },
+                                 openSettings: { [weak self] in self?.openSettings() })
+            panelView = view
+            surface.place(view, at: layout.panelBody)
+            view.layoutSubtreeIfNeeded()
+            showBody()
+            if animated { Motion.reveal(view, delay: 0.07, duration: 0.3, dy: 10) }
+        } else if !expanded, let view = panelView {
+            panelView = nil
+            closingPanel = view
+            if animated {
+                Motion.conceal(view, duration: 0.12, dy: 8) { [weak self, weak view] in
+                    guard let self, let view, self.closingPanel === view else { return }
+                    view.isHidden = true
+                }
+            } else { view.removeFromSuperview(); closingPanel = nil }
+        }
+        let integrated = layout.integratesCameraHousing
+        let bottom: CGFloat = expanded ? 22 : integrated ? 11 : 16
+        let window = animated ? surface.visibleShapeBounds.union(target).insetBy(dx: -28, dy: -28).intersection(layout.frame) : target
+        setFrame(window)
+        let wasHidden = pill.isHidden
+        layoutStatus()
+        if animated, !integrated, wasHidden, !pill.isHidden { Motion.reveal(pill, delay: 0.1, duration: 0.24) }
+        surface.morph(to: target, bottom: bottom, top: expanded ? 20 : 16, outlined: expanded, style: animated ? style : .none) { [weak self] in
+            self?.settle()
+        }
+    }
+
+    private func settle() {
+        guard let frame = expectedFrame else { return }
+        setFrame(frame)
+        if !state.expanded, let closingPanel {
+            closingPanel.removeFromSuperview()
+            closingPanel.layer?.removeAllAnimations()
+            self.closingPanel = nil
+        }
+    }
+
+    private func setFrame(_ rect: CGRect) {
+        if panel.frame != rect {
+            panel.disableScreenUpdatesUntilFlush()
+            panel.setFrame(rect, display: true)
+        }
+        surface.syncToWindow()
+        if !panel.isVisible, screen != nil { panel.orderFrontRegardless() }
     }
 
     private func systemDidWake() {
@@ -400,16 +492,11 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate, NSSearchFi
         modules.forEach { $0.systemDidWake() }
     }
 
+    // MARK: Diagnostics
+
     func snapshot(to url: URL) throws {
         guard let view = panel.contentView else { throw CocoaError(.fileWriteUnknown) }
-        try snapshot(view: view, to: url)
-    }
-
-    func snapshotSettings(to url: URL) throws {
-        guard let view = settingsController?.window.contentView else { throw CocoaError(.fileWriteUnknown) }
-        settingsController?.window.displayIfNeeded()
-        try snapshot(view: view, to: url)
-        settingsController?.window.close()
+        try Self.snapshot(view: view, to: url)
     }
 
     func accessibilityReport(to url: URL) throws {
@@ -418,7 +505,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate, NSSearchFi
             guard !view.isHidden else { return }
             if let control = view as? NSControl {
                 let name = control.accessibilityLabel() ?? (control as? NSButton)?.title ?? (control as? NSTextField)?.stringValue ?? ""
-                if (control is NSButton || control is NSSearchField || control is NSSegmentedControl), name.isEmpty {
+                if control is NSButton || control.acceptsFirstResponder, name.isEmpty {
                     throw CocoaError(.validationMissingMandatoryProperty)
                 }
                 lines.append("\(type(of: control)): \(name)")
@@ -429,7 +516,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate, NSSearchFi
         try Data((lines.joined(separator: "\n") + "\n").utf8).write(to: url)
     }
 
-    private func snapshot(view: NSView, to url: URL) throws {
+    static func snapshot(view: NSView, to url: URL) throws {
         view.layoutSubtreeIfNeeded()
         guard let bitmap = view.bitmapImageRepForCachingDisplay(in: view.bounds) else { throw CocoaError(.fileWriteUnknown) }
         view.cacheDisplay(in: view.bounds, to: bitmap)

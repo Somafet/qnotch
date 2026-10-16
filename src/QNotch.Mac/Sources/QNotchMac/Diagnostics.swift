@@ -8,7 +8,7 @@ enum NativeSmokeTest {
             do {
                 try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
                 guard let layout = shell.layout else { throw Failure("No display available for native UI validation") }
-                let placement = "camera_housing=\(layout.hasCameraHousing)\nintegrated=\(layout.integratesCameraHousing)\nsafe_top_points=\(layout.safeTop)\ndisplay_frame=\(layout.frame)\ncollapsed_frame=\(layout.surface(expanded: false))\nexpanded_frame=\(layout.surface(expanded: true))\npanel_body=\(layout.panelBody)\n"
+                let placement = "camera_housing=\(layout.hasCameraHousing)\nintegrated=\(layout.integratesCameraHousing)\nsafe_top_points=\(layout.safeTop)\ndisplay_frame=\(layout.frame)\ncollapsed_idle_frame=\(layout.surface(expanded: false))\ncollapsed_status_frame=\(layout.surface(expanded: false, wing: 56))\nexpanded_frame=\(layout.surface(expanded: true))\npanel_body=\(layout.panelBody)\n"
                 try Data(placement.utf8).write(to: output.appendingPathComponent("placement.txt"))
                 shell.updateGeneral { $0.reduceMotion = true }
                 try checkPlacement(shell: shell, layout: layout)
@@ -19,6 +19,8 @@ enum NativeSmokeTest {
                     throw Failure("Hover took keyboard focus")
                 }
                 try shell.snapshot(to: output.appendingPathComponent("home.png"))
+                shell.selectTab("search")
+                try shell.snapshot(to: output.appendingPathComponent("search.png"))
                 shell.selectTab("timer")
                 try shell.snapshot(to: output.appendingPathComponent("timer.png"))
                 try shell.accessibilityReport(to: output.appendingPathComponent("accessibility.txt"))
@@ -27,6 +29,7 @@ enum NativeSmokeTest {
                 shell.close(restoreFocus: false)
                 try shell.snapshot(to: output.appendingPathComponent("pill-running.png"))
                 try checkPlacement(shell: shell, layout: layout)
+                guard shell.wing > 0 else { throw Failure("A running timer did not show its status segment") }
                 guard !shell.panel.canBecomeKey else { throw Failure("Collapsed panel accepts keyboard") }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) {
                     do {
@@ -45,8 +48,9 @@ enum NativeSmokeTest {
                         shell.openSettings()
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                             do {
-                                try shell.snapshotSettings(to: output.appendingPathComponent("settings.png"))
-                                let report = "Native UI smoke: actual window placement verified; camera center reserved; hover preserves focus; explicit summon grants keyboard; Escape collapses; timer completes hidden with one wake; disabled module not constructed; interactive controls named.\nstartup_seconds=\(ready)\ndone\n"
+                                try shell.settings?.snapshotPages(to: output)
+                                shell.settings?.window.close()
+                                let report = "Native UI smoke: actual window placement verified; camera center reserved; hover preserves focus; explicit summon grants keyboard; Escape collapses; running timer shows its status wing; timer completes hidden with one wake; disabled module not constructed; interactive controls named; every settings page rendered.\nstartup_seconds=\(ready)\ndone\n"
                                 try Data(report.utf8).write(to: output.appendingPathComponent("smoke.txt"))
                                 NSApp.terminate(nil)
                             } catch { fail(error, output: output) }
@@ -57,10 +61,13 @@ enum NativeSmokeTest {
         }
     }
     private static func checkPlacement(shell: ShellController, layout: DisplayLayout) throws {
-        let expected = layout.surface(expanded: shell.state.expanded)
+        guard let expected = shell.expectedFrame else { throw Failure("No expected surface") }
         guard abs(shell.panel.frame.maxY - expected.maxY) <= 0.5,
               abs(shell.panel.frame.minX - expected.minX) <= 0.5 else { throw Failure("AppKit displaced the surface from the bezel: actual=\(shell.panel.frame), expected=\(expected)") }
-        guard let housing = layout.cameraHousing, let wings = layout.wings(expanded: shell.state.expanded) else { return }
+        guard abs(shell.panel.frame.width - expected.width) <= 0.5, abs(shell.panel.frame.height - expected.height) <= 0.5 else {
+            throw Failure("Settled window differs from the surface: actual=\(shell.panel.frame), expected=\(expected)")
+        }
+        guard let housing = layout.cameraHousing, let wings = layout.wings(expanded: shell.state.expanded, wing: shell.wing) else { return }
         guard shell.panel.level == .statusBar else { throw Failure("Integrated surface is below the menu bar level") }
         func walk(_ view: NSView) throws {
             let global = shell.panel.convertToScreen(view.convert(view.bounds, to: nil))
@@ -159,3 +166,4 @@ enum PerformanceMeasurement {
         }
     }
 }
+

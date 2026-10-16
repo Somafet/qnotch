@@ -33,9 +33,21 @@ final class CoreTests: XCTestCase {
         var timer = Countdown(duration: 300)
         XCTAssertNil(timer.nextWake(at: now, visible: false))
         timer.toggle(at: now)
-        XCTAssertEqual(timer.nextWake(at: now, visible: false), 300)
+        XCTAssertEqual(timer.nextWake(at: now, visible: false), 60, "Collapsed shows whole minutes")
+        XCTAssertEqual(timer.nextWake(at: now.addingTimeInterval(30), visible: false), 30)
+        XCTAssertEqual(timer.nextWake(at: now.addingTimeInterval(250), visible: false), 1, "Final minute shows seconds")
         XCTAssertEqual(timer.nextWake(at: now, visible: true), 1)
         XCTAssertEqual(timer.nextWake(at: now.addingTimeInterval(299.5), visible: true), 0.5)
+    }
+
+    func testShortTextUsesMinutesUntilTheFinalMinute() {
+        var timer = Countdown(duration: 25 * 60)
+        XCTAssertEqual(timer.shortText(at: now), "25:00", "A stopped timer shows the full time")
+        timer.toggle(at: now)
+        XCTAssertEqual(timer.shortText(at: now), "25m")
+        XCTAssertEqual(timer.shortText(at: now.addingTimeInterval(60)), "24m")
+        XCTAssertEqual(timer.shortText(at: now.addingTimeInterval(24 * 60 + 1)), "0:59")
+        XCTAssertEqual(timer.progress(at: now.addingTimeInterval(12.5 * 60)), 0.5, accuracy: 0.0001)
     }
 
     func testFormattingRoundsUpAndNeverShowsNegativeTime() {
@@ -66,12 +78,16 @@ final class CoreTests: XCTestCase {
         let layout = DisplayLayout(frame: CGRect(x: 100, y: 200, width: 1512, height: 982),
                                    visibleFrame: CGRect(x: 100, y: 224, width: 1512, height: 921),
                                    safeTop: 37, cameraGap: CGRect(x: 760, y: 1145, width: 192, height: 37))
-        for expanded in [false, true] {
-            let surface = layout.surface(expanded: expanded)
+        let idle = layout.surface(expanded: false)
+        XCTAssertEqual(idle.width, 192 + 2 * DisplayLayout.flare, "An idle surface hugs the camera housing")
+        XCTAssertEqual(idle.height, 37)
+        for (expanded, wing) in [(false, 48), (true, 0), (true, 48)] as [(Bool, CGFloat)] {
+            let surface = layout.surface(expanded: expanded, wing: wing)
             XCTAssertEqual(surface.maxY, layout.frame.maxY, "The surface must join the physical bezel, not sit below the notch")
             XCTAssertEqual(surface.midX, 856)
             XCTAssertTrue(layout.frame.contains(surface))
-            let wings = layout.wings(expanded: expanded)!
+            let wings = layout.wings(expanded: expanded, wing: wing)!
+            XCTAssertGreaterThanOrEqual(wings.left.width, wing)
             XCTAssertEqual(wings.left.maxX, layout.cameraHousing!.minX)
             XCTAssertEqual(wings.right.minX, layout.cameraHousing!.maxX)
             XCTAssertFalse(wings.left.intersects(layout.cameraHousing!))
@@ -81,6 +97,8 @@ final class CoreTests: XCTestCase {
             XCTAssertTrue(surface.contains(wings.right))
         }
         XCTAssertEqual(layout.panelBody.maxY, layout.cameraHousing!.minY)
+        XCTAssertEqual(layout.surface(expanded: true).width, DisplayLayout.panelSize.width)
+        XCTAssertEqual(layout.surface(expanded: true).height, DisplayLayout.panelSize.height + 37)
     }
 
     func testUnknownCameraGeometryFallsBackWithoutCoveringControls() {
@@ -98,6 +116,8 @@ final class CoreTests: XCTestCase {
         let layout = DisplayLayout(frame: CGRect(x: -1920, y: -100, width: 1920, height: 1080),
                                    visibleFrame: CGRect(x: -1920, y: -100, width: 1920, height: 1055), safeTop: 0, cameraGap: nil)
         XCTAssertEqual(layout.surface(expanded: false).midX, -960)
+        XCTAssertEqual(layout.surface(expanded: false, wing: 120).width, 148, "A floating pill fits its content")
+        XCTAssertEqual(layout.surface(expanded: false).width, 96)
         XCTAssertEqual(layout.surface(expanded: true).maxY, 949)
         XCTAssertTrue(layout.visibleFrame.contains(layout.surface(expanded: true)))
     }
@@ -157,7 +177,8 @@ final class CoreTests: XCTestCase {
         defer { modules.forEach { $0.stop() } }
         XCTAssertEqual(registries.cards.items.map(\.id), ["timer"])
         XCTAssertEqual(registries.tabs.items.map(\.id), ["timer"])
-        XCTAssertEqual(registries.segments.items.map(\.id), ["timer.pill"])
+        XCTAssertEqual(registries.segments.items.map(\.id), ["timer.pill", "timer.ring"])
+        XCTAssertEqual(registries.segments.items.map(\.slot), [.trailing, .leading])
         XCTAssertEqual(registries.searchSources.items.first?.find("COUNTDOWN").count, 1)
         XCTAssertEqual(registries.searchSources.items.first?.find("unknown").count, 0)
         XCTAssertEqual(registries.settingsSections.items.map(\.id), ["timer"])
