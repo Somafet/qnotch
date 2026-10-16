@@ -682,3 +682,44 @@ final class AgentUsageTests: XCTestCase {
         XCTAssertTrue(board.applyT3([]).isEmpty)
     }
 }
+
+final class WeatherTests: XCTestCase {
+    func testForecastParsesAndFormatsLikeWindows() throws {
+        let place = WeatherPlace(id: "1-72837", name: "Oslo", detail: "Norway", lat: 59.91333, lon: 10.73889, elevation: 23, timeZone: "Europe/Oslo", urlPath: "Norway/Oslo/Oslo/Oslo")
+        XCTAssertEqual(place.forecastURL?.absoluteString, "https://api.met.no/weatherapi/locationforecast/2.0/complete?lat=59.9133&lon=10.7389&altitude=23")
+        XCTAssertEqual(place.yrURL?.absoluteString, "https://www.yr.no/en/forecast/daily-table/1-72837/Norway/Oslo/Oslo/Oslo")
+        let json = """
+        {"properties":{"timeseries":[
+         {"time":"2026-10-16T10:00:00Z","data":{"instant":{"details":{"air_temperature":11.6,"apparent_air_temperature":9.4,"wind_speed":4.2}},
+          "next_1_hours":{"summary":{"symbol_code":"lightrainshowers_day"},"details":{"precipitation_amount":0.4}},
+          "next_6_hours":{"summary":{"symbol_code":"rain"},"details":{"air_temperature_max":13.1,"air_temperature_min":8.0}}}},
+         {"time":"2026-10-17T10:00:00Z","data":{"instant":{"details":{"air_temperature":7.0}},
+          "next_6_hours":{"summary":{"symbol_code":"clearsky_day"},"details":{"air_temperature_max":9.0,"air_temperature_min":2.4}}}}
+        ]}}
+        """
+        let now = ISO8601DateFormatter().date(from: "2026-10-16T10:30:00Z")!
+        let forecast = try WeatherForecast.parse(Data(json.utf8), lat: place.lat, lon: place.lon, fetched: now, expires: now, lastModified: "")
+        XCTAssertEqual(forecast.points.count, 2)
+        let view = try XCTUnwrap(WeatherFormat.build(forecast, place: place, units: .metric, now: now))
+        XCTAssertEqual(view.temp, "12°")
+        XCTAssertEqual(view.condition, "Light rain showers")
+        XCTAssertEqual(view.detail, "Feels 9° · 4 m/s · 0.4 mm")
+        XCTAssertEqual(view.days.map(\.name).first, "Today")
+        XCTAssertEqual(view.days.first?.high, "13°")
+        XCTAssertEqual(view.days.count, 2)
+        XCTAssertEqual(view.days[1].symbol, "clearsky_day")
+        XCTAssertEqual(WeatherFormat.build(forecast, place: place, units: .imperial, now: now)?.temp, "53°")
+        XCTAssertNil(WeatherFormat.build(forecast, place: place, units: .metric, now: now.addingTimeInterval(3 * 86400)))
+        XCTAssertEqual(WeatherFormat.condition("heavysnowshowersandthunder_night"), "Heavy snow showers and thunder")
+        XCTAssertEqual(WeatherFormat.condition("rain"), "Rain")
+        XCTAssertEqual(WeatherFormat.sfSymbol("partlycloudy_night"), "cloud.moon.fill")
+        XCTAssertEqual(WeatherFormat.sfSymbol("heavyrainandthunder"), "cloud.bolt.rain.fill")
+        XCTAssertEqual(WeatherFormat.nextRefresh(expires: now.addingTimeInterval(60), now: now), 600)
+        XCTAssertEqual(WeatherFormat.nextRefresh(expires: now.addingTimeInterval(9000), now: now), 7200)
+        XCTAssertThrowsError(try WeatherForecast.parse(Data(#"{"properties":{"timeseries":[]}}"#.utf8), lat: 0, lon: 0, fetched: now, expires: now, lastModified: ""))
+        let search = #"{"_embedded":{"location":[{"id":"2-3054643","name":"Budapest","position":{"lat":47.49801,"lon":19.03991},"elevation":109.6,"timeZone":"Europe/Budapest","urlPath":"Hungary/Budapest/Budapest","region":{"name":"Budapest"},"country":{"name":"Hungary"}}]}}"#
+        let places = try WeatherPlace.parseSearch(Data(search.utf8))
+        XCTAssertEqual(places.first?.detail, "Hungary")
+        XCTAssertEqual(places.first?.elevation, 110)
+    }
+}

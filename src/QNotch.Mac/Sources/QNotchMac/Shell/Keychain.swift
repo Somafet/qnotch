@@ -40,3 +40,9 @@ enum Keychain {
         return bytes.map { String(format: "%02x", $0) }.joined()
     }
 }
+
+/// Process-wide facts modules may consult.
+enum Runtime {
+    /// `--smoke-test` or `--measure`: no network requests, no Keychain, demo data where a module needs some.
+    static var diagnostics = false
+}

@@ -32,6 +32,7 @@ private final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenu
             }
             // Diagnostic runs never read or write the user's Keychain.
             Keychain.inMemory = [:]
+            Runtime.diagnostics = true
         }
         // Advisory, per-data-root instance lock. Never terminate another user's app.
         do {

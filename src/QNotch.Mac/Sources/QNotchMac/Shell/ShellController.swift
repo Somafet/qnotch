@@ -491,8 +491,18 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     private func buildStatus() {
         for view in [leading, trailing, pill] { view.removeFromSuperview() }
         let segments = registries.segments.items
-        leading = row(segments.filter { $0.slot == .leading }.map { $0.makeView() }, spacing: 6)
-        trailing = row(segments.filter { $0.slot == .trailing }.map { $0.makeView() }, spacing: 6)
+        func stack(_ slot: SegmentSlot) -> NSStackView {
+            // Each segment sits in a shell-owned slot, so a full wing can drop whole segments
+            // (farthest from the camera first) without touching the module's own visibility.
+            let slots = segments.filter { $0.slot == slot }.map { item -> NSView in
+                let container = SegmentSlotView()
+                embed(item.makeView(), in: container, inset: 0, fill: true)
+                return container
+            }
+            return row(slots, spacing: 6)
+        }
+        leading = stack(.leading)
+        trailing = stack(.trailing)
         leading.identifier = NSUserInterfaceItemIdentifier("notch-left-wing")
         trailing.identifier = NSUserInterfaceItemIdentifier("notch-right-wing")
         let glyph = symbol("circle.lefthalf.filled", size: 13, weight: .medium, color: Palette.textSecondary)
@@ -544,11 +554,28 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         return handle
     }
 
+    private final class SegmentSlotView: NSView {}
+
     private func visibleWidth(_ stack: NSStackView) -> CGFloat {
         stack.arrangedSubviews.contains { !$0.isHidden } ? stack.fittingSize.width : 0
     }
 
+    /// Shows the slots whose segment is visible, in order, while they fit in `maxWidth`.
+    private func fit(_ stack: NSStackView, maxWidth: CGFloat) {
+        var used: CGFloat = 0
+        for case let slot as SegmentSlotView in stack.arrangedSubviews {
+            guard let segment = slot.subviews.first, !segment.isHidden else { slot.isHidden = true; continue }
+            let width = segment.fittingSize.width + (used > 0 ? stack.spacing : 0)
+            slot.isHidden = used + width > maxWidth
+            if !slot.isHidden { used += width }
+        }
+    }
+
     private func measureWing() -> CGFloat {
+        let integrated = layout?.integratesCameraHousing == true
+        // The wing grows to at most 170 points (content plus 24 of margin); a pill to 300.
+        fit(leading, maxWidth: integrated ? 146 : 150)
+        fit(trailing, maxWidth: integrated ? 146 : 150)
         let left = peekShown ? peekLeft.fittingSize.width : visibleWidth(leading)
         let right = peekShown ? peekRight.fittingSize.width : visibleWidth(trailing)
         guard left > 0 || right > 0 else { return 0 }
@@ -582,9 +609,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
             for (stack, area) in [(leading, wings.left), (trailing, wings.right), (peekLeft, wings.left), (peekRight, wings.right)] {
                 if stack === leading || stack === trailing { stack.isHidden = !active || peeking }
                 guard !stack.isHidden else { continue }
-                // Never wider than the clear area beside the camera: long text truncates instead.
-                var size = stack.fittingSize
-                size.width = min(size.width, max(0, area.width - 12))
+                let size = stack.fittingSize
                 surface.place(stack, at: CGRect(x: area.midX - size.width / 2, y: area.midY - size.height / 2, width: size.width, height: size.height))
             }
         } else {

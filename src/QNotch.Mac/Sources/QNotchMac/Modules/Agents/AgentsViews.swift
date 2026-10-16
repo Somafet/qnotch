@@ -11,7 +11,6 @@ final class AgentPillView: NSStackView {
         spacing = 5
         size(dot, width: 7, height: 7)
         text.widthAnchor.constraint(lessThanOrEqualToConstant: 110).isActive = true
-        text.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         [dot, text].forEach(addArrangedSubview)
         identifier = NSUserInterfaceItemIdentifier("agents-segment")
         setAccessibilityElement(true)
@@ -101,7 +100,6 @@ private final class SessionRow: FillView {
         var subtitle = [meta]
         if !session.title.isEmpty { subtitle.insert(line(session.name + " ·", size: 11, color: Palette.textTertiary), at: 0) }
         let text = column([title, row(subtitle, spacing: 4)], spacing: 2)
-        text.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         var buttons: [NSView] = []
         if let usage = module.usage[session.id]?.today, usage.tokens > 0 {
             let cost = line(usage.costText, size: 12, weight: .medium, color: Palette.textPrimary)

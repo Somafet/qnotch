@@ -314,7 +314,7 @@ enum NativeSmokeTest {
             if (id == "notch-left-wing" || id == "notch-right-wing"), global.width > 0, global.height > 0 {
                 let clearArea = id == "notch-left-wing" ? wings.left : wings.right
                 guard clearArea.insetBy(dx: -0.5, dy: -0.5).contains(global), !global.intersects(housing) else {
-                    throw Failure("Status content overlaps the camera or bezel: \(id ?? "") \(global)")
+                    throw Failure("Status content overlaps the camera or bezel: \(id ?? "") \(global) area=\(clearArea) wing=\(shell.wing) expanded=\(shell.state.expanded) fitting=\(view.fittingSize)")
                 }
             }
             for child in view.subviews { try walk(child) }
