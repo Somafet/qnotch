@@ -245,3 +245,18 @@ final class VolumeLevelTests: XCTestCase {
         XCTAssertTrue(muted.setting(percent: 0).muted)
     }
 }
+
+final class NoteTextTests: XCTestCase {
+    func testWordsAndLineMatches() {
+        XCTAssertEqual(NoteText.words(in: ""), 0)
+        XCTAssertEqual(NoteText.words(in: "Buy milk,\nthen call Ádám — at 5pm."), 7)
+        let text = "Groceries\n  buy MILK and eggs\n\nCafé meeting\n" + String(repeating: "x", count: 50) + " milk " + String(repeating: "y", count: 50)
+        let hits = NoteText.matches(of: "milk", in: text)
+        XCTAssertEqual(hits.first, "buy MILK and eggs")
+        XCTAssertEqual(hits.count, 2)
+        XCTAssertTrue(hits[1].hasPrefix("…") && hits[1].hasSuffix("…") && hits[1].contains("milk"))
+        XCTAssertEqual(NoteText.matches(of: "cafe", in: text), ["Café meeting"])
+        XCTAssertEqual(NoteText.matches(of: "", in: text), [])
+        XCTAssertEqual(NoteText.matches(of: "e", in: text, limit: 2).count, 2)
+    }
+}
