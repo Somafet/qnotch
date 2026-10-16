@@ -1,21 +1,20 @@
 # Agent instructions
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for the code layout and rules.
+Read [ARCHITECTURE.md](ARCHITECTURE.md) for shared principles and the Windows implementation contract. See [CONTRIBUTING.md](CONTRIBUTING.md) for checks by area and [docs/releases.md](docs/releases.md) before changing packaging or publishing.
 
-## After every feature
+## Work by platform
 
-Rebuild the exe so it can be tried out right away:
+- Windows app: `src/QNotch/`, `tests/QNotch.UpdateTests/`, and `tests/QNotch.PhoneShareTests/`. Follow [the Windows agent instructions](src/QNotch/AGENTS.md), including the publish and Explorer-launch rules, for work in any of these paths or on Windows packaging.
+- macOS: reserved source location `src/QNotch.Mac/`; no app target exists yet. Read [the macOS guide](docs/macos/README.md). Do not create a placeholder executable, claim feature parity, or require Windows tooling for Mac-only work.
+- Website: `website/`. Follow [website/README.md](website/README.md) and run its static build.
+- Repository tooling: `scripts/`, `tests/repository/`, and `.github/`. Run `npm ci` and `npm test` from the root with Node.js 24 or newer. Workflow changes must preserve the required `build` check and existing Windows release compatibility.
 
-```
-dotnet publish src/QNotch/QNotch.csproj -p:PublishProfile=win-x64
-```
+Do not move the Windows app, rename its downloads, change the latest-release endpoint, or change the contents of its single-exe ZIP as part of repository preparation. A Mac release must never replace the global Windows latest release. Use the guarded publisher documented in the release guide.
 
-This writes `dist\QNotch.exe`. If QNotch is running it locks the exe: feel free to kill the process, publish, and start it again without asking.
+## Scope and verification
 
-Always start it through Explorer, never directly:
+Keep common product contracts separate from OS implementations. Prefer shared examples and fixtures over a speculative shared runtime. A framework choice for the Mac port is still open.
 
-```
-explorer.exe dist\QNotch.exe
-```
+Run checks for each affected area. Windows features must leave a freshly published `dist/QNotch.exe` for the user to try. Mac-only and website-only changes do not require a Windows build. Shared behavior or release changes require the affected Windows regression checks too.
 
-The Claude desktop app is a packaged (MSIX) app, so a process it starts directly gets a private copy of `%APPDATA%` (`%LOCALAPPDATA%\Packages\Claude_*\LocalCache\Roaming\QNotch`). Settings saved in that instance are invisible to the QNotch the user starts themselves, and the other way around. The same applies when you inspect `%APPDATA%\QNotch` from an agent shell: you see the private copy, not the real folder.
+Keep personal account details and signing credentials out of public issues, documentation, logs, and source. Describe signing requirements generically; configure the actual identity privately.

@@ -1,0 +1,12 @@
+[
+  { "tag": "v0.4.0", "platform": "windows", "version": "0.4.0" },
+  { "tag": "v1.10.2", "platform": "windows", "version": "1.10.2" },
+  { "tag": "macos-v0.1.0", "platform": "macos", "version": "0.1.0" },
+  { "tag": "macos-v0.1.0-beta.1", "platform": "macos", "version": "0.1.0", "prerelease": true },
+  { "tag": "macos-v99.0.0", "platform": "macos", "version": "99.0.0" },
+  { "tag": "v0.5.0-beta.1", "platform": null },
+  { "tag": "v01.2.3", "platform": null },
+  { "tag": "v1.2", "platform": null },
+  { "tag": "macos-v1.2.3;echo bad", "platform": null },
+  { "tag": "v65535.0.0", "platform": null }
+]

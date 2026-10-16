@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Threading;
@@ -35,6 +36,39 @@ await Test("new stable release selects the installed variant", () =>
     Assert(UpdateRelease.Read(ReleaseJson(exe, draft: true), previous, false) is null);
     Assert(UpdateRelease.Read(ReleaseJson(exe, preview: true), previous, false) is null);
     return Task.CompletedTask;
+});
+await Test("Mac channel tags never become Windows updates, even at a higher version", () =>
+{
+    using var fixtures = JsonDocument.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "release-tags.json")));
+    foreach (var fixture in fixtures.RootElement.EnumerateArray())
+    {
+        if (fixture.GetProperty("platform").GetString() != "macos") continue;
+        var tag = fixture.GetProperty("tag").GetString()!;
+        var json = ReleaseJson(exe, tag: tag, assetName: "QNotch-macos-arm64.dmg");
+        Assert(UpdateRelease.Read(json, previous, false) is null);
+        Assert(UpdateRelease.Read(json, previous, true) is null);
+    }
+    return Task.CompletedTask;
+});
+await Test("Mac assets do not change selection of either legacy Windows variant", () =>
+{
+    foreach (var zip in new[] { false, true })
+    {
+        var root = JsonNode.Parse(ReleaseJson(exe, zip: zip))!;
+        var assets = root["assets"]!.AsArray();
+        var mac = assets[0]!.DeepClone();
+        mac["name"] = "QNotch-macos-arm64.dmg";
+        mac["browser_download_url"] = $"{UpdateRelease.Repository}/releases/download/v0.4.0/QNotch-macos-arm64.dmg";
+        assets.Insert(0, mac);
+        Assert(UpdateRelease.Read(root.ToJsonString(), previous, zip) is { } update && update.IsZip == zip);
+    }
+    return Task.CompletedTask;
+});
+await Test("Windows-style tags with only Mac downloads still fail closed", async () =>
+{
+    var json = ReleaseJson(exe, assetName: "QNotch-macos-arm64.dmg");
+    await Reject(() => Task.FromResult(UpdateRelease.Read(json, previous, false)));
+    await Reject(() => Task.FromResult(UpdateRelease.Read(json, previous, true)));
 });
 await Test("rejects missing assets, foreign URLs and missing checksums", async () =>
 {
@@ -204,6 +238,27 @@ if (args.Contains("--verify-publish"))
         VerifyPublishedRuntime(Path.GetFullPath("dist/self-contained/QNotch.exe"), true);
         return Task.CompletedTask;
     });
+    await Test("published archive contains only the exact self-contained executable", () =>
+    {
+        using var archive = ZipFile.OpenRead(Path.GetFullPath("dist/QNotch-self-contained.zip"));
+        Assert(archive.Entries.Count == 1 && archive.Entries[0].FullName == "QNotch.exe");
+        Assert(archive.Entries[0].Length is > 0 and <= UpdateRelease.MaxDownloadSize);
+        using var entry = archive.Entries[0].Open();
+        using var published = File.OpenRead(Path.GetFullPath("dist/self-contained/QNotch.exe"));
+        Assert(archive.Entries[0].Length == published.Length);
+        Assert(SHA256.HashData(entry).SequenceEqual(SHA256.HashData(published)));
+        return Task.CompletedTask;
+    });
+    if (Array.IndexOf(args, "--release-version") is var index && index >= 0)
+        await Test("both published executable versions match the release tag", () =>
+        {
+            Assert(index + 1 < args.Length);
+            var version = UpdateRelease.ParseVersion(args[index + 1]);
+            Assert(version is not null);
+            UpdateClient.ValidateExecutable(Path.GetFullPath("dist/QNotch.exe"), version!);
+            UpdateClient.ValidateExecutable(Path.GetFullPath("dist/self-contained/QNotch.exe"), version!);
+            return Task.CompletedTask;
+        });
 }
 Console.WriteLine($"{checks - failures}/{checks} update checks passed.");
 if (Directory.Exists(settingsDirectory)) Directory.Delete(settingsDirectory, true); // exact absolute test-owned directory above
@@ -228,6 +283,7 @@ static void VerifyPublishedRuntime(string exePath, bool selfContained)
     object?[] arguments = [exePath, 0L];
     Assert((bool)isBundle.Invoke(null, arguments)!);
     using var reader = new BinaryReader(File.OpenRead(exePath));
+    Assert(reader.BaseStream.Length is > 0 and <= UpdateRelease.MaxDownloadSize);
     reader.BaseStream.Position = (long)arguments[1]!;
     Assert(reader.ReadUInt32() is 2 or 6);
     Assert(reader.ReadUInt32() == 0 && reader.ReadInt32() > 0);
@@ -251,9 +307,9 @@ static async Task Reject(Func<Task> action)
     catch (Exception ex) when (ex is InvalidDataException or HttpRequestException or OperationCanceledException) { return; }
     throw new Exception("Expected the invalid update to be rejected.");
 }
-static string ReleaseJson(byte[] bytes, bool zip = false, bool draft = false, bool preview = false, string? url = null, string? digest = null, long? size = null, string tag = "v0.4.0")
+static string ReleaseJson(byte[] bytes, bool zip = false, bool draft = false, bool preview = false, string? url = null, string? digest = null, long? size = null, string tag = "v0.4.0", string? assetName = null)
 {
-    var name = zip ? "QNotch-self-contained.zip" : "QNotch.exe";
+    var name = assetName ?? (zip ? "QNotch-self-contained.zip" : "QNotch.exe");
     return JsonSerializer.Serialize(new
     {
         tag_name = tag, draft, prerelease = preview,

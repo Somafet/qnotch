@@ -1,4 +1,6 @@
-# QNotch: specification
+# QNotch: Windows design specification
+
+This is the original Windows design document. It includes historical goals and alternatives; [ARCHITECTURE.md](ARCHITECTURE.md) describes the current Windows implementation. Shared product principles now live in [spec/README.md](spec/README.md). A future macOS port has its own [platform guide](docs/macos/README.md) and does not inherit Windows API or packaging requirements.
 
 A personal, performance-first Windows "notch" overlay modelled on BuildNotch 1.1.0 (buildnotch.app, reviewed 2026-09-30). BuildNotch ships as a Tauri app (Rust core + WebView2 UI). QNotch keeps a trimmed feature set, drops the web view, and adds a Game mode: native rendering, near-zero idle CPU, small resident memory, instant hover response.
 
@@ -15,7 +17,7 @@ Goals
 
 Non-goals
 
-- Multi-platform. Notch is Windows-only.
+- Implementing the macOS port inside this Windows design. The repository accommodates both ports; macOS implementation and platform differences are separate work.
 - Cloud sync, accounts, payments.
 - Replacing Windows clipboard history (Win+V). QNotch's clipboard is a session convenience layer.
 - Productivity widgets (timers, tasks, projects, notes-as-todo, quotes, app launchers, code scratchpad). Deliberately left out to keep the surface small.
