@@ -38,6 +38,35 @@ enum NativeSmokeTest {
                 }
                 shell.modules.lazy.compactMap({ $0 as? StatsModule }).first?.sampleNow()
                 try shell.snapshot(to: output.appendingPathComponent("home.png"))
+                shell.setEditing(true)
+                guard shell.editing, shell.isHeld else { throw Failure("Edit mode did not hold the panel open") }
+                try shell.snapshot(to: output.appendingPathComponent("home-editing.png"))
+                // A real drag through the grid's mouse handlers: the first card onto the second.
+                let ids = shell.registries.cards.items.map(\.id)
+                if ids.count > 1, let root = shell.panel.contentView {
+                    func find(_ id: String, in view: NSView) -> NSView? {
+                        if view.identifier?.rawValue == "card-" + id { return view }
+                        for child in view.subviews { if let found = find(id, in: child) { return found } }
+                        return nil
+                    }
+                    let order = LayoutOrder.apply(saved: shell.general.cardOrder, defaults: ids)
+                    if let first = find(order[0], in: root), let second = find(order[1], in: root), let grid = first.superview {
+                        func event(_ type: NSEvent.EventType, _ view: NSView) -> NSEvent {
+                            let point = view.convert(NSPoint(x: view.bounds.midX, y: view.bounds.midY), to: nil)
+                            return NSEvent.mouseEvent(with: type, location: point, modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime,
+                                                      windowNumber: shell.panel.windowNumber, context: nil, eventNumber: 0, clickCount: 1, pressure: 1)!
+                        }
+                        grid.mouseDown(with: event(.leftMouseDown, first))
+                        grid.mouseDragged(with: event(.leftMouseDragged, second))
+                        grid.mouseUp(with: event(.leftMouseUp, second))
+                        guard LayoutOrder.apply(saved: shell.general.cardOrder, defaults: ids).prefix(2) == [order[1], order[0]] else {
+                            throw Failure("Dragging a card in edit mode did not save its new place (\(shell.general.cardOrder))")
+                        }
+                        shell.updateGeneral { $0.cardOrder = [] }
+                    }
+                }
+                shell.setEditing(false)
+                guard !shell.isHeld else { throw Failure("Ending edit mode kept the panel held") }
                 try snapshotCards(shell: shell, output: output)
                 if let stats = shell.modules.lazy.compactMap({ $0 as? StatsModule }).first {
                     guard stats.hasScheduledWake, stats.sampleCount > 0 else { throw Failure("System stats did not sample while its card was visible") }
@@ -159,7 +188,7 @@ enum NativeSmokeTest {
                             do {
                                 try shell.settings?.snapshotPages(to: output)
                                 shell.settings?.window.close()
-                                let report = "Native UI smoke: actual window placement verified; camera center reserved; hover preserves focus; explicit summon grants keyboard; Escape collapses; running timer shows its status wing; toggle and search hotkeys work; timer completes hidden with one wake and opens Home; disabled module not constructed; every Home card and tab rendered; notify command, waiting answer and loopback HTTP work; agent hooks update the board and transcript usage is read; clipboard skips concealed content; file tray accepts drops and lists files; pin, card hiding and accent applied; mic and camera segment shown; system stats sampled; note saved after its debounce; interactive controls named; every settings page rendered.\nstartup_seconds=\(ready)\n\(screenLocked ? "note=screen locked; window-server key status not checked\n" : "")done\n"
+                                let report = "Native UI smoke: actual window placement verified; camera center reserved; hover preserves focus; explicit summon grants keyboard; Escape collapses; running timer shows its status wing; toggle and search hotkeys work; timer completes hidden with one wake and opens Home; disabled module not constructed; every Home card and tab rendered; edit mode holds the panel and a card drag saves its place; notify command, waiting answer and loopback HTTP work; agent hooks update the board and transcript usage is read; clipboard skips concealed content; file tray accepts drops and lists files; pin, card hiding and accent applied; mic and camera segment shown; system stats sampled; note saved after its debounce; interactive controls named; every settings page rendered.\nstartup_seconds=\(ready)\n\(screenLocked ? "note=screen locked; window-server key status not checked\n" : "")done\n"
                                 try Data(report.utf8).write(to: output.appendingPathComponent("smoke.txt"))
                                 NSApp.terminate(nil)
                             } catch { fail(error, output: output) }

@@ -27,6 +27,9 @@ public struct GeneralSettings: Codable, Equatable {
     public var profileName: String?
     /// Home cards the user hid (by card id).
     public var hiddenCards: [String] = []
+    /// Edit mode: the user's order of Home cards and of module tabs (see LayoutOrder).
+    public var cardOrder: [String] = []
+    public var tabOrder: [String] = []
     public init() {}
 
     public func isEnabled(_ module: String) -> Bool { !disabledModules.contains(module) }
@@ -47,7 +50,7 @@ public struct GeneralSettings: Codable, Equatable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case displayID, reduceMotion, disabledModules, timerEnabled, hoverDelayMs, closeDelayMs, pinned, accent, profileName, hiddenCards
+        case displayID, reduceMotion, disabledModules, timerEnabled, hoverDelayMs, closeDelayMs, pinned, accent, profileName, hiddenCards, cardOrder, tabOrder
     }
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -62,6 +65,8 @@ public struct GeneralSettings: Codable, Equatable {
         accent = c.value(.accent, String?.none).flatMap { Self.accents.contains($0) ? $0 : nil }
         profileName = c.value(.profileName, String?.none)
         hiddenCards = c.value(.hiddenCards, [])
+        cardOrder = c.value(.cardOrder, [])
+        tabOrder = c.value(.tabOrder, [])
     }
     public func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
@@ -74,6 +79,8 @@ public struct GeneralSettings: Codable, Equatable {
         try c.encodeIfPresent(accent, forKey: .accent)
         try c.encodeIfPresent(profileName, forKey: .profileName)
         try c.encode(hiddenCards, forKey: .hiddenCards)
+        try c.encode(cardOrder, forKey: .cardOrder)
+        try c.encode(tabOrder, forKey: .tabOrder)
     }
 }
 

@@ -227,11 +227,12 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         init(_ shell: ShellController) { self.shell = shell; shell.holds += 1 }
         deinit {
             guard let shell else { return }
-            DispatchQueue.main.async {
+            let release = {
                 shell.holds -= 1
                 // Released while the pointer is elsewhere: close after the usual leave delay.
-                if shell.holds == 0, !shell.panel.frame.contains(NSEvent.mouseLocation) { shell.pointerLeft() }
+                if shell.holds == 0 { DispatchQueue.main.async { if !shell.panel.frame.contains(NSEvent.mouseLocation) { shell.pointerLeft() } } }
             }
+            if Thread.isMainThread { release() } else { DispatchQueue.main.async(execute: release) }
         }
     }
     var isHeld: Bool { holds > 0 }
@@ -361,6 +362,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         hoverTask?.cancel(); leaveTask?.cancel()
         guard state.expanded else { return }
         let restore = restoreFocus && panel.isKeyWindow
+        setEditing(false)
         state.close()
         panel.keyboardAllowed = false
         panel.resignKey()
@@ -382,9 +384,28 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     // MARK: Tabs and search
 
     private var tabs: [PanelView.Tab] {
-        [PanelView.Tab(id: "home", symbol: "house", title: "Home"),
-         PanelView.Tab(id: "search", symbol: "magnifyingglass", title: "Search")] +
-        registries.tabs.items.map { PanelView.Tab(id: $0.id, symbol: $0.symbol, title: $0.title) }
+        let items = registries.tabs.items
+        let order = LayoutOrder.apply(saved: general.tabOrder, defaults: items.map(\.id))
+        return [PanelView.Tab(id: "home", symbol: "house", title: "Home"),
+                PanelView.Tab(id: "search", symbol: "magnifyingglass", title: "Search")] +
+            order.compactMap { id in items.first { $0.id == id } }.map { PanelView.Tab(id: $0.id, symbol: $0.symbol, title: $0.title) }
+    }
+
+    // MARK: Edit mode
+
+    private(set) var editing = false
+    private var editHold: AnyObject?
+    private weak var homeView: HomeView?
+
+    /// Jiggle and drag cards and tabs (Windows EditMode). The panel never auto-closes meanwhile.
+    func toggleEditing() { setEditing(!editing) }
+
+    func setEditing(_ value: Bool) {
+        guard editing != value else { return }
+        editing = value
+        editHold = value ? holdOpen() : nil
+        homeView?.editing = value
+        panelView?.setEditing(value, onHome: activeTab == "home")
     }
 
     func selectTab(_ id: String) {
@@ -395,8 +416,10 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
             if id == "search", state.acceptsKeyboard { searchView?.focus(appending: "") }
             return
         }
+        if editing, id != "home" { setEditing(false) }
         activeTab = id
         panelView?.select(id, animated: true)
+        panelView?.setEditing(editing, onHome: id == "home")
         showBody(direction: next > previous ? 1 : -1, animated: true)
         updateVisibility()
         if id == "search", state.acceptsKeyboard { searchView?.focus(appending: "") }
@@ -476,7 +499,13 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
             return placeholder(symbol: "square.grid.2x2", title: "No cards on Home", detail: "Turn on features in Settings to add their cards here.",
                                action: ("Open Settings", { [weak self] in self?.openSettings(page: "features") }))
         }
-        return HomeView(cards: cards.map { ($0, cached("card." + $0.id, $0.makeView)) })
+        let order = LayoutOrder.apply(saved: general.cardOrder, defaults: cards.map(\.id))
+        let ordered = order.compactMap { id in cards.first { $0.id == id } }
+        let home = HomeView(cards: ordered.map { ($0, cached("card." + $0.id, $0.makeView)) })
+        home.reordered = { [weak self] ids in self?.updateGeneral { $0.cardOrder = LayoutOrder.reorder(ids, saved: $0.cardOrder) } }
+        home.editing = editing
+        homeView = home
+        return home
     }
 
     private func cached(_ id: String, _ factory: () -> NSView) -> NSView {
@@ -699,7 +728,9 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
             let view = PanelView(tabs: tabs, selected: activeTab, profile: profile, pinned: general.pinned,
                                  select: { [weak self] in self?.selectTab($0) },
                                  togglePin: { [weak self] in self?.togglePin() },
-                                 openSettings: { [weak self] in self?.openSettings() })
+                                 openSettings: { [weak self] in self?.openSettings() },
+                                 toggleEdit: { [weak self] in self?.toggleEditing() },
+                                 reorderTabs: { [weak self] ids in self?.updateGeneral { $0.tabOrder = LayoutOrder.reorder(ids, saved: $0.tabOrder) } })
             panelView = view
             surface.place(view, at: layout.panelBody)
             view.layoutSubtreeIfNeeded()

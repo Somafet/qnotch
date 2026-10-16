@@ -261,20 +261,31 @@ final class HoverButton: NSButton {
 
 // MARK: - Notch controls
 
-/// Icon tab strip with one sliding indicator behind the buttons (Windows TabStrip).
+/// Icon tab strip with one sliding indicator behind the buttons (Windows TabStrip). In edit mode
+/// the movable tabs (after `fixed`) jiggle and drag sideways to reorder; a press without a drag
+/// still opens the tab.
 final class TabBar: FillView {
-    private let buttons: [HoverButton]
+    private var buttons: [HoverButton]
     private let indicator = FillView(fill: Palette.controlHover, stroke: Palette.stroke, radius: 9)
     private(set) var selected: Int
+    private let changed: (Int) -> Void
+    /// Original indices in their new order, after a drag.
+    var reordered: (([Int]) -> Void)?
+    var fixed = 2
+    var editing = false { didSet { if oldValue != editing { applyEditing() } } }
+    private var order: [Int]
+    private var drag: (position: Int, start: CGFloat, moved: Bool)?
     private static let item = NSSize(width: 40, height: 28), gap: CGFloat = 2, inset: CGFloat = 3
 
     init(items: [(symbol: String, title: String)], selected: Int, changed: @escaping (Int) -> Void) {
         self.selected = selected
+        self.changed = changed
         var made: [HoverButton] = []
         for (index, item) in items.enumerated() {
             made.append(HoverButton(symbol: item.symbol, style: .tab, symbolSize: 14, label: item.title) { changed(index) })
         }
         buttons = made
+        order = Array(items.indices)
         super.init(fill: Palette.control, radius: 12)
         addSubview(indicator)
         buttons.forEach(addSubview)
@@ -289,20 +300,22 @@ final class TabBar: FillView {
         let count = CGFloat(buttons.count)
         return NSSize(width: Self.inset * 2 + count * Self.item.width + max(0, count - 1) * Self.gap, height: Self.item.height + Self.inset * 2)
     }
-    private func frame(at index: Int) -> NSRect {
-        NSRect(x: Self.inset + CGFloat(index) * (Self.item.width + Self.gap), y: Self.inset, width: Self.item.width, height: Self.item.height)
+    private func frame(at position: Int) -> NSRect {
+        NSRect(x: Self.inset + CGFloat(position) * (Self.item.width + Self.gap), y: Self.inset, width: Self.item.width, height: Self.item.height)
     }
+    private func position(of index: Int) -> Int { order.firstIndex(of: index) ?? index }
+
     override func layout() {
         super.layout()
-        for (index, button) in buttons.enumerated() { button.frame = frame(at: index) }
-        indicator.frame = frame(at: selected)
+        for (position, index) in order.enumerated() where drag?.position != position { buttons[index].frame = frame(at: position) }
+        indicator.frame = frame(at: position(of: selected))
     }
 
     func select(_ index: Int, animated: Bool) {
         guard buttons.indices.contains(index) else { return }
         selected = index
         for (offset, button) in buttons.enumerated() { button.isSelectedLook = offset == index }
-        let target = frame(at: index)
+        let target = frame(at: position(of: index))
         if animated, Motion.enabled {
             NSAnimationContext.runAnimationGroup { context in
                 context.duration = 0.32
@@ -311,6 +324,66 @@ final class TabBar: FillView {
                 indicator.frame = target
             }
         } else { indicator.frame = target }
+    }
+
+    private func applyEditing() {
+        for (position, index) in order.enumerated() {
+            let layer = buttons[index].layer
+            layer?.removeAnimation(forKey: "jiggle")
+            guard editing, position >= fixed, Motion.enabled, let bounds = layer?.bounds else { continue }
+            func tilt(_ degrees: CGFloat) -> NSValue {
+                var t = CATransform3DMakeTranslation(bounds.midX, bounds.midY, 0)
+                t = CATransform3DRotate(t, degrees * .pi / 180, 0, 0, 1)
+                return NSValue(caTransform3D: CATransform3DTranslate(t, -bounds.midX, -bounds.midY, 0))
+            }
+            let jiggle = CAKeyframeAnimation(keyPath: "transform")
+            jiggle.values = [tilt(-2.5), tilt(2.5), tilt(-2.5)]
+            jiggle.duration = 0.26
+            jiggle.repeatCount = .infinity
+            jiggle.timeOffset = Double(position) * 0.05
+            layer?.add(jiggle, forKey: "jiggle")
+        }
+    }
+
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        guard editing else { return super.hitTest(point) }
+        return frame.contains(point) ? self : nil
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        guard editing else { return super.mouseDown(with: event) }
+        let x = convert(event.locationInWindow, from: nil).x
+        let position = max(0, min(order.count - 1, Int((x - Self.inset) / (Self.item.width + Self.gap))))
+        drag = (position, x, false)
+    }
+
+    override func mouseDragged(with event: NSEvent) {
+        guard var current = drag, current.position >= fixed else { return }
+        let x = convert(event.locationInWindow, from: nil).x
+        guard current.moved || abs(x - current.start) > 4 else { return }
+        current.moved = true
+        let button = buttons[order[current.position]]
+        button.frame.origin.x = max(frame(at: fixed).minX, min(frame(at: order.count - 1).minX, x - Self.item.width / 2))
+        let target = max(fixed, min(order.count - 1, Int((button.frame.midX - Self.inset) / (Self.item.width + Self.gap))))
+        if target != current.position {
+            order.insert(order.remove(at: current.position), at: target)
+            current.position = target
+            drag = current
+            Motion.animate(0.18) { self.needsLayout = true; self.layoutSubtreeIfNeeded() }
+        }
+        drag = current
+    }
+
+    override func mouseUp(with event: NSEvent) {
+        guard let current = drag else { return }
+        drag = nil
+        if current.moved {
+            Motion.animate(0.18) { self.needsLayout = true; self.layoutSubtreeIfNeeded() }
+            applyEditing()
+            reordered?(order)
+        } else {
+            changed(order[current.position])
+        }
     }
 }
 

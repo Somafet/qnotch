@@ -11,9 +11,11 @@ final class PanelView: NSView {
     private weak var current: NSView?
 
     private var pin: HoverButton!
+    private var edit: HoverButton!
 
     init(tabs: [Tab], selected: String, profile: (name: String, image: NSImage?), pinned: Bool,
-         select: @escaping (String) -> Void, togglePin: @escaping () -> Void, openSettings: @escaping () -> Void) {
+         select: @escaping (String) -> Void, togglePin: @escaping () -> Void, openSettings: @escaping () -> Void,
+         toggleEdit: @escaping () -> Void, reorderTabs: @escaping ([String]) -> Void) {
         self.tabs = tabs
         tabBar = TabBar(items: tabs.map { ($0.symbol, $0.title) }, selected: tabs.firstIndex { $0.id == selected } ?? 0) { index in
             select(tabs[index].id)
@@ -49,7 +51,9 @@ final class PanelView: NSView {
         let settings = HoverButton(symbol: "gearshape", style: .icon, symbolSize: 14, label: "Settings", action: openSettings)
         pin = HoverButton(symbol: "pin", style: .icon, symbolSize: 13, label: "Keep panel open", action: togglePin)
         pin.setAccessibilityIdentifier("panel-pin")
-        let actions = row([pin, settings], spacing: 2)
+        edit = HoverButton(symbol: "pencil", style: .icon, symbolSize: 13, label: "Edit layout", action: toggleEdit)
+        edit.setAccessibilityIdentifier("panel-edit")
+        let actions = row([edit, pin, settings], spacing: 2)
         for view in [profile, tabBar, actions, host] as [NSView] {
             view.translatesAutoresizingMaskIntoConstraints = false
             addSubview(view)
@@ -69,6 +73,17 @@ final class PanelView: NSView {
         ])
         host.wantsLayer = true
         setPinned(pinned)
+        let fixed = tabs.prefix { $0.id == "home" || $0.id == "search" }.count
+        tabBar.fixed = fixed
+        tabBar.reordered = { order in reorderTabs(order.dropFirst(fixed).map { tabs[$0].id }) }
+        edit.isHidden = selected != "home"
+    }
+
+    func setEditing(_ editing: Bool, onHome: Bool) {
+        tabBar.editing = editing
+        edit.isHidden = !onHome && !editing
+        edit.setSymbol(editing ? "checkmark" : "pencil", size: 13, label: editing ? "Done editing" : "Edit layout")
+        edit.tint = editing ? Palette.accent : nil
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 

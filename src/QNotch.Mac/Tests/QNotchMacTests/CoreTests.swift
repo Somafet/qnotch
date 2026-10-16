@@ -777,3 +777,16 @@ final class AiUsageTests: XCTestCase {
         XCTAssertEqual(settings.slots.prefix(3).map { $0 }, ["cursor", "chatgpt", nil], "A removed app is not placed again")
     }
 }
+
+final class LayoutOrderTests: XCTestCase {
+    func testSavedOrderWinsAndGoneItemsKeepTheirSlot() {
+        XCTAssertEqual(LayoutOrder.apply(saved: [], defaults: ["a", "b", "c"]), ["a", "b", "c"])
+        XCTAssertEqual(LayoutOrder.apply(saved: ["c", "gone", "a"], defaults: ["a", "b", "c"]), ["c", "a", "b"])
+        let moved = LayoutOrder.move("b", to: "c", saved: ["c", "gone", "a"], defaults: ["a", "b", "c"])
+        XCTAssertEqual(moved, ["b", "c", "gone", "a"])
+        XCTAssertEqual(LayoutOrder.apply(saved: moved, defaults: ["a", "b", "c", "gone"]), ["b", "c", "gone", "a"])
+        XCTAssertEqual(LayoutOrder.move("a", to: "a", saved: ["a"], defaults: ["a"]), ["a"])
+        XCTAssertEqual(LayoutOrder.reorder(["b", "a"], saved: ["a", "gone", "b"]), ["b", "gone", "a"])
+        XCTAssertEqual(LayoutOrder.reorder(["c", "a", "b"], saved: ["a", "b"]), ["c", "a", "b"])
+    }
+}
