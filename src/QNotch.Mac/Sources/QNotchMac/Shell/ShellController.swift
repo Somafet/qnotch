@@ -554,7 +554,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         guard left > 0 || right > 0 else { return 0 }
         if layout?.integratesCameraHousing == true {
             // Symmetric wings; rounded so a one-character change does not resize the notch.
-            return min(peekShown ? 180 : 150, ceil((max(left, right) + 24) / 8) * 8)
+            return min(peekShown ? 180 : 170, ceil((max(left, right) + 24) / 8) * 8)
         }
         return min(300, left + right + (left > 0 && right > 0 ? 8 : 0))
     }
@@ -582,7 +582,9 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
             for (stack, area) in [(leading, wings.left), (trailing, wings.right), (peekLeft, wings.left), (peekRight, wings.right)] {
                 if stack === leading || stack === trailing { stack.isHidden = !active || peeking }
                 guard !stack.isHidden else { continue }
-                let size = stack.fittingSize
+                // Never wider than the clear area beside the camera: long text truncates instead.
+                var size = stack.fittingSize
+                size.width = min(size.width, max(0, area.width - 12))
                 surface.place(stack, at: CGRect(x: area.midX - size.width / 2, y: area.midY - size.height / 2, width: size.width, height: size.height))
             }
         } else {

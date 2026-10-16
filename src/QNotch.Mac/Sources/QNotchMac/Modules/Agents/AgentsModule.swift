@@ -31,6 +31,19 @@ final class AgentsModule: NotchModule {
     private let views = NSHashTable<AnyObject>.weakObjects()
     private let pills = NSHashTable<AgentPillView>.weakObjects()
     var contextShell: ModuleShell? { context.shell }
+    private var t3: T3Watch?
+    private let io = DispatchQueue(label: "qnotch.agents.usage", qos: .utility)
+    /// Usage readers by session id (touched on `io` only), and today's usage per session on main.
+    private var readers: [String: TranscriptUsage] = [:]
+    private var reading: Set<String> = []
+    private var stale: Set<String> = []
+    private(set) var usage: [String: (cwd: String, today: AgentUsage)] = [:]
+    private var appTitles: [String: String] = [:]
+    private var t3Titles: [String: String] = [:]
+    private let codexTitles = CodexTitles()
+    private var titlesPending = false
+
+    var today: AgentUsage { usage.values.reduce(AgentUsage()) { $0 + $1.today } }
 
     func initialize(_ context: ModuleContext) {
         self.context = context
@@ -59,7 +72,10 @@ final class AgentsModule: NotchModule {
         registry.settingsSections.register(ViewContribution(id: "agents", title: "Agents", order: 45, symbol: "sparkles", tint: .systemOrange) { [weak self] in
             self?.makeSettings() ?? NSView()
         })
-        DispatchQueue.main.async { [weak self] in self?.startServer() }
+        DispatchQueue.main.async { [weak self] in
+            self?.startServer()
+            self?.t3 = T3Watch { sessions, titles in self?.applyT3(sessions, titles: titles) }
+        }
         applySounds()
     }
 
@@ -80,6 +96,8 @@ final class AgentsModule: NotchModule {
     func stop() {
         server?.stopAll()
         server = nil
+        t3?.stop()
+        t3 = nil
         exits.values.forEach { $0.cancel() }
         exits.removeAll()
         clock?.invalidate(); clock = nil
@@ -103,7 +121,22 @@ final class AgentsModule: NotchModule {
     func apply(_ event: AgentEvent) {
         let alert = board.apply(event)
         if let pid = event.pid, pid > 0 { watch(pid) }
+        if let session = board.sessions.first(where: { $0.id == event.session || $0.t3Session == event.session }) { readUsage(session) }
+        readTitles()
         changed()
+        handle(alert)
+    }
+
+    private func applyT3(_ sessions: [T3Session], titles: [String: String]) {
+        let before = board
+        let alerts = board.applyT3(sessions)
+        t3Titles = titles
+        applyTitles()
+        if board != before { changed() }
+        alerts.forEach { handle($0) }
+    }
+
+    private func handle(_ alert: AgentBoard.Alert?) {
         switch alert {
         case .needsYou(let session)?:
             announce(session, what: "Needs you", symbol: "exclamationmark.bubble.fill", tint: .systemOrange, sound: settings.soundNeedsYou ? "agents.needsyou" : nil)
@@ -112,6 +145,58 @@ final class AgentsModule: NotchModule {
         case nil:
             // Answered in the terminal (or gone): the peek about it goes at once.
             if let id = peekFor, board.sessions.first(where: { $0.id == id })?.status != .needsYou { peek?.end(); peekFor = nil }
+        }
+    }
+
+    // MARK: Usage and titles
+
+    /// Every event means the transcript grew: read the new lines 3 s later, so a burst costs one read.
+    private func readUsage(_ session: AgentSession) {
+        guard let path = session.transcript, !path.isEmpty else { return }
+        let id = session.id, cwd = session.cwd
+        if reading.contains(id) { stale.insert(id); return }
+        reading.insert(id)
+        stale.remove(id)
+        io.asyncAfter(deadline: .now() + 3) { [weak self] in
+            guard let self else { return }
+            let reader = self.readers[id] ?? TranscriptUsage()
+            self.readers[id] = reader
+            reader.read(URL(fileURLWithPath: path))
+            let today = reader.today, title = reader.title
+            DispatchQueue.main.async {
+                self.reading.remove(id)
+                if self.stale.contains(id), let session = self.board.sessions.first(where: { $0.id == id }) { self.readUsage(session) }
+                if today.tokens > 0 { self.usage[id] = (cwd, today) }
+                if let title, self.appTitles[id] == nil, self.board.sessions.first(where: { $0.id == id })?.t3Thread == nil {
+                    self.board.setTitle(title, for: id)
+                }
+                self.refresh()
+            }
+        }
+    }
+
+    /// Codex names its threads in one file; T3 titles come with its sessions. One read serves every row.
+    private func readTitles() {
+        guard !titlesPending else { return }
+        titlesPending = true
+        let index = (ProcessInfo.processInfo.environment["CODEX_HOME"].map { URL(fileURLWithPath: $0, isDirectory: true) }
+            ?? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".codex", isDirectory: true)).appendingPathComponent("session_index.jsonl")
+        io.asyncAfter(deadline: .now() + 3) { [weak self] in
+            guard let self else { return }
+            let names = FileManager.default.fileExists(atPath: index.path) ? self.codexTitles.read(index) : [:]
+            DispatchQueue.main.async {
+                self.titlesPending = false
+                self.appTitles = names
+                self.applyTitles()
+                self.refresh()
+            }
+        }
+    }
+
+    /// T3 Code wins over Codex, both over a Claude Code transcript title.
+    private func applyTitles() {
+        for session in board.sessions where session.t3Thread == nil {
+            if let title = t3Titles[session.id] ?? appTitles[session.id] { board.setTitle(title, for: session.id) }
         }
     }
 
@@ -142,13 +227,17 @@ final class AgentsModule: NotchModule {
 
     /// Brings the terminal or app the agent runs in forward, then opens the session link if any.
     func show(_ session: AgentSession) {
-        if let pid = session.pid, let app = NotificationsModule.appOwning(pid) { app.activate(options: [.activateAllWindows]) }
-        if let link = session.link, AgentEvent.isValidLink(link), let url = URL(string: link) { NSWorkspace.shared.open(url) }
+        if session.t3Thread != nil, let app = NSRunningApplication.runningApplications(withBundleIdentifier: T3Watch.bundleID).first {
+            app.activate(options: [.activateAllWindows])
+        } else if let pid = session.pid, let app = NotificationsModule.appOwning(pid) { app.activate(options: [.activateAllWindows]) }
+        if let link = session.link, AgentEvent.isValidLink(link) || (session.t3Thread != nil && link.hasPrefix("t3code://threads/")),
+           let url = URL(string: link) { NSWorkspace.shared.open(url) }
         context.shell?.closePanel()
     }
 
     func dismiss(_ session: AgentSession) {
         board.remove(session.id)
+        if (usage[session.id]?.today.tokens ?? 0) == 0 { usage[session.id] = nil }
         changed()
     }
 

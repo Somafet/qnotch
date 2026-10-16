@@ -11,6 +11,7 @@ final class AgentPillView: NSStackView {
         spacing = 5
         size(dot, width: 7, height: 7)
         text.widthAnchor.constraint(lessThanOrEqualToConstant: 110).isActive = true
+        text.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         [dot, text].forEach(addArrangedSubview)
         identifier = NSUserInterfaceItemIdentifier("agents-segment")
         setAccessibilityElement(true)
@@ -30,6 +31,7 @@ final class AgentPillView: NSStackView {
 final class AgentsTabView: NSView {
     private weak var module: AgentsModule?
     private let list = NSStackView()
+    private let header = line("", size: 11, color: Palette.textTertiary)
     private let emptyView: NSView
 
     init(module: AgentsModule) {
@@ -40,6 +42,7 @@ final class AgentsTabView: NSView {
         list.orientation = .vertical
         list.alignment = .leading
         list.spacing = 6
+        header.toolTip = "Today's tokens at API list prices, from Claude Code transcripts. Subscriptions are not billed this way."
         let scroll = NSScrollView()
         let document = FlippedView()
         document.translatesAutoresizingMaskIntoConstraints = false
@@ -49,7 +52,9 @@ final class AgentsTabView: NSView {
         scroll.hasVerticalScroller = true
         scroll.autohidesScrollers = true
         scroll.scrollerStyle = .overlay
-        embed(scroll, in: self, inset: 0, fill: true)
+        let stack = column([header, scroll], spacing: 8)
+        embed(stack, in: self, inset: 0, fill: true)
+        scroll.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
         NSLayoutConstraint.activate([
             document.leadingAnchor.constraint(equalTo: scroll.contentView.leadingAnchor),
             document.trailingAnchor.constraint(equalTo: scroll.contentView.trailingAnchor),
@@ -64,6 +69,9 @@ final class AgentsTabView: NSView {
         guard let module else { return }
         list.arrangedSubviews.forEach { $0.removeFromSuperview() }
         emptyView.isHidden = !module.board.sessions.isEmpty
+        let today = module.today
+        header.stringValue = today.tokens > 0 ? "Today: \(today.text) at API prices" : ""
+        header.isHidden = today.tokens == 0
         for session in module.board.sessions {
             let row = SessionRow(session: session, module: module)
             list.addArrangedSubview(row)
@@ -95,6 +103,12 @@ private final class SessionRow: FillView {
         let text = column([title, row(subtitle, spacing: 4)], spacing: 2)
         text.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         var buttons: [NSView] = []
+        if let usage = module.usage[session.id]?.today, usage.tokens > 0 {
+            let cost = line(usage.costText, size: 12, weight: .medium, color: Palette.textPrimary)
+            let tokens = line("\(AgentUsage.tokens(usage.tokens)) tokens", size: 10, color: Palette.textTertiary)
+            cost.alignment = .right; tokens.alignment = .right
+            buttons.append(column([cost, tokens], spacing: 0, alignment: .trailing))
+        }
         if session.pid != nil || session.link != nil {
             buttons.append(HoverButton(session.link != nil ? "Open" : "Show", style: session.status == .needsYou ? .accent : .plain) { [weak module] in module?.show(session) })
         }

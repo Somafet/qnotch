@@ -155,7 +155,7 @@ enum NativeSmokeTest {
                             do {
                                 try shell.settings?.snapshotPages(to: output)
                                 shell.settings?.window.close()
-                                let report = "Native UI smoke: actual window placement verified; camera center reserved; hover preserves focus; explicit summon grants keyboard; Escape collapses; running timer shows its status wing; toggle and search hotkeys work; timer completes hidden with one wake and opens Home; disabled module not constructed; every Home card rendered; notify command, waiting answer and loopback HTTP work; agent hooks update the board; clipboard skips concealed content; file tray accepts drops and lists files; pin, card hiding and accent applied; mic and camera segment shown; system stats sampled; note saved after its debounce; interactive controls named; every settings page rendered.\nstartup_seconds=\(ready)\n\(screenLocked ? "note=screen locked; window-server key status not checked\n" : "")done\n"
+                                let report = "Native UI smoke: actual window placement verified; camera center reserved; hover preserves focus; explicit summon grants keyboard; Escape collapses; running timer shows its status wing; toggle and search hotkeys work; timer completes hidden with one wake and opens Home; disabled module not constructed; every Home card rendered; notify command, waiting answer and loopback HTTP work; agent hooks update the board and transcript usage is read; clipboard skips concealed content; file tray accepts drops and lists files; pin, card hiding and accent applied; mic and camera segment shown; system stats sampled; note saved after its debounce; interactive controls named; every settings page rendered.\nstartup_seconds=\(ready)\n\(screenLocked ? "note=screen locked; window-server key status not checked\n" : "")done\n"
                                 try Data(report.utf8).write(to: output.appendingPathComponent("smoke.txt"))
                                 NSApp.terminate(nil)
                             } catch { fail(error, output: output) }
@@ -171,12 +171,19 @@ enum NativeSmokeTest {
     private static func exerciseAgents(shell: ShellController, output: URL, done: @escaping (Error?) -> Void) {
         guard let module = shell.modules.lazy.compactMap({ $0 as? AgentsModule }).first else { return done(nil) }
         let directory = shell.store.directory.path
-        let events = [#"{"hook_event_name":"UserPromptSubmit","session_id":"smoke","cwd":"/tmp/demo-app"}"#,
+        let transcript = shell.store.directory.appendingPathComponent("smoke-transcript.jsonl")
+        let stamp = ISO8601DateFormatter().string(from: Date())
+        try? Data((#"{"type":"assistant","timestamp":"\#(stamp)","message":{"id":"m1","model":"claude-sonnet-4-5","usage":{"input_tokens":120000,"output_tokens":8000}}}"# + "\n").utf8).write(to: transcript)
+        let events = [#"{"hook_event_name":"UserPromptSubmit","session_id":"smoke","cwd":"/tmp/demo-app","transcript_path":"\#(transcript.path)"}"#,
                       #"{"hook_event_name":"Notification","session_id":"smoke","cwd":"/tmp/demo-app","notification_type":"permission_prompt","message":"Claude needs your permission to use Bash"}"#]
         func send(_ index: Int) {
             guard index < events.count else {
-                // Hooks are async: give the socket a moment.
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                // Hooks are async, and usage is read 3 s after an event.
+                DispatchQueue.main.asyncAfter(deadline: .now() + 3.6) {
+                    guard module.usage["smoke"]?.today.tokens == 128_000 else { return done(Failure("Transcript usage was not read (\(String(describing: module.usage["smoke"])))")) }
+                    let t3 = module.board.sessions.filter { $0.t3Thread != nil }.count
+                    try? Data("t3_running=\(T3Watch.folder.path.isEmpty ? false : !NSRunningApplication.runningApplications(withBundleIdentifier: T3Watch.bundleID).isEmpty)\nt3_sessions=\(t3)\n".utf8)
+                        .write(to: output.appendingPathComponent("agents.txt"))
                     guard module.board.sessions.first(where: { $0.id == "smoke" })?.status == .needsYou, module.board.pillText == "demo-app needs you" else {
                         return done(Failure("Agent hook events did not reach the board (\(module.board.sessions))"))
                     }

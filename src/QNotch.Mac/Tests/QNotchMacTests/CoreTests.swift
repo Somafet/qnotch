@@ -615,3 +615,70 @@ final class AgentsTests: XCTestCase {
         XCTAssertNil(board.pillText)
     }
 }
+
+final class AgentUsageTests: XCTestCase {
+    func testTranscriptUsageCountsRepliesOnceAndReadsIncrementally() throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: folder.appendingPathComponent("s/subagents"), withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let transcript = folder.appendingPathComponent("s.jsonl")
+        let now = ISO8601DateFormatter().string(from: Date())
+        func reply(_ id: String, output: Int, model: String = "claude-sonnet-4-5") -> String {
+            #"{"type":"assistant","timestamp":"\#(now)","message":{"id":"\#(id)","model":"\#(model)","usage":{"input_tokens":1000,"cache_read_input_tokens":0,"cache_creation_input_tokens":0,"output_tokens":\#(output)}}}"#
+        }
+        try Data((reply("m1", output: 10) + "\n" + reply("m1", output: 500) + "\n" + #"{"type":"ai-title","aiTitle":"Fix login"}"# + "\n").utf8).write(to: transcript)
+        let usage = TranscriptUsage()
+        usage.read(transcript)
+        XCTAssertEqual(usage.today.tokens, 1500, "The last line of a reply replaces the earlier ones")
+        let expected: Double = (1000.0 * 3 + 500.0 * 15) / 1_000_000
+        XCTAssertEqual(usage.today.cost, expected, accuracy: 1e-9)
+        XCTAssertEqual(usage.title, "Fix login")
+        let handle = try FileHandle(forWritingTo: transcript)
+        try handle.seekToEnd()
+        try handle.write(contentsOf: Data((reply("m2", output: 0, model: "mystery-model") + "\n" + #"{"type":"custom-title","customTitle":"Renamed"}"# + "\n{\"partial").utf8))
+        try handle.close()
+        try Data((reply("sub", output: 100) + "\n").utf8).write(to: folder.appendingPathComponent("s/subagents/a.jsonl"))
+        usage.read(transcript)
+        XCTAssertEqual(usage.today.tokens, 1500 + 1000 + 1100)
+        XCTAssertTrue(usage.today.unpriced)
+        XCTAssertEqual(usage.title, "Renamed")
+        XCTAssertEqual(AgentUsage(tokens: 1_940_000, cost: 2.14).text, "1.9M tokens · $2.14")
+        XCTAssertEqual(AgentUsage(tokens: 12_000, cost: 0, unpriced: true).text, "12K tokens · price unknown")
+        XCTAssertEqual(AgentUsage.tokens(25_000_000), "25M")
+        XCTAssertNil(AgentPrices.cost(model: "gpt-5", input: 1, write5m: 0, write1h: 0, read: 0, output: 0, fast: false))
+        XCTAssertEqual(AgentPrices.cost(model: "claude-opus-4-1", input: 1_000_000, write5m: 0, write1h: 0, read: 0, output: 0, fast: true), 30)
+    }
+
+    func testCodexTitlesAndT3Merge() throws {
+        let file = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".jsonl")
+        defer { try? FileManager.default.removeItem(at: file) }
+        let index = "{\"id\":\"a\",\"thread_name\":\"First\"}\n{\"id\":\"a\",\"thread_name\":\"Renamed\"}\n"
+        try Data(index.utf8).write(to: file)
+        XCTAssertEqual(CodexTitles().read(file), ["a": "Renamed"])
+        let env = "6F9619FF-8B86-D011-B42D-00CF4FC964FF", thread = "7F9619FF-8B86-D011-B42D-00CF4FC964FF"
+        let running = try XCTUnwrap(T3Session.from(row: [thread, "native-1", "run-1", "claudeAgent", " Pull latest ", "/code/q", "running", "2026-10-16T10:00:00.000Z", ""], environment: env))
+        XCTAssertEqual(running.agent, "claude")
+        XCTAssertEqual(running.status, .working)
+        XCTAssertEqual(running.title, "Pull latest")
+        XCTAssertEqual(running.link, "t3code://threads/\(env)/\(thread)")
+        XCTAssertNil(T3Session.threadLink(environment: "x", thread: thread))
+        var board = AgentBoard()
+        board.apply(AgentEvent(agent: "claude", event: "UserPromptSubmit", session: "native-1", cwd: "/code/q", pid: 9, at: 1))
+        XCTAssertTrue(board.applyT3([running]).isEmpty)
+        XCTAssertEqual(board.sessions.count, 1, "The hook row and the T3 row are one session")
+        XCTAssertEqual(board.sessions.first?.title, "Pull latest")
+        XCTAssertNil(board.apply(AgentEvent(agent: "claude", event: "Stop", session: "native-1", cwd: "", at: 2)))
+        XCTAssertEqual(board.sessions.first?.status, .working, "T3 owns the status")
+        var asking = running
+        asking.status = .needsYou
+        guard case .needsYou? = board.applyT3([asking]).first else { return XCTFail("needs you") }
+        var finished = running
+        finished.status = .done
+        _ = board.applyT3([running])
+        guard case .done? = board.applyT3([finished]).first else { return XCTFail("done") }
+        board.remove("native-1")
+        XCTAssertTrue(board.applyT3([finished]).isEmpty)
+        XCTAssertTrue(board.sessions.isEmpty, "A dismissed or finished T3 run is not imported")
+        XCTAssertTrue(board.applyT3([]).isEmpty)
+    }
+}

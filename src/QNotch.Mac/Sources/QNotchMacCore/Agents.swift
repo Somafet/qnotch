@@ -186,6 +186,10 @@ public struct AgentSession: Equatable, Identifiable {
     public var transcript: String?
     /// The tool a permission prompt or question waits on, so other tools' events leave "needs you" alone.
     public var waitingTool: String?
+    /// T3 Code owns this row's status; hooks may still add its transcript and process.
+    public var t3Thread: String?
+    public var t3Run: String?
+    public var t3Session: String?
 
     public init(id: String, since: Date) { self.id = id; self.since = since }
 
@@ -203,13 +207,21 @@ public struct AgentBoard: Equatable {
 
     public private(set) var sessions: [AgentSession] = []
     private var ended: [String] = []
+    /// Dismissed T3 threads, by the run that was showing.
+    private var t3Dismissed: [String: String] = [:]
     public init() {}
 
     /// Applies one hook event; returns an alert when a session starts needing you or finishes a turn.
     @discardableResult
     public mutating func apply(_ event: AgentEvent, now: Date = Date()) -> Alert? {
         guard !event.session.isEmpty else { return nil }
-        var index = sessions.firstIndex { $0.id == event.session }
+        var index = sessions.firstIndex { $0.id == event.session || $0.t3Session == event.session }
+        if let found = index, sessions[found].t3Thread != nil {
+            // T3 can keep a turn running across provider restarts; hook Stop/SessionEnd cannot end it.
+            if let transcript = event.transcript, !transcript.isEmpty { sessions[found].transcript = transcript }
+            if let pid = event.pid, pid > 0 { sessions[found].pid = pid }
+            return nil
+        }
         if event.event == "SessionEnd" {
             // Async hooks race: a Stop that lands after SessionEnd must not bring the row back.
             ended.append(event.session)
@@ -272,14 +284,54 @@ public struct AgentBoard: Equatable {
         return tool.isEmpty || tool.contains(" ") ? nil : String(tool)
     }
 
-    public mutating func remove(_ id: String) { sessions.removeAll { $0.id == id } }
+    public mutating func remove(_ id: String) {
+        if let session = sessions.first(where: { $0.id == id }), let thread = session.t3Thread, let run = session.t3Run {
+            t3Dismissed[thread] = run
+            if t3Dismissed.count > 100, let first = t3Dismissed.keys.first { t3Dismissed[first] = nil }
+        }
+        sessions.removeAll { $0.id == id }
+    }
 
-    /// Drops every session of an agent process that exited without a SessionEnd (terminal closed).
+    /// Drops the hook sessions of an agent process that exited without a SessionEnd (terminal
+    /// closed); T3 rows stay, since T3 owns their status.
     @discardableResult
     public mutating func processEnded(_ pid: Int32) -> Bool {
         let before = sessions.count
-        sessions.removeAll { $0.pid == pid }
+        sessions.removeAll { $0.pid == pid && $0.t3Thread == nil }
+        for index in sessions.indices where sessions[index].pid == pid { sessions[index].pid = nil }
         return sessions.count != before
+    }
+
+    /// Merges T3 Code's live runs (by native session id, so hooks never double the count). Live work
+    /// is restored at startup without importing the history of finished threads.
+    public mutating func applyT3(_ list: [T3Session], now: Date = Date()) -> [Alert] {
+        var alerts: [Alert] = []
+        let threads = Set(list.map(\.thread))
+        sessions.removeAll { $0.t3Thread.map { !threads.contains($0) } ?? false }
+        t3Dismissed = t3Dismissed.filter { threads.contains($0.key) }
+        for t in list {
+            var index = sessions.firstIndex { $0.t3Thread == t.thread } ?? sessions.firstIndex { $0.id == t.session }
+            if index == nil {
+                if t.status == .done || t3Dismissed[t.thread] == t.run { continue }
+                sessions.append(AgentSession(id: t.session, since: t.since))
+                index = sessions.count - 1
+            }
+            var s = sessions[index!]
+            let fresh = s.t3Thread == nil && s.t3Run == nil && s.at == 0
+            let was = s.status
+            if fresh || s.t3Run != t.run || s.status != t.status { s.since = t.status == .needsYou ? now : t.since }
+            s.t3Thread = t.thread; s.t3Run = t.run; s.t3Session = t.session
+            s.title = t.title; s.cwd = t.cwd; s.agent = t.agent; s.status = t.status; s.message = t.message
+            s.link = t.link; s.waitingTool = nil
+            sessions[index!] = s
+            // A handoff can leave a hook row behind for the same session.
+            let keep = s.id
+            sessions.removeAll { $0.id != keep && $0.id == t.session }
+            if (fresh || was != s.status) && s.status == .needsYou { alerts.append(.needsYou(s)) }
+            else if !fresh && was == .working && s.status == .done { alerts.append(.done(s)) }
+        }
+        sort()
+        return alerts
     }
 
     public mutating func setTitle(_ title: String, for id: String) {

@@ -13,7 +13,7 @@ Resident size counts clean pages of shared system frameworks. It rises with ever
 
 ### Clipboard history
 
-macOS has no pasteboard change notification. With Clipboard history on (the default), a 1-second timer with 0.5-second tolerance compares `NSPasteboard.changeCount` and reads contents only after a change. This is the agreed exception to "no repeating idle timers". Measured with every module enabled and nothing active: **0 app draw callbacks**, **0.0006% of one core** (up from about 0.0002%), **31 interrupt wakeups** in 30 seconds (up from about 7), footprint **9.8 MiB**, resident **62.4 MiB**. Turning Clipboard history off removes the timer. [Raw sample](performance-2026-10-16-clipboard.json).
+macOS has no pasteboard change notification. With Clipboard history on (the default), a 1-second timer with 0.5-second tolerance compares `NSPasteboard.changeCount` and reads contents only after a change. This is the agreed exception to "no repeating idle timers". Measured with every module enabled and nothing active: **0 app draw callbacks**, **0.0006% of one core** (up from about 0.0002%), **31 interrupt wakeups** in 30 seconds (up from about 7), footprint **9.8 MiB**, resident **62.4 MiB**. Turning Clipboard history off removes the timer. Agents adds no idle wake: hooks arrive on a socket, and the T3 Code watcher reads its database only after FSEvents reports a write (at most once a second) while T3 Code runs. Measurements taken while a T3 conversation is active include those reads (about 0.0009% of one core in the latest run). [Raw sample](performance-2026-10-16-clipboard.json).
 
 ## Integrated-notch correction
 
