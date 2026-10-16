@@ -292,3 +292,37 @@ final class CaptureStateTests: XCTestCase {
         XCTAssertEqual(CaptureState(camera: true).summary, "Camera in use.")
     }
 }
+
+final class SystemStatsTests: XCTestCase {
+    func testCpuRatesAndFormatting() {
+        XCTAssertNil(SystemStats.cpuPercent(from: nil, to: .init(busy: 10, total: 100)))
+        XCTAssertEqual(SystemStats.cpuPercent(from: .init(busy: 10, total: 100), to: .init(busy: 35, total: 200)), 25)
+        XCTAssertNil(SystemStats.cpuPercent(from: .init(busy: 10, total: 100), to: .init(busy: 10, total: 100)))
+        XCTAssertEqual(SystemStats.rate(from: 1000, to: 3000, seconds: 2), 1000)
+        XCTAssertEqual(SystemStats.rate(from: UInt64(UInt32.max) - 99, to: 100, seconds: 1), 200)
+        XCTAssertNil(SystemStats.rate(from: 0, to: 10, seconds: 0.01))
+        XCTAssertEqual(SystemStats.rateText(819_600), "820 KB/s")
+        XCTAssertEqual(SystemStats.rateText(1_250_000), "1.2 MB/s")
+        XCTAssertEqual(SystemStats.rateText(nil), "--")
+        XCTAssertEqual(SystemStats.shortRate(4_000), "4K")
+        XCTAssertEqual(SystemStats.memoryText(used: 6_550_000_000, total: 8_589_934_592), "6.1/8 GB")
+        XCTAssertEqual(SystemStats.percentText(12.6), "13%")
+        XCTAssertTrue(SystemStats.countsInterface("en0", loopback: false))
+        for name in ["lo0", "utun3", "awdl0", "llw0", "bridge0", "anpi1"] { XCTAssertFalse(SystemStats.countsInterface(name, loopback: false), name) }
+        XCTAssertFalse(SystemStats.countsInterface("en5", loopback: true))
+        XCTAssertEqual(SystemStats.batterySymbol(percent: 50, charging: false), "battery.50")
+        XCTAssertEqual(SystemStats.batterySymbol(percent: 5, charging: true), "battery.100.bolt")
+    }
+
+    func testStatsSettingsDefaultsAvoidMenuBarDuplicates() throws {
+        let decoded = try JSONDecoder().decode(StatsSettings.self, from: Data(#"{"wingGPU":true}"#.utf8))
+        XCTAssertTrue(decoded.wingCPU && decoded.wingMemory && decoded.wingGPU)
+        XCTAssertFalse(decoded.wingBattery || decoded.wingClock || decoded.wingNetwork)
+        var none = StatsSettings()
+        none.wingCPU = false; none.wingMemory = false
+        XCTAssertFalse(none.anyWing)
+        none.wingClock = true
+        XCTAssertTrue(none.anyWing)
+        XCTAssertFalse(none.sampledWing)
+    }
+}

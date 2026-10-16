@@ -1,5 +1,16 @@
 # Mac milestone measurements
 
+## Parity modules: Timer, Volume, Note, Color picker, Mic and camera, System stats
+
+Measured 2026-10-16 on the same Mac14,2, 8 GiB, macOS 26.3 configuration (release/arm64, built from the working tree that this commit records). `measure.sh` now records two 30-second collapsed intervals with every module enabled:
+
+- **Enabled but quiet** (no stats in the wings, timer stopped, no capture in use): **0 app draw callbacks**, **0.00019% of one core**, **7 interrupt wakeups**, resident **73.3 MiB**, physical footprint **9.7 MiB**. Volume, Mic and camera, and battery use event listeners only. Note and Color picker do nothing until used.
+- **Default System stats wings** (CPU and memory, sampled every 5 seconds while collapsed): **0 app draw callbacks**, **0.0011% of one core**, **18 interrupt wakeups**, resident **74.3 MiB**, footprint **10.0 MiB**. This is the one repeating collapsed wake so far. It runs only while a sampled stat is shown in the wings; with none shown, nothing is sampled.
+
+Resident size counts clean pages of shared system frameworks. It rises with every framework a module loads (CoreMediaIO and IOKit added about 2 MiB), while the app's own physical footprint (what Activity Monitor shows as Memory) stays near 10 MiB. Both are recorded from now on. The 80 MiB resident target still holds, but it has less headroom than the footprint suggests.
+
+[Raw sample](performance-2026-10-16-modules.json).
+
 ## Integrated-notch correction
 
 Measured 2026-10-16 on the same Mac14,2, 8 GiB, macOS 26.3 configuration, release/arm64 source `f1726270f109988e099535c7933c5dfa808c7e09`, clean when built. The surface now wraps the camera housing at the bezel. Native smoke checked actual window/view bounds: screen and surface top at 956 points, panel controls ending below the camera boundary at 924 points, and status views entirely in the side wings.

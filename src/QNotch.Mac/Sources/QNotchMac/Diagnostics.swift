@@ -29,8 +29,12 @@ enum NativeSmokeTest {
                 guard shell.state.presentation == .hover, !shell.panel.isKeyWindow, !shell.panel.canBecomeKey else {
                     throw Failure("Hover took keyboard focus")
                 }
+                shell.modules.lazy.compactMap({ $0 as? StatsModule }).first?.sampleNow()
                 try shell.snapshot(to: output.appendingPathComponent("home.png"))
                 try snapshotCards(shell: shell, output: output)
+                if let stats = shell.modules.lazy.compactMap({ $0 as? StatsModule }).first {
+                    guard stats.hasScheduledWake, stats.sampleCount > 0 else { throw Failure("System stats did not sample while its card was visible") }
+                }
                 shell.selectTab("search")
                 try shell.snapshot(to: output.appendingPathComponent("search.png"))
                 shell.selectTab("timer")
@@ -81,7 +85,7 @@ enum NativeSmokeTest {
                             do {
                                 try shell.settings?.snapshotPages(to: output)
                                 shell.settings?.window.close()
-                                let report = "Native UI smoke: actual window placement verified; camera center reserved; hover preserves focus; explicit summon grants keyboard; Escape collapses; running timer shows its status wing; toggle and search hotkeys work; timer completes hidden with one wake; disabled module not constructed; every Home card rendered; mic and camera segment shown; note saved after its debounce; interactive controls named; every settings page rendered.\nstartup_seconds=\(ready)\ndone\n"
+                                let report = "Native UI smoke: actual window placement verified; camera center reserved; hover preserves focus; explicit summon grants keyboard; Escape collapses; running timer shows its status wing; toggle and search hotkeys work; timer completes hidden with one wake; disabled module not constructed; every Home card rendered; mic and camera segment shown; system stats sampled; note saved after its debounce; interactive controls named; every settings page rendered.\nstartup_seconds=\(ready)\ndone\n"
                                 try Data(report.utf8).write(to: output.appendingPathComponent("smoke.txt"))
                                 NSApp.terminate(nil)
                             } catch { fail(error, output: output) }
@@ -163,6 +167,7 @@ enum PerformanceMeasurement {
         let time: TimeInterval
         let cpu: TimeInterval
         let resident: UInt64
+        let footprint: UInt64
         let wakeups: UInt64
         let draws: Int
     }
@@ -174,42 +179,68 @@ enum PerformanceMeasurement {
         precondition(result == 0, "proc_pid_rusage failed")
         return Sample(time: ProcessInfo.processInfo.systemUptime,
                       cpu: Double(usage.ri_user_time + usage.ri_system_time) / 1_000_000_000,
-                      resident: usage.ri_resident_size, wakeups: usage.ri_interrupt_wkups,
+                      resident: usage.ri_resident_size, footprint: usage.ri_phys_footprint, wakeups: usage.ri_interrupt_wkups,
                       draws: RenderDiagnostics.drawCount)
     }
     static func run(shell: ShellController, output: URL, ready: TimeInterval) {
-        // One warmup and one end-of-interval callback. No sampling loop changes idle behavior.
+        // Two intervals, each after its own warmup: every module enabled but quiet (no stats in the
+        // wings), then the default stats wings. Endpoint samples only; no sampling loop.
+        let stats = shell.modules.lazy.compactMap({ $0 as? StatsModule }).first
+        let defaults = stats?.settings
+        stats?.set { $0.wingCPU = false; $0.wingMemory = false; $0.wingGPU = false; $0.wingNetwork = false; $0.wingBattery = false; $0.wingClock = false }
         DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
             shell.close(restoreFocus: false)
-            let before = sample()
-            let surfaceRevision = shell.surfaceRevision
-            DispatchQueue.main.asyncAfter(deadline: .now() + 30) {
-                let after = sample()
-                let elapsed = after.time - before.time
-                let report: [String: Any] = [
-                    "app_version": Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "unbundled",
-                    "source_revision": Bundle.main.object(forInfoDictionaryKey: "QNotchSourceRevision") as? String ?? "unknown",
-                    "source_dirty": Bundle.main.object(forInfoDictionaryKey: "QNotchSourceDirty") as? Bool ?? true,
-                    "hardware_model": hardwareModel(), "physical_memory_bytes": ProcessInfo.processInfo.physicalMemory,
-                    "platform": "macOS", "architecture": "arm64", "os": ProcessInfo.processInfo.operatingSystemVersionString,
-                    "state": shell.state.expanded || shell.surfaceRevision != surfaceRevision ? "presentation activity observed; not a quiet collapsed baseline" : "collapsed, timer not running",
-                    "surface_rebuilds_delta": shell.surfaceRevision - surfaceRevision,
-                    "panel_expanded_at_end": shell.state.expanded,
-                    "interval_seconds": elapsed,
-                    "process_start_to_panel_ordered_seconds": ready, "cpu_percent_one_core": (after.cpu - before.cpu) / elapsed * 100,
-                    "resident_bytes_start": before.resident, "resident_bytes_end": after.resident,
-                    "interrupt_wakeups_delta": after.wakeups - before.wakeups,
-                    "app_draw_callbacks_delta": after.draws - before.draws,
-                    "method": "proc_pid_rusage RUSAGE_INFO_V2; app draw counters; one 30-second interval after 3-second warmup",
-                    "launch_method": "mach_absolute_time minus ri_proc_start_abstime; panel ordered front, before compositor presentation"
-                ]
-                do {
-                    try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
-                    try JSONSerialization.data(withJSONObject: report, options: [.prettyPrinted, .sortedKeys]).write(to: output.appendingPathComponent("performance.json"))
-                } catch { fputs("Unable to write performance report\n", stderr); exit(1) }
-                NSApp.terminate(nil)
+            interval(shell: shell, label: "collapsed, all modules enabled, nothing active") { quiet in
+                guard let stats, let defaults else { return write(shell: shell, output: output, ready: ready, quiet: quiet, wings: nil) }
+                stats.set { $0 = defaults }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 6) {
+                    interval(shell: shell, label: "collapsed, default System stats wings (CPU, memory)") { wings in
+                        write(shell: shell, output: output, ready: ready, quiet: quiet, wings: wings)
+                    }
+                }
             }
         }
+    }
+
+    private static func interval(shell: ShellController, label: String, done: @escaping ([String: Any]) -> Void) {
+        let before = sample()
+        let surfaceRevision = shell.surfaceRevision
+        DispatchQueue.main.asyncAfter(deadline: .now() + 30) {
+            let after = sample()
+            let elapsed = after.time - before.time
+            done([
+                "state": shell.state.expanded || shell.surfaceRevision != surfaceRevision ? "presentation activity observed; not a quiet collapsed interval" : label,
+                "surface_rebuilds_delta": shell.surfaceRevision - surfaceRevision,
+                "panel_expanded_at_end": shell.state.expanded,
+                "interval_seconds": elapsed,
+                "cpu_percent_one_core": (after.cpu - before.cpu) / elapsed * 100,
+                "resident_bytes_start": before.resident, "resident_bytes_end": after.resident,
+                "phys_footprint_bytes_end": after.footprint,
+                "interrupt_wakeups_delta": after.wakeups - before.wakeups,
+                "app_draw_callbacks_delta": after.draws - before.draws
+            ])
+        }
+    }
+
+    private static func write(shell: ShellController, output: URL, ready: TimeInterval, quiet: [String: Any], wings: [String: Any]?) {
+        var report: [String: Any] = quiet
+        report.merge([
+            "app_version": Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "unbundled",
+            "source_revision": Bundle.main.object(forInfoDictionaryKey: "QNotchSourceRevision") as? String ?? "unknown",
+            "source_dirty": Bundle.main.object(forInfoDictionaryKey: "QNotchSourceDirty") as? Bool ?? true,
+            "hardware_model": hardwareModel(), "physical_memory_bytes": ProcessInfo.processInfo.physicalMemory,
+            "platform": "macOS", "architecture": "arm64", "os": ProcessInfo.processInfo.operatingSystemVersionString,
+            "enabled_modules": ModuleList.all.map(\.id).filter { shell.general.isEnabled($0) },
+            "process_start_to_panel_ordered_seconds": ready,
+            "method": "proc_pid_rusage RUSAGE_INFO_V2; app draw counters; 30-second intervals after a warmup",
+            "launch_method": "mach_absolute_time minus ri_proc_start_abstime; panel ordered front, before compositor presentation"
+        ]) { current, _ in current }
+        if let wings { report["stats_wings_interval"] = wings }
+        do {
+            try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
+            try JSONSerialization.data(withJSONObject: report, options: [.prettyPrinted, .sortedKeys]).write(to: output.appendingPathComponent("performance.json"))
+        } catch { fputs("Unable to write performance report\n", stderr); exit(1) }
+        NSApp.terminate(nil)
     }
 }
 

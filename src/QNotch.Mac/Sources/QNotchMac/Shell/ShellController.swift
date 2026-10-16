@@ -410,7 +410,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         guard left > 0 || right > 0 else { return 0 }
         if layout?.integratesCameraHousing == true {
             // Symmetric wings; rounded so a one-character change does not resize the notch.
-            return min(100, ceil((max(left, right) + 24) / 8) * 8)
+            return min(150, ceil((max(left, right) + 24) / 8) * 8)
         }
         return min(300, left + right + (left > 0 && right > 0 ? 8 : 0))
     }
