@@ -59,6 +59,8 @@ Default local root: `~/Library/Application Support/QNotch.Mac/`. `general.json` 
 
 ## Performance: targets and evidence
 
+See the [recorded Mac measurements](performance.md) for the dated build, hardware, results, and limitations.
+
 Mac development targets: collapsed stopped-timer CPU at or below 0.1% of one core, zero app draw callbacks after settling, no app-scheduled repeating idle work, process-start-to-panel-ordering below 500 ms, and resident memory below 80 MiB. These are targets, not guarantees or imported Windows benchmarks. A hidden running timer retains one completion wake; an expanded running timer can wake once per second.
 
 Run the release build, keep the pointer away from the pill, and measure an isolated process:
