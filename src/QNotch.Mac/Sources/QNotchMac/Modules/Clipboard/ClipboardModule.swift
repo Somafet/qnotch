@@ -80,7 +80,7 @@ final class ClipboardModule: NotchModule {
     // MARK: Watching
 
     private func startWatching() {
-        if #available(macOS 15.4, *), NSPasteboard.general.accessBehavior == .alwaysDeny {
+        if Self.accessDenied(NSPasteboard.general) {
             denied = true
             return
         }
@@ -97,13 +97,20 @@ final class ClipboardModule: NotchModule {
         guard change != lastChange else { return }
         lastChange = change
         guard change != ownWrite else { return }
-        if #available(macOS 15.4, *), pasteboard.accessBehavior == .alwaysDeny {
+        if Self.accessDenied(pasteboard) {
             denied = true
             stop()
             refresh()
             return
         }
         capture(pasteboard)
+    }
+
+    /// macOS 15.4+ `accessBehavior == .alwaysDeny` (3), read through the runtime so the app also
+    /// builds with SDKs that predate the property.
+    private static func accessDenied(_ pasteboard: NSPasteboard) -> Bool {
+        guard pasteboard.responds(to: NSSelectorFromString("accessBehavior")) else { return false }
+        return (pasteboard.value(forKey: "accessBehavior") as? Int) == 3
     }
 
     /// Text first, else an image. Finder file copies, concealed and transient content are skipped.
