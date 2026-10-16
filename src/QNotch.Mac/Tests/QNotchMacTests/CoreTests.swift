@@ -444,3 +444,84 @@ final class ClipHistoryTests: XCTestCase {
         XCTAssertEqual(history.search("ITEM").count, 1)
     }
 }
+
+final class NotifyTests: XCTestCase {
+    private func post(_ json: String) throws -> NotifyPost {
+        guard case .notify(let post) = try NotifyRules.parse(Data(json.utf8), makeID: { "generated" }) else { throw NotifyError("not a post") }
+        return post
+    }
+
+    func testRequestsAreValidatedLikeWindows() throws {
+        let p = try post(##"{"Title":"  Build done \u0007 ","body":"line1\r\nline2","LEVEL":"Success","ttl":"5","app":"CI","actions":[{"label":"Open","url":"https://example.com/x"}]}"##)
+        XCTAssertEqual(p.title, "Build done")
+        XCTAssertEqual(p.body, "line1\nline2")
+        XCTAssertEqual(p.level, .success)
+        XCTAssertEqual(p.ttl, 5)
+        XCTAssertEqual(p.id, "generated")
+        XCTAssertEqual(p.actions.first?.url, "https://example.com/x")
+        XCTAssertEqual(try post(#"{"title":"x"}"#).app, "QNotch")
+        XCTAssertEqual(try post(#"{"title":"\#(String(repeating: "a", count: 100))"}"#).title.count, 80)
+        XCTAssertTrue(try post(#"{"title":"\#(String(repeating: "a", count: 100))"}"#).title.hasSuffix("…"))
+        let waiting = try post(#"{"title":"Approve?","wait":true,"timeout":999999,"actions":[{"id":"yes","label":"Yes"},{"label":"No"}]}"#)
+        XCTAssertEqual(waiting.timeout, 86_400)
+        XCTAssertEqual(waiting.actions.map(\.id), ["yes", "No"])
+        XCTAssertTrue(waiting.actions[0].answersOnly)
+        func fails(_ json: String, _ message: String) {
+            XCTAssertThrowsError(try NotifyRules.parse(Data(json.utf8))) { XCTAssertEqual(($0 as? NotifyError)?.message.hasPrefix(message), true, "\($0)") }
+        }
+        fails(#"{"body":"no title"}"#, "title is required")
+        fails(#"{"title":"x","level":"loud"}"#, "level must be")
+        fails(#"{"title":"x","actions":[{"label":"a","url":"javascript:alert(1)"}]}"#, "Action 'a': only")
+        fails(#"{"title":"x","actions":[{"label":"a","url":"file:///etc/passwd"}]}"#, "Action 'a': only")
+        fails(#"{"title":"x","actions":[{"label":"Yes"}]}"#, "Action 'Yes' needs a url")
+        fails(#"{"title":"x","actions":[{"label":"1","url":"https://a"},{"label":"2","url":"https://a"},{"label":"3","url":"https://a"},{"label":"4","url":"https://a"}]}"#, "At most 3")
+        fails(#"{"op":"rename"}"#, "Unknown op")
+        fails("[1]", "The request is not a JSON object")
+        XCTAssertEqual(try NotifyRules.parse(Data(#"{"op":"dismiss","id":"build"}"#.utf8)), .dismiss(id: "build"))
+    }
+
+    func testCommandLineMatchesWindowsArguments() throws {
+        let data = try NotifyCLI.payload(["Deploy", "finished", "-l", "success", "--url", "https://x.y", "--focus", "--action", "ok=Looks good"], parentPid: 42)
+        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        XCTAssertEqual(object["title"] as? String, "Deploy")
+        XCTAssertEqual(object["body"] as? String, "finished")
+        XCTAssertEqual(object["wait"] as? Bool, true)
+        let actions = try XCTUnwrap(object["actions"] as? [[String: Any]])
+        XCTAssertEqual(actions.map { $0["label"] as? String }, ["Looks good", "Open", "Show"])
+        XCTAssertEqual(actions[2]["focusPid"] as? Int, 42)
+        XCTAssertEqual(data.last, 0x0A)
+        XCTAssertThrowsError(try NotifyCLI.payload(["--bogus"], parentPid: 1))
+        XCTAssertThrowsError(try NotifyCLI.payload(["-b", "no title"], parentPid: 1))
+        XCTAssertEqual(String(decoding: try NotifyCLI.payload(["--json", "{\"title\":\n\"x\"}"], parentPid: 1), as: UTF8.self), "{\"title\": \"x\"}\n")
+        XCTAssertEqual(NotifyCLI.outcome(NotifyRules.reply(ok: "a", result: "clicked", action: "ok")).code, 0)
+        XCTAssertEqual(NotifyCLI.outcome(NotifyRules.reply(ok: "a", result: "clicked", action: "ok")).stdout, "ok")
+        XCTAssertEqual(NotifyCLI.outcome(NotifyRules.reply(ok: "a", result: "dismissed")).code, 1)
+        XCTAssertEqual(NotifyCLI.outcome(NotifyRules.reply(ok: "a", result: "timeout")).code, 2)
+        XCTAssertEqual(NotifyCLI.outcome(NotifyRules.reply(error: "nope")).code, 4)
+    }
+
+    func testLoopbackHTTPRules() throws {
+        let good = "POST /notify?wait=1 HTTP/1.1\r\nHost: 127.0.0.1:47821\r\nAuthorization: Bearer secret\r\nContent-Length: 20"
+        let request = try LocalHTTP.parse(head: good, port: 47821, token: "secret")
+        XCTAssertEqual(request.method, "POST")
+        XCTAssertEqual(request.path, "/notify")
+        XCTAssertEqual(request.query["wait"], "1")
+        XCTAssertEqual(request.contentLength, 20)
+        func status(_ head: String) -> Int? {
+            do { _ = try LocalHTTP.parse(head: head, port: 47821, token: "secret"); return nil }
+            catch LocalHTTP.Failure.status(let code, _) { return code } catch { return -1 }
+        }
+        XCTAssertEqual(status(good + "\r\nOrigin: https://evil.example"), 403)
+        XCTAssertEqual(status(good.replacingOccurrences(of: "127.0.0.1:47821", with: "evil.example")), 403)
+        XCTAssertEqual(status(good.replacingOccurrences(of: "secret", with: "secreT")), 401)
+        XCTAssertEqual(status(good + "\r\nContent-Length: 5"), 400)
+        XCTAssertEqual(status(good.replacingOccurrences(of: "20", with: "70000")), 413)
+        XCTAssertEqual(status(good + "\r\nTransfer-Encoding: chunked"), 411)
+        XCTAssertEqual(status("garbage"), 400)
+        XCTAssertTrue(LocalHTTP.constantTimeEqual("abc", "abc"))
+        XCTAssertFalse(LocalHTTP.constantTimeEqual("abc", "abcd"))
+        let settings = try JSONDecoder().decode(NotificationSettings.self, from: Data(#"{"httpPort":80,"toastSeconds":99}"#.utf8))
+        XCTAssertEqual(settings.httpPort, 47821)
+        XCTAssertEqual(settings.toastSeconds, 60)
+    }
+}

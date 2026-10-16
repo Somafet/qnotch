@@ -30,6 +30,8 @@ private final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenu
                 fputs("Diagnostics require --data-dir and --output.\n", stderr)
                 exit(2)
             }
+            // Diagnostic runs never read or write the user's Keychain.
+            Keychain.inMemory = [:]
         }
         // Advisory, per-data-root instance lock. Never terminate another user's app.
         do {

@@ -347,6 +347,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         let wasExpanded = state.expanded
         if keyboard, !state.acceptsKeyboard { previousApp = NSWorkspace.shared.frontmostApplication }
         state.open(keyboard: keyboard)
+        peekHandle?.end()
         panel.keyboardAllowed = state.acceptsKeyboard
         if !wasExpanded { present(.open) }
         updateVisibility()
@@ -503,16 +504,57 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         wing = measureWing()
     }
 
+    // MARK: Peek
+
+    private var peekHandle: PeekHandle?
+    private var peekLeft = NSStackView(), peekRight = NSStackView()
+    private var peekShown: Bool { peekHandle != nil && !state.expanded }
+
+    @discardableResult
+    func peek(symbol name: String, tint: NSColor, leading: String, trailing: String, seconds: TimeInterval?) -> PeekHandle? {
+        guard screen != nil, !state.expanded else { return nil }
+        peekHandle?.end()
+        let handle = PeekHandle { [weak self] handle in
+            guard let self, self.peekHandle === handle else { return }
+            self.peekHandle = nil
+            self.peekLeft.removeFromSuperview(); self.peekRight.removeFromSuperview()
+            self.segmentsChanged()
+        }
+        peekHandle = handle
+        peekLeft.removeFromSuperview(); peekRight.removeFromSuperview()
+        let icon = symbol(name, size: 12, weight: .semibold, color: tint)
+        let left = line(leading, size: 12, weight: .semibold, color: tint)
+        let right = line(trailing, size: 12, weight: .medium, color: Palette.textPrimary)
+        left.widthAnchor.constraint(lessThanOrEqualToConstant: 120).isActive = true
+        right.widthAnchor.constraint(lessThanOrEqualToConstant: 150).isActive = true
+        peekLeft = row([icon, left], spacing: 5)
+        peekRight = row([right], spacing: 0)
+        for view in [peekLeft, peekRight] {
+            view.wantsLayer = true
+            view.identifier = NSUserInterfaceItemIdentifier(view === peekLeft ? "notch-left-wing" : "notch-right-wing")
+        }
+        peekLeft.setAccessibilityElement(true)
+        peekLeft.setAccessibilityRole(.staticText)
+        peekLeft.setAccessibilityLabel("\(leading): \(trailing)")
+        segmentsChanged()
+        for view in [peekLeft, peekRight] { Motion.reveal(view, delay: 0.05, duration: 0.18) }
+        if let seconds {
+            DispatchQueue.main.asyncAfter(deadline: .now() + min(10, max(1, seconds))) { [weak handle] in handle?.end() }
+        }
+        return handle
+    }
+
     private func visibleWidth(_ stack: NSStackView) -> CGFloat {
         stack.arrangedSubviews.contains { !$0.isHidden } ? stack.fittingSize.width : 0
     }
 
     private func measureWing() -> CGFloat {
-        let left = visibleWidth(leading), right = visibleWidth(trailing)
+        let left = peekShown ? peekLeft.fittingSize.width : visibleWidth(leading)
+        let right = peekShown ? peekRight.fittingSize.width : visibleWidth(trailing)
         guard left > 0 || right > 0 else { return 0 }
         if layout?.integratesCameraHousing == true {
             // Symmetric wings; rounded so a one-character change does not resize the notch.
-            return min(150, ceil((max(left, right) + 24) / 8) * 8)
+            return min(peekShown ? 180 : 150, ceil((max(left, right) + 24) / 8) * 8)
         }
         return min(300, left + right + (left > 0 && right > 0 ? 8 : 0))
     }
@@ -533,18 +575,23 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     private func layoutStatus() {
         guard let layout else { return }
         let active = wing > 0
+        let peeking = peekShown
         if let wings = layout.wings(expanded: false, wing: wing) {
             pill.isHidden = true
-            for (stack, area) in [(leading, wings.left), (trailing, wings.right)] {
-                stack.isHidden = !active
+            peekLeft.isHidden = !peeking; peekRight.isHidden = !peeking
+            for (stack, area) in [(leading, wings.left), (trailing, wings.right), (peekLeft, wings.left), (peekRight, wings.right)] {
+                if stack === leading || stack === trailing { stack.isHidden = !active || peeking }
+                guard !stack.isHidden else { continue }
                 let size = stack.fittingSize
                 surface.place(stack, at: CGRect(x: area.midX - size.width / 2, y: area.midY - size.height / 2, width: size.width, height: size.height))
             }
         } else {
             if pill.arrangedSubviews.isEmpty { [pillIdle, leading, trailing].forEach(pill.addArrangedSubview) }
+            if peeking, peekLeft.superview !== pill { [peekLeft, peekRight].forEach(pill.addArrangedSubview) }
+            peekLeft.isHidden = !peeking; peekRight.isHidden = !peeking
             pillIdle.isHidden = active
-            leading.isHidden = !active || visibleWidth(leading) == 0
-            trailing.isHidden = !active || visibleWidth(trailing) == 0
+            leading.isHidden = !active || peeking || visibleWidth(leading) == 0
+            trailing.isHidden = !active || peeking || visibleWidth(trailing) == 0
             pill.isHidden = state.expanded
             let rect = layout.surface(expanded: false, wing: wing)
             let size = pill.fittingSize

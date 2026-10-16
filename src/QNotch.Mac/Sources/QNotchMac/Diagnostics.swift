@@ -146,21 +146,89 @@ enum NativeSmokeTest {
                         shell.togglePin()
                         shell.updateGeneral { $0.setCardVisible("note", true); $0.accent = nil }
                         shell.close(restoreFocus: false)
+                        exerciseNotifications(shell: shell, output: output) { problem in
+                        if let problem { return fail(problem, output: output) }
                         shell.openSettings()
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                             do {
                                 try shell.settings?.snapshotPages(to: output)
                                 shell.settings?.window.close()
-                                let report = "Native UI smoke: actual window placement verified; camera center reserved; hover preserves focus; explicit summon grants keyboard; Escape collapses; running timer shows its status wing; toggle and search hotkeys work; timer completes hidden with one wake and opens Home; disabled module not constructed; every Home card rendered; clipboard skips concealed content; file tray accepts drops and lists files; pin, card hiding and accent applied; mic and camera segment shown; system stats sampled; note saved after its debounce; interactive controls named; every settings page rendered.\nstartup_seconds=\(ready)\n\(screenLocked ? "note=screen locked; window-server key status not checked\n" : "")done\n"
+                                let report = "Native UI smoke: actual window placement verified; camera center reserved; hover preserves focus; explicit summon grants keyboard; Escape collapses; running timer shows its status wing; toggle and search hotkeys work; timer completes hidden with one wake and opens Home; disabled module not constructed; every Home card rendered; notify command, waiting answer and loopback HTTP work; clipboard skips concealed content; file tray accepts drops and lists files; pin, card hiding and accent applied; mic and camera segment shown; system stats sampled; note saved after its debounce; interactive controls named; every settings page rendered.\nstartup_seconds=\(ready)\n\(screenLocked ? "note=screen locked; window-server key status not checked\n" : "")done\n"
                                 try Data(report.utf8).write(to: output.appendingPathComponent("smoke.txt"))
                                 NSApp.terminate(nil)
                             } catch { fail(error, output: output) }
+                        }
                         }
                     } catch { fail(error, output: output) }
                 }
             } catch { fail(error, output: output) }
         }
     }
+    /// The real `QNotch notify` binary and loopback HTTP against this isolated instance.
+    private static func exerciseNotifications(shell: ShellController, output: URL, done: @escaping (Error?) -> Void) {
+        guard let module = shell.modules.lazy.compactMap({ $0 as? NotificationsModule }).first else { return done(nil) }
+        let directory = shell.store.directory.path
+        // The user's own QNotch may own the default port; this isolated instance uses its own.
+        module.set { $0.httpPort = 49152 + Int(getpid() % 10000) }
+        func notify(_ arguments: [String], finished: @escaping (Int32, String) -> Void) {
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: Bundle.main.executablePath!)
+            process.arguments = ["notify"] + arguments
+            process.environment = ["QNOTCH_MAC_DATA_DIR": directory]
+            let pipe = Pipe()
+            process.standardOutput = pipe
+            process.terminationHandler = { process in
+                let text = String(decoding: pipe.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
+                DispatchQueue.main.async { finished(process.terminationStatus, text) }
+            }
+            do { try process.run() } catch { finished(-1, "") }
+        }
+        notify(["Build finished", "All 42 tests passed.", "--app", "CI", "-l", "success", "--id", "build"]) { code, _ in
+            guard code == 0, module.items.first?.id == "build" else { return done(Failure("notify did not post through the socket (exit \(code))")) }
+            try? shell.snapshot(to: output.appendingPathComponent("pill-peek.png"))
+            notify(["Run the migration?", "--app", "Claude Code", "-i", "chat", "--action", "yes=Approve", "--action", "no=Deny", "--timeout", "10"]) { code, answer in
+                guard code == 0, answer == "yes" else { return done(Failure("A waiting notify did not return the answer (exit \(code), \(answer))")) }
+                var request = URLRequest(url: URL(string: "http://127.0.0.1:\(module.settings.httpPort)/notify")!)
+                request.httpMethod = "POST"
+                request.httpBody = Data(#"{"title":"Deploy failed","body":"Step 3 of 5: database migration","level":"warning","app":"GitHub Actions","actions":[{"label":"Open run","url":"https://github.com"}]}"#.utf8)
+                request.setValue("Bearer \(module.currentToken())", forHTTPHeaderField: "Authorization")
+                URLSession.shared.dataTask(with: request) { _, response, _ in
+                    let ok = (response as? HTTPURLResponse)?.statusCode
+                    var bad = request
+                    bad.setValue("Bearer wrong", forHTTPHeaderField: "Authorization")
+                    URLSession.shared.dataTask(with: bad) { _, response, _ in
+                        let rejected = (response as? HTTPURLResponse)?.statusCode
+                        var web = request
+                        web.setValue("https://example.com", forHTTPHeaderField: "Origin")
+                        URLSession.shared.dataTask(with: web) { _, response, _ in
+                            let origin = (response as? HTTPURLResponse)?.statusCode
+                            DispatchQueue.main.async {
+                                guard ok == 200, rejected == 401, origin == 403, module.items.first?.title == "Deploy failed" else {
+                                    return done(Failure("Loopback HTTP: ok=\(ok ?? 0) wrong token=\(rejected ?? 0) origin=\(origin ?? 0)"))
+                                }
+                                shell.open(keyboard: false)
+                                shell.selectTab("notifications")
+                                try? shell.snapshot(to: output.appendingPathComponent("notifications.png"))
+                                shell.close(restoreFocus: false)
+                                done(nil)
+                            }
+                        }.resume()
+                    }.resume()
+                }.resume()
+            }
+            // Answer the waiting request from the UI once it arrives.
+            func answer(_ attempts: Int) {
+                if let note = module.items.first(where: { $0.pending }), let approve = note.actions.first {
+                    try? shell.snapshot(to: output.appendingPathComponent("pill-waiting.png"))
+                    module.invoke(approve, on: note)
+                } else if attempts > 0 {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { answer(attempts - 1) }
+                }
+            }
+            answer(50)
+        }
+    }
+
     /// One PNG per Home card (cards past the first rows are scrolled out of home.png).
     private static func snapshotCards(shell: ShellController, output: URL) throws {
         guard let root = shell.panel.contentView else { return }
@@ -203,7 +271,7 @@ enum NativeSmokeTest {
         let description: String
         init(_ description: String) { self.description = description }
     }
-    private static func fail(_ error: Error, output: URL) {
+    fileprivate static func fail(_ error: Error, output: URL) {
         let message = "Native smoke failed: \(error)\n"
         try? Data(message.utf8).write(to: output.appendingPathComponent("smoke.txt"))
         fputs(message, stderr)

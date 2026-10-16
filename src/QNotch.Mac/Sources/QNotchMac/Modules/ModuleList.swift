@@ -28,7 +28,9 @@ enum ModuleList {
         ModuleInfo(id: "filetray", title: "File tray", detail: "Drop files on the notch to keep them within reach. Share with AirDrop, export copies, preview with Quick Look.",
                    symbol: "tray.full.fill", tint: .systemBlue) { FileTrayModule() },
         ModuleInfo(id: "clipboard", title: "Clipboard history", detail: "Text and images you copy, kept in memory. Concealed content from password managers is never captured.",
-                   symbol: "doc.on.clipboard.fill", tint: .systemIndigo) { ClipboardModule() }
+                   symbol: "doc.on.clipboard.fill", tint: .systemIndigo) { ClipboardModule() },
+        ModuleInfo(id: "notifications", title: "Notifications", detail: "Lets apps and scripts post notifications to the notch: QNotch notify, a local socket or loopback HTTP.",
+                   symbol: "bell.badge.fill", tint: .systemRed) { NotificationsModule() }
     ]
 
     static func make(disabled: [String]) -> [NotchModule] {

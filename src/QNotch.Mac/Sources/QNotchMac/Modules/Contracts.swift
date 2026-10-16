@@ -77,7 +77,25 @@ final class ModuleRegistries {
     }
 }
 
+/// A shown peek; `end()` removes it early (e.g. the agent was answered).
+final class PeekHandle {
+    fileprivate(set) var ended = false
+    private let finish: (PeekHandle) -> Void
+    init(finish: @escaping (PeekHandle) -> Void) { self.finish = finish }
+    func end() {
+        guard !ended else { return }
+        ended = true
+        finish(self)
+    }
+}
+
 protocol ModuleShell: AnyObject {
+    /// Replaces the collapsed status with one line for a moment ("api: Needs you"): `symbol` and
+    /// `leading` in the left wing, `trailing` in the right (side by side in a floating pill).
+    /// A newer peek replaces the shown one; `seconds` nil keeps it until `end()`. Nothing shows
+    /// while the panel is open. For something the user must notice now, never routine updates.
+    @discardableResult
+    func peek(symbol: String, tint: NSColor, leading: String, trailing: String, seconds: TimeInterval?) -> PeekHandle?
     func selectTab(_ id: String)
     func openSettings()
     /// Opens Settings on a module's section (its `settingsSections` id).
