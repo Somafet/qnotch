@@ -745,3 +745,35 @@ final class GithubTests: XCTestCase {
     }
 }
 
+final class AiUsageTests: XCTestCase {
+    func testClaudeAndCodexReadingsLikeWindows() throws {
+        let now = ISO8601DateFormatter().date(from: "2026-10-16T12:00:00Z")!
+        let body = #"{"five_hour":{"utilization":42.4,"resets_at":"2026-10-16T14:05:00Z"},"seven_day":{"utilization":120,"resets_at":null},"cedar_ember":{"eligible":true,"next_grant_id":"g1","grants":[{"id":"g1","resets_left":2,"ends_at":"2026-10-20T12:00:00Z","label":"Bonus"},{"id":"g2","resets_left":5,"paused":true}]}}"#
+        guard case let .ok(windows, plan, _, banked) = ClaudeUsage.parse(status: 200, body: Data(body.utf8), plan: "Max 20x", now: now) else { return XCTFail() }
+        XCTAssertEqual(windows.map(\.label), ["5-hour", "Weekly"])
+        XCTAssertEqual(windows[0].usedText, "42%")
+        XCTAssertEqual(windows[1].usedPercent, 100)
+        XCTAssertEqual(windows[0].resetText(now: now), "Resets in 2h 5m")
+        XCTAssertEqual(plan, "Max 20x")
+        XCTAssertEqual(banked?.count, 2)
+        XCTAssertEqual(banked?.text(now: now), "2 banked resets  ·  expires in 4d 0h")
+        XCTAssertEqual(ClaudeUsage.parse(status: 401, body: nil, plan: ""), .unavailable("Sign-in expired. Open Claude Code once to renew it."))
+        let credentials = #"{"claudeAiOauth":{"accessToken":"t","subscriptionType":"max","rateLimitTier":"default_claude_max_20x"}}"#
+        XCTAssertEqual(ClaudeUsage.credentials(Data(credentials.utf8))?.plan, "Max 20x")
+        XCTAssertNil(ClaudeUsage.credentials(Data("{}".utf8)))
+        XCTAssertEqual(ClaudeUsage.keychainService(configDir: "/x", isDefault: false, sha256Hex: { _ in "95d6dcc1ffff" }), "Claude Code-credentials-95d6dcc1")
+        let tail = """
+        {"timestamp":"2026-10-16T11:00:00Z","payload":{"rate_limits":{"plan_type":"prolite","primary":{"used_percent":12,"window_minutes":300,"resets_in_seconds":7200},"secondary":{"used_percent":40,"window_minutes":10080,"resets_at":1000}}}}
+        """
+        guard case let .ok(codex, codexPlan, _, _)? = CodexUsage.reading(fromTail: "noise\n" + tail, now: now) else { return XCTFail() }
+        XCTAssertEqual(codex.map(\.label), ["5-hour"], "A window that already reset is dropped")
+        XCTAssertEqual(codexPlan, "Pro Lite")
+        XCTAssertEqual(CodexUsage.label(minutes: 2880), "2-day")
+        XCTAssertEqual(CodexUsage.credits(["availableCount": 3, "credits": [["status": "available", "expiresAt": 2000.0, "title": "A"]]])?.count, 3)
+        var settings = AiSettings()
+        settings.autoPlace(["claude", "chatgpt"])
+        settings.slots[0] = nil
+        settings.autoPlace(["claude", "cursor"])
+        XCTAssertEqual(settings.slots.prefix(3).map { $0 }, ["cursor", "chatgpt", nil], "A removed app is not placed again")
+    }
+}

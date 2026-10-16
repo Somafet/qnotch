@@ -46,6 +46,10 @@ enum NativeSmokeTest {
                 try shell.snapshot(to: output.appendingPathComponent("search.png"))
                 shell.selectTab("timer")
                 try shell.snapshot(to: output.appendingPathComponent("timer.png"))
+                for tab in shell.registries.tabs.items {
+                    shell.selectTab(tab.id)
+                    try shell.snapshot(to: output.appendingPathComponent("tab-\(tab.id).png"))
+                }
                 if let clipboard = shell.modules.lazy.compactMap({ $0 as? ClipboardModule }).first {
                     // A private pasteboard: the user's clipboard is never read or written by the smoke test.
                     let board = NSPasteboard(name: NSPasteboard.Name("dev.qnotch.smoke.\(UUID().uuidString)"))
@@ -155,7 +159,7 @@ enum NativeSmokeTest {
                             do {
                                 try shell.settings?.snapshotPages(to: output)
                                 shell.settings?.window.close()
-                                let report = "Native UI smoke: actual window placement verified; camera center reserved; hover preserves focus; explicit summon grants keyboard; Escape collapses; running timer shows its status wing; toggle and search hotkeys work; timer completes hidden with one wake and opens Home; disabled module not constructed; every Home card rendered; notify command, waiting answer and loopback HTTP work; agent hooks update the board and transcript usage is read; clipboard skips concealed content; file tray accepts drops and lists files; pin, card hiding and accent applied; mic and camera segment shown; system stats sampled; note saved after its debounce; interactive controls named; every settings page rendered.\nstartup_seconds=\(ready)\n\(screenLocked ? "note=screen locked; window-server key status not checked\n" : "")done\n"
+                                let report = "Native UI smoke: actual window placement verified; camera center reserved; hover preserves focus; explicit summon grants keyboard; Escape collapses; running timer shows its status wing; toggle and search hotkeys work; timer completes hidden with one wake and opens Home; disabled module not constructed; every Home card and tab rendered; notify command, waiting answer and loopback HTTP work; agent hooks update the board and transcript usage is read; clipboard skips concealed content; file tray accepts drops and lists files; pin, card hiding and accent applied; mic and camera segment shown; system stats sampled; note saved after its debounce; interactive controls named; every settings page rendered.\nstartup_seconds=\(ready)\n\(screenLocked ? "note=screen locked; window-server key status not checked\n" : "")done\n"
                                 try Data(report.utf8).write(to: output.appendingPathComponent("smoke.txt"))
                                 NSApp.terminate(nil)
                             } catch { fail(error, output: output) }

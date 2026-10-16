@@ -36,7 +36,9 @@ enum ModuleList {
         ModuleInfo(id: "weather", title: "Weather", detail: "The MET Norway forecast for a place you pick, on a Home card and beside the notch.",
                    symbol: "cloud.sun.fill", tint: .systemCyan) { WeatherModule() },
         ModuleInfo(id: "github", title: "GitHub", detail: "Your GitHub contribution graph on a Home card, with a token you add in Settings.",
-                   symbol: "chart.bar.xaxis", tint: .darkGray) { GithubModule() }
+                   symbol: "chart.bar.xaxis", tint: .darkGray) { GithubModule() },
+        ModuleInfo(id: "ai", title: "AI apps and usage", detail: "⌃⌥1 to ⌃⌥6 open your AI apps; plan usage for Claude Code and Codex.",
+                   symbol: "gauge.with.dots.needle.33percent", tint: .systemPurple) { AiModule() }
     ]
 
     static func make(disabled: [String]) -> [NotchModule] {
