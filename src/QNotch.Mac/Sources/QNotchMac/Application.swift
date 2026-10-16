@@ -18,6 +18,7 @@ private final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenu
     private var status: NSMenuItem!
     private let launched = ProcessInfo.processInfo.systemUptime
     private var dataDirectory: URL!
+    private var gameItems: [NSMenuItem] = []
     private var lockDescriptor: Int32 = -1
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -55,6 +56,18 @@ private final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenu
         status = NSMenuItem(title: "", action: nil, keyEquivalent: "")
         menu.addItem(status)
         menu.addItem(.separator())
+        let gameHeader = NSMenuItem(title: "Game Mode", action: nil, keyEquivalent: "")
+        gameHeader.isEnabled = false
+        menu.addItem(gameHeader)
+        for (title, mode) in [("Automatic", GameOverride.auto), ("On", .on), ("Off", .off)] {
+            let entry = NSMenuItem(title: title, action: #selector(setGameMode(_:)), keyEquivalent: "")
+            entry.target = self
+            entry.representedObject = mode.rawValue
+            entry.indentationLevel = 1
+            menu.addItem(entry)
+            gameItems.append(entry)
+        }
+        menu.addItem(.separator())
         menu.addItem(withTitle: "Quit QNotch", action: #selector(quit), keyEquivalent: "q").target = self
         item.menu = menu
         shell.statusChanged = { [weak self] in self?.refreshStatus() }
@@ -74,9 +87,15 @@ private final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenu
         if lockDescriptor >= 0 { Darwin.close(lockDescriptor) }
     }
     @objc private func openPanel() { shell.open(keyboard: true) }
+    @objc private func setGameMode(_ sender: NSMenuItem) {
+        if let raw = sender.representedObject as? String, let mode = GameOverride(rawValue: raw) { shell.gameMode.override = mode }
+    }
     @objc private func openSettings() { shell.openSettings() }
     @objc private func quit() { NSApp.terminate(nil) }
-    func menuWillOpen(_ menu: NSMenu) { refreshStatus() }
+    func menuWillOpen(_ menu: NSMenu) {
+        refreshStatus()
+        for item in gameItems { item.state = (item.representedObject as? String) == shell.gameMode.override.rawValue ? .on : .off }
+    }
     private func refreshStatus() {
         guard status != nil else { return }
         let problem = [shell.displayMessage, shell.store.problem ?? ""].filter { !$0.isEmpty }.joined(separator: " ")

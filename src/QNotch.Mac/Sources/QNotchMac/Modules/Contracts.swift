@@ -51,6 +51,7 @@ final class Registry<T: Contribution> {
     func removeAll() { values.removeAll() }
     func removeAll(owner: String) { values = values.filter { $0.value.owner != owner } }
     func ids(owner: String) -> [String] { values.filter { $0.value.owner == owner }.map(\.key) }
+    func owner(of id: String) -> String? { values[id]?.owner }
 }
 
 /// Mac-local equivalents of the five product extension concepts. No WPF or shared runtime.

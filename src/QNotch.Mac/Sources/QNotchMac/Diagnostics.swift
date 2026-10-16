@@ -21,6 +21,14 @@ enum NativeSmokeTest {
                 shell.modules.lazy.compactMap({ $0 as? ColorPickerModule }).first?.seedRecent(["#3CC8D9", "#4CD98C", "#FFB54D", "#FF7A6B", "#B07CFF", "#5B9DFF"])
                 try checkPlacement(shell: shell, layout: layout)
                 try shell.snapshot(to: output.appendingPathComponent("pill.png"))
+                shell.gameMode.override = .on
+                shell.open(keyboard: false)
+                guard shell.gameActive, !shell.state.expanded, shell.panel.ignoresMouseEvents,
+                      shell.peek(symbol: "bell", tint: .white, leading: "x", trailing: "y", seconds: 1) == nil else { throw Failure("Game mode did not keep the notch out of the way") }
+                try shell.snapshot(to: output.appendingPathComponent("pill-game.png"))
+                shell.gameMode.override = .off
+                guard !shell.gameActive, !shell.panel.ignoresMouseEvents else { throw Failure("Game mode did not end") }
+                shell.gameMode.override = .auto
                 if let capture = shell.modules.lazy.compactMap({ $0 as? CaptureModule }).first {
                     let real = capture.state
                     capture.apply(CaptureState(microphone: true, microphoneApps: ["FaceTime"], camera: true))
@@ -188,7 +196,7 @@ enum NativeSmokeTest {
                             do {
                                 try shell.settings?.snapshotPages(to: output)
                                 shell.settings?.window.close()
-                                let report = "Native UI smoke: actual window placement verified; camera center reserved; hover preserves focus; explicit summon grants keyboard; Escape collapses; running timer shows its status wing; toggle and search hotkeys work; timer completes hidden with one wake and opens Home; disabled module not constructed; every Home card and tab rendered; edit mode holds the panel and a card drag saves its place; notify command, waiting answer and loopback HTTP work; agent hooks update the board and transcript usage is read; clipboard skips concealed content; file tray accepts drops and lists files; pin, card hiding and accent applied; mic and camera segment shown; system stats sampled; note saved after its debounce; interactive controls named; every settings page rendered.\nstartup_seconds=\(ready)\n\(screenLocked ? "note=screen locked; window-server key status not checked\n" : "")done\n"
+                                let report = "Native UI smoke: actual window placement verified; camera center reserved; hover preserves focus; explicit summon grants keyboard; Escape collapses; running timer shows its status wing; toggle and search hotkeys work; timer completes hidden with one wake and opens Home; disabled module not constructed; every Home card and tab rendered; game mode keeps the notch out of the way; edit mode holds the panel and a card drag saves its place; notify command, waiting answer and loopback HTTP work; agent hooks update the board and transcript usage is read; clipboard skips concealed content; file tray accepts drops and lists files; pin, card hiding and accent applied; mic and camera segment shown; system stats sampled; note saved after its debounce; interactive controls named; every settings page rendered.\nstartup_seconds=\(ready)\n\(screenLocked ? "note=screen locked; window-server key status not checked\n" : "")done\n"
                                 try Data(report.utf8).write(to: output.appendingPathComponent("smoke.txt"))
                                 NSApp.terminate(nil)
                             } catch { fail(error, output: output) }

@@ -9,6 +9,8 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     let sounds: SoundRegistry
     let shortcuts: ShortcutRegistry
     let capture = CaptureWatch()
+    private(set) var gameMode: GameModeController!
+    var gameActive: Bool { gameMode?.active == true }
     private(set) var general: GeneralSettings
     private(set) var state = ShellState()
     private(set) var activeTab = "home"
@@ -83,6 +85,15 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         shortcuts.add("search", title: "Open search", hint: "Opens the Search tab with the cursor in the box.", gesture: "ctrl+opt+f", order: 20) { [weak self] in
             self?.summonSearch()
         }
+        shortcuts.add("gamemode", title: "Cycle game mode", hint: "Automatic, then forced on, then forced off.", gesture: "ctrl+opt+g", order: 10) { [weak self] in
+            self?.gameMode.cycle()
+        }
+        gameMode = GameModeController(store: store)
+        gameMode.display = { [weak self] in
+            guard let screen = self?.screen else { return nil }
+            return CGDisplayBounds(Self.displayID(screen))
+        }
+        gameMode.changed = { [weak self] in self?.applyGameMode() }
         shortcuts.changed = { [weak self] in self?.settingsController?.refreshShortcuts() }
         composeModules()
         store.problemChanged = { [weak self] in
@@ -250,12 +261,13 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
 
     private func fileDragEntered() {
         leaveTask?.cancel()
+        guard !gameActive else { return }
         if !state.expanded { open(keyboard: false) }
         fileDropEntered?()
     }
     @discardableResult
     func tryOpenPanel(tab: String, linger: TimeInterval) -> Bool {
-        guard screen != nil else { return false }
+        guard screen != nil, !gameActive else { return false }
         guard !state.expanded else { return true }
         if tabs.contains(where: { $0.id == tab }) { activeTab = tab }
         open(keyboard: false)
@@ -318,6 +330,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
 
     func pointerEntered() {
         leaveTask?.cancel()
+        guard !gameActive else { return }
         guard !state.expanded else { return }
         hoverTask?.cancel()
         let task = DispatchWorkItem { [weak self] in
@@ -343,7 +356,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     }
 
     func open(keyboard: Bool) {
-        guard screen != nil else { return }
+        guard screen != nil, !gameActive else { return }
         hoverTask?.cancel(); leaveTask?.cancel()
         let wasExpanded = state.expanded
         if keyboard, !state.acceptsKeyboard { previousApp = NSWorkspace.shared.frontmostApplication }
@@ -454,7 +467,21 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         })
     }
 
-    static let shellShortcuts: Set<String> = ["toggle", "search"]
+    static let shellShortcuts: Set<String> = ["toggle", "search", "gamemode"]
+
+    // MARK: Game mode
+
+    /// The notch steps aside: the panel cannot open, the surface ignores the mouse, peeks are off,
+    /// and the wings show only the segments chosen for game mode, at the chosen opacity.
+    private func applyGameMode() {
+        let active = gameActive
+        if active { close(restoreFocus: false); peekHandle?.end() }
+        panel.ignoresMouseEvents = active
+        for stack in [leading, trailing, pill] { stack.alphaValue = active ? CGFloat(gameMode.settings.opacity) / 100 : 1 }
+        segmentsChanged()
+        statusChanged?()
+        settingsController?.refreshGameMode()
+    }
 
     /// ⌃⌥N: opens the panel for typing, or closes it when it already has the keyboard.
     func toggleFromKeyboard() {
@@ -525,6 +552,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
             // (farthest from the camera first) without touching the module's own visibility.
             let slots = segments.filter { $0.slot == slot }.map { item -> NSView in
                 let container = SegmentSlotView()
+                container.owner = registries.segments.owner(of: item.id)
                 embed(item.makeView(), in: container, inset: 0, fill: true)
                 return container
             }
@@ -539,7 +567,11 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         pill = NSStackView()
         pill.orientation = .horizontal
         pill.spacing = 8
-        for view in [leading, trailing, pill] { view.detachesHiddenViews = true; view.wantsLayer = true }
+        for view in [leading, trailing, pill] {
+            view.detachesHiddenViews = true
+            view.wantsLayer = true
+            if gameActive { view.alphaValue = CGFloat(gameMode.settings.opacity) / 100 }
+        }
         wing = measureWing()
     }
 
@@ -551,7 +583,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
 
     @discardableResult
     func peek(symbol name: String, tint: NSColor, leading: String, trailing: String, seconds: TimeInterval?) -> PeekHandle? {
-        guard screen != nil, !state.expanded else { return nil }
+        guard screen != nil, !state.expanded, !gameActive else { return nil }
         peekHandle?.end()
         let handle = PeekHandle { [weak self] handle in
             guard let self, self.peekHandle === handle else { return }
@@ -583,7 +615,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         return handle
     }
 
-    private final class SegmentSlotView: NSView {}
+    private final class SegmentSlotView: NSView { var owner: String? }
 
     private func visibleWidth(_ stack: NSStackView) -> CGFloat {
         stack.arrangedSubviews.contains { !$0.isHidden } ? stack.fittingSize.width : 0
@@ -592,8 +624,9 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     /// Shows the slots whose segment is visible, in order, while they fit in `maxWidth`.
     private func fit(_ stack: NSStackView, maxWidth: CGFloat) {
         var used: CGFloat = 0
+        let hidden = gameActive ? Set(gameMode.settings.hiddenModules) : []
         for case let slot as SegmentSlotView in stack.arrangedSubviews {
-            guard let segment = slot.subviews.first, !segment.isHidden else { slot.isHidden = true; continue }
+            guard let segment = slot.subviews.first, !segment.isHidden, !hidden.contains(slot.owner ?? "") else { slot.isHidden = true; continue }
             let width = segment.fittingSize.width + (used > 0 ? stack.spacing : 0)
             slot.isHidden = used + width > maxWidth
             if !slot.isHidden { used += width }

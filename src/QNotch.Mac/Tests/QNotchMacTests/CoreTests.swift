@@ -790,3 +790,30 @@ final class LayoutOrderTests: XCTestCase {
         XCTAssertEqual(LayoutOrder.reorder(["c", "a", "b"], saved: ["a", "b"]), ["c", "a", "b"])
     }
 }
+
+final class GameModeTests: XCTestCase {
+    func testFullScreenWindowsListsAndOverride() {
+        let display = CGRect(x: 0, y: 0, width: 1470, height: 956)
+        var settings = GameModeSettings()
+        XCTAssertTrue(GameClassifier.isGame(bundleID: "com.valve.game", isSelf: false, windows: [display], display: display, settings: settings, category: "public.app-category.action-games"))
+        XCTAssertFalse(GameClassifier.isGame(bundleID: "com.apple.dt.Xcode", isSelf: false, windows: [display], display: display, settings: settings, category: "public.app-category.developer-tools"))
+        settings.anyFullScreen = true
+        XCTAssertTrue(GameClassifier.isGame(bundleID: "com.apple.dt.Xcode", isSelf: false, windows: [display], display: display, settings: settings))
+        XCTAssertFalse(GameClassifier.isGame(bundleID: "com.apple.Safari", isSelf: false, windows: [CGRect(x: 0, y: 37, width: 1470, height: 919)], display: display, settings: settings))
+        XCTAssertFalse(GameClassifier.isGame(bundleID: "dev.qnotch.mac", isSelf: true, windows: [display], display: display, settings: settings))
+        XCTAssertFalse(GameClassifier.isGame(bundleID: "com.apple.finder", isSelf: false, windows: [display], display: display, settings: settings))
+        settings.always = ["com.apple.Safari"]
+        XCTAssertTrue(GameClassifier.isGame(bundleID: "com.apple.Safari", isSelf: false, windows: [], display: display, settings: settings))
+        settings.never = ["com.apple.Safari", "com.valve.game"]
+        XCTAssertFalse(GameClassifier.isGame(bundleID: "com.apple.Safari", isSelf: false, windows: [], display: display, settings: settings))
+        XCTAssertFalse(GameClassifier.isGame(bundleID: "com.valve.game", isSelf: false, windows: [display], display: display, settings: settings))
+        settings.never = []
+        settings.autoDetect = false
+        XCTAssertFalse(GameClassifier.isGame(bundleID: "com.valve.game", isSelf: false, windows: [display], display: display, settings: settings))
+        XCTAssertTrue(GameClassifier.active(override: .on, detected: false))
+        XCTAssertFalse(GameClassifier.active(override: .off, detected: true))
+        XCTAssertEqual(GameClassifier.next(.off), .auto)
+        let decoded = try? JSONDecoder().decode(GameModeSettings.self, from: Data(#"{"opacity":5}"#.utf8))
+        XCTAssertEqual(decoded?.opacity, 30)
+    }
+}

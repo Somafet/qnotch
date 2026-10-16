@@ -51,7 +51,8 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
         ("features", "Features", "square.grid.2x2.fill", .systemBlue, "modules enable disable turn on off"),
         ("hotkeys", "Hotkeys", "command", .systemIndigo, "shortcuts keyboard keys"),
         ("sounds", "Sounds", "speaker.wave.2.fill", .systemPink, "audio chime alert"),
-        ("appearance", "Appearance", "paintbrush.fill", .systemPurple, "accent color name photo picture cards motion animation")
+        ("appearance", "Appearance", "paintbrush.fill", .systemPurple, "accent color name photo picture cards motion animation"),
+        ("gamemode", "Game mode", "gamecontroller.fill", .systemGreen, "games full screen fullscreen focus")
     ]
 
     private var pages: [Page] {
@@ -331,6 +332,7 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
         case "hotkeys": return hotkeysPage()
         case "sounds": return soundsPage()
         case "appearance": return appearancePage()
+        case "gamemode": return gameModePage()
         default: return generalPage()
         }
     }
@@ -404,6 +406,76 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
         }
         return page("Sounds", subtitle: "Pick a system sound or your own audio file. Turn a sound on or off on its feature's page.", [
             settingsGroup(rows, footer: "Sounds follow the alert volume in System Settings, Sound.", width: width)
+        ])
+    }
+
+    func refreshGameMode() { if window.isVisible, selected == "gamemode" { select("gamemode", animated: false) } }
+
+    private func gameModePage() -> NSView {
+        let width = Self.contentWidth
+        let game = shell.gameMode!
+        let modes: [GameOverride] = [.auto, .on, .off]
+        let mode = ActionPopUp("Mode", items: ["Automatic", "On", "Off"], selected: modes.firstIndex(of: game.override) ?? 0) { [weak self] index in
+            self?.shell.gameMode.override = modes[index]
+        }
+        let auto = ActionSwitch("Automatic detection", value: game.settings.autoDetect) { value in game.set { $0.autoDetect = value } }
+        let any = ActionSwitch("Any full-screen app", value: game.settings.anyFullScreen) { value in game.set { $0.anyFullScreen = value } }
+        let opacity = NSSlider(value: Double(game.settings.opacity), minValue: 30, maxValue: 100, target: nil, action: nil)
+        opacity.controlSize = .small
+        opacity.widthAnchor.constraint(equalToConstant: 140).isActive = true
+        let opacityTarget = ClosureTarget { [weak opacity] in
+            guard let opacity, NSApp.currentEvent?.type != .leftMouseDragged else { return }
+            game.set { $0.opacity = Int(opacity.doubleValue.rounded()) }
+        }
+        opacity.target = opacityTarget
+        opacity.action = #selector(ClosureTarget.run)
+        opacity.isContinuous = true
+        objc_setAssociatedObject(opacity, "action", opacityTarget, .OBJC_ASSOCIATION_RETAIN)
+        opacity.setAccessibilityLabel("Opacity")
+        // One switch per feature that shows something beside the notch.
+        let owners = Array(Set(shell.registries.segments.items.compactMap { shell.registries.segments.owner(of: $0.id) }))
+        let features = ModuleList.all.filter { owners.contains($0.id) }
+        let segmentRows = features.map { info -> NSView in
+            let toggle = ActionSwitch(info.title, value: !game.settings.hiddenModules.contains(info.id)) { value in
+                game.set { settings in
+                    settings.hiddenModules.removeAll { $0 == info.id }
+                    if !value { settings.hiddenModules.append(info.id) }
+                }
+            }
+            return settingsRow(info.title, control: toggle, width: width)
+        }
+        func appList(_ title: String, _ key: WritableKeyPath<GameModeSettings, [String]>, detail: String) -> NSView {
+            let running = NSWorkspace.shared.runningApplications.filter { $0.activationPolicy == .regular && $0.bundleIdentifier != nil }
+                .sorted { ($0.localizedName ?? "") < ($1.localizedName ?? "") }
+            let add = ActionPopUp("Add an app", items: ["Add a running app…"] + running.map { $0.localizedName ?? $0.bundleIdentifier! }, selected: 0) { [weak self] index in
+                guard index > 0, let id = running[index - 1].bundleIdentifier else { return }
+                game.set { settings in
+                    settings.always.removeAll { $0 == id }; settings.never.removeAll { $0 == id }
+                    settings[keyPath: key].append(id)
+                }
+                self?.select("gamemode", animated: false)
+            }
+            var rows: [NSView] = [settingsRow(title, detail: detail, control: add, width: width)]
+            for id in game.settings[keyPath: key] {
+                let name = NSWorkspace.shared.urlForApplication(withBundleIdentifier: id).map { FileManager.default.displayName(atPath: $0.path).replacingOccurrences(of: ".app", with: "") } ?? id
+                let remove = ActionSwitch(name, value: true) { [weak self] _ in
+                    game.set { $0[keyPath: key].removeAll { $0 == id } }
+                    self?.select("gamemode", animated: false)
+                }
+                rows.append(settingsRow(name, detail: id, control: remove, width: width))
+            }
+            return settingsGroup(rows, width: width)
+        }
+        return page("Game mode", subtitle: "While a game or full-screen app is in front, the notch steps aside: it does not open, ignores the pointer and shows only a quiet status line.", [
+            settingsGroup([
+                settingsRow("Mode", detail: game.status + ". ⌃⌥G cycles it; also in the QNotch menu.", control: mode, width: width),
+                settingsRow("Automatic detection", detail: "A game (by its App Store category) with a window covering the whole display, checked when apps or Spaces change.", control: auto, width: width),
+                settingsRow("Any full-screen app", detail: "Also step aside for full-screen apps that are not games, as QNotch for Windows does. Off, so the notch keeps working in full-screen Spaces.", control: any, width: width),
+                settingsRow("Opacity", detail: "Of the status beside the notch while game mode is on.", control: opacity, width: width)
+            ], width: width),
+            settingsGroup(segmentRows.isEmpty ? [settingsRow("Nothing to show", width: width)] : segmentRows, header: "Show in game mode", width: width),
+            appList("Always use game mode", \.always, detail: "Even in a window. Add games that do not declare the games category."),
+            appList("Never use game mode", \.never, detail: "Never wins.")
         ])
     }
 
