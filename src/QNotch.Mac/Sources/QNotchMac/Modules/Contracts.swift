@@ -11,6 +11,8 @@ struct ViewContribution: Contribution {
     var symbol = "square.grid.2x2"
     /// Settings sidebar icon background.
     var tint = NSColor.systemGray
+    /// Home cards only: 1 or 2 grid columns.
+    var span = 1
     let makeView: () -> NSView
 }
 
@@ -63,6 +65,8 @@ final class ModuleRegistries {
 protocol ModuleShell: AnyObject {
     func selectTab(_ id: String)
     func openSettings()
+    /// Opens Settings on a module's section (its `settingsSections` id).
+    func openSettings(section: String)
     /// A segment became visible, hidden, or changed width.
     func segmentsChanged()
 }
@@ -71,6 +75,19 @@ struct ModuleContext {
     let settings: SettingsStore
     let registries: ModuleRegistries
     weak var shell: ModuleShell?
+    /// Every sound a module plays: add it in `initialize`, then `play(id)`.
+    let sounds: SoundRegistry
+    /// Every lasting global hotkey a module owns.
+    let shortcuts: ShortcutRegistry
+
+    init(settings: SettingsStore, registries: ModuleRegistries, shell: ModuleShell?,
+         sounds: SoundRegistry? = nil, shortcuts: ShortcutRegistry? = nil) {
+        self.settings = settings
+        self.registries = registries
+        self.shell = shell
+        self.sounds = sounds ?? SoundRegistry(store: settings)
+        self.shortcuts = shortcuts ?? ShortcutRegistry(store: settings)
+    }
 }
 
 protocol NotchModule: AnyObject {

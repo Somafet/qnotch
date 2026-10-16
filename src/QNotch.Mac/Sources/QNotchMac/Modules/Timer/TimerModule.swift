@@ -26,6 +26,7 @@ final class TimerModule: NotchModule {
         preferences = context.settings.load("timer", default: TimerSettings())
         preferences.minutes = min(180, max(1, preferences.minutes))
         countdown = Countdown(duration: TimeInterval(preferences.minutes * 60))
+        context.sounds.add("timer.done", title: "Timer is up", hint: "A countdown reached zero.", defaultName: "Glass", order: 30)
         let registry = context.registries
         registry.cards.register(ViewContribution(id: "timer", title: "Timer", order: 26, symbol: "timer") { [unowned self] in
             self.track(TimerCardView(module: self))
@@ -104,7 +105,7 @@ final class TimerModule: NotchModule {
         let now = Date()
         if countdown.refresh(at: now) {
             completionUnseen = !visible
-            if preferences.playSound { (NSSound(named: "Glass") ?? NSSound(named: "Ping"))?.play() }
+            if preferences.playSound { context.sounds.play("timer.done") }
         }
         if visible {
             for case let view as TimerDisplay in displays.allObjects { view.update(countdown: countdown, now: now, animated: animated || countdown.isRunning) }
@@ -158,7 +159,7 @@ final class TimerModule: NotchModule {
             self?.choose(minutes: values[index])
         }
         return settingsGroup([
-            settingsRow("Play a sound", detail: "A short chime when the countdown finishes. QNotch never takes focus.", control: sound, width: width),
+            settingsRow("Play a sound", detail: "When the countdown finishes. Pick the sound in Settings, Sounds. QNotch never takes focus.", control: sound, width: width),
             settingsRow("Length", detail: "Also set from the presets in the panel, or scroll over the Home card.", control: length, width: width)
         ], footer: "The length is saved on this Mac. A running timer keeps going through sleep and stops when QNotch quits.", width: width)
     }
@@ -171,7 +172,7 @@ final class TimerModule: NotchModule {
 // MARK: - Home card
 
 private final class TimerCardView: NSView, TimerDisplay {
-    private let time = line("25:00", size: 34, weight: .semibold, color: Palette.textPrimary)
+    private let time = line("25:00", size: 30, weight: .semibold, color: Palette.textPrimary)
     private let status = line("Ready", size: 12, color: Palette.textTertiary)
     private let start: HoverButton
     private let resetButton: HoverButton
@@ -186,7 +187,7 @@ private final class TimerCardView: NSView, TimerDisplay {
         resetButton = HoverButton(symbol: "arrow.counterclockwise", style: .icon, symbolSize: 14, label: "Reset countdown") { [weak module] in module?.reset() }
         presets = ChipPicker(values: TimerModule.presets, format: { "\($0)" }, label: { "\($0) minutes" }) { [weak module] in module?.choose(minutes: $0) }
         super.init(frame: .zero)
-        time.font = .rounded(34, weight: .semibold, monospacedDigits: true)
+        time.font = .rounded(30, weight: .semibold, monospacedDigits: true)
         time.setAccessibilityIdentifier("timer-remaining")
         start.setAccessibilityIdentifier("timer-toggle")
         start.tint = Palette.textPrimary

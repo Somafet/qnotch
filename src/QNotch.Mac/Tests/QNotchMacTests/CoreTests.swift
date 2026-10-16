@@ -166,13 +166,14 @@ final class CoreTests: XCTestCase {
     }
 
     func testDisabledModuleIsNeverConstructed() {
-        XCTAssertTrue(ModuleList.make(timerEnabled: false).isEmpty)
+        XCTAssertTrue(ModuleList.make(disabled: ModuleList.all.map(\.id)).isEmpty)
+        XCTAssertFalse(ModuleList.make(disabled: []).isEmpty)
     }
 
     func testRealTimerRegistersAllFiveExtensionConcepts() {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let registries = ModuleRegistries()
-        let modules = ModuleList.make(timerEnabled: true)
+        let modules = ModuleList.make(disabled: ModuleList.all.map(\.id).filter { $0 != "timer" })
         modules.forEach { $0.initialize(ModuleContext(settings: SettingsStore(directory: directory), registries: registries, shell: nil)) }
         defer { modules.forEach { $0.stop() } }
         XCTAssertEqual(registries.cards.items.map(\.id), ["timer"])
@@ -182,5 +183,49 @@ final class CoreTests: XCTestCase {
         XCTAssertEqual(registries.searchSources.items.first?.find("COUNTDOWN").count, 1)
         XCTAssertEqual(registries.searchSources.items.first?.find("unknown").count, 0)
         XCTAssertEqual(registries.settingsSections.items.map(\.id), ["timer"])
+    }
+
+    func testLegacyTimerSwitchAndMissingKeysDecode() throws {
+        let legacy = try JSONDecoder().decode(GeneralSettings.self, from: Data(#"{"reduceMotion":true,"timerEnabled":false}"#.utf8))
+        XCTAssertTrue(legacy.reduceMotion)
+        XCTAssertEqual(legacy.disabledModules, ["timer"])
+        XCTAssertFalse(legacy.isEnabled("timer"))
+        let empty = try JSONDecoder().decode(GeneralSettings.self, from: Data("{}".utf8))
+        XCTAssertEqual(empty, GeneralSettings())
+        let timer = try JSONDecoder().decode(TimerSettings.self, from: Data(#"{"minutes":10}"#.utf8))
+        XCTAssertEqual(timer.minutes, 10)
+        XCTAssertTrue(timer.playSound)
+        var general = GeneralSettings()
+        general.setEnabled("volume", false); general.setEnabled("clipboard", false); general.setEnabled("volume", false)
+        XCTAssertEqual(general.disabledModules, ["clipboard", "volume"])
+        general.setEnabled("volume", true)
+        XCTAssertEqual(general.disabledModules, ["clipboard"])
+        let encoded = String(decoding: try JSONEncoder().encode(general), as: UTF8.self)
+        XCTAssertFalse(encoded.contains("timerEnabled"))
+    }
+
+    func testKeyComboRoundTripsAndRequiresAGlobalModifier() throws {
+        let toggle = try XCTUnwrap(KeyCombo("ctrl+opt+n"))
+        XCTAssertEqual(toggle.keyCode, 0x2D)
+        XCTAssertEqual(toggle.modifiers, KeyCombo.control | KeyCombo.option)
+        XCTAssertEqual(toggle.display, "⌃⌥N")
+        XCTAssertEqual(KeyCombo(toggle.text), toggle)
+        XCTAssertEqual(KeyCombo("Shift + Cmd + Space")?.display, "⇧⌘Space")
+        XCTAssertEqual(KeyCombo("alt+1")?.text, "opt+1")
+        XCTAssertTrue(toggle.isAllowedGlobally)
+        XCTAssertFalse(try XCTUnwrap(KeyCombo("shift+a")).isAllowedGlobally)
+        for invalid in ["", "ctrl+opt", "ctrl+n+m", "ctrl+unknown"] { XCTAssertNil(KeyCombo(invalid), invalid) }
+        XCTAssertNil(KeyCombo(keyCode: 0xFF, modifiers: 0))
+    }
+
+    func testCardGridPacksDenselyInReadingOrder() {
+        let slots = CardGrid.place(spans: [2, 2, 1, 1, 3, 5])
+        XCTAssertEqual(slots, [
+            .init(row: 0, column: 0, span: 2), .init(row: 1, column: 0, span: 2),
+            .init(row: 0, column: 2, span: 1), .init(row: 1, column: 2, span: 1),
+            .init(row: 2, column: 0, span: 3), .init(row: 3, column: 0, span: 3)
+        ])
+        XCTAssertEqual(CardGrid.rows(slots), 4)
+        XCTAssertEqual(CardGrid.rows([]), 0)
     }
 }

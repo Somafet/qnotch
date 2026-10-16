@@ -1,4 +1,5 @@
 import AppKit
+import UniformTypeIdentifiers
 
 /// Sidebar settings window, laid out like the Windows one (navigation left, titled pages of
 /// label/detail/control rows right) and styled like System Settings. Follows the system appearance.
@@ -42,11 +43,18 @@ final class SettingsController: NSObject {
         window.center()
     }
 
+    /// App pages before the module sections, with extra search words (Search, Settings source).
+    static let appPages: [(id: String, title: String, symbol: String, tint: NSColor, keywords: String)] = [
+        ("general", "General", "gearshape.fill", .systemGray, "display monitor motion animation preferences"),
+        ("features", "Features", "square.grid.2x2.fill", .systemBlue, "modules enable disable turn on off"),
+        ("hotkeys", "Hotkeys", "command", .systemIndigo, "shortcuts keyboard keys"),
+        ("sounds", "Sounds", "speaker.wave.2.fill", .systemPink, "audio chime alert")
+    ]
+
     private var pages: [Page] {
-        var pages = [
-            Page(id: "general", title: "General", symbol: "gearshape.fill", tint: .systemGray) { [unowned self] in self.generalPage() },
-            Page(id: "features", title: "Features", symbol: "square.grid.2x2.fill", tint: .systemBlue) { [unowned self] in self.featuresPage() }
-        ]
+        var pages = Self.appPages.map { info in
+            Page(id: info.id, title: info.title, symbol: info.symbol, tint: info.tint) { [unowned self] in self.appPage(info.id) }
+        }
         for section in shell.registries.settingsSections.items {
             pages.append(Page(id: "module." + section.id, title: section.title, symbol: section.symbol, tint: section.tint) {
                 [unowned self] in self.page(section.title, [section.makeView()])
@@ -56,12 +64,16 @@ final class SettingsController: NSObject {
         return pages
     }
 
-    func show() {
+    func show(page: String? = nil) {
         rebuildNavigation()
-        select(selected, animated: false)
+        select(page.flatMap { id in pages.contains { $0.id == id } ? id : nil } ?? selected, animated: false)
         NSApp.activate(ignoringOtherApps: true)
         window.makeKeyAndOrderFront(nil)
     }
+
+    /// A shortcut changed (recorded, taken by another app, or a module was turned off).
+    func refreshShortcuts() { if window.isVisible, selected == "hotkeys", !recording { select("hotkeys", animated: false) } }
+    private var recording: Bool { window.firstResponder is ShortcutRecorder }
 
     func refreshDisplays() { if window.isVisible, selected == "general" { select("general", animated: false) } }
 
@@ -125,7 +137,7 @@ final class SettingsController: NSObject {
             rows[page.id] = item
             // Gaps separate app pages, module pages and About, as in System Settings.
             let next = index + 1 < pages.count ? pages[index + 1].id : nil
-            if page.id == "features" || next == "about" { navigation.setCustomSpacing(14, after: item) }
+            if page.id == Self.appPages.last?.id || next == "about" { navigation.setCustomSpacing(14, after: item) }
         }
     }
 
@@ -195,22 +207,98 @@ final class SettingsController: NSObject {
         ])
     }
 
+    private func appPage(_ id: String) -> NSView {
+        switch id {
+        case "features": return featuresPage()
+        case "hotkeys": return hotkeysPage()
+        case "sounds": return soundsPage()
+        default: return generalPage()
+        }
+    }
+
     private func featuresPage() -> NSView {
         let width = Self.contentWidth
-        let countdown = ActionSwitch("Countdown", value: shell.general.timerEnabled) { [weak self] value in
-            self?.shell.updateGeneral { $0.timerEnabled = value }
-            self?.rebuildNavigation()
-            self?.rows["features"]?.isSelected = true
+        let rows = ModuleList.all.map { info -> NSView in
+            let toggle = ActionSwitch(info.title, value: shell.general.isEnabled(info.id)) { [weak self] value in
+                self?.shell.updateGeneral { $0.setEnabled(info.id, value) }
+                self?.rebuildNavigation()
+                self?.rows["features"]?.isSelected = true
+            }
+            return featureRow(info.title, detail: info.detail, symbol: info.symbol, tint: info.tint, control: toggle, width: width)
         }
-        return page("Features", subtitle: "Turn modules on or off. A module that is off is not loaded and uses no resources.", [
-            settingsGroup([
-                featureRow("Countdown", detail: "Timer card on Home, a Timer tab, and the time left beside the notch.", symbol: "timer", tint: .systemOrange, control: countdown, width: width)
-            ], width: width),
-            settingsGroup([
-                featureRow("Not on Mac yet", detail: "Media, clipboard history, scheduled jobs and mic/camera attribution are available in QNotch for Windows.",
-                           symbol: "hourglass", tint: .systemGray, control: nil, width: width)
-            ], width: width)
+        return page("Features", subtitle: "Turn modules on or off. A module that is off is not loaded and uses no resources. Changes apply right away.", [
+            settingsGroup(rows, width: width)
         ])
+    }
+
+    private func hotkeysPage() -> NSView {
+        let width = Self.contentWidth
+        let rows = shell.shortcuts.items.map { shortcut -> NSView in
+            let recorder = ShortcutRecorder(registry: shell.shortcuts, id: shortcut.id)
+            recorder.finished = { [weak self] in self?.select("hotkeys", animated: false) }
+            let reset = HoverButton(symbol: "arrow.uturn.backward", style: .icon, symbolSize: 12, label: "Reset \(shortcut.title) to \(shortcut.defaultCombo?.display ?? "off")") { [weak self] in
+                self?.shell.shortcuts.reset(shortcut.id)
+                self?.select("hotkeys", animated: false)
+            }
+            reset.tint = .secondaryLabelColor
+            reset.isHidden = shortcut.combo == shortcut.defaultCombo
+            var detail = shortcut.hint
+            if let owner = shortcut.usedBy { detail += " Used by \(owner)." }
+            else if shortcut.taken { detail += " Taken by another app. Pick another shortcut." }
+            return settingsRow(shortcut.title, detail: detail, control: row([reset, recorder], spacing: 4), width: width)
+        }
+        return page("Hotkeys", subtitle: "Click a shortcut, then press the new keys. A shortcut needs ⌃, ⌥ or ⌘. Esc cancels; Delete turns it off.", [
+            settingsGroup(rows, footer: "Hotkeys work from any app without Accessibility access. If another app already uses a key, QNotch leaves it alone.", width: width)
+        ])
+    }
+
+    private func soundsPage() -> NSView {
+        let width = Self.contentWidth
+        let sounds = shell.sounds.items
+        guard !sounds.isEmpty else {
+            return page("Sounds", [settingsGroup([settingsRow("No sounds", detail: "Features that play sounds list them here when they are on.", width: width)], width: width)])
+        }
+        let names = SoundRegistry.systemNames
+        let rows = sounds.map { sound -> NSView in
+            let current = shell.sounds.choice(for: sound.id)
+            var titles = names
+            var values = names
+            if current.hasPrefix("/") { titles.append(SoundRegistry.title(of: current)); values.append(current) }
+            titles.append("Choose File…")
+            let popUp = ActionPopUp(sound.title, items: titles, selected: values.firstIndex(of: current) ?? names.firstIndex(of: sound.defaultName) ?? 0) { [weak self] index in
+                guard let self else { return }
+                if index < values.count {
+                    self.shell.sounds.choose(sound.id, values[index])
+                    self.shell.sounds.play(sound.id)
+                } else { self.chooseSoundFile(sound.id) }
+                self.select("sounds", animated: false)
+            }
+            let play = HoverButton(symbol: "play.fill", style: .icon, symbolSize: 11, label: "Play \(sound.title)") { [weak self] in self?.shell.sounds.play(sound.id) }
+            play.tint = .secondaryLabelColor
+            let reset = HoverButton(symbol: "arrow.uturn.backward", style: .icon, symbolSize: 12, label: "Reset \(sound.title) to \(sound.defaultName)") { [weak self] in
+                self?.shell.sounds.choose(sound.id, nil)
+                self?.select("sounds", animated: false)
+            }
+            reset.tint = .secondaryLabelColor
+            reset.isHidden = shell.sounds.isDefault(sound.id)
+            return settingsRow(sound.title, detail: sound.hint, control: row([reset, play, popUp], spacing: 2), width: width)
+        }
+        return page("Sounds", subtitle: "Pick a system sound or your own audio file. Turn a sound on or off on its feature's page.", [
+            settingsGroup(rows, footer: "Sounds follow the alert volume in System Settings, Sound.", width: width)
+        ])
+    }
+
+    private func chooseSoundFile(_ id: String) {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = SoundRegistry.fileTypes.compactMap { UTType(filenameExtension: $0) }
+        panel.allowsMultipleSelection = false
+        panel.message = "Choose a sound"
+        panel.beginSheetModal(for: window) { [weak self] response in
+            guard response == .OK, let url = panel.url, let self else { return }
+            self.shell.sounds.choose(id, url.path)
+            self.shell.sounds.play(id)
+            self.select("sounds", animated: false)
+        }
     }
 
     private func aboutPage() -> NSView {

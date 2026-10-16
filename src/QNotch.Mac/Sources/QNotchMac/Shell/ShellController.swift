@@ -6,6 +6,8 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     let surface = NotchSurfaceView()
     let store: SettingsStore
     let registries = ModuleRegistries()
+    let sounds: SoundRegistry
+    let shortcuts: ShortcutRegistry
     private(set) var general: GeneralSettings
     private(set) var state = ShellState()
     private(set) var activeTab = "home"
@@ -37,6 +39,8 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         self.store = store
         general = store.load("general", default: GeneralSettings())
         Motion.userReduced = general.reduceMotion
+        sounds = SoundRegistry(store: store)
+        shortcuts = ShortcutRegistry(store: store)
         panel = NotchPanel(contentRect: .zero, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
         super.init()
         panel.isFloatingPanel = true
@@ -67,6 +71,13 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         }
         panel.escaped = { [weak self] in self?.close() }
         panel.typed = { [weak self] text in self?.typeToSearch(text) }
+        shortcuts.add("toggle", title: "Toggle panel", hint: "Opens or closes the panel, ready for typing.", gesture: "ctrl+opt+n", order: 0) { [weak self] in
+            self?.toggleFromKeyboard()
+        }
+        shortcuts.add("search", title: "Open search", hint: "Opens the Search tab with the cursor in the box.", gesture: "ctrl+opt+f", order: 20) { [weak self] in
+            self?.summonSearch()
+        }
+        shortcuts.changed = { [weak self] in self?.settingsController?.refreshShortcuts() }
         composeModules()
         store.problemChanged = { [weak self] in
             self?.settingsController?.refreshIssue()
@@ -129,19 +140,22 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         registries.removeAll()
         contentCache.removeAll()
         searchView = nil
-        modules = ModuleList.make(timerEnabled: general.timerEnabled)
-        let context = ModuleContext(settings: store, registries: registries, shell: self)
+        sounds.removeAll()
+        shortcuts.remove { !Self.shellShortcuts.contains($0.id) }
+        modules = ModuleList.make(disabled: general.disabledModules)
+        let context = ModuleContext(settings: store, registries: registries, shell: self, sounds: sounds, shortcuts: shortcuts)
         modules.forEach { $0.initialize(context) }
+        registerShellSearch()
         if !tabs.contains(where: { $0.id == activeTab }) { activeTab = "home" }
         buildStatus()
     }
 
     func updateGeneral(_ change: (inout GeneralSettings) -> Void) {
-        let enabled = general.timerEnabled
+        let disabled = general.disabledModules
         change(&general)
         store.save("general", general)
         Motion.userReduced = general.reduceMotion
-        if enabled != general.timerEnabled {
+        if disabled != general.disabledModules {
             composeModules()
             if let panelView { panelView.removeFromSuperview(); self.panelView = nil }
         }
@@ -151,10 +165,13 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         statusChanged?()
     }
 
-    func openSettings() {
+    func openSettings() { openSettings(page: nil) }
+    func openSettings(section: String) { openSettings(page: "module." + section) }
+
+    func openSettings(page: String?) {
         close(restoreFocus: false)
         if settingsController == nil { settingsController = SettingsController(shell: self) }
-        settingsController?.show()
+        settingsController?.show(page: page)
     }
 
     var settings: SettingsController? { settingsController }
@@ -287,11 +304,40 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     }
 
     private func search(_ query: String) -> [SearchHit] {
-        var hits = registries.searchSources.items.flatMap { Array($0.find(query).prefix(5)) }
-        if "settings preferences display motion".localizedCaseInsensitiveContains(query) {
-            hits.append(SearchHit(title: "Settings", detail: "Display, motion and features", symbol: "gearshape") { [weak self] in self?.openSettings() })
-        }
-        return hits
+        registries.searchSources.items.flatMap { Array($0.find(query).prefix(5)) }
+    }
+
+    /// Tabs (order 80) and Settings pages (order 90), as on Windows.
+    private func registerShellSearch() {
+        registries.searchSources.register(SearchSource(id: "tabs", order: 80) { [weak self] query in
+            guard let self else { return [] }
+            return self.tabs.filter { $0.id != "search" && $0.title.localizedCaseInsensitiveContains(query) }.map { tab in
+                SearchHit(title: tab.title, detail: "Tab · opens it", symbol: tab.symbol) { [weak self] in self?.selectTab(tab.id) }
+            }
+        })
+        registries.searchSources.register(SearchSource(id: "settings", order: 90) { [weak self] query in
+            guard let self else { return [] }
+            let pages = SettingsController.appPages.map { ($0.id, $0.title, $0.keywords) } +
+                self.registries.settingsSections.items.map { ("module." + $0.id, $0.title, "") }
+            return pages.filter { "\($0.1) \($0.2)".localizedCaseInsensitiveContains(query) }.map { page in
+                SearchHit(title: page.1, detail: "Settings · opens this page", symbol: "gearshape") { [weak self] in self?.openSettings(page: page.0) }
+            }
+        })
+    }
+
+    static let shellShortcuts: Set<String> = ["toggle", "search"]
+
+    /// ⌃⌥N: opens the panel for typing, or closes it when it already has the keyboard.
+    func toggleFromKeyboard() {
+        if state.acceptsKeyboard { close() } else { open(keyboard: true) }
+    }
+
+    /// ⌃⌥F: opens Search with the cursor in the box; pressed again there, it closes the panel.
+    func summonSearch() {
+        if state.acceptsKeyboard, activeTab == "search" { close(); return }
+        open(keyboard: true)
+        selectTab("search")
+        searchView?.focus(appending: "")
     }
 
     private func updateVisibility() {
@@ -321,16 +367,10 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     private func makeHome() -> NSView {
         let cards = registries.cards.items
         guard !cards.isEmpty else {
-            return placeholder(symbol: "timer", title: "Countdown is off", detail: "Turn it on in Settings to use the timer here.",
-                               action: ("Open Settings", { [weak self] in self?.openSettings() }))
+            return placeholder(symbol: "square.grid.2x2", title: "No cards on Home", detail: "Turn on features in Settings to add their cards here.",
+                               action: ("Open Settings", { [weak self] in self?.openSettings(page: "features") }))
         }
-        let views = cards.map { CardView(title: $0.title, content: cached("card." + $0.id, $0.makeView)) }
-        let stack = NSStackView(views: views)
-        stack.orientation = .horizontal
-        stack.distribution = .fillEqually
-        stack.alignment = .height
-        stack.spacing = 10
-        return stack
+        return HomeView(cards: cards.map { ($0, cached("card." + $0.id, $0.makeView)) })
     }
 
     private func cached(_ id: String, _ factory: () -> NSView) -> NSView {

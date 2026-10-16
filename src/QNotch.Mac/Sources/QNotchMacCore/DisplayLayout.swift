@@ -6,7 +6,7 @@ public struct DisplayLayout {
     /// Concave top corners that let the surface flow out of the bezel beside the camera housing.
     public static let flare: CGFloat = 6
     /// Expanded panel body, below the camera band.
-    public static let panelSize = CGSize(width: 540, height: 232)
+    public static let panelSize = CGSize(width: 700, height: 376)
 
     public let frame: CGRect
     public let visibleFrame: CGRect

@@ -1,16 +1,69 @@
 import Foundation
 
+/// Settings structs decode missing keys as their defaults, so adding a field never makes an
+/// existing file unreadable.
+extension KeyedDecodingContainer {
+    public func value<T: Decodable>(_ key: Key, _ fallback: T) -> T {
+        (try? decodeIfPresent(T.self, forKey: key)) ?? fallback
+    }
+}
+
 public struct GeneralSettings: Codable, Equatable {
     public var displayID: UInt32?
     public var reduceMotion = false
-    public var timerEnabled = true
+    /// Module ids that are off. A module that is off is never constructed.
+    public var disabledModules: [String] = []
     public init() {}
+
+    public func isEnabled(_ module: String) -> Bool { !disabledModules.contains(module) }
+    public mutating func setEnabled(_ module: String, _ enabled: Bool) {
+        disabledModules.removeAll { $0 == module }
+        if !enabled { disabledModules.append(module); disabledModules.sort() }
+    }
+
+    private enum CodingKeys: String, CodingKey { case displayID, reduceMotion, disabledModules, timerEnabled }
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        displayID = c.value(.displayID, nil)
+        reduceMotion = c.value(.reduceMotion, false)
+        disabledModules = c.value(.disabledModules, [])
+        // The first milestone stored one switch for its only module.
+        if c.value(.timerEnabled, true) == false, !disabledModules.contains("timer") { disabledModules.append("timer") }
+    }
+    public func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encodeIfPresent(displayID, forKey: .displayID)
+        try c.encode(reduceMotion, forKey: .reduceMotion)
+        try c.encode(disabledModules, forKey: .disabledModules)
+    }
 }
 
 public struct TimerSettings: Codable, Equatable {
     public var minutes = 25
     public var playSound = true
     public init() {}
+    private enum CodingKeys: String, CodingKey { case minutes, playSound }
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        minutes = c.value(.minutes, 25)
+        playSound = c.value(.playSound, true)
+    }
+}
+
+/// Changed shortcut gestures by id ("" = off). Unlisted ids use their default.
+public struct ShortcutSettings: Codable, Equatable {
+    public var keys: [String: String] = [:]
+    public init() {}
+    private enum CodingKeys: String, CodingKey { case keys }
+    public init(from decoder: Decoder) throws { keys = try decoder.container(keyedBy: CodingKeys.self).value(.keys, [:]) }
+}
+
+/// Chosen sounds by id: a system sound name or an absolute audio file path. Unlisted ids use their default.
+public struct SoundSettings: Codable, Equatable {
+    public var sounds: [String: String] = [:]
+    public init() {}
+    private enum CodingKeys: String, CodingKey { case sounds }
+    public init(from decoder: Decoder) throws { sounds = try decoder.container(keyedBy: CodingKeys.self).value(.sounds, [:]) }
 }
 
 /// One atomic JSON file per owner. Tests and smoke runs always supply a temporary root.

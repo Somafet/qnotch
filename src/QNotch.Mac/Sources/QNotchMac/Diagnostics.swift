@@ -24,7 +24,7 @@ enum NativeSmokeTest {
                 shell.selectTab("timer")
                 try shell.snapshot(to: output.appendingPathComponent("timer.png"))
                 try shell.accessibilityReport(to: output.appendingPathComponent("accessibility.txt"))
-                guard let timer = shell.modules.first as? TimerModule else { throw Failure("Timer module was not constructed") }
+                guard let timer = shell.modules.lazy.compactMap({ $0 as? TimerModule }).first else { throw Failure("Timer module was not constructed") }
                 timer.startShortTimer(seconds: 1)
                 shell.close(restoreFocus: false)
                 try shell.snapshot(to: output.appendingPathComponent("pill-running.png"))
@@ -38,19 +38,32 @@ enum NativeSmokeTest {
                         guard shell.panel.canBecomeKey, shell.panel.isKeyWindow, shell.state.acceptsKeyboard else { throw Failure("Explicit summon did not grant keyboard") }
                         shell.panel.cancelOperation(nil)
                         guard !shell.state.expanded else { throw Failure("Escape did not collapse") }
+                        for id in ["toggle", "search"] {
+                            // Another QNotch instance (the user's own) may already own the key.
+                            guard let key = shell.shortcuts.shortcut(id), key.isRegistered || key.taken else { throw Failure("Shortcut \(id) was not registered") }
+                        }
+                        shell.summonSearch()
+                        guard shell.activeTab == "search", shell.state.acceptsKeyboard else { throw Failure("Search shortcut did not open Search with the keyboard") }
+                        shell.summonSearch()
+                        guard !shell.state.expanded else { throw Failure("Search shortcut did not close an open Search") }
+                        shell.toggleFromKeyboard()
+                        guard shell.state.acceptsKeyboard else { throw Failure("Toggle shortcut did not open the panel") }
+                        shell.toggleFromKeyboard()
+                        guard !shell.state.expanded else { throw Failure("Toggle shortcut did not close the panel") }
+                        shell.selectTab("home")
                         timer.startShortTimer(seconds: 60)
-                        shell.updateGeneral { $0.timerEnabled = false }
-                        guard shell.modules.isEmpty, shell.registries.cards.items.isEmpty, !timer.hasScheduledWake else { throw Failure("Disabled module still constructed or scheduled") }
+                        shell.updateGeneral { $0.setEnabled("timer", false) }
+                        guard !shell.modules.contains(where: { $0 is TimerModule }), !shell.registries.cards.items.contains(where: { $0.id == "timer" }), !timer.hasScheduledWake else { throw Failure("Disabled module still constructed or scheduled") }
                         shell.open(keyboard: false)
                         try shell.snapshot(to: output.appendingPathComponent("unavailable.png"))
                         shell.close(restoreFocus: false)
-                        shell.updateGeneral { $0.timerEnabled = true }
+                        shell.updateGeneral { $0.setEnabled("timer", true) }
                         shell.openSettings()
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                             do {
                                 try shell.settings?.snapshotPages(to: output)
                                 shell.settings?.window.close()
-                                let report = "Native UI smoke: actual window placement verified; camera center reserved; hover preserves focus; explicit summon grants keyboard; Escape collapses; running timer shows its status wing; timer completes hidden with one wake; disabled module not constructed; interactive controls named; every settings page rendered.\nstartup_seconds=\(ready)\ndone\n"
+                                let report = "Native UI smoke: actual window placement verified; camera center reserved; hover preserves focus; explicit summon grants keyboard; Escape collapses; running timer shows its status wing; toggle and search hotkeys work; timer completes hidden with one wake; disabled module not constructed; interactive controls named; every settings page rendered.\nstartup_seconds=\(ready)\ndone\n"
                                 try Data(report.utf8).write(to: output.appendingPathComponent("smoke.txt"))
                                 NSApp.terminate(nil)
                             } catch { fail(error, output: output) }
