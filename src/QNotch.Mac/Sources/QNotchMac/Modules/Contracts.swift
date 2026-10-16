@@ -43,10 +43,14 @@ struct SearchSource: Contribution {
 }
 
 final class Registry<T: Contribution> {
-    private var values: [String: T] = [:]
-    var items: [T] { values.values.sorted { ($0.order, $0.id) < ($1.order, $1.id) } }
-    func register(_ value: T) { values[value.id] = value }
+    private var values: [String: (owner: String?, value: T)] = [:]
+    /// The module whose `initialize` is running; its registrations are removed with it.
+    var owner: String?
+    var items: [T] { values.values.map(\.value).sorted { ($0.order, $0.id) < ($1.order, $1.id) } }
+    func register(_ value: T) { values[value.id] = (owner, value) }
     func removeAll() { values.removeAll() }
+    func removeAll(owner: String) { values = values.filter { $0.value.owner != owner } }
+    func ids(owner: String) -> [String] { values.filter { $0.value.owner == owner }.map(\.key) }
 }
 
 /// Mac-local equivalents of the five product extension concepts. No WPF or shared runtime.
@@ -56,6 +60,17 @@ final class ModuleRegistries {
     let segments = Registry<SegmentContribution>()
     let searchSources = Registry<SearchSource>()
     let settingsSections = Registry<ViewContribution>()
+    /// Set by the shell around each module's `initialize`.
+    var owner: String? {
+        didSet {
+            cards.owner = owner; tabs.owner = owner; segments.owner = owner
+            searchSources.owner = owner; settingsSections.owner = owner
+        }
+    }
+    func removeAll(owner: String) {
+        cards.removeAll(owner: owner); tabs.removeAll(owner: owner); segments.removeAll(owner: owner)
+        searchSources.removeAll(owner: owner); settingsSections.removeAll(owner: owner)
+    }
     func removeAll() {
         cards.removeAll(); tabs.removeAll(); segments.removeAll()
         searchSources.removeAll(); settingsSections.removeAll()

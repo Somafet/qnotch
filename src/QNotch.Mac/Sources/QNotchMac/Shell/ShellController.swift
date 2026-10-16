@@ -12,7 +12,8 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     private(set) var general: GeneralSettings
     private(set) var state = ShellState()
     private(set) var activeTab = "home"
-    private(set) var modules: [NotchModule] = []
+    private var loaded: [(id: String, module: NotchModule)] = []
+    var modules: [NotchModule] { loaded.map(\.module) }
     private(set) var displayMessage = ""
     private(set) var surfaceRevision = 0
     /// Width of each status wing beside the camera, or the floating pill's content width.
@@ -40,6 +41,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         self.store = store
         general = store.load("general", default: GeneralSettings())
         Motion.userReduced = general.reduceMotion
+        Palette.accentOverride = general.accent.flatMap(Palette.hex)
         sounds = SoundRegistry(store: store)
         shortcuts = ShortcutRegistry(store: store)
         panel = NotchPanel(contentRect: .zero, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
@@ -72,6 +74,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         }
         panel.escaped = { [weak self] in self?.close() }
         panel.typed = { [weak self] text in self?.typeToSearch(text) }
+        registerShellSearch()
         shortcuts.add("toggle", title: "Toggle panel", hint: "Opens or closes the panel, ready for typing.", gesture: "ctrl+opt+n", order: 0) { [weak self] in
             self?.toggleFromKeyboard()
         }
@@ -88,10 +91,10 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         rebuildSurface()
         globalClick = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
             guard let self, !self.panel.frame.contains(NSEvent.mouseLocation) else { return }
-            self.close(restoreFocus: false)
+            self.clickedOutside()
         }
         localClick = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] event in
-            if event.window !== self?.panel { self?.close(restoreFocus: false) }
+            if event.window !== self?.panel { self?.clickedOutside() }
             return event
         }
         let center = NotificationCenter.default
@@ -122,7 +125,29 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         })
     }
 
-    func start() { if screen != nil { panel.orderFrontRegardless() } }
+    func start() {
+        guard screen != nil else { return }
+        panel.orderFrontRegardless()
+        if general.pinned { DispatchQueue.main.async { [weak self] in self?.open(keyboard: false) } }
+    }
+
+    /// A pinned panel stays open; it only gives the keyboard back.
+    private func clickedOutside() {
+        if general.pinned { releaseKeyboard() } else { close(restoreFocus: false) }
+    }
+
+    private func releaseKeyboard() {
+        guard state.acceptsKeyboard else { return }
+        state.releaseKeyboard()
+        panel.keyboardAllowed = false
+        panel.resignKey()
+    }
+
+    func togglePin() {
+        updateGeneral { $0.pinned.toggle() }
+        panelView?.setPinned(general.pinned)
+        if !general.pinned, state.presentation == .hover, !panel.frame.contains(NSEvent.mouseLocation) { pointerLeft() }
+    }
 
     func stop() {
         hoverTask?.cancel(); leaveTask?.cancel()
@@ -136,26 +161,42 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
 
     // MARK: Modules and settings
 
+    /// Stops modules that were turned off and constructs those turned on. Modules that stay on
+    /// keep running untouched (a running countdown survives turning Note off).
     private func composeModules() {
-        modules.forEach { $0.stop() }
-        registries.removeAll()
-        contentCache.removeAll()
+        let wanted = ModuleList.all.filter { general.isEnabled($0.id) }
+        for (id, module) in loaded where !wanted.contains(where: { $0.id == id }) {
+            module.stop()
+            registries.removeAll(owner: id)
+            sounds.removeAll(owner: id)
+            shortcuts.remove { $0.owner == id }
+        }
+        loaded = wanted.map { info in
+            if let existing = loaded.first(where: { $0.id == info.id }) { return existing }
+            let module = info.make()
+            registries.owner = info.id; sounds.owner = info.id; shortcuts.owner = info.id
+            module.initialize(ModuleContext(settings: store, registries: registries, shell: self, sounds: sounds, shortcuts: shortcuts, capture: capture))
+            registries.owner = nil; sounds.owner = nil; shortcuts.owner = nil
+            return (info.id, module)
+        }
+        // Card and tab views of removed modules go; kept modules keep their (cached) views.
+        let live = Set(registries.cards.items.map { "card." + $0.id } + registries.tabs.items.map { "tab." + $0.id })
+        contentCache = contentCache.filter { live.contains($0.key) }
         searchView = nil
-        sounds.removeAll()
-        shortcuts.remove { !Self.shellShortcuts.contains($0.id) }
-        modules = ModuleList.make(disabled: general.disabledModules)
-        let context = ModuleContext(settings: store, registries: registries, shell: self, sounds: sounds, shortcuts: shortcuts, capture: capture)
-        modules.forEach { $0.initialize(context) }
-        registerShellSearch()
         if !tabs.contains(where: { $0.id == activeTab }) { activeTab = "home" }
         buildStatus()
     }
 
     func updateGeneral(_ change: (inout GeneralSettings) -> Void) {
+        let previous = general
         let disabled = general.disabledModules
         change(&general)
         store.save("general", general)
         Motion.userReduced = general.reduceMotion
+        Palette.accentOverride = general.accent.flatMap(Palette.hex)
+        if previous.accent != general.accent || previous.profileName != general.profileName || previous.hiddenCards != general.hiddenCards {
+            accentChanged()
+        }
         if disabled != general.disabledModules {
             composeModules()
             if let panelView { panelView.removeFromSuperview(); self.panelView = nil }
@@ -223,21 +264,21 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
             self.open(keyboard: false)
         }
         hoverTask = task
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12, execute: task)
+        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(general.hoverDelayMs), execute: task)
     }
 
     func pointerLeft() {
         hoverTask?.cancel()
         leaveTask?.cancel()
-        guard state.presentation == .hover else { return }
+        guard state.presentation == .hover, !general.pinned else { return }
         let task = DispatchWorkItem { [weak self] in
-            guard let self, !self.panel.frame.contains(NSEvent.mouseLocation) else { return }
+            guard let self, !self.general.pinned, !self.panel.frame.contains(NSEvent.mouseLocation) else { return }
             self.state.pointerLeft()
             self.present(.close)
             self.updateVisibility()
         }
         leaveTask = task
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4, execute: task)
+        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(general.closeDelayMs), execute: task)
     }
 
     func open(keyboard: Bool) {
@@ -273,7 +314,8 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     }
 
     func windowDidResignKey(_ notification: Notification) {
-        if state.acceptsKeyboard { close(restoreFocus: false) }
+        guard state.acceptsKeyboard else { return }
+        if general.pinned { releaseKeyboard() } else { close(restoreFocus: false) }
     }
 
     // MARK: Tabs and search
@@ -368,7 +410,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     }
 
     private func makeHome() -> NSView {
-        let cards = registries.cards.items
+        let cards = registries.cards.items.filter { general.isCardVisible($0.id) }
         guard !cards.isEmpty else {
             return placeholder(symbol: "square.grid.2x2", title: "No cards on Home", detail: "Turn on features in Settings to add their cards here.",
                                action: ("Open Settings", { [weak self] in self?.openSettings(page: "features") }))
@@ -450,6 +492,44 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         }
     }
 
+    // MARK: Profile
+
+    var profileImageURL: URL { store.directory.appendingPathComponent("profile.png") }
+    private var profileImage: NSImage?
+    private var profileImageLoaded = false
+
+    var profile: (name: String, image: NSImage?) {
+        if !profileImageLoaded {
+            profileImageLoaded = true
+            profileImage = NSImage(contentsOf: profileImageURL)
+        }
+        return (GeneralSettings.displayName(chosen: general.profileName, fullUserName: NSFullUserName()), profileImage)
+    }
+
+    /// Saves a 96-pixel square copy, so moving or deleting the original never breaks the header.
+    func setProfileImage(from url: URL?) -> Bool {
+        defer { profileImageLoaded = false; accentChanged() }
+        guard let url else { try? FileManager.default.removeItem(at: profileImageURL); return true }
+        guard let source = NSImage(contentsOf: url), let png = Self.squarePNG(source, pixels: 96) else { return false }
+        do {
+            try FileManager.default.createDirectory(at: store.directory, withIntermediateDirectories: true)
+            try png.write(to: profileImageURL, options: .atomic)
+            return true
+        } catch { return false }
+    }
+
+    private static func squarePNG(_ image: NSImage, pixels: Int) -> Data? {
+        guard let cg = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else { return nil }
+        let side = min(cg.width, cg.height)
+        guard side > 0, let crop = cg.cropping(to: CGRect(x: (cg.width - side) / 2, y: (cg.height - side) / 2, width: side, height: side)),
+              let context = CGContext(data: nil, width: pixels, height: pixels, bitsPerComponent: 8, bytesPerRow: 0,
+                                      space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
+        context.interpolationQuality = .high
+        context.draw(crop, in: CGRect(x: 0, y: 0, width: pixels, height: pixels))
+        guard let scaled = context.makeImage() else { return nil }
+        return NSBitmapImageRep(cgImage: scaled).representation(using: .png, properties: [:])
+    }
+
     // MARK: Surface
 
     private func accentChanged() {
@@ -482,7 +562,9 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         if expanded, panelView == nil {
             closingPanel?.removeFromSuperview()
             closingPanel = nil
-            let view = PanelView(tabs: tabs, selected: activeTab, select: { [weak self] in self?.selectTab($0) },
+            let view = PanelView(tabs: tabs, selected: activeTab, profile: profile, pinned: general.pinned,
+                                 select: { [weak self] in self?.selectTab($0) },
+                                 togglePin: { [weak self] in self?.togglePin() },
                                  openSettings: { [weak self] in self?.openSettings() })
             panelView = view
             surface.place(view, at: layout.panelBody)

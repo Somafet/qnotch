@@ -74,18 +74,41 @@ enum NativeSmokeTest {
                         guard !shell.state.expanded else { throw Failure("Toggle shortcut did not close the panel") }
                         shell.selectTab("home")
                         timer.startShortTimer(seconds: 60)
+                        shell.updateGeneral { $0.setEnabled("note", false) }
+                        guard shell.modules.contains(where: { $0 === timer }), timer.countdown.isRunning, timer.hasScheduledWake,
+                              !shell.modules.contains(where: { $0 is NoteModule }) else { throw Failure("Turning Note off disturbed the running timer") }
+                        shell.updateGeneral { $0.setEnabled("note", true) }
                         shell.updateGeneral { $0.setEnabled("timer", false) }
                         guard !shell.modules.contains(where: { $0 is TimerModule }), !shell.registries.cards.items.contains(where: { $0.id == "timer" }), !timer.hasScheduledWake else { throw Failure("Disabled module still constructed or scheduled") }
                         shell.open(keyboard: false)
                         try shell.snapshot(to: output.appendingPathComponent("unavailable.png"))
                         shell.close(restoreFocus: false)
                         shell.updateGeneral { $0.setEnabled("timer", true) }
+                        // Pin: a pinned panel ignores outside clicks; a hidden card leaves Home; a swatch recolors.
+                        shell.open(keyboard: false)
+                        shell.togglePin()
+                        shell.panel.cancelOperation(nil)
+                        guard !shell.state.expanded else { throw Failure("Escape did not close a pinned panel") }
+                        shell.open(keyboard: true)
+                        shell.windowDidResignKey(Notification(name: NSWindow.didResignKeyNotification))
+                        guard shell.state.expanded, !shell.state.acceptsKeyboard else { throw Failure("A pinned panel closed on focus loss or kept the keyboard") }
+                        shell.updateGeneral { $0.setCardVisible("note", false); $0.accent = GeneralSettings.accents[6] }
+                        shell.selectTab("home")
+                        shell.close(restoreFocus: false); shell.open(keyboard: false)
+                        try shell.snapshot(to: output.appendingPathComponent("home-pinned-green.png"))
+                        guard !shell.registries.cards.items.isEmpty, (shell.panel.contentView.map { root -> Bool in
+                            func find(_ view: NSView) -> Bool { view.identifier?.rawValue == "card-note" || view.subviews.contains(where: find) }
+                            return find(root)
+                        } ?? true) == false else { throw Failure("A hidden card is still on Home") }
+                        shell.togglePin()
+                        shell.updateGeneral { $0.setCardVisible("note", true); $0.accent = nil }
+                        shell.close(restoreFocus: false)
                         shell.openSettings()
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                             do {
                                 try shell.settings?.snapshotPages(to: output)
                                 shell.settings?.window.close()
-                                let report = "Native UI smoke: actual window placement verified; camera center reserved; hover preserves focus; explicit summon grants keyboard; Escape collapses; running timer shows its status wing; toggle and search hotkeys work; timer completes hidden with one wake; disabled module not constructed; every Home card rendered; mic and camera segment shown; system stats sampled; note saved after its debounce; interactive controls named; every settings page rendered.\nstartup_seconds=\(ready)\ndone\n"
+                                let report = "Native UI smoke: actual window placement verified; camera center reserved; hover preserves focus; explicit summon grants keyboard; Escape collapses; running timer shows its status wing; toggle and search hotkeys work; timer completes hidden with one wake; disabled module not constructed; every Home card rendered; pin, card hiding and accent applied; mic and camera segment shown; system stats sampled; note saved after its debounce; interactive controls named; every settings page rendered.\nstartup_seconds=\(ready)\ndone\n"
                                 try Data(report.utf8).write(to: output.appendingPathComponent("smoke.txt"))
                                 NSApp.terminate(nil)
                             } catch { fail(error, output: output) }

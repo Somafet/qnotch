@@ -10,7 +10,10 @@ final class PanelView: NSView {
     private let tabs: [Tab]
     private weak var current: NSView?
 
-    init(tabs: [Tab], selected: String, select: @escaping (String) -> Void, openSettings: @escaping () -> Void) {
+    private var pin: HoverButton!
+
+    init(tabs: [Tab], selected: String, profile: (name: String, image: NSImage?), pinned: Bool,
+         select: @escaping (String) -> Void, togglePin: @escaping () -> Void, openSettings: @escaping () -> Void) {
         self.tabs = tabs
         tabBar = TabBar(items: tabs.map { ($0.symbol, $0.title) }, selected: tabs.firstIndex { $0.id == selected } ?? 0) { index in
             select(tabs[index].id)
@@ -19,14 +22,23 @@ final class PanelView: NSView {
         wantsLayer = true
         identifier = NSUserInterfaceItemIdentifier("notch-panel-body")
 
-        let full = NSFullUserName().split(separator: " ").first.map(String.init) ?? ""
-        let name = full.isEmpty ? "QNotch" : full
+        let name = profile.name
         let avatar = FillView(fill: Palette.accentSoft, stroke: Palette.stroke, radius: 15)
         size(avatar, width: 30, height: 30)
-        let initial = line(String(name.prefix(1)).uppercased(), size: 13, weight: .semibold, color: Palette.accent)
-        initial.translatesAutoresizingMaskIntoConstraints = false
-        avatar.addSubview(initial)
-        NSLayoutConstraint.activate([initial.centerXAnchor.constraint(equalTo: avatar.centerXAnchor), initial.centerYAnchor.constraint(equalTo: avatar.centerYAnchor)])
+        if let image = profile.image {
+            let photo = NSImageView(image: image)
+            photo.imageScaling = .scaleProportionallyUpOrDown
+            photo.wantsLayer = true
+            photo.layer?.cornerRadius = 15
+            photo.layer?.masksToBounds = true
+            photo.setAccessibilityElement(false)
+            embed(photo, in: avatar, inset: 0, fill: true)
+        } else {
+            let initial = line(String(name.prefix(1)).uppercased(), size: 13, weight: .semibold, color: Palette.accent)
+            initial.translatesAutoresizingMaskIntoConstraints = false
+            avatar.addSubview(initial)
+            NSLayoutConstraint.activate([initial.centerXAnchor.constraint(equalTo: avatar.centerXAnchor), initial.centerYAnchor.constraint(equalTo: avatar.centerYAnchor)])
+        }
         let formatter = DateFormatter()
         formatter.setLocalizedDateFormatFromTemplate("EEEEMMMMd")
         let greeting = column([line(name, size: 13, weight: .semibold, color: Palette.textPrimary),
@@ -35,7 +47,10 @@ final class PanelView: NSView {
         profile.setAccessibilityElement(false)
 
         let settings = HoverButton(symbol: "gearshape", style: .icon, symbolSize: 14, label: "Settings", action: openSettings)
-        for view in [profile, tabBar, settings, host] as [NSView] {
+        pin = HoverButton(symbol: "pin", style: .icon, symbolSize: 13, label: "Keep panel open", action: togglePin)
+        pin.setAccessibilityIdentifier("panel-pin")
+        let actions = row([pin, settings], spacing: 2)
+        for view in [profile, tabBar, actions, host] as [NSView] {
             view.translatesAutoresizingMaskIntoConstraints = false
             addSubview(view)
         }
@@ -45,16 +60,23 @@ final class PanelView: NSView {
             profile.trailingAnchor.constraint(lessThanOrEqualTo: tabBar.leadingAnchor, constant: -8),
             tabBar.centerXAnchor.constraint(equalTo: centerXAnchor),
             tabBar.topAnchor.constraint(equalTo: topAnchor, constant: 10),
-            settings.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -12),
-            settings.centerYAnchor.constraint(equalTo: tabBar.centerYAnchor),
+            actions.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -12),
+            actions.centerYAnchor.constraint(equalTo: tabBar.centerYAnchor),
             host.topAnchor.constraint(equalTo: tabBar.bottomAnchor, constant: 12),
             host.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 12),
             host.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -12),
             host.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -12)
         ])
         host.wantsLayer = true
+        setPinned(pinned)
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    func setPinned(_ pinned: Bool) {
+        pin.setSymbol(pinned ? "pin.fill" : "pin", size: 13, label: pinned ? "Unpin panel" : "Keep panel open")
+        pin.tint = pinned ? Palette.accent : nil
+        pin.setAccessibilityValue(pinned ? "on" : "off")
+    }
 
     func select(_ id: String, animated: Bool) {
         tabBar.select(tabs.firstIndex { $0.id == id } ?? 0, animated: animated)

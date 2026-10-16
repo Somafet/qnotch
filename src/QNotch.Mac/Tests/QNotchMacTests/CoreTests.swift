@@ -326,3 +326,39 @@ final class SystemStatsTests: XCTestCase {
         XCTAssertFalse(none.sampledWing)
     }
 }
+
+final class GeneralSettingsTests: XCTestCase {
+    func testDelaysClampAccentsValidateAndNamesFallBack() throws {
+        let decoded = try JSONDecoder().decode(GeneralSettings.self, from: Data(##"{"hoverDelayMs":9000,"closeDelayMs":5,"accent":"#123456","pinned":true}"##.utf8))
+        XCTAssertEqual(decoded.hoverDelayMs, 600)
+        XCTAssertEqual(decoded.closeDelayMs, 100)
+        XCTAssertNil(decoded.accent)
+        XCTAssertTrue(decoded.pinned)
+        var settings = GeneralSettings()
+        settings.accent = "#4CD98C"
+        settings.setCardVisible("note", false)
+        let round = try JSONDecoder().decode(GeneralSettings.self, from: JSONEncoder().encode(settings))
+        XCTAssertEqual(round, settings)
+        XCTAssertFalse(round.isCardVisible("note"))
+        XCTAssertEqual(GeneralSettings.displayName(chosen: nil, fullUserName: "Ada Lovelace"), "Ada")
+        XCTAssertEqual(GeneralSettings.displayName(chosen: "  ", fullUserName: ""), "QNotch")
+        XCTAssertEqual(GeneralSettings.displayName(chosen: " Captain ", fullUserName: "Ada Lovelace"), "Captain")
+    }
+}
+
+final class RegistryOwnershipTests: XCTestCase {
+    func testRemovingAModuleKeepsOtherContributions() {
+        let registries = ModuleRegistries()
+        registries.owner = "timer"
+        registries.cards.register(ViewContribution(id: "timer", title: "Timer", order: 26) { NSView() })
+        registries.searchSources.register(SearchSource(id: "timer", order: 10) { _ in [] })
+        registries.owner = "note"
+        registries.cards.register(ViewContribution(id: "note", title: "Note", order: 45) { NSView() })
+        registries.owner = nil
+        registries.searchSources.register(SearchSource(id: "tabs", order: 80) { _ in [] })
+        registries.removeAll(owner: "note")
+        XCTAssertEqual(registries.cards.items.map(\.id), ["timer"])
+        XCTAssertEqual(registries.searchSources.items.map(\.id), ["timer", "tabs"])
+        XCTAssertEqual(registries.cards.ids(owner: "timer"), ["timer"])
+    }
+}

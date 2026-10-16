@@ -11,6 +11,7 @@ final class SoundRegistry {
         let hint: String
         let defaultName: String
         let order: Int
+        let owner: String?
     }
 
     private let store: SettingsStore
@@ -24,14 +25,17 @@ final class SoundRegistry {
         settings = store.load("sounds", default: SoundSettings())
     }
 
+    /// The module whose `initialize` is running; its sounds are removed with it.
+    var owner: String?
+
     var items: [Sound] { sounds.values.sorted { ($0.order, $0.id) < ($1.order, $1.id) } }
 
     /// Call once per id in `initialize`. `defaultName` is a system sound such as "Glass".
     func add(_ id: String, title: String, hint: String, defaultName: String, order: Int) {
-        sounds[id] = Sound(id: id, title: title, hint: hint, defaultName: defaultName, order: order)
+        sounds[id] = Sound(id: id, title: title, hint: hint, defaultName: defaultName, order: order, owner: owner)
     }
 
-    func removeAll() { sounds.removeAll() }
+    func removeAll(owner: String) { sounds = sounds.filter { $0.value.owner != owner } }
 
     /// The saved choice: a system sound name or an absolute file path.
     func choice(for id: String) -> String { settings.sounds[id] ?? sounds[id]?.defaultName ?? "" }

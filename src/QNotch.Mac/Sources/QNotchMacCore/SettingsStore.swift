@@ -9,10 +9,24 @@ extension KeyedDecodingContainer {
 }
 
 public struct GeneralSettings: Codable, Equatable {
+    public static let hoverRange = 0...600, closeRange = 100...1500
+    public static let accents = ["#5B9DFF", "#7C83FF", "#B07CFF", "#FF7CB0", "#FF7A6B", "#FFB54D", "#4CD98C", "#3CC8D9"]
+
     public var displayID: UInt32?
     public var reduceMotion = false
     /// Module ids that are off. A module that is off is never constructed.
     public var disabledModules: [String] = []
+    /// Pointer rest before the panel opens, and pointer absence before it closes (milliseconds).
+    public var hoverDelayMs = 120
+    public var closeDelayMs = 400
+    /// Keep panel open: it never closes on pointer leave, outside clicks or focus loss.
+    public var pinned = false
+    /// One of `accents`, or nil to follow the macOS accent color.
+    public var accent: String?
+    /// Header name; nil uses the account's first name.
+    public var profileName: String?
+    /// Home cards the user hid (by card id).
+    public var hiddenCards: [String] = []
     public init() {}
 
     public func isEnabled(_ module: String) -> Bool { !disabledModules.contains(module) }
@@ -20,8 +34,21 @@ public struct GeneralSettings: Codable, Equatable {
         disabledModules.removeAll { $0 == module }
         if !enabled { disabledModules.append(module); disabledModules.sort() }
     }
+    public func isCardVisible(_ card: String) -> Bool { !hiddenCards.contains(card) }
+    public mutating func setCardVisible(_ card: String, _ visible: Bool) {
+        hiddenCards.removeAll { $0 == card }
+        if !visible { hiddenCards.append(card); hiddenCards.sort() }
+    }
 
-    private enum CodingKeys: String, CodingKey { case displayID, reduceMotion, disabledModules, timerEnabled }
+    /// Name for the panel header: the chosen name, else the account's first name, else "QNotch".
+    public static func displayName(chosen: String?, fullUserName: String) -> String {
+        if let chosen = chosen?.trimmingCharacters(in: .whitespacesAndNewlines), !chosen.isEmpty { return String(chosen.prefix(40)) }
+        return fullUserName.split(separator: " ").first.map(String.init) ?? "QNotch"
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case displayID, reduceMotion, disabledModules, timerEnabled, hoverDelayMs, closeDelayMs, pinned, accent, profileName, hiddenCards
+    }
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         displayID = c.value(.displayID, nil)
@@ -29,12 +56,24 @@ public struct GeneralSettings: Codable, Equatable {
         disabledModules = c.value(.disabledModules, [])
         // The first milestone stored one switch for its only module.
         if c.value(.timerEnabled, true) == false, !disabledModules.contains("timer") { disabledModules.append("timer") }
+        hoverDelayMs = min(Self.hoverRange.upperBound, max(Self.hoverRange.lowerBound, c.value(.hoverDelayMs, 120)))
+        closeDelayMs = min(Self.closeRange.upperBound, max(Self.closeRange.lowerBound, c.value(.closeDelayMs, 400)))
+        pinned = c.value(.pinned, false)
+        accent = c.value(.accent, String?.none).flatMap { Self.accents.contains($0) ? $0 : nil }
+        profileName = c.value(.profileName, String?.none)
+        hiddenCards = c.value(.hiddenCards, [])
     }
     public func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
         try c.encodeIfPresent(displayID, forKey: .displayID)
         try c.encode(reduceMotion, forKey: .reduceMotion)
         try c.encode(disabledModules, forKey: .disabledModules)
+        try c.encode(hoverDelayMs, forKey: .hoverDelayMs)
+        try c.encode(closeDelayMs, forKey: .closeDelayMs)
+        try c.encode(pinned, forKey: .pinned)
+        try c.encodeIfPresent(accent, forKey: .accent)
+        try c.encodeIfPresent(profileName, forKey: .profileName)
+        try c.encode(hiddenCards, forKey: .hiddenCards)
     }
 }
 

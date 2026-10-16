@@ -13,6 +13,7 @@ final class ShortcutRegistry {
         let defaultCombo: KeyCombo?
         let order: Int
         let action: () -> Void
+        let owner: String?
         fileprivate(set) var enabled: Bool
         /// The effective gesture, nil when the user turned it off.
         fileprivate(set) var combo: KeyCombo?
@@ -23,9 +24,9 @@ final class ShortcutRegistry {
         fileprivate var reference: EventHotKeyRef?
         fileprivate var number: UInt32 = 0
 
-        fileprivate init(id: String, title: String, hint: String, defaultCombo: KeyCombo?, order: Int, enabled: Bool, action: @escaping () -> Void) {
+        fileprivate init(id: String, title: String, hint: String, defaultCombo: KeyCombo?, order: Int, enabled: Bool, owner: String?, action: @escaping () -> Void) {
             self.id = id; self.title = title; self.hint = hint; self.defaultCombo = defaultCombo
-            self.order = order; self.enabled = enabled; self.action = action
+            self.order = order; self.enabled = enabled; self.owner = owner; self.action = action
         }
         var isRegistered: Bool { reference != nil }
     }
@@ -38,6 +39,8 @@ final class ShortcutRegistry {
     private var nextNumber: UInt32 = 1
     private var suspended = false
     var changed: (() -> Void)?
+    /// The module whose `initialize` is running; its shortcuts are removed with it.
+    var owner: String?
 
     init(store: SettingsStore) {
         self.store = store
@@ -56,7 +59,7 @@ final class ShortcutRegistry {
     @discardableResult
     func add(_ id: String, title: String, hint: String, gesture: String, order: Int, enabled: Bool = true, action: @escaping () -> Void) -> Shortcut {
         if let old = shortcuts[id] { unregister(old) }
-        let shortcut = Shortcut(id: id, title: title, hint: hint, defaultCombo: KeyCombo(gesture), order: order, enabled: enabled, action: action)
+        let shortcut = Shortcut(id: id, title: title, hint: hint, defaultCombo: KeyCombo(gesture), order: order, enabled: enabled, owner: owner, action: action)
         nextNumber += 1
         shortcut.number = nextNumber
         shortcut.combo = saved(for: shortcut)
