@@ -1,8 +1,18 @@
 # Mac milestone measurements
 
+## Integrated-notch correction
+
+Measured 2026-10-16 on the same Mac14,2, 8 GiB, macOS 26.3 configuration, release/arm64 source `f1726270f109988e099535c7933c5dfa808c7e09`, clean when built. The surface now wraps the camera housing at the bezel. Native smoke checked actual window/view bounds: screen and surface top at 956 points, panel controls ending below the camera boundary at 924 points, and status views entirely in the side wings.
+
+One isolated **31.495-second** collapsed-idle interval after the same three-second warmup recorded **0 app draw callbacks**, **0 surface rebuilds**, **6 interrupt wakeups**, **0.000218% of one core** (practically below 0.001%), and **70.1 MiB start / 65.3 MiB end resident memory**. Process start to panel ordering was **442.5 ms** in this run. This is another single sample, not evidence of a general memory improvement or a consistently met cold-launch target. The method and measurement limitations below still apply.
+
+[Raw integrated-notch sample](performance-2026-10-16-notch.json). Local validation also passed 14 regressions and the native placement/focus/timer smoke test.
+
+## Initial milestone baseline
+
 Measured 2026-10-16 on Mac14,2 (Apple silicon, 8 GiB RAM), macOS 26.3 build 25D125. QNotch 0.1.0, release/arm64, source commit `87403d570ab4e0ad6880a18e544dc0f17ec5673e`, clean source when built. Toolchain: Swift 6.2.3, Xcode macOS SDK 26.2. These are Mac observations, not Windows benchmarks.
 
-## Measured sample
+### Measured sample
 
 `bash scripts/macos/measure.sh` launched a separate process with fresh temporary settings. After a three-second warmup, it measured one requested 30-second collapsed-idle interval. The actual interval was **31.471 seconds**, reflecting timer scheduling/coalescing. No timer was running, the pointer stayed away, and no UI smoke test ran concurrently.
 
