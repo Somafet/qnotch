@@ -281,3 +281,14 @@ final class HexColorTests: XCTestCase {
         XCTAssertEqual(decoded.recent, ["#AABBCC"])
     }
 }
+
+final class CaptureStateTests: XCTestCase {
+    func testSummaryNamesMicrophoneAppsOnly() {
+        XCTAssertEqual(CaptureState().summary, "")
+        XCTAssertFalse(CaptureState().active)
+        XCTAssertEqual(CaptureState(microphone: true).summary, "Microphone in use.")
+        XCTAssertEqual(CaptureState(microphone: true, microphoneApps: ["Zoom", "Safari", "Zoom"], camera: true).summary,
+                       "Microphone: Safari, Zoom. Camera in use.")
+        XCTAssertEqual(CaptureState(camera: true).summary, "Camera in use.")
+    }
+}

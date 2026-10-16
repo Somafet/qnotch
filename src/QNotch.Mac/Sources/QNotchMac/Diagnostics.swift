@@ -14,6 +14,16 @@ enum NativeSmokeTest {
                 shell.modules.lazy.compactMap({ $0 as? ColorPickerModule }).first?.seedRecent(["#3CC8D9", "#4CD98C", "#FFB54D", "#FF7A6B", "#B07CFF", "#5B9DFF"])
                 try checkPlacement(shell: shell, layout: layout)
                 try shell.snapshot(to: output.appendingPathComponent("pill.png"))
+                if let capture = shell.modules.lazy.compactMap({ $0 as? CaptureModule }).first {
+                    let real = capture.state
+                    capture.apply(CaptureState(microphone: true, microphoneApps: ["FaceTime"], camera: true))
+                    guard shell.wing > 0 else { throw Failure("Mic and camera use did not show a status segment") }
+                    try checkPlacement(shell: shell, layout: layout)
+                    try shell.snapshot(to: output.appendingPathComponent("pill-capture.png"))
+                    capture.apply(real)
+                    try Data("capture_input_devices=\(shell.capture.inputDevices.count)\ncapture_cameras=\(shell.capture.cameras.count)\ncapture_active_now=\(real.active)\n".utf8)
+                        .write(to: output.appendingPathComponent("capture.txt"))
+                }
                 shell.open(keyboard: false)
                 try checkPlacement(shell: shell, layout: layout)
                 guard shell.state.presentation == .hover, !shell.panel.isKeyWindow, !shell.panel.canBecomeKey else {
@@ -71,7 +81,7 @@ enum NativeSmokeTest {
                             do {
                                 try shell.settings?.snapshotPages(to: output)
                                 shell.settings?.window.close()
-                                let report = "Native UI smoke: actual window placement verified; camera center reserved; hover preserves focus; explicit summon grants keyboard; Escape collapses; running timer shows its status wing; toggle and search hotkeys work; timer completes hidden with one wake; disabled module not constructed; every Home card rendered; note saved after its debounce; interactive controls named; every settings page rendered.\nstartup_seconds=\(ready)\ndone\n"
+                                let report = "Native UI smoke: actual window placement verified; camera center reserved; hover preserves focus; explicit summon grants keyboard; Escape collapses; running timer shows its status wing; toggle and search hotkeys work; timer completes hidden with one wake; disabled module not constructed; every Home card rendered; mic and camera segment shown; note saved after its debounce; interactive controls named; every settings page rendered.\nstartup_seconds=\(ready)\ndone\n"
                                 try Data(report.utf8).write(to: output.appendingPathComponent("smoke.txt"))
                                 NSApp.terminate(nil)
                             } catch { fail(error, output: output) }

@@ -8,6 +8,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     let registries = ModuleRegistries()
     let sounds: SoundRegistry
     let shortcuts: ShortcutRegistry
+    let capture = CaptureWatch()
     private(set) var general: GeneralSettings
     private(set) var state = ShellState()
     private(set) var activeTab = "home"
@@ -143,7 +144,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         sounds.removeAll()
         shortcuts.remove { !Self.shellShortcuts.contains($0.id) }
         modules = ModuleList.make(disabled: general.disabledModules)
-        let context = ModuleContext(settings: store, registries: registries, shell: self, sounds: sounds, shortcuts: shortcuts)
+        let context = ModuleContext(settings: store, registries: registries, shell: self, sounds: sounds, shortcuts: shortcuts, capture: capture)
         modules.forEach { $0.initialize(context) }
         registerShellSearch()
         if !tabs.contains(where: { $0.id == activeTab }) { activeTab = "home" }

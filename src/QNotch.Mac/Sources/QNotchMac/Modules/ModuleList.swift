@@ -20,7 +20,9 @@ enum ModuleList {
         ModuleInfo(id: "note", title: "Note", detail: "A quick note on a Home card, saved as you type.",
                    symbol: "note.text", tint: .systemYellow) { NoteModule() },
         ModuleInfo(id: "colorpicker", title: "Color picker", detail: "Pick a color anywhere on screen with the system loupe and copy its hex code.",
-                   symbol: "eyedropper", tint: .systemPurple) { ColorPickerModule() }
+                   symbol: "eyedropper", tint: .systemPurple) { ColorPickerModule() },
+        ModuleInfo(id: "capture", title: "Mic and camera", detail: "A glyph beside the notch while an app uses your microphone or camera, naming microphone apps where macOS allows.",
+                   symbol: "mic.fill", tint: .systemGreen) { CaptureModule() }
     ]
 
     static func make(disabled: [String]) -> [NotchModule] {

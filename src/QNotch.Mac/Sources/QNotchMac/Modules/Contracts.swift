@@ -81,14 +81,17 @@ struct ModuleContext {
     let sounds: SoundRegistry
     /// Every lasting global hotkey a module owns.
     let shortcuts: ShortcutRegistry
+    /// Shared microphone and camera watcher; observe it, and remove yourself in `stop`.
+    let capture: CaptureWatch
 
     init(settings: SettingsStore, registries: ModuleRegistries, shell: ModuleShell?,
-         sounds: SoundRegistry? = nil, shortcuts: ShortcutRegistry? = nil) {
+         sounds: SoundRegistry? = nil, shortcuts: ShortcutRegistry? = nil, capture: CaptureWatch? = nil) {
         self.settings = settings
         self.registries = registries
         self.shell = shell
         self.sounds = sounds ?? SoundRegistry(store: settings)
         self.shortcuts = shortcuts ?? ShortcutRegistry(store: settings)
+        self.capture = capture ?? CaptureWatch()
     }
 }
 
