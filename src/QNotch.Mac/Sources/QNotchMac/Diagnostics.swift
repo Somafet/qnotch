@@ -39,6 +39,20 @@ enum NativeSmokeTest {
                 try shell.snapshot(to: output.appendingPathComponent("search.png"))
                 shell.selectTab("timer")
                 try shell.snapshot(to: output.appendingPathComponent("timer.png"))
+                if let tray = shell.modules.lazy.compactMap({ $0 as? FileTrayModule }).first {
+                    guard shell.surface.registeredDraggedTypes.contains(.fileURL) else { throw Failure("The notch does not accept file drops") }
+                    let folder = shell.store.directory.appendingPathComponent("tray-sample", isDirectory: true)
+                    try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+                    let files = ["Quarterly report.pdf", "Notes.txt", "Screenshot.png", "Archive.zip", "Budget.numbers"].map { folder.appendingPathComponent($0) }
+                    for file in files { try Data("QNotch smoke".utf8).write(to: file) }
+                    tray.add(files)
+                    try FileManager.default.removeItem(at: files[4])
+                    shell.selectTab("files")
+                    tray.setVisibility(panel: false, activeTab: "files"); tray.setVisibility(panel: true, activeTab: "files")
+                    tray.reloadNow()
+                    try shell.snapshot(to: output.appendingPathComponent("files.png"))
+                    guard tray.items.count == 5, tray.items.first?.url.lastPathComponent == "Quarterly report.pdf" else { throw Failure("File tray did not keep the dropped files in order") }
+                }
                 try shell.accessibilityReport(to: output.appendingPathComponent("accessibility.txt"))
                 guard let timer = shell.modules.lazy.compactMap({ $0 as? TimerModule }).first else { throw Failure("Timer module was not constructed") }
                 let note = shell.modules.lazy.compactMap({ $0 as? NoteModule }).first
@@ -109,7 +123,7 @@ enum NativeSmokeTest {
                             do {
                                 try shell.settings?.snapshotPages(to: output)
                                 shell.settings?.window.close()
-                                let report = "Native UI smoke: actual window placement verified; camera center reserved; hover preserves focus; explicit summon grants keyboard; Escape collapses; running timer shows its status wing; toggle and search hotkeys work; timer completes hidden with one wake and opens Home; disabled module not constructed; every Home card rendered; pin, card hiding and accent applied; mic and camera segment shown; system stats sampled; note saved after its debounce; interactive controls named; every settings page rendered.\nstartup_seconds=\(ready)\ndone\n"
+                                let report = "Native UI smoke: actual window placement verified; camera center reserved; hover preserves focus; explicit summon grants keyboard; Escape collapses; running timer shows its status wing; toggle and search hotkeys work; timer completes hidden with one wake and opens Home; disabled module not constructed; every Home card rendered; file tray accepts drops and lists files; pin, card hiding and accent applied; mic and camera segment shown; system stats sampled; note saved after its debounce; interactive controls named; every settings page rendered.\nstartup_seconds=\(ready)\ndone\n"
                                 try Data(report.utf8).write(to: output.appendingPathComponent("smoke.txt"))
                                 NSApp.terminate(nil)
                             } catch { fail(error, output: output) }

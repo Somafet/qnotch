@@ -85,6 +85,12 @@ protocol ModuleShell: AnyObject {
     /// Opens the panel on `tab` without taking the keyboard. If the pointer is elsewhere it closes
     /// again after `linger` seconds. For something the user must see now, never routine updates.
     @discardableResult func tryOpenPanel(tab: String, linger: TimeInterval) -> Bool
+    /// While the returned token is alive the panel never auto-closes (pointer leave, outside clicks,
+    /// focus loss). Hold one around drags, share pickers, menus and file dialogs.
+    func holdOpen() -> AnyObject
+    /// Files dropped on the notch. `entered` runs once when a file drag reaches it; the shell opens
+    /// the panel itself. Only one module receives drops.
+    func acceptFileDrops(entered: @escaping () -> Void, dropped: @escaping ([URL]) -> Void)
     /// Collapses the panel (e.g. before picking from the screen under it).
     func closePanel()
     /// A segment became visible, hidden, or changed width.

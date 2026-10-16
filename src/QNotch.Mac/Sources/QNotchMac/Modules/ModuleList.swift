@@ -24,7 +24,9 @@ enum ModuleList {
         ModuleInfo(id: "colorpicker", title: "Color picker", detail: "Pick a color anywhere on screen with the system loupe and copy its hex code.",
                    symbol: "eyedropper", tint: .systemPurple) { ColorPickerModule() },
         ModuleInfo(id: "capture", title: "Mic and camera", detail: "A glyph beside the notch while an app uses your microphone or camera, naming microphone apps where macOS allows.",
-                   symbol: "mic.fill", tint: .systemGreen) { CaptureModule() }
+                   symbol: "mic.fill", tint: .systemGreen) { CaptureModule() },
+        ModuleInfo(id: "filetray", title: "File tray", detail: "Drop files on the notch to keep them within reach. Share with AirDrop, export copies, preview with Quick Look.",
+                   symbol: "tray.full.fill", tint: .systemBlue) { FileTrayModule() }
     ]
 
     static func make(disabled: [String]) -> [NotchModule] {

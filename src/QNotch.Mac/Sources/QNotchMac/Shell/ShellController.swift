@@ -63,6 +63,8 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         panel.contentView = surface
         surface.entered = { [weak self] in self?.pointerEntered() }
         surface.exited = { [weak self] in self?.pointerLeft() }
+        surface.fileDragEntered = { [weak self] in self?.fileDragEntered() }
+        surface.fileDragExited = { [weak self] in self?.pointerLeft() }
         surface.setAccessibilityElement(true)
         surface.setAccessibilityRole(.group)
         surface.setAccessibilityLabel("QNotch. Hover or click to open the panel, or use the menu-bar item.")
@@ -133,6 +135,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
 
     /// A pinned panel stays open; it only gives the keyboard back.
     private func clickedOutside() {
+        guard holds == 0 else { return }
         if general.pinned { releaseKeyboard() } else { close(restoreFocus: false) }
     }
 
@@ -167,6 +170,11 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         let wanted = ModuleList.all.filter { general.isEnabled($0.id) }
         for (id, module) in loaded where !wanted.contains(where: { $0.id == id }) {
             module.stop()
+            if fileDropOwner == id {
+                fileDropOwner = nil; fileDropEntered = nil
+                surface.filesDropped = nil
+                surface.acceptFiles(false)
+            }
             registries.removeAll(owner: id)
             sounds.removeAll(owner: id)
             shortcuts.remove { $0.owner == id }
@@ -211,6 +219,39 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
 
     private var lingerTask: DispatchWorkItem?
 
+    // MARK: Holds and file drops
+
+    private var holds = 0
+    private final class Hold {
+        weak var shell: ShellController?
+        init(_ shell: ShellController) { self.shell = shell; shell.holds += 1 }
+        deinit {
+            guard let shell else { return }
+            DispatchQueue.main.async {
+                shell.holds -= 1
+                // Released while the pointer is elsewhere: close after the usual leave delay.
+                if shell.holds == 0, !shell.panel.frame.contains(NSEvent.mouseLocation) { shell.pointerLeft() }
+            }
+        }
+    }
+    var isHeld: Bool { holds > 0 }
+    func holdOpen() -> AnyObject { Hold(self) }
+
+    private var fileDropEntered: (() -> Void)?
+    private var fileDropOwner: String?
+
+    func acceptFileDrops(entered: @escaping () -> Void, dropped: @escaping ([URL]) -> Void) {
+        fileDropEntered = entered
+        fileDropOwner = registries.owner
+        surface.filesDropped = { urls in dropped(urls); return true }
+        surface.acceptFiles(true)
+    }
+
+    private func fileDragEntered() {
+        leaveTask?.cancel()
+        if !state.expanded { open(keyboard: false) }
+        fileDropEntered?()
+    }
     @discardableResult
     func tryOpenPanel(tab: String, linger: TimeInterval) -> Bool {
         guard screen != nil else { return false }
@@ -289,9 +330,9 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     func pointerLeft() {
         hoverTask?.cancel()
         leaveTask?.cancel()
-        guard state.presentation == .hover, !general.pinned else { return }
+        guard state.presentation == .hover, !general.pinned, holds == 0 else { return }
         let task = DispatchWorkItem { [weak self] in
-            guard let self, !self.general.pinned, !self.panel.frame.contains(NSEvent.mouseLocation) else { return }
+            guard let self, !self.general.pinned, self.holds == 0, !self.panel.frame.contains(NSEvent.mouseLocation) else { return }
             self.state.pointerLeft()
             self.present(.close)
             self.updateVisibility()
@@ -333,7 +374,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     }
 
     func windowDidResignKey(_ notification: Notification) {
-        guard state.acceptsKeyboard else { return }
+        guard state.acceptsKeyboard, holds == 0 else { return }
         if general.pinned { releaseKeyboard() } else { close(restoreFocus: false) }
     }
 

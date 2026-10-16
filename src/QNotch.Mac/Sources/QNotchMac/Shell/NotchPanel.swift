@@ -103,6 +103,10 @@ final class ShapeView: NSView {
 final class NotchSurfaceView: NSView {
     var entered: (() -> Void)?
     var exited: (() -> Void)?
+    /// File drags: set by the shell only while a module accepts file drops.
+    var fileDragEntered: (() -> Void)?
+    var fileDragExited: (() -> Void)?
+    var filesDropped: (([URL]) -> Bool)?
     let world = NSView()
     private let backdrop = ShapeView()
     private let outline = ShapeView()
@@ -146,6 +150,28 @@ final class NotchSurfaceView: NSView {
     }
     override func mouseEntered(with event: NSEvent) { entered?() }
     override func mouseExited(with event: NSEvent) { exited?() }
+
+    // MARK: File drops
+
+    func acceptFiles(_ accept: Bool) {
+        if accept { registerForDraggedTypes([.fileURL]) } else { unregisterDraggedTypes() }
+    }
+
+    private func fileURLs(_ info: NSDraggingInfo) -> [URL] {
+        (info.draggingPasteboard.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL]) ?? []
+    }
+
+    override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
+        guard filesDropped != nil, !fileURLs(sender).isEmpty else { return [] }
+        fileDragEntered?()
+        return .copy
+    }
+    override func draggingUpdated(_ sender: NSDraggingInfo) -> NSDragOperation { filesDropped == nil ? [] : .copy }
+    override func draggingExited(_ sender: NSDraggingInfo?) { fileDragExited?() }
+    override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
+        let urls = fileURLs(sender)
+        return !urls.isEmpty && filesDropped?(urls) == true
+    }
 
     /// Sets the region content can occupy (the expanded surface plus room for a spring overshoot).
     func configure(world rect: CGRect, integrated: Bool, band: CGFloat) {

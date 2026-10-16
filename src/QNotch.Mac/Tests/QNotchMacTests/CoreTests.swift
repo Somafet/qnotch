@@ -383,3 +383,21 @@ final class TimerChainingTests: XCTestCase {
         XCTAssertEqual(countdown.secondsLeft(at: start.addingTimeInterval(70)), 300)
     }
 }
+
+final class FileTrayListTests: XCTestCase {
+    func testAddingDedupesCapsAndExportNamesNeverOverwrite() {
+        var list = FileTrayList.adding(["/a", "/b"], to: [])
+        XCTAssertEqual(list, ["/a", "/b"])
+        list = FileTrayList.adding(["/c", "/a"], to: list)
+        XCTAssertEqual(list, ["/c", "/a", "/b"])
+        let many = FileTrayList.adding((0..<70).map { "/f\($0)" }, to: list)
+        XCTAssertEqual(many.count, 60)
+        XCTAssertEqual(many.first, "/f0")
+        let taken: Set<String> = ["report.pdf", "report (2).pdf", "notes"]
+        XCTAssertEqual(FileTrayList.uniqueName("report.pdf", taken: taken.contains), "report (3).pdf")
+        XCTAssertEqual(FileTrayList.uniqueName("notes", taken: taken.contains), "notes (2)")
+        XCTAssertEqual(FileTrayList.uniqueName("new.txt", taken: taken.contains), "new.txt")
+        XCTAssertEqual(FileTrayList.countText(1, missing: 0), "1 file")
+        XCTAssertEqual(FileTrayList.countText(4, missing: 2), "4 files · 2 missing")
+    }
+}
