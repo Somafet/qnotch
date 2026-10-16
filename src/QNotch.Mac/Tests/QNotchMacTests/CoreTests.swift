@@ -861,3 +861,36 @@ final class NowPlayingTests: XCTestCase {
         XCTAssertEqual(NowPlaying.time(3725), "1:02:05")
     }
 }
+
+final class ProcessTrackerTests: XCTestCase {
+    func testGroupsWhatShellsStartedAndRemembersOrphans() {
+        let tracker = ProcessTracker()
+        let second: UInt64 = 1_000_000
+        func entry(_ pid: Int32, _ parent: Int32, _ exe: String, _ t: UInt64) -> ProcessTracker.Entry { .init(pid: pid, parent: parent, exe: exe, created: t * second) }
+        var snapshot: [Int32: ProcessTracker.Entry] = [
+            10: entry(10, 1, "claude", 1), 11: entry(11, 10, "node", 2),          // an MCP server: not tracked
+            20: entry(20, 10, "zsh", 3), 21: entry(21, 20, "node", 4), 22: entry(22, 21, "esbuild", 5)
+        ]
+        let sessions = [(id: "s", project: "web", pid: Int32(10))]
+        var groups = tracker.walk(snapshot, sessions: sessions, now: 20 * second) { $0 == 21 ? "npm run dev" : "" }
+        XCTAssertEqual(groups.count, 1)
+        XCTAssertEqual(groups[0].root, 21)
+        XCTAssertEqual(groups[0].label, "npm run dev")
+        XCTAssertEqual(groups[0].members.map(\.pid), [21, 22])
+        XCTAssertFalse(groups[0].leftRunning)
+        // The shell exits and macOS reparents the server to launchd.
+        snapshot[20] = nil
+        snapshot[21]?.parent = 1
+        groups = tracker.walk(snapshot, sessions: sessions, now: 30 * second) { _ in "" }
+        XCTAssertEqual(groups.first?.leftRunning, true)
+        XCTAssertEqual(groups.first?.session, "")
+        // A process too young is not shown yet; a reused pid is not ours.
+        snapshot[30] = entry(30, 10, "bash", 29)
+        snapshot[31] = entry(31, 30, "python3", 29)
+        XCTAssertEqual(tracker.walk(snapshot, sessions: sessions, now: 30 * second) { _ in "" }.count, 1)
+        snapshot[21] = entry(21, 1, "node", 40)
+        snapshot[22] = nil
+        XCTAssertFalse(tracker.walk(snapshot, sessions: sessions, now: 45 * second) { _ in "" }.contains { $0.root == 21 })
+        XCTAssertEqual(ProcessTracker.label(["/usr/local/bin/node", "/x/vite.js", "--port", "3000"]), "node vite.js --port 3000")
+    }
+}

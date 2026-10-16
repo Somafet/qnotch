@@ -43,6 +43,80 @@ final class AgentsModule: NotchModule {
     private let codexTitles = CodexTitles()
     private var titlesPending = false
 
+    // MARK: Processes
+
+    private let tracker = ProcessTracker()
+    private var cpuSamples: [Int32: (cpu: UInt64, at: TimeInterval)] = [:]
+    private(set) var groups: [AgentProcessGroup] = []
+    private var walking = false
+    private var walkAgain = false
+    private var walkTimer: Timer?
+    private var burstUntil = Date.distantPast
+    private(set) var tabVisible = false
+
+    /// Walks the process tree off the main thread: every 2 s while the Agents tab is on screen,
+    /// every second for 10 s after a shell tool starts, and when a tool ends or an agent exits.
+    func walk() {
+        if walking { walkAgain = true; return }
+        walking = true
+        let sessions = board.sessions.compactMap { session in session.pid.map { (id: session.id, project: session.name, pid: $0) } }
+        let measure = tabVisible
+        io.async { [weak self] in
+            guard let self else { return }
+            let snapshot = ProcessNative.snapshot()
+            let now = UInt64(Date().timeIntervalSince1970 * 1_000_000)
+            let found = self.tracker.walk(snapshot, sessions: sessions, now: now) { ProcessTracker.label(ProcessNative.arguments($0)) }
+            let uptime = ProcessInfo.processInfo.systemUptime
+            let measured = found.map { group -> AgentProcessGroup in
+                guard measure else { return AgentProcessGroup(group: group, memory: 0, cpu: nil, ports: []) }
+                var memory: UInt64 = 0, cpu: Double = 0, sampled = false
+                var ports: [Int] = []
+                for member in group.members {
+                    guard let usage = ProcessNative.usage(member.pid) else { continue }
+                    memory += usage.resident
+                    if let last = self.cpuSamples[member.pid], uptime > last.at, usage.cpu >= last.cpu {
+                        cpu += Double(usage.cpu - last.cpu) / 1e9 / (uptime - last.at) * 100
+                        sampled = true
+                    }
+                    self.cpuSamples[member.pid] = (usage.cpu, uptime)
+                    ports += ProcessNative.listeningPorts(member.pid)
+                }
+                return AgentProcessGroup(group: group, memory: memory, cpu: sampled ? cpu : nil, ports: Array(Set(ports)).sorted())
+            }
+            DispatchQueue.main.async {
+                self.walking = false
+                self.groups = measured
+                self.refresh()
+                if self.walkAgain { self.walkAgain = false; self.walk() }
+                else if self.tabVisible { self.walkLater(2) }
+                else if Date() < self.burstUntil { self.walkLater(1) }
+            }
+        }
+    }
+
+    private func walkLater(_ seconds: TimeInterval) {
+        walkTimer?.invalidate()
+        let timer = Timer(timeInterval: seconds, repeats: false) { [weak self] _ in self?.walk() }
+        timer.tolerance = 0.2
+        RunLoop.main.add(timer, forMode: .common)
+        walkTimer = timer
+    }
+
+    /// "npm run dev &" outlives its shell, which ends before PostToolUse: note it while the shell runs.
+    private func trackTool(_ event: AgentEvent) {
+        guard event.tool == "Bash" || event.tool == "shell" || event.tool == "local_shell" else { return }
+        if event.event == "PreToolUse" { burstUntil = Date().addingTimeInterval(10); walkLater(0.2) }
+        else if event.event == "PostToolUse" { burstUntil = .distantPast; walk() }
+    }
+
+    func stopGroup(_ group: AgentProcessGroup) {
+        let members = group.group.members
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            ProcessNative.stop(members)
+            DispatchQueue.main.async { self?.walk() }
+        }
+    }
+
     var today: AgentUsage { usage.values.reduce(AgentUsage()) { $0 + $1.today } }
 
     func initialize(_ context: ModuleContext) {
@@ -81,6 +155,7 @@ final class AgentsModule: NotchModule {
 
     func setVisibility(panel: Bool, activeTab: String) {
         let visible = panel && activeTab == "agents"
+        if visible != tabVisible { tabVisible = visible; if visible { walk() } else { walkTimer?.invalidate(); walkTimer = nil } }
         if visible, clock == nil {
             // "4m ago" goes stale only while someone looks.
             let timer = Timer(timeInterval: 30, repeats: true) { [weak self] _ in self?.refresh() }
@@ -101,6 +176,7 @@ final class AgentsModule: NotchModule {
         exits.values.forEach { $0.cancel() }
         exits.removeAll()
         clock?.invalidate(); clock = nil
+        walkTimer?.invalidate(); walkTimer = nil
         peek?.end()
         context.capture.remove(self)
     }
@@ -121,6 +197,7 @@ final class AgentsModule: NotchModule {
     func apply(_ event: AgentEvent) {
         let alert = board.apply(event)
         if let pid = event.pid, pid > 0 { watch(pid) }
+        trackTool(event)
         if let session = board.sessions.first(where: { $0.id == event.session || $0.t3Session == event.session }) { readUsage(session) }
         readTitles()
         changed()
@@ -221,6 +298,7 @@ final class AgentsModule: NotchModule {
     private func ended(_ pid: Int32) {
         exits.removeValue(forKey: pid)?.cancel()
         if board.processEnded(pid) { changed() }
+        walk() // what it started now names a dead parent: find it before anything else exits
     }
 
     // MARK: Commands

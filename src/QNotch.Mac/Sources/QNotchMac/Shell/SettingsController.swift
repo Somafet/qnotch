@@ -507,7 +507,7 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
         let stack = column([
             identity,
             settingsGroup([
-                settingsRow("Automatic updates", detail: "Not available in development builds. This build makes no network requests.", control: unavailable, width: width)
+                settingsRow("Automatic updates", detail: "Not available in development builds: installing updates needs Developer ID signing.", control: unavailable, width: width)
             ], width: width),
             settingsGroup([
                 settingsRow("Hover the notch", detail: "Opens the panel without taking the keyboard.", width: width),

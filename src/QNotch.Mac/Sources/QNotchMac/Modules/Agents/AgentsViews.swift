@@ -67,7 +67,8 @@ final class AgentsTabView: NSView {
     func reload() {
         guard let module else { return }
         list.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        emptyView.isHidden = !module.board.sessions.isEmpty
+        let leftRunning = module.groups.filter(\.group.leftRunning)
+        emptyView.isHidden = !module.board.sessions.isEmpty || !leftRunning.isEmpty
         let today = module.today
         header.stringValue = today.tokens > 0 ? "Today: \(today.text) at API prices" : ""
         header.isHidden = today.tokens == 0
@@ -75,6 +76,62 @@ final class AgentsTabView: NSView {
             let row = SessionRow(session: session, module: module)
             list.addArrangedSubview(row)
             row.widthAnchor.constraint(equalTo: list.widthAnchor).isActive = true
+            for group in module.groups where group.group.session == session.id {
+                let view = GroupRow(group: group, module: module)
+                list.addArrangedSubview(view)
+                view.widthAnchor.constraint(equalTo: list.widthAnchor).isActive = true
+            }
+        }
+        if !leftRunning.isEmpty {
+            list.addArrangedSubview(line("Left running", size: 12, weight: .semibold, color: Palette.textSecondary))
+            for group in leftRunning {
+                let view = GroupRow(group: group, module: module)
+                list.addArrangedSubview(view)
+                view.widthAnchor.constraint(equalTo: list.widthAnchor).isActive = true
+            }
+        }
+    }
+}
+
+/// A process group an agent started: its command, memory, CPU and ports, and Stop (confirmed).
+private final class GroupRow: NSView {
+    private var confirming = false
+    private weak var module: AgentsModule?
+    private let group: AgentProcessGroup
+    private let buttons = NSStackView()
+
+    init(group: AgentProcessGroup, module: AgentsModule) {
+        self.group = group
+        self.module = module
+        super.init(frame: .zero)
+        let icon = symbol(group.group.leftRunning ? "exclamationmark.circle" : "terminal", size: 11, weight: .medium,
+                          color: group.group.leftRunning ? .systemOrange : Palette.textTertiary)
+        let command = line(group.group.label, size: 11, weight: .medium, color: Palette.textSecondary)
+        command.font = .monospacedSystemFont(ofSize: 11, weight: .medium)
+        let detail = line((group.group.leftRunning && !group.group.project.isEmpty ? group.group.project + " · " : "") + group.summary, size: 10, color: Palette.textTertiary)
+        let text = column([command, detail], spacing: 1)
+        text.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        buttons.orientation = .horizontal
+        buttons.spacing = 4
+        let layout = row([icon, text, spacer(), buttons], spacing: 8)
+        embed(layout, in: self, inset: NSEdgeInsets(top: 2, left: 28, bottom: 2, right: 8), fill: true)
+        showButtons()
+        setAccessibilityElement(true)
+        setAccessibilityRole(.group)
+        setAccessibilityLabel("\(group.group.label). \(group.summary)")
+    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    private func showButtons() {
+        buttons.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        if confirming {
+            buttons.addArrangedSubview(HoverButton("Stop", style: .accent) { [weak self] in
+                guard let self else { return }
+                self.module?.stopGroup(self.group)
+            })
+            buttons.addArrangedSubview(HoverButton("Cancel", style: .plain) { [weak self] in self?.confirming = false; self?.showButtons() })
+        } else {
+            buttons.addArrangedSubview(HoverButton("Stop", style: .plain) { [weak self] in self?.confirming = true; self?.showButtons() })
         }
     }
 }

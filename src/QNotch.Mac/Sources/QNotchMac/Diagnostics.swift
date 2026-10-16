@@ -196,7 +196,7 @@ enum NativeSmokeTest {
                             do {
                                 try shell.settings?.snapshotPages(to: output)
                                 shell.settings?.window.close()
-                                let report = "Native UI smoke: actual window placement verified; camera center reserved; hover preserves focus; explicit summon grants keyboard; Escape collapses; running timer shows its status wing; toggle and search hotkeys work; timer completes hidden with one wake and opens Home; disabled module not constructed; every Home card and tab rendered; game mode keeps the notch out of the way; edit mode holds the panel and a card drag saves its place; notify command, waiting answer and loopback HTTP work; agent hooks update the board and transcript usage is read; clipboard skips concealed content; file tray accepts drops and lists files; pin, card hiding and accent applied; mic and camera segment shown; system stats sampled; note saved after its debounce; interactive controls named; every settings page rendered.\nstartup_seconds=\(ready)\n\(screenLocked ? "note=screen locked; window-server key status not checked\n" : "")done\n"
+                                let report = "Native UI smoke: actual window placement verified; camera center reserved; hover preserves focus; explicit summon grants keyboard; Escape collapses; running timer shows its status wing; toggle and search hotkeys work; timer completes hidden with one wake and opens Home; disabled module not constructed; every Home card and tab rendered; game mode keeps the notch out of the way; edit mode holds the panel and a card drag saves its place; notify command, waiting answer and loopback HTTP work; agent hooks update the board, transcript usage is read and agent processes are tracked and stopped; clipboard skips concealed content; file tray accepts drops and lists files; pin, card hiding and accent applied; mic and camera segment shown; system stats sampled; note saved after its debounce; interactive controls named; every settings page rendered.\nstartup_seconds=\(ready)\n\(screenLocked ? "note=screen locked; window-server key status not checked\n" : "")done\n"
                                 try Data(report.utf8).write(to: output.appendingPathComponent("smoke.txt"))
                                 NSApp.terminate(nil)
                             } catch { fail(error, output: output) }
@@ -212,6 +212,12 @@ enum NativeSmokeTest {
     private static func exerciseAgents(shell: ShellController, output: URL, done: @escaping (Error?) -> Void) {
         guard let module = shell.modules.lazy.compactMap({ $0 as? AgentsModule }).first else { return done(nil) }
         let directory = shell.store.directory.path
+        // This process plays the agent: a shell tool it runs starts a long-lived command.
+        let tool = Process()
+        tool.executableURL = URL(fileURLWithPath: "/bin/bash")
+        tool.arguments = ["-c", "sleep 60; true"]
+        try? tool.run()
+        module.apply(AgentEvent(agent: "claude", event: "UserPromptSubmit", session: "smoke-proc", cwd: "/tmp/proc-demo", pid: getpid(), at: Date().timeIntervalSince1970))
         let transcript = shell.store.directory.appendingPathComponent("smoke-transcript.jsonl")
         let stamp = ISO8601DateFormatter().string(from: Date())
         try? Data((#"{"type":"assistant","timestamp":"\#(stamp)","message":{"id":"m1","model":"claude-sonnet-4-5","usage":{"input_tokens":120000,"output_tokens":8000}}}"# + "\n").utf8).write(to: transcript)
@@ -221,6 +227,13 @@ enum NativeSmokeTest {
             guard index < events.count else {
                 // Hooks are async, and usage is read 3 s after an event.
                 DispatchQueue.main.asyncAfter(deadline: .now() + 3.6) {
+                    module.walk()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                        guard let group = module.groups.first(where: { $0.group.label.hasPrefix("sleep") && $0.group.session == "smoke-proc" }) else {
+                            return done(Failure("The process an agent's shell started was not tracked (\(module.groups.map(\.group.label)))"))
+                        }
+                        module.stopGroup(group)
+                        module.dismiss(module.board.sessions.first { $0.id == "smoke-proc" }!)
                     guard module.usage["smoke"]?.today.tokens == 128_000 else { return done(Failure("Transcript usage was not read (\(String(describing: module.usage["smoke"])))")) }
                     let t3 = module.board.sessions.filter { $0.t3Thread != nil }.count
                     try? Data("t3_running=\(T3Watch.folder.path.isEmpty ? false : !NSRunningApplication.runningApplications(withBundleIdentifier: T3Watch.bundleID).isEmpty)\nt3_sessions=\(t3)\n".utf8)
@@ -235,6 +248,7 @@ enum NativeSmokeTest {
                     try? shell.snapshot(to: output.appendingPathComponent("agents.png"))
                     shell.close(restoreFocus: false)
                     done(nil)
+                    }
                 }
                 return
             }
