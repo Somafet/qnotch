@@ -11,6 +11,7 @@ enum NativeSmokeTest {
                 let placement = "camera_housing=\(layout.hasCameraHousing)\nintegrated=\(layout.integratesCameraHousing)\nsafe_top_points=\(layout.safeTop)\ndisplay_frame=\(layout.frame)\ncollapsed_idle_frame=\(layout.surface(expanded: false))\ncollapsed_status_frame=\(layout.surface(expanded: false, wing: 56))\nexpanded_frame=\(layout.surface(expanded: true))\npanel_body=\(layout.panelBody)\n"
                 try Data(placement.utf8).write(to: output.appendingPathComponent("placement.txt"))
                 shell.updateGeneral { $0.reduceMotion = true }
+                shell.modules.lazy.compactMap({ $0 as? ColorPickerModule }).first?.seedRecent(["#3CC8D9", "#4CD98C", "#FFB54D", "#FF7A6B", "#B07CFF", "#5B9DFF"])
                 try checkPlacement(shell: shell, layout: layout)
                 try shell.snapshot(to: output.appendingPathComponent("pill.png"))
                 shell.open(keyboard: false)

@@ -67,6 +67,8 @@ protocol ModuleShell: AnyObject {
     func openSettings()
     /// Opens Settings on a module's section (its `settingsSections` id).
     func openSettings(section: String)
+    /// Collapses the panel (e.g. before picking from the screen under it).
+    func closePanel()
     /// A segment became visible, hidden, or changed width.
     func segmentsChanged()
 }

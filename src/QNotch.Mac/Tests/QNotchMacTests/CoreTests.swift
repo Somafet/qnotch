@@ -260,3 +260,24 @@ final class NoteTextTests: XCTestCase {
         XCTAssertEqual(NoteText.matches(of: "e", in: text, limit: 2).count, 2)
     }
 }
+
+final class HexColorTests: XCTestCase {
+    func testFormattingNormalizingAndRecents() throws {
+        XCTAssertEqual(HexColor.string(red: 1, green: 0.5, blue: 0), "#FF8000")
+        XCTAssertEqual(HexColor.string(red: -1, green: 2, blue: 0.2), "#00FF33")
+        XCTAssertEqual(HexColor.normalize(" #abc"), "#AABBCC")
+        XCTAssertEqual(HexColor.normalize("5b9dff"), "#5B9DFF")
+        for bad in ["", "#12345", "#GG0000", "#1234567"] { XCTAssertNil(HexColor.normalize(bad), bad) }
+        let c = try XCTUnwrap(HexColor.components("#FF8000"))
+        XCTAssertEqual(c.green, 128.0 / 255, accuracy: 0.0001)
+        var recent: [String] = []
+        for color in ["#111111", "#222222", "#333333", "#444444", "#555555", "#666666", "#777777"] { recent = HexColor.remember(color, in: recent) }
+        XCTAssertEqual(recent.count, 6)
+        XCTAssertEqual(recent.first, "#777777")
+        recent = HexColor.remember("#444444", in: recent)
+        XCTAssertEqual(recent.prefix(2), ["#444444", "#777777"])
+        XCTAssertEqual(Set(recent).count, recent.count)
+        let decoded = try JSONDecoder().decode(ColorPickerSettings.self, from: Data(##"{"recent":["#abc","nope"]}"##.utf8))
+        XCTAssertEqual(decoded.recent, ["#AABBCC"])
+    }
+}

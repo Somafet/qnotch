@@ -18,7 +18,9 @@ enum ModuleList {
         ModuleInfo(id: "volume", title: "Volume", detail: "System volume and mute on a Home card. Follows the current output device.",
                    symbol: "speaker.wave.2.fill", tint: .systemPink) { VolumeModule() },
         ModuleInfo(id: "note", title: "Note", detail: "A quick note on a Home card, saved as you type.",
-                   symbol: "note.text", tint: .systemYellow) { NoteModule() }
+                   symbol: "note.text", tint: .systemYellow) { NoteModule() },
+        ModuleInfo(id: "colorpicker", title: "Color picker", detail: "Pick a color anywhere on screen with the system loupe and copy its hex code.",
+                   symbol: "eyedropper", tint: .systemPurple) { ColorPickerModule() }
     ]
 
     static func make(disabled: [String]) -> [NotchModule] {

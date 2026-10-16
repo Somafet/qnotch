@@ -165,6 +165,8 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         statusChanged?()
     }
 
+    func closePanel() { close() }
+
     func openSettings() { openSettings(page: nil) }
     func openSettings(section: String) { openSettings(page: "module." + section) }
 
