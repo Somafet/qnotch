@@ -723,3 +723,25 @@ final class WeatherTests: XCTestCase {
         XCTAssertEqual(places.first?.elevation, 110)
     }
 }
+
+final class GithubTests: XCTestCase {
+    func testCalendarParsingStreakAndErrors() throws {
+        let response = #"{"data":{"viewer":{"login":"ada","contributionsCollection":{"contributionCalendar":{"totalContributions":7,"weeks":[{"contributionDays":[{"date":"2026-10-14","contributionCount":0,"contributionLevel":"NONE"},{"date":"2026-10-15","contributionCount":3,"contributionLevel":"SECOND_QUARTILE"}]},{"contributionDays":[{"date":"2026-10-16","contributionCount":0,"contributionLevel":"NONE"}]}]}}}}}"#
+        let payload = try GithubData.payload(status: 200, body: Data(response.utf8), transportFailed: false)
+        let data = try GithubData.parse(payload, fetched: Date())
+        XCTAssertEqual(data.login, "ada")
+        XCTAssertEqual(data.total, 7)
+        XCTAssertEqual(data.days.map(\.level), [0, 2, 0])
+        XCTAssertEqual(data.streak, 1, "An empty today does not break the streak")
+        XCTAssertTrue(data.sameGraph(data))
+        XCTAssertThrowsError(try GithubData.payload(status: 401, body: nil, transportFailed: false)) { XCTAssertEqual(($0 as? GithubError)?.text, "GitHub rejected the token. Check it in Settings.") }
+        XCTAssertThrowsError(try GithubData.payload(status: nil, body: nil, transportFailed: true)) { XCTAssertEqual(($0 as? GithubError)?.offline, true) }
+        XCTAssertThrowsError(try GithubData.payload(status: 200, body: Data(#"{"errors":[{"message":"Bad credentials"}]}"#.utf8), transportFailed: false)) {
+            XCTAssertEqual(($0 as? GithubError)?.text, "Bad credentials")
+        }
+        let demo = GithubData.demo()
+        XCTAssertGreaterThanOrEqual(demo.days.count, 365)
+        XCTAssertEqual(demo, GithubData.demo(now: demo.fetched))
+    }
+}
+
