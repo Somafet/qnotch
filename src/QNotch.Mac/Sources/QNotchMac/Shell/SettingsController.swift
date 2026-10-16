@@ -214,8 +214,101 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
                 settingsRow("Close delay", detail: "How long after the pointer leaves before the panel closes.", control: leave, width: width),
                 settingsRow("Keep panel open", detail: "The panel stays open until you close it with Escape, the pin, or the toggle hotkey. Also the pin in the panel header.", control: pin, width: width)
             ], header: "Panel", width: width),
-            settingsGroup([loginRow(width: width)], width: width)
+            settingsGroup([loginRow(width: width)], width: width),
+            setupGroup(width: width)
         ])
+    }
+
+    // MARK: Setup codes
+
+    private var setupSnapshot: SetupCode.Snapshot {
+        let store = shell.store
+        return SetupCode.Snapshot(general: shell.general, gameMode: shell.gameMode.settings,
+                                  timer: store.load("timer", default: TimerSettings()), weather: store.load("weather", default: WeatherSettings()),
+                                  notifications: store.load("notifications", default: NotificationSettings()),
+                                  ai: store.load("ai", default: AiSettings()), agents: store.load("agents", default: AgentsSettings()))
+    }
+    private var setupPlan: SetupCode.Plan?
+
+    private func setupGroup(width: CGFloat) -> NSView {
+        func button(_ title: String, _ action: @escaping () -> Void) -> NSButton {
+            let target = ClosureTarget(action)
+            let button = NSButton(title: title, target: target, action: #selector(ClosureTarget.run))
+            button.bezelStyle = .rounded
+            button.controlSize = .small
+            objc_setAssociatedObject(button, "action", target, .OBJC_ASSOCIATION_RETAIN)
+            return button
+        }
+        let note = label("", size: 11, color: .secondaryLabelColor)
+        note.preferredMaxLayoutWidth = width - 30
+        let copy = button("Copy Code") { [weak self, weak note] in
+            guard let self else { return }
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(SetupCode.export(self.setupSnapshot), forType: .string)
+            note?.stringValue = "Copied. Paste it into QNotch on another Mac or PC."
+        }
+        let field = NSTextField()
+        field.placeholderString = "qnotch-setup-1:…"
+        field.widthAnchor.constraint(equalToConstant: 200).isActive = true
+        field.setAccessibilityLabel("Setup code")
+        let apply = button("Apply and Restart") { [weak self] in self?.applySetup() }
+        apply.isEnabled = false
+        let check = button("Check") { [weak self, weak field, weak note, weak apply] in
+            guard let self, let field else { return }
+            do {
+                let plan = try SetupCode.read(field.stringValue, current: self.setupSnapshot, modules: ModuleList.all.map(\.id))
+                self.setupPlan = plan
+                let on: [String] = plan.turnsOn.compactMap { id in ModuleList.all.first { $0.id == id }?.title }
+                let changes: String = "Changes \(plan.titles.joined(separator: ", "))."
+                let extra: String = on.isEmpty ? "" : " Turns on \(on.joined(separator: ", "))."
+                note?.stringValue = changes + extra
+                apply?.isEnabled = true
+            } catch {
+                self.setupPlan = nil
+                note?.stringValue = (error as? SetupCode.Failure)?.message ?? "This code could not be read."
+                apply?.isEnabled = false
+            }
+        }
+        let box = NSView()
+        embed(note, in: box, inset: NSEdgeInsets(top: 0, left: 14, bottom: 8, right: 14), fill: true)
+        return settingsGroup([
+            settingsRow("Share your setup", detail: "A code with your layout, features and preferences (no accounts, tokens, history, display or hotkeys). It also works with QNotch for Windows.", control: copy, width: width),
+            settingsRow("Apply a setup code", control: row([field, check], spacing: 6), width: width),
+            box,
+            settingsRow("", control: apply, width: width)
+        ], width: width)
+    }
+
+    private func applySetup() {
+        guard let plan = setupPlan else { return }
+        let store = shell.store, s = plan.result
+        store.save("general", s.general)
+        store.save("gamemode", s.gameMode)
+        store.save("timer", s.timer)
+        store.save("weather", s.weather)
+        store.save("notifications", s.notifications)
+        store.save("ai", s.ai)
+        store.save("agents", s.agents)
+        Self.relaunch()
+    }
+
+    /// Starts a new copy once this one has quit (one instance per data folder).
+    static func relaunch() {
+        let bundle = Bundle.main.bundlePath
+        var command = "sleep 1; /usr/bin/open -n \"$0\""
+        var arguments = [bundle]
+        if let directory = ProcessInfo.processInfo.environment["QNOTCH_MAC_DATA_DIR"] ?? {
+            let args = ProcessInfo.processInfo.arguments
+            return args.firstIndex(of: "--data-dir").flatMap { $0 + 1 < args.count ? args[$0 + 1] : nil }
+        }() {
+            command += " --args --data-dir \"$1\""
+            arguments.append(directory)
+        }
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/bin/sh")
+        process.arguments = ["-c", command] + arguments
+        try? process.run()
+        NSApp.terminate(nil)
     }
 
     private func loginRow(width: CGFloat) -> NSView {

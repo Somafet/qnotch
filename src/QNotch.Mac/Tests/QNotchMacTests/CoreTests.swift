@@ -894,3 +894,46 @@ final class ProcessTrackerTests: XCTestCase {
         XCTAssertEqual(ProcessTracker.label(["/usr/local/bin/node", "/x/vite.js", "--port", "3000"]), "node vite.js --port 3000")
     }
 }
+
+final class SetupCodeTests: XCTestCase {
+    private var base: SetupCode.Snapshot {
+        SetupCode.Snapshot(general: GeneralSettings(), gameMode: GameModeSettings(), timer: TimerSettings(), weather: WeatherSettings(),
+                           notifications: NotificationSettings(), ai: AiSettings(), agents: AgentsSettings())
+    }
+
+    func testRoundTripAndWindowsCodes() throws {
+        var mine = base
+        mine.general.hoverDelayMs = 300
+        mine.general.setEnabled("clipboard", false)
+        mine.general.setCardVisible("note", false)
+        mine.timer.minutes = 45
+        mine.weather.units = .imperial
+        mine.gameMode.opacity = 55
+        mine.gameMode.anyFullScreen = true
+        let code = SetupCode.export(mine)
+        XCTAssertTrue(code.hasPrefix(SetupCode.prefix))
+        XCTAssertFalse(code.contains("="))
+        let plan = try SetupCode.read(code, current: base, modules: ["clipboard", "timer"])
+        XCTAssertEqual(plan.result, mine)
+        XCTAssertTrue(plan.turnsOn.isEmpty)
+        XCTAssertTrue(plan.titles.contains("Timer"))
+        // A code from QNotch for Windows: shared fields apply, Windows-only ones (Theme, Height, hotkeys) are ignored.
+        let windows = "qnotch-setup-1:NY9NS8QwEIb_y-txgxQ_QHNb0sMuUhT8uIiHbDsmYadNSUbLsvS_m4ieHnjnmXmZMxxNlCxDn7GL35TahZi7DH3VNAovnkaCRmvTEQrbvqdJTOSYSnhxY9r7O1PyNmR7YBq6OHwxleV3GA7zIdo04EPBFL6FHIpTi6YohZ-WM62rgo9ypFOuk4c_SnSuujCSeLNl2XSo6kJWPKWqvE5Biov9OFMK5QOFZx-X_fQUmP-vKzg70hiH397H2fZBTtDN5a3CjoLzAn3drOsP"
+        var current = base
+        current.general.setEnabled("weather", false)
+        let fromWindows = try SetupCode.read(windows, current: current, modules: ["weather", "clipboard"])
+        XCTAssertEqual(fromWindows.result.general.hoverDelayMs, 200)
+        XCTAssertEqual(fromWindows.result.general.accent, "#4CD98C")
+        XCTAssertEqual(fromWindows.result.general.disabledModules, ["clipboard"])
+        XCTAssertEqual(fromWindows.result.general.hiddenCards, ["note"])
+        XCTAssertEqual(fromWindows.result.weather.units, .imperial)
+        XCTAssertFalse(fromWindows.result.weather.showInPill)
+        XCTAssertEqual(fromWindows.result.gameMode.opacity, 50)
+        XCTAssertEqual(fromWindows.turnsOn, ["weather"])
+        for (bad, message) in [("hello", "This is not a QNotch setup code."), (SetupCode.prefix + "!!!!", "This code is damaged or incomplete. Copy it again.")] {
+            XCTAssertThrowsError(try SetupCode.read(bad, current: base, modules: [])) { XCTAssertEqual(($0 as? SetupCode.Failure)?.message, message) }
+        }
+        let outOfRange = SetupCode.prefix + SetupCode.base64url(SetupCode.deflate(Data(#"{"timer":{"Minutes":999}}"#.utf8)))
+        XCTAssertThrowsError(try SetupCode.read(outOfRange, current: base, modules: []))
+    }
+}
