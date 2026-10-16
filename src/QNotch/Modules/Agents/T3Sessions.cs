@@ -5,7 +5,7 @@ using QNotch.Core;
 namespace QNotch.Modules.Agents;
 
 internal sealed record T3Session(string Thread, string Session, string Run, string Agent, string Title, string Cwd,
-    AgentStatus Status, DateTime Since, string Message);
+    AgentStatus Status, DateTime Since, string Message, string Link = "");
 
 /// <summary>T3's durable run state, independent of whether its provider executes user hooks.</summary>
 internal static class T3Sessions
@@ -28,17 +28,30 @@ internal static class T3Sessions
         WHERE t.deleted_at IS NULL AND t.archived_at IS NULL
         """;
 
-    public static List<T3Session> Read(string path) => T3Titles.ReadRows(path, Query).Select(row =>
+    public static List<T3Session> Read(string path)
     {
-        var active = row[6] is "preparing" or "starting" or "running" or "waiting";
-        var status = active ? row[8].Length > 0 ? AgentStatus.NeedsYou : AgentStatus.Working : AgentStatus.Done;
-        var agent = row[3].StartsWith("codex", StringComparison.OrdinalIgnoreCase) ? "codex"
-            : row[3].StartsWith("claude", StringComparison.OrdinalIgnoreCase) ? "claude" : row[3];
-        var since = DateTime.TryParse(row[7], CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal, out var at)
-            ? at : DateTime.UtcNow;
-        return new T3Session(row[0], row[1].Length > 0 ? row[1] : "t3:" + row[0], row[2], agent, row[4].Trim(), row[5], status, since,
-            status != AgentStatus.NeedsYou ? "" : row[8] == "user_input" ? "T3 Code is waiting for your answer" : "T3 Code needs your permission");
-    }).ToList();
+        // The first path component is T3's environment id, not its project or native provider session id.
+        var environment = "";
+        try { environment = File.ReadAllText(Path.Combine(Path.GetDirectoryName(path)!, "environment-id")).Trim(); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { /* focus the app when its identity is unavailable */ }
+        return T3Titles.ReadRows(path, Query).Select(row =>
+        {
+            var active = row[6] is "preparing" or "starting" or "running" or "waiting";
+            var status = active ? row[8].Length > 0 ? AgentStatus.NeedsYou : AgentStatus.Working : AgentStatus.Done;
+            var agent = row[3].StartsWith("codex", StringComparison.OrdinalIgnoreCase) ? "codex"
+                : row[3].StartsWith("claude", StringComparison.OrdinalIgnoreCase) ? "claude" : row[3];
+            var since = DateTime.TryParse(row[7], CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal, out var at)
+                ? at : DateTime.UtcNow;
+            return new T3Session(row[0], row[1].Length > 0 ? row[1] : "t3:" + row[0], row[2], agent, row[4].Trim(), row[5], status, since,
+                status != AgentStatus.NeedsYou ? "" : row[8] == "user_input" ? "T3 Code is waiting for your answer" : "T3 Code needs your permission",
+                ThreadLink(environment, row[0]));
+        }).ToList();
+    }
+
+    /// <summary>Only locally constructed thread links go to the Windows protocol handler.</summary>
+    internal static string ThreadLink(string environment, string thread) =>
+        Guid.TryParseExact(environment, "D", out _) && Guid.TryParseExact(thread, "D", out _)
+            ? $"t3code://threads/{environment}/{thread}" : "";
 }
 
 /// <summary>

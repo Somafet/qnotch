@@ -20,12 +20,12 @@ public sealed partial class AgentsModule
             var was = s.Status;
             var newRun = s.T3Run != t.Run;
             changed |= fresh || newRun || s.Status != t.Status || s.Title != t.Title || s.Cwd != t.Cwd
-                || s.Agent != t.Agent || s.Window != window || s.Message != t.Message || s.T3Thread is null;
+                || s.Agent != t.Agent || s.Window != window || s.Message != t.Message || s.Link != t.Link || s.T3Thread is null;
             if (fresh || newRun || s.Status != t.Status)
                 s.Since = t.Status == AgentStatus.NeedsYou ? DateTime.UtcNow : t.Since;
             (s.T3Thread, s.T3Run, s.T3Session) = (t.Thread, t.Run, t.Session);
             (s.Title, s.Cwd, s.Agent, s.Status, s.Message, s.Window) = (t.Title, t.Cwd, t.Agent, t.Status, t.Message, window);
-            s.Link = ""; // Show brings T3 forward; provider app links would open a different application.
+            s.Link = t.Link;
             s.WaitingTool = null;
             // A handoff can leave a provider hook row behind. Keep its usage/process identity when it is the same session.
             changed |= _st.Sessions.RemoveAll(other => other != s && other.Id == t.Session) > 0;
