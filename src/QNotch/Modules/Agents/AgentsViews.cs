@@ -27,6 +27,7 @@ internal static class AgentsViews
     /// </summary>
     public static string Meta(AgentSession s) => string.Join(" · ", new[]
     {
+        s.T3Thread is not null ? "T3 Code" : "",
         s.Agent == "codex" && s.Status != AgentStatus.NeedsYou ? "Codex" : "",
         s.Title.Length > 0 ? s.Name : "",
         Status(s),
@@ -132,7 +133,7 @@ internal static class AgentsViews
 
         // Room for both buttons on every row, so the usage column lines up.
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 0), MinWidth = 60 };
-        if (s.Window != 0 || s.Link.Length > 0) buttons.Children.Add(IconButton(ShowGlyph, s.Link.Length > 0 ? "Open the session" : "Show its terminal", () => module.Show(s)));
+        if (s.Window != 0 || s.Link.Length > 0) buttons.Children.Add(IconButton(ShowGlyph, s.Link.Length > 0 ? "Open the session" : s.T3Thread is not null ? "Show T3 Code" : "Show its terminal", () => module.Show(s)));
         if (s.Status is AgentStatus.Done or AgentStatus.Ready) buttons.Children.Add(IconButton(Glyphs.Close, "Clear", () => module.Dismiss(s)));
 
         var g = new Grid();
@@ -180,7 +181,7 @@ internal sealed class AgentsTab : Grid
         _st = st;
         Margin = new Thickness(19, 2, 19, 0);
         _empty = Placeholder.Create(AgentsModule.Icon, "No agents running",
-            "Claude Code and Codex sessions show up here with what they are doing. Connect them in Settings, Agents, then start a session.");
+            "T3 Code sessions appear automatically. For Claude Code and Codex outside T3, connect them in Settings, Agents, then start a session.");
         if (_empty is Panel p)
         {
             var open = new Button { Content = "Open settings", HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 12, 0, 0), Padding = new Thickness(12, 4, 12, 4) };
@@ -319,7 +320,7 @@ internal static class AgentsSettings
     public static FrameworkElement Create(AgentsModule m, AgentsConfig cfg, bool readOnly)
     {
         var page = UiKit.Page("Agents");
-        var intro = UiKit.Text("Claude Code and Codex tell QNotch what each session is doing through hooks in their settings. Everything stays on this PC.", "Muted");
+        var intro = UiKit.Text("T3 Code sessions appear automatically while the app is running. Claude Code and Codex outside T3 use hooks in their settings. Everything stays on this PC.", "Muted");
         intro.Margin = new Thickness(0, -8, 0, 16);
         page.Children.Add(intro);
 

@@ -19,8 +19,12 @@ internal sealed class AgentSession(string id)
     public string Agent { get; set; } = "claude";
     /// <summary>The thread's title in T3 Code or the Codex app, else the one Claude Code gave the session (or the user's rename); empty until it has one.</summary>
     public string Title { get; set; } = "";
+    /// <summary>T3 owns this row's status; hooks may still provide its transcript and process.</summary>
+    public string? T3Thread { get; set; }
+    public string? T3Run { get; set; }
+    public string? T3Session { get; set; }
     /// <summary>The project folder name, what the pill shows, and the rows when there is no title.</summary>
-    public string Name => Cwd.Length == 0 ? (Agent == "codex" ? "Codex" : "Claude") : Path.GetFileName(Path.TrimEndingDirectorySeparator(Cwd));
+    public string Name => Cwd.Length == 0 ? Agent switch { "codex" => "Codex", "claude" => "Claude", _ => Agent } : Path.GetFileName(Path.TrimEndingDirectorySeparator(Cwd));
     public AgentStatus Status { get; set; }
     /// <summary>What it waits for ("Claude needs your permission to use Bash"), only while it needs you.</summary>
     public string Message { get; set; } = "";
@@ -113,7 +117,7 @@ internal sealed record AgentEvent(string Agent, string Event, string Session, st
 
 /// <summary>
 /// Live Claude Code and Codex sessions: working, needs you, done. The agent runs <c>QNotch.exe agent</c> on each event and the hook sends one
-/// line over a named pipe. Idle cost is one pending pipe accept; a session's end is an OS process-exit event, never a poll.
+/// line over a named pipe. T3 Code sessions also come from its database, watched through file change notifications.
 /// </summary>
 public sealed partial class AgentsModule : INotchModule, ICadenceAware
 {
@@ -135,6 +139,8 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
     Timer? _walkTimer;
     bool _fast, _walking, _again;
     CodexTitles? _codexTitles;
+    T3SessionWatch? _t3Watch;
+    readonly Dictionary<string, string> _t3Dismissed = [];
     bool _titlesPending, _titlesStale;
     /// <summary>The latest titles from the apps (T3 Code, Codex): they win over the one in a Claude Code transcript.</summary>
     Dictionary<string, string> _appTitles = [];
@@ -160,6 +166,7 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
         ApplySounds();
         ctx.Shell.TabChanged += _ => { if (Watching) Walk(); };
         Task.Run(Listen);
+        _t3Watch = new((sessions, window) => _ctx.Bus.Run(() => ApplyT3(sessions, window)));
     }
 
     /// <summary>"4m ago" goes stale only while someone looks: refresh it every 30 s while the panel is open.</summary>
@@ -197,6 +204,11 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
 
     internal void Dismiss(AgentSession s)
     {
+        if (s.T3Thread is { } thread && s.T3Run is { } run)
+        {
+            _t3Dismissed[thread] = run;
+            if (_t3Dismissed.Count > 100) _t3Dismissed.Remove(_t3Dismissed.Keys.First());
+        }
         _st.Sessions.Remove(s);
         _st.Raise();
     }
@@ -286,7 +298,16 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
 
     void Apply(AgentEvent e)
     {
-        var s = _st.Sessions.Find(x => x.Id == e.Session);
+        var s = _st.Sessions.Find(x => x.Id == e.Session || x.T3Session == e.Session);
+        if (s?.T3Thread is not null)
+        {
+            // T3 can keep a turn running across provider restarts or handoffs. Hook Stop/SessionEnd cannot end it.
+            if (e.Transcript is { Length: > 0 } transcript) s.Transcript = transcript;
+            if (e.Pid > 0 && s.Pid != e.Pid) { s.Pid = e.Pid; Watch(e.Pid); }
+            TrackTool(e);
+            ReadUsage(s);
+            return;
+        }
         if (e.Event == "SessionEnd")
         {
             _ended.Add(e.Session); // async hooks race: a Stop that lands after SessionEnd must not bring the row back
@@ -309,12 +330,7 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
             || (link.StartsWith("codex://threads/", StringComparison.Ordinal) && Guid.TryParseExact(link["codex://threads/".Length..], "D", out _))))
             s.Link = link;
         if (e.Pid > 0 && s.Pid != e.Pid) { s.Pid = e.Pid; Watch(e.Pid); }
-        // "npm run dev &" outlives its shell, which ends before PostToolUse: note its processes while the shell still runs.
-        if (e.Tool is "Bash" or "PowerShell")
-        {
-            if (e.Event == "PreToolUse") { _burstUntil = DateTime.UtcNow.AddSeconds(10); Later(200); }
-            else if (e.Event == "PostToolUse") { _burstUntil = default; Walk(); }
-        }
+        TrackTool(e);
 
         // While it waits for you, tool events of other tools (subagents share the session id) must not clear the wait:
         // only the tool it asked about, a new prompt or the end of the turn do.
@@ -357,6 +373,14 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
     }
 
     // ---------- alerts ----------
+
+    // "npm run dev &" outlives its shell, which ends before PostToolUse: note its processes while the shell still runs.
+    void TrackTool(AgentEvent e)
+    {
+        if (e.Tool is not ("Bash" or "PowerShell")) return;
+        if (e.Event == "PreToolUse") { _burstUntil = DateTime.UtcNow.AddSeconds(10); Later(200); }
+        else if (e.Event == "PostToolUse") { _burstUntil = default; Walk(); }
+    }
 
     /// <summary>Widens the pill for a moment ("api: Needs you") and plays the sound, unless in game mode (Peek returns null) or a call.</summary>
     void Alert(AgentSession s, string what, string glyph, string brush, Sound? sound)
@@ -415,7 +439,7 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
                 s.UsagePending = false;
                 if (s.UsageStale && _st.Sessions.Contains(s)) ReadUsage(s);
                 if (days is null) return;
-                if (title is not null && !_appTitles.ContainsKey(s.Id)) s.Title = title;
+                if (title is not null && s.T3Thread is null && !_appTitles.ContainsKey(s.Id)) s.Title = title;
                 if (reader.BytesRead > 1_000_000) MemoryTrim.AfterActivity();
                 _st.Usage[s.Id] = new SessionUsage(s.Cwd, days);
                 _st.Raise();
@@ -449,7 +473,7 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
                 if (names is null) return;
                 _appTitles = names;
                 foreach (var s in _st.Sessions)
-                    if (names.TryGetValue(s.Id, out var title)) s.Title = title;
+                    if (s.T3Thread is null && names.TryGetValue(s.Id, out var title)) s.Title = title;
                 _st.Raise();
             });
         });
@@ -488,7 +512,8 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
     void Ended(int pid)
     {
         _watched.Remove(pid);
-        if (_st.Sessions.RemoveAll(s => s.Pid == pid) > 0) _st.Raise();
+        if (_st.Sessions.RemoveAll(s => s.Pid == pid && s.T3Thread is null) > 0) _st.Raise();
+        foreach (var s in _st.Sessions.Where(s => s.Pid == pid)) s.Pid = 0;
         Walk(); // what it started now names a dead parent: find it before anything else exits
 
     }
@@ -501,7 +526,7 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
             new("1") { Cwd = @"C:\code\api", Title = "Rate limit the login endpoint", Status = AgentStatus.NeedsYou, Message = "Claude needs your permission to use Bash", Since = now.AddMinutes(-1), Window = 1 },
             new("2") { Cwd = @"C:\code\web", Title = "Dark mode for the settings page", Status = AgentStatus.Working, Since = now.AddMinutes(-6), Window = 1 },
             new("3") { Cwd = @"C:\code\ledge", Status = AgentStatus.Done, Since = now.AddMinutes(-12), Window = 1 },
-            new("4") { Cwd = @"C:\code\infra", Agent = "codex", Title = "Upgrade the Terraform providers", Status = AgentStatus.Working, Since = now.AddMinutes(-3), Window = 1 },
+            new("4") { Cwd = @"C:\code\infra", Agent = "codex", T3Thread = "demo-t3", Title = "Upgrade the Terraform providers", Status = AgentStatus.Working, Since = now.AddMinutes(-3), Window = 1 },
         ]);
         var today = DateOnly.FromDateTime(DateTime.Now);
         _st.Usage["1"] = new(@"C:\code\api", new() { [today] = new(1_940_000, 2.14) });
