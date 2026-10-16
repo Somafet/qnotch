@@ -1,36 +1,79 @@
 name: Release
 
-# Push a tag like v0.1.0 to build both downloads and publish a GitHub release with generated notes.
+# vX.Y.Z remains the Windows channel. macos-v* must never enter this workflow.
 on:
   push:
     tags: ['v*']
 
 permissions:
-  contents: write
+  contents: read
+
+# Future platform release workflows must use this same group, without cancellation.
+concurrency:
+  group: qnotch-release
+  cancel-in-progress: false
 
 jobs:
   release:
+    if: github.repository == 'Somafet/qnotch'
     runs-on: windows-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Validate Windows release tag
+        id: policy
+        shell: pwsh
+        run: node scripts/release-policy.mjs --platform windows --tag "$env:GITHUB_REF_NAME"
+
+      - name: Install repository tooling
+        run: npm ci
+
+      - name: Repository checks
+        run: npm test
 
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
 
-      - name: Publish both variants
+      - name: Build without warnings
+        run: dotnet build src/QNotch/QNotch.csproj -c Release -warnaserror
+
+      - name: Updater regression checks
+        run: dotnet run --project tests/QNotch.UpdateTests -c Release
+
+      - name: Phone-sharing regression checks
+        run: dotnet run --project tests/QNotch.PhoneShareTests -c Release
+
+      - name: Publish both Windows variants
         shell: pwsh
+        env:
+          RELEASE_VERSION: ${{ steps.policy.outputs.version }}
         run: |
-          $version = "${{ github.ref_name }}".TrimStart('v')
-          dotnet publish src/QNotch/QNotch.csproj -p:PublishProfile=win-x64 -p:Version=$version
-          dotnet publish src/QNotch/QNotch.csproj -p:PublishProfile=win-x64-self-contained -p:Version=$version
+          dotnet publish src/QNotch/QNotch.csproj -p:PublishProfile=win-x64 -p:Version=$env:RELEASE_VERSION
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet publish src/QNotch/QNotch.csproj -p:PublishProfile=win-x64-self-contained -p:Version=$env:RELEASE_VERSION
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           Compress-Archive -Path dist/self-contained/QNotch.exe -DestinationPath dist/QNotch-self-contained.zip
 
-      - name: Verify published runtime configurations
-        run: dotnet run --project tests/QNotch.UpdateTests -c Release -- --verify-publish
+      - name: Verify published runtime configurations and archive
+        env:
+          RELEASE_VERSION: ${{ steps.policy.outputs.version }}
+        shell: pwsh
+        run: dotnet run --project tests/QNotch.UpdateTests -c Release -- --verify-publish --release-version "$env:RELEASE_VERSION"
 
-      - name: Create release
+      - name: Publish verified release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "${{ github.ref_name }}" dist/QNotch.exe dist/QNotch-self-contained.zip --generate-notes --verify-tag
+        shell: pwsh
+        run: >-
+          node scripts/publish-release.mjs --platform windows --tag "$env:GITHUB_REF_NAME"
+          --asset dist/QNotch.exe --asset dist/QNotch-self-contained.zip

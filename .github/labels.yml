@@ -1,0 +1,28 @@
+# Managed subset. Preserve other repository labels.
+- name: bug
+  color: d73a4a
+  description: Something is not working
+- name: enhancement
+  color: a2eeef
+  description: New feature or improvement
+- name: documentation
+  color: 0075ca
+  description: Improvements or additions to documentation
+- name: platform:windows
+  color: 1d76db
+  description: Windows application or integration
+- name: platform:macos
+  color: '555555'
+  description: macOS port or integration
+- name: platform:shared
+  color: '7057ff'
+  description: Shared behavior or more than one platform
+- name: area:website
+  color: '0e8a16'
+  description: Landing page and interactive demo
+- name: area:ci
+  color: '5319e7'
+  description: Builds, checks, and contributor automation
+- name: area:releases
+  color: 'fbca04'
+  description: Packaging, publishing, and update channels

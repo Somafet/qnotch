@@ -2,6 +2,18 @@ name: Feature or extension idea
 description: A new feature, or an extension you would like to build.
 labels: [enhancement]
 body:
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform or area
+      options:
+        - Windows
+        - macOS port development (no release yet)
+        - Website
+        - Repository / CI / releases
+        - Shared / more than one
+    validations:
+      required: true
   - type: textarea
     id: what
     attributes:

@@ -1,120 +1,72 @@
 # QNotch
 
-A notch for Windows 11. A slim pill at the top of your screen shows what is playing, system stats and the time. Hover it and it opens into a panel with everything else.
+A small notch at the top of your desktop for music, system stats, files, clipboard history, and coding agents. Hover it to open the panel.
 
-![The QNotch panel](docs/images/home.png)
+Free and open source under the [MIT license](LICENSE). No account required.
 
-![The collapsed pill](docs/images/pill.png)
+## Platforms
+
+- **Windows: available.** The existing C#/.NET 10 WPF app stays in `src/QNotch/`. [Download Windows](https://github.com/Somafet/qnotch/releases/latest) · [Windows guide](docs/windows/README.md) · [Build and test](docs/windows/development.md).
+- **macOS: planned.** No download, build target, minimum OS version, or framework has been selected. [Mac port status and contribution scope](docs/macos/README.md).
+
+Both ports belong in this repository and can release independently. A feature being available on Windows does not imply Mac support. The landing page and interactive demo currently describe Windows.
+
+![The QNotch Windows panel](docs/images/home.png)
+
+![The collapsed Windows pill](docs/images/pill.png)
 
 ## What it does
 
-- **System stats:** CPU, GPU, RAM, network and battery.
-- **Now playing:** track, artwork and controls for anything that plays media.
-- **Clipboard history:** text, code, links and images you copied, with pins.
-- **Weather:** the [yr.no](https://www.yr.no/en) forecast for a place you pick: now and the next days on a Home card, and the temperature in the pill and the game bar.
-- **Mic and camera:** a glyph in the pill and the game bar while an app uses your microphone or camera.
-- **Notifications:** any app or script can post one, with buttons. See [docs/notifications.md](docs/notifications.md).
-- **Search** across clipboard, files, notes, notifications and settings.
-- **Agents:** every Claude Code and Codex session in the pill and the Agents tab (by the title Claude Code, the Codex app or T3 Code gives it): working, needs you or done, with the tokens each Claude Code session used today and what that would cost at API list prices, plus the dev servers and test runners it started (memory, CPU, ports) and any it left running after its session ended, each with a Stop button. Its Show button brings up the terminal or app it runs in, and in the Claude app or the Codex app opens that session. When one needs you or finishes, the pill widens for a moment with its name and plays a soft sound (never in Game mode or during a call). One click in Settings, Agents connects Claude Code or Codex (Codex then asks you to trust the hooks once).
-- **AI apps:** launch them with Alt+1 to Alt+6 and see your Claude Code and Codex usage limits.
-- **Note, GitHub contribution graph, file tray, volume, timer, color picker** and your **scheduled tasks**.
-- **Make it yours:** the pencil in the header turns on Edit mode: drag the Home cards and the tabs into the order you like.
-- **Move it aside:** drag the pill (or the open panel's header) sideways and fling it out of the way of your tabs, or carry it onto another display. It springs into place, snaps to the center or an edge, and remembers the spot for each app. Double-click it to center it again.
-- **Game mode:** when a game or fullscreen video is running, the notch shrinks to a one-line status bar.
+The released Windows app includes:
 
-Turn off anything you don't use in Settings, Features. A feature that is off is never loaded and costs nothing.
+- System stats, now-playing controls, weather, and mic/camera activity indicators.
+- Clipboard history, a file tray with browser-based phone transfers, notes, and search.
+- Live Claude Code and Codex sessions, AI usage limits, GitHub contributions, and script notifications.
+- Volume, a timer, a screen color picker, and Windows scheduled tasks.
+- Reorderable cards and tabs, per-app positioning, multi-monitor support, and a passive Game mode.
 
-| | |
-| --- | --- |
-| ![Notifications](docs/images/notifications.png) | ![Clipboard history](docs/images/clipboard.png) |
+Disabled features are never loaded. See the [Windows guide](docs/windows/README.md) for behavior and limitations and the [notification reference](docs/notifications.md) for integrations.
 
-![Agents tab](docs/images/agents.png)
-
-![Game mode status bar](docs/images/gamebar.png)
+![Windows Agents tab](docs/images/agents.png)
 
 ## Install
 
-Windows 10 2004 or newer, x64. Download from [Releases](https://github.com/Somafet/qnotch/releases):
-
-- `QNotch-self-contained.zip` (80 MB): unzip and run. Nothing else to install.
-- `QNotch.exe` (27 MB): needs the [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0).
-
-The exe is not code-signed yet, so Windows may say "Windows protected your PC" on first run. Click **More info**, then **Run anyway**.
-
-Quit from the tray icon.
+Windows 10 2004 or newer, x64. Choose `QNotch-self-contained.zip` to run without installing .NET, or `QNotch.exe` if you have the .NET 10 Desktop Runtime. [Download and first-run instructions](docs/windows/README.md#install). There is no Mac download yet.
 
 ## Updates
 
-Automatic update checks are enabled by default. On the first start with this feature, Settings, Updates asks whether to **Keep enabled** or **Turn off** and remembers your answer. Closing the window leaves checks on and keeps the choice pending for the next start. You can change the **Check for updates automatically** switch at any time. QNotch checks GitHub for a newer stable release shortly after startup and every six hours. **Check now** works with the switch off, too.
-
-When an update is available, QNotch sends a Windows notification, an arrow appears in the pill, and the tray menu shows the new version. Click the notification to open Settings, Updates. QNotch remembers notified versions across restarts and defers notifications during games and Windows quiet time. Click **Update and restart** to download it, verify its SHA-256 checksum, and replace the executable. QNotch restarts through Explorer, keeps your settings and saved history, and retains the previous executable as `.QNotch.previous.exe` beside the app. Both the standalone exe and the self-contained download keep their existing runtime variant.
-
-The install folder must be writable by your account. If downloading or verification fails, QNotch keeps running; if replacement fails, the helper starts the old version again and shows the error in Settings, Updates.
+Windows supports automatic checks and explicit update installation. [Update settings and recovery](docs/windows/README.md#updates). GitHub's global latest release remains the Windows channel for existing installations. Future Mac releases must use a separate channel; see [release compatibility](docs/releases.md).
 
 ## Hotkeys
 
-| Keys | Action |
-| --- | --- |
-| Ctrl+Alt+N | Open or close the panel |
-| Ctrl+Alt+F | Search |
-| Ctrl+Alt+G | Cycle Game mode: Auto, On, Off |
-| Alt+1 to Alt+6 | Launch the AI app in that slot |
-| Esc | Close the panel |
-
-Change them in Settings, Hotkeys.
+Windows defaults include Ctrl+Alt+N to toggle the panel, Ctrl+Alt+F to search, and Ctrl+Alt+G for Game mode. [All shortcuts](docs/windows/README.md#hotkeys).
 
 ## Sounds
 
-Agent alerts, the timer and (when you turn it on in Settings, Notifications) new notifications play one of your Windows sounds. To use your own, pick an audio file (WAV, MP3, WMA, M4A, AAC or FLAC) for each in Settings, Sounds, or drop one on its row.
+[Windows sound settings](docs/windows/README.md#sounds) support system sounds and custom audio files.
 
 ## Privacy and data
 
-Settings, notes and logs live in `%APPDATA%\QNotch\`. Tokens (GitHub, notifications) are kept in Windows Credential Manager, never in a file. Clipboard history stays in memory unless you choose to keep it.
-
-Settings, General, Share your setup copies your look, features, card layout, hotkeys and Game mode as one line of text, to paste on another PC. The code leaves out your name and picture, monitor, the Game mode app lists, history, app paths and tokens. Before a code is applied you see what it changes, including any feature it turns back on.
-
-QNotch only goes online for these features, all visible in Settings:
-
-- **GitHub:** your contribution graph, once you add a token.
-- **Claude Code usage:** it sends your local Claude Code sign-in to Anthropic's usage endpoint. That endpoint is undocumented, so it may break. Turn it off in Settings, AI.
-- **Weather:** once you pick a place, it fetches that place's forecast from MET Norway (the source behind yr.no) about every 30 minutes. Searching for a place sends what you type to yr.no.
-- **Updates:** automatic checks are on by default, with a first-run choice to keep them enabled or turn them off. Checks the public QNotch releases on GitHub without a token. The update download starts only when you click Update and restart.
-
-Codex usage is read from Codex's local files. Agents changes only Claude Code's `settings.json` or Codex's `hooks.json` (with a backup) when you click Connect, and its hook talks to QNotch over a local pipe. Token counts come from the transcripts Claude Code already keeps on your PC.
+The Windows app stores settings, notes, and logs locally, and secrets in Windows Credential Manager. Clipboard history stays in memory unless you choose to save it. Optional integrations and update checks make network requests. [Data locations and network behavior](docs/windows/README.md#privacy-and-data). Mac data locations and permissions will be documented with its implementation.
 
 ## Performance
 
-QNotch is built to stay out of the way. Measured on Windows 11, collapsed and idle:
-
-| | Measured | Target |
-| --- | --- | --- |
-| Idle CPU | 0.08% of one core | 0.1% |
-| Memory | about 42 MB | under 80 MB |
-| Start to visible pill | about 500 ms | 300 ms |
-
-Startup still misses its target, and copying a 4K screenshot briefly pushes memory to about 185 MB.
+The existing Windows measurements are about 0.08% of one core and 42 MB resident memory while collapsed and idle, and about 500 ms to the visible pill. These are Windows observations, not Mac targets or benchmarks. [Measurements, targets, and known limitations](docs/windows/README.md#performance).
 
 ## Build
 
-Requires the .NET 10 SDK.
+Choose the area you are working on:
 
-```powershell
-dotnet build -c Release
-dotnet publish src/QNotch/QNotch.csproj -p:PublishProfile=win-x64                  # into dist\
-dotnet publish src/QNotch/QNotch.csproj -p:PublishProfile=win-x64-self-contained   # into dist\self-contained\
-```
+- [Windows development](docs/windows/development.md): .NET 10 build, updater/phone-sharing tests, snapshots, and both publish profiles.
+- [macOS development status](docs/macos/README.md): no executable target yet.
+- [Website](website/README.md): independent Astro project.
+- [Repository tooling and CI](docs/releases.md#required-checks): Node.js 24+, `npm ci`, then `npm test` from the root.
 
-`QNotch.exe --snapshot <dir>` renders every tab and settings page to PNG, which is how the screenshots above were made.
-
-Run the updater checks (release selection, package validation, cancellation, replacement and recovery) on Windows:
-
-```powershell
-dotnet run --project tests/QNotch.UpdateTests -c Release
-```
+The existing `QNotch.sln` remains a Windows solution. A Mac contributor does not need to build it.
 
 ## Contributing
 
-Bug reports, fixes and new extensions are welcome. Each feature is a self-contained folder in `src/QNotch/Modules/`. Start with [CONTRIBUTING.md](CONTRIBUTING.md) and [ARCHITECTURE.md](ARCHITECTURE.md). [SPEC.md](SPEC.md) has the full specification.
+Start with [CONTRIBUTING.md](CONTRIBUTING.md). [ARCHITECTURE.md](ARCHITECTURE.md) separates shared principles from Windows implementation rules; [spec/README.md](spec/README.md) holds common behavior and compatibility fixtures. [SPEC.md](SPEC.md) preserves the original Windows design. [Documentation index](docs/README.md).
 
 ## License
 

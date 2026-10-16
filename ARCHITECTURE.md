@@ -1,9 +1,21 @@
-# QNotch architecture (contract for feature agents)
+# QNotch architecture
+
+## Repository and shared principles
+
+One repository hosts the Windows app, the website, and preparation for a macOS port. Windows remains in `src/QNotch/`; `src/QNotch.Mac/` is reserved for the future Mac implementation. No Mac build target or framework has been selected. [The platform guides](docs/README.md) describe what exists and how to contribute.
+
+The common product contract is in [spec/README.md](spec/README.md): a small shell, independently enabled modules, explicit unavailable states, local data, bounded memory, and work driven by events and visibility. Share behavior and protocol fixtures where useful; UI controls, providers, credentials, launch behavior, and packaging belong to their platform. Do not promise matching features until both implementations support them.
+
+Release compatibility is a repository-level contract. Read [docs/releases.md](docs/releases.md) before changing workflows, tags, assets, or update feeds. CI retains the required check named `build`, which aggregates all validation jobs and fails when any fails, is cancelled, or is unexpectedly skipped.
+
+## Windows implementation contract
+
+Everything below describes the existing C#/WPF Windows implementation. Existing section anchors remain valid for feature agents and external links. These Windows-specific rules do not prescribe a Mac framework, renderer, OS APIs, or memory-management techniques.
 
 QNotch is a **shell** plus sixteen **extensions**. The shell (window, pill, panel, tabs, Home grid, Settings, tray, hotkeys, Game mode, Edit mode) knows no extension by name except the single file `Modules/ModuleList.cs`. An extension (Media, Clipboard, Ai, Agents, Notes, Github, FileTray, Stats, Notifications, Capture, Scheduled, Volume, Pomodoro, ColorPicker, Weather, Search) lives entirely in `Modules/<Name>/`: its state, providers, views, P/Invoke and settings. It plugs in through five registries (cards, tabs, settings sections, segments, search sources) and a small `IShell`. Extensions are compiled in, not loaded at runtime (no DLL plugins: cold start, no WPF unload, no isolation). Each one has an on/off switch in Settings, Features; an extension that is off is never constructed. Game mode and Edit mode are shell features, not extensions: the shell owns the mode enum, click-through, the pill and panel swap and the card grid.
 
 C# on .NET 10, WPF, `net10.0-windows10.0.22621.0`, x64. Only NuGet dependency: CommunityToolkit.Mvvm. No System.Windows.Forms.
-Build: `dotnet build -c Release` from the repo root. Run: `src/QNotch/bin/Release/net10.0-windows10.0.22621.0/win-x64/QNotch.exe`.
+Build: `dotnet build -c Release` from the repo root. After publishing, launch the interactive app with `explorer.exe dist\QNotch.exe`; see [Windows development](docs/windows/development.md) for isolated noninteractive snapshots and tests.
 The two publish profiles use separate intermediate and build output directories for their ReadyToRun, runtime configuration and bundle files; switching runtime variants must not reuse those artifacts. The release workflow validates each executable's embedded runtime configuration without launching it before uploading the downloads.
 Data folder `%APPDATA%\QNotch`, logs in `%APPDATA%\QNotch\logs` (`qnotch.log`, `crash.log`).
 

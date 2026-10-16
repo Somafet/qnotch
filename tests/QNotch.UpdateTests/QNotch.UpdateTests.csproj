@@ -13,5 +13,6 @@
     <ProjectReference Include="../../src/QNotch/QNotch.csproj" />
     <None Include="../../src/QNotch/Core/Updates/ApplyUpdate.ps1" Link="ApplyUpdate.ps1" CopyToOutputDirectory="PreserveNewest" />
     <None Update="HelperHarness.ps1" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../fixtures/release-tags.json" Link="release-tags.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

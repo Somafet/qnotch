@@ -1,9 +1,13 @@
 # QNotch website
 
+The site and interactive demo currently describe the released Windows app. A Mac port is planned but has no download or build target. Repository preparation does not redesign this site or imply feature parity. See [platform status](../docs/macos/README.md) and [release compatibility](../docs/releases.md) before adding platform downloads.
+
+Use Node.js 24 or newer. CI installs from `website/package-lock.json` and runs `npm run build` independently of root repository tooling.
+
 The static landing page, built with Astro. No framework, no runtime dependencies: the interactive demo is plain TypeScript in `src/scripts/demo.ts`, styled after the app's dark theme in `src/styles/demo.css`.
 
 ```bash
-npm install
+npm ci
 npm run dev      # http://localhost:4321
 npm run build    # static site in dist/
 ```
