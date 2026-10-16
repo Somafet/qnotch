@@ -817,3 +817,27 @@ final class GameModeTests: XCTestCase {
         XCTAssertEqual(decoded?.opacity, 30)
     }
 }
+
+final class LaunchAgentTests: XCTestCase {
+    func testPlistsSchedulesAndLaunchctlOutput() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "UTC")!
+        let now = ISO8601DateFormatter().date(from: "2026-10-16T08:00:00Z")!
+        let backup = try XCTUnwrap(LaunchAgentJob.parse(["Label": "me.backup", "ProgramArguments": ["/bin/bash", "/Users/me/bin/backup.sh"],
+                                                         "StartCalendarInterval": ["Hour": 9, "Minute": 30]], path: "/x", now: now, calendar: calendar))
+        XCTAssertEqual(backup.schedule, "Daily at 09:30")
+        XCTAssertEqual(backup.next, ISO8601DateFormatter().date(from: "2026-10-16T09:30:00Z"))
+        XCTAssertFalse(backup.fromApp)
+        XCTAssertEqual(LaunchAgentJob.parse(["Label": "a", "Program": "/x", "StartInterval": 600], path: "")?.schedule, "Every 10 min")
+        XCTAssertEqual(LaunchAgentJob.parse(["Label": "a", "Program": "/x", "StartCalendarInterval": ["Weekday": 1, "Hour": 8]], path: "")?.schedule, "Mondays at 08:00")
+        XCTAssertEqual(LaunchAgentJob.parse(["Label": "a", "Program": "/x", "KeepAlive": true], path: "")?.schedule, "Always running")
+        XCTAssertEqual(LaunchAgentJob.parse(["Label": "a", "Program": "/x", "RunAtLoad": true], path: "")?.schedule, "At login")
+        XCTAssertTrue(try XCTUnwrap(LaunchAgentJob.parse(["Label": "com.google.keystone.agent", "ProgramArguments": ["/Users/me/Library/Application Support/Google/x.app/Contents/MacOS/agent"]], path: "")).fromApp)
+        XCTAssertNil(LaunchAgentJob.parse(["Program": "/x"], path: ""))
+        let list = LaunchAgentJob.parseList("PID\tStatus\tLabel\n-\t0\tme.backup\n412\t0\thomebrew.mxcl.redis\n-\t78\tme.broken\n")
+        XCTAssertEqual(list["homebrew.mxcl.redis"]?.pid, 412)
+        XCTAssertEqual(list["me.broken"]?.status, 78)
+        XCTAssertNil(list["me.backup"]?.pid ?? nil)
+        XCTAssertEqual(LaunchAgentJob.parseDisabled("\tdisabled services = {\n\t\t\"me.backup\" => disabled\n\t\t\"x\" => enabled\n\t}"), ["me.backup"])
+    }
+}

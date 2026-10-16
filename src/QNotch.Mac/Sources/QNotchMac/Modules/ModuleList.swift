@@ -38,7 +38,9 @@ enum ModuleList {
         ModuleInfo(id: "github", title: "GitHub", detail: "Your GitHub contribution graph on a Home card, with a token you add in Settings.",
                    symbol: "chart.bar.xaxis", tint: .darkGray) { GithubModule() },
         ModuleInfo(id: "ai", title: "AI apps and usage", detail: "⌃⌥1 to ⌃⌥6 open your AI apps; plan usage for Claude Code and Codex.",
-                   symbol: "gauge.with.dots.needle.33percent", tint: .systemPurple) { AiModule() }
+                   symbol: "gauge.with.dots.needle.33percent", tint: .systemPurple) { AiModule() },
+        ModuleInfo(id: "scheduled", title: "Scheduled tasks", detail: "Your launch agents (scripts and jobs on a timer), with pause, resume and delete.",
+                   symbol: "clock.arrow.2.circlepath", tint: .systemBrown) { ScheduledModule() }
     ]
 
     static func make(disabled: [String]) -> [NotchModule] {
