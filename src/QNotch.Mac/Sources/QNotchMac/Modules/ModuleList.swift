@@ -26,7 +26,9 @@ enum ModuleList {
         ModuleInfo(id: "capture", title: "Mic and camera", detail: "A glyph beside the notch while an app uses your microphone or camera, naming microphone apps where macOS allows.",
                    symbol: "mic.fill", tint: .systemGreen) { CaptureModule() },
         ModuleInfo(id: "filetray", title: "File tray", detail: "Drop files on the notch to keep them within reach. Share with AirDrop, export copies, preview with Quick Look.",
-                   symbol: "tray.full.fill", tint: .systemBlue) { FileTrayModule() }
+                   symbol: "tray.full.fill", tint: .systemBlue) { FileTrayModule() },
+        ModuleInfo(id: "clipboard", title: "Clipboard history", detail: "Text and images you copy, kept in memory. Concealed content from password managers is never captured.",
+                   symbol: "doc.on.clipboard.fill", tint: .systemIndigo) { ClipboardModule() }
     ]
 
     static func make(disabled: [String]) -> [NotchModule] {

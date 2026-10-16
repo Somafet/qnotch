@@ -3,6 +3,13 @@ import QNotchMacCore
 import Darwin
 
 enum NativeSmokeTest {
+    /// A locked screen (loginwindow in front) never grants another app's window the keyboard.
+    /// The shell's own keyboard state is still checked; only the window server's key status is not.
+    static var screenLocked: Bool {
+        ((CGSessionCopyCurrentDictionary() as? [String: Any])?["CGSSessionScreenIsLocked"] as? Bool) == true
+            || NSWorkspace.shared.frontmostApplication?.bundleIdentifier == "com.apple.loginwindow"
+    }
+
     static func run(shell: ShellController, output: URL, ready: TimeInterval) {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
             do {
@@ -39,6 +46,24 @@ enum NativeSmokeTest {
                 try shell.snapshot(to: output.appendingPathComponent("search.png"))
                 shell.selectTab("timer")
                 try shell.snapshot(to: output.appendingPathComponent("timer.png"))
+                if let clipboard = shell.modules.lazy.compactMap({ $0 as? ClipboardModule }).first {
+                    // A private pasteboard: the user's clipboard is never read or written by the smoke test.
+                    let board = NSPasteboard(name: NSPasteboard.Name("dev.qnotch.smoke.\(UUID().uuidString)"))
+                    defer { board.releaseGlobally() }
+                    let samples: [(String, Bool)] = [("hunter2", true), ("Remember the milk", false),
+                        ("func greet() {\n    print(\"Hello\")\n}", false), ("https://github.com/Somafet/qnotch", false)]
+                    for (text, concealed) in samples {
+                        board.clearContents()
+                        board.setString(text, forType: .string)
+                        if concealed { board.setData(Data(), forType: NSPasteboard.PasteboardType("org.nspasteboard.ConcealedType")) }
+                        clipboard.capture(board)
+                    }
+                    guard clipboard.history.entries.map(\.kind) == [.link, .code, .text], !clipboard.history.entries.contains(where: { $0.text == "hunter2" }) else {
+                        throw Failure("Clipboard history captured concealed content or misclassified entries")
+                    }
+                    shell.selectTab("clipboard")
+                    try shell.snapshot(to: output.appendingPathComponent("clipboard.png"))
+                }
                 if let tray = shell.modules.lazy.compactMap({ $0 as? FileTrayModule }).first {
                     guard shell.surface.registeredDraggedTypes.contains(.fileURL) else { throw Failure("The notch does not accept file drops") }
                     let folder = shell.store.directory.appendingPathComponent("tray-sample", isDirectory: true)
@@ -69,10 +94,13 @@ enum NativeSmokeTest {
                             let saved = try? String(contentsOf: shell.store.directory.appendingPathComponent("note.txt"), encoding: .utf8)
                             guard saved == "Smoke note\nsecond line", note?.status == .saved else { throw Failure("Note was not saved atomically after the debounce") }
                         }
+                        if let clipboard = shell.modules.lazy.compactMap({ $0 as? ClipboardModule }).first, clipboard.checks == 0, !clipboard.denied {
+                            throw Failure("Clipboard history never checked the change count")
+                        }
                         guard shell.state.presentation == .hover, shell.activeTab == "home" else { throw Failure("Finishing did not open the panel on Home without the keyboard") }
                         guard timer.countdown.finished, timer.wakeCount == 1 else { throw Failure("Collapsed deadline did not finish with one wake (finished=\(timer.countdown.finished), wakes=\(timer.wakeCount))") }
                         shell.open(keyboard: true)
-                        guard shell.panel.canBecomeKey, shell.panel.isKeyWindow, shell.state.acceptsKeyboard else { throw Failure("Explicit summon did not grant keyboard") }
+                        guard shell.panel.canBecomeKey, shell.panel.isKeyWindow || screenLocked, shell.state.acceptsKeyboard else { throw Failure("Explicit summon did not grant keyboard (canBecomeKey=\(shell.panel.canBecomeKey) key=\(shell.panel.isKeyWindow) state=\(shell.state.presentation) keyWindow=\(String(describing: NSApp.keyWindow)) active=\(NSApp.isActive) front=\(NSWorkspace.shared.frontmostApplication?.localizedName ?? "-"))") }
                         shell.panel.cancelOperation(nil)
                         guard !shell.state.expanded else { throw Failure("Escape did not collapse") }
                         for id in ["toggle", "search"] {
@@ -123,7 +151,7 @@ enum NativeSmokeTest {
                             do {
                                 try shell.settings?.snapshotPages(to: output)
                                 shell.settings?.window.close()
-                                let report = "Native UI smoke: actual window placement verified; camera center reserved; hover preserves focus; explicit summon grants keyboard; Escape collapses; running timer shows its status wing; toggle and search hotkeys work; timer completes hidden with one wake and opens Home; disabled module not constructed; every Home card rendered; file tray accepts drops and lists files; pin, card hiding and accent applied; mic and camera segment shown; system stats sampled; note saved after its debounce; interactive controls named; every settings page rendered.\nstartup_seconds=\(ready)\ndone\n"
+                                let report = "Native UI smoke: actual window placement verified; camera center reserved; hover preserves focus; explicit summon grants keyboard; Escape collapses; running timer shows its status wing; toggle and search hotkeys work; timer completes hidden with one wake and opens Home; disabled module not constructed; every Home card rendered; clipboard skips concealed content; file tray accepts drops and lists files; pin, card hiding and accent applied; mic and camera segment shown; system stats sampled; note saved after its debounce; interactive controls named; every settings page rendered.\nstartup_seconds=\(ready)\n\(screenLocked ? "note=screen locked; window-server key status not checked\n" : "")done\n"
                                 try Data(report.utf8).write(to: output.appendingPathComponent("smoke.txt"))
                                 NSApp.terminate(nil)
                             } catch { fail(error, output: output) }

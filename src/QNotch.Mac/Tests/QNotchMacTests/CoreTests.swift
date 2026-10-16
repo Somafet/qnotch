@@ -401,3 +401,46 @@ final class FileTrayListTests: XCTestCase {
         XCTAssertEqual(FileTrayList.countText(4, missing: 2), "4 files · 2 missing")
     }
 }
+
+final class ClipHistoryTests: XCTestCase {
+    func testClassificationMatchesWindows() {
+        XCTAssertEqual(ClipText.classify("https://github.com/Somafet/qnotch"), .link)
+        XCTAssertEqual(ClipText.classify("www.apple.com"), .link)
+        XCTAssertEqual(ClipText.classify("see https://x.y now"), .text)
+        XCTAssertEqual(ClipText.classify(#"{"a": 1}"#), .code)
+        XCTAssertEqual(ClipText.classify("<div><b>x</b></div>"), .code)
+        XCTAssertEqual(ClipText.classify("func greet() {\n    print(\"hi\")\n}"), .code)
+        XCTAssertEqual(ClipText.classify("if (x == 1) {\n  return y;\n}"), .code)
+        XCTAssertEqual(ClipText.classify("Remember to buy milk.\nAnd call mom."), .text)
+        XCTAssertEqual(ClipText.entry("https://www.apple.com/mac")?.meta, "Link · www.apple.com")
+        XCTAssertEqual(ClipText.entry("let a = 1;\nlet b = 2;\nreturn a + b;")?.meta, "Code · 3 lines")
+        XCTAssertNil(ClipText.entry("   \n "))
+        XCTAssertNil(ClipText.entry(String(repeating: "x", count: ClipText.maxTextLength + 1)))
+        XCTAssertEqual(ClipText.age(Date(timeIntervalSince1970: 0), now: Date(timeIntervalSince1970: 7200)), "2h ago")
+    }
+
+    func testHistoryDedupesKeepsPinsOnTopAndCaps() throws {
+        var history = ClipHistory()
+        let t0 = Date(timeIntervalSince1970: 0)
+        for index in 0..<45 { history.add(try XCTUnwrap(ClipText.entry("item \(index)", at: t0.addingTimeInterval(Double(index))))) }
+        XCTAssertEqual(history.entries.count, 40)
+        XCTAssertEqual(history.entries.first?.text, "item 44")
+        let oldest = try XCTUnwrap(history.entries.last)
+        history.togglePin(oldest.id)
+        XCTAssertEqual(history.entries.first?.id, oldest.id)
+        history.add(try XCTUnwrap(ClipText.entry("item 30", at: t0.addingTimeInterval(100))))
+        XCTAssertEqual(history.entries[1].text, "item 30", "A repeat moves to the front of the unpinned entries")
+        XCTAssertEqual(history.entries.count, 40)
+        history.add(try XCTUnwrap(ClipText.entry("new", at: t0.addingTimeInterval(200))))
+        XCTAssertTrue(history.entries.contains { $0.id == oldest.id }, "Pins are never evicted")
+        history.clearUnpinned()
+        XCTAssertEqual(history.entries.map(\.id), [oldest.id])
+        let image = ClipEntry(kind: .image, text: nil, png: Data(count: 5 << 20), key: "a", preview: "", line: "Image", meta: "", created: t0)
+        var images = ClipHistory()
+        images.add(image)
+        images.add(ClipEntry(kind: .image, text: nil, png: Data(count: 5 << 20), key: "b", preview: "", line: "Image", meta: "", created: t0))
+        XCTAssertEqual(images.entries.map(\.key), ["b"], "Image bytes stay within 8 MB")
+        XCTAssertTrue(images.persistable.isEmpty, "Images are never saved")
+        XCTAssertEqual(history.search("ITEM").count, 1)
+    }
+}

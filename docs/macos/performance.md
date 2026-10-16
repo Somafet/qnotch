@@ -11,6 +11,10 @@ Resident size counts clean pages of shared system frameworks. It rises with ever
 
 [Raw sample](performance-2026-10-16-modules.json).
 
+### Clipboard history
+
+macOS has no pasteboard change notification. With Clipboard history on (the default), a 1-second timer with 0.5-second tolerance compares `NSPasteboard.changeCount` and reads contents only after a change. This is the agreed exception to "no repeating idle timers". Measured with every module enabled and nothing active: **0 app draw callbacks**, **0.0006% of one core** (up from about 0.0002%), **31 interrupt wakeups** in 30 seconds (up from about 7), footprint **9.8 MiB**, resident **62.4 MiB**. Turning Clipboard history off removes the timer. [Raw sample](performance-2026-10-16-clipboard.json).
+
 ## Integrated-notch correction
 
 Measured 2026-10-16 on the same Mac14,2, 8 GiB, macOS 26.3 configuration, release/arm64 source `f1726270f109988e099535c7933c5dfa808c7e09`, clean when built. The surface now wraps the camera housing at the bezel. Native smoke checked actual window/view bounds: screen and surface top at 956 points, panel controls ending below the camera boundary at 924 points, and status views entirely in the side wings.
