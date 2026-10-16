@@ -69,7 +69,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate, NSSearchFi
         }
         let center = NotificationCenter.default
         observers.append(center.addObserver(forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main) { [weak self] _ in
-            self?.resolveDisplay(); self?.reposition(); self?.settingsController?.refreshDisplays()
+            self?.resolveDisplay(); self?.rebuildSurface(); self?.updateVisibility(); self?.settingsController?.refreshDisplays()
         })
         let workspace = NSWorkspace.shared.notificationCenter
         workspaceObservers.append(workspace.addObserver(forName: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil, queue: .main) { [weak self] _ in
@@ -86,7 +86,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate, NSSearchFi
             self?.close(restoreFocus: false)
         })
         workspaceObservers.append(workspace.addObserver(forName: NSWorkspace.activeSpaceDidChangeNotification, object: nil, queue: .main) { [weak self] _ in
-            self?.close(restoreFocus: false); self?.resolveDisplay(); self?.reposition()
+            self?.close(restoreFocus: false); self?.resolveDisplay(); self?.rebuildSurface()
         })
         observers.append(center.addObserver(forName: Notification.Name("NSSystemClockDidChangeNotification"), object: nil, queue: .main) { [weak self] _ in
             self?.systemDidWake()
@@ -137,6 +137,9 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate, NSSearchFi
         screen = selected ?? displays.first
         displayMessage = screen == nil ? "No display available. The panel is hidden." :
             general.displayID != nil && selected == nil ? "Selected display unavailable. Using the main display." : ""
+        if let layout, layout.hasCameraHousing, !layout.integratesCameraHousing {
+            displayMessage += " Camera geometry unavailable. Using a pill below the safe area."
+        }
         if screen == nil { state.close(); panel.orderOut(nil); updateVisibility() }
         statusChanged?()
     }
@@ -153,6 +156,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate, NSSearchFi
 
     private func reposition() {
         guard let layout else { return }
+        panel.level = layout.integratesCameraHousing ? .statusBar : .floating
         panel.setFrame(layout.surface(expanded: state.expanded), display: true)
         if !panel.isVisible { panel.orderFrontRegardless() }
     }
@@ -241,25 +245,37 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate, NSSearchFi
 
     private func rebuildSurface() {
         surfaceRevision += 1
+        let integrated = layout?.integratesCameraHousing == true
+        let topBand = layout?.topBandHeight ?? 0
         let surface = TrackingSurface()
         surface.wantsLayer = true
         surface.layer?.cornerRadius = state.expanded ? 18 : 14
+        if integrated { surface.layer?.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner] }
         surface.layer?.masksToBounds = true
         surface.entered = { [weak self] in self?.pointerEntered() }
         surface.exited = { [weak self] in self?.pointerLeft() }
         panel.contentView = surface
         bodyHost = nil; navigation = nil; search = nil
         if state.expanded {
+            if integrated { addPill(to: surface, topBandOnly: true) }
+            let content = NSView()
+            content.identifier = NSUserInterfaceItemIdentifier("notch-panel-body")
+            content.translatesAutoresizingMaskIntoConstraints = false
+            surface.addSubview(content)
+            NSLayoutConstraint.activate([
+                content.leadingAnchor.constraint(equalTo: surface.leadingAnchor), content.trailingAnchor.constraint(equalTo: surface.trailingAnchor),
+                content.topAnchor.constraint(equalTo: surface.topAnchor, constant: topBand), content.bottomAnchor.constraint(equalTo: surface.bottomAnchor)
+            ])
             // The material exists only while expanded. Collapsed idle has no backdrop effect.
             let material = NSVisualEffectView()
             material.material = .popover
             material.blendingMode = .behindWindow
             material.state = .active
             material.translatesAutoresizingMaskIntoConstraints = false
-            surface.addSubview(material)
+            content.addSubview(material)
             NSLayoutConstraint.activate([
-                material.leadingAnchor.constraint(equalTo: surface.leadingAnchor), material.trailingAnchor.constraint(equalTo: surface.trailingAnchor),
-                material.topAnchor.constraint(equalTo: surface.topAnchor), material.bottomAnchor.constraint(equalTo: surface.bottomAnchor)
+                material.leadingAnchor.constraint(equalTo: content.leadingAnchor), material.trailingAnchor.constraint(equalTo: content.trailingAnchor),
+                material.topAnchor.constraint(equalTo: content.topAnchor), material.bottomAnchor.constraint(equalTo: content.bottomAnchor)
             ])
             let header = label("QNotch", size: 13)
             header.font = .systemFont(ofSize: 13, weight: .semibold)
@@ -278,33 +294,58 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate, NSSearchFi
             bodyHost = body
             body.heightAnchor.constraint(greaterThanOrEqualToConstant: 208).isActive = true
             let stack = column([heading, field, tabs, body], spacing: 12)
-            embed(stack, in: surface)
+            embed(stack, in: content)
             for view in [heading, field, tabs, body] { view.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true }
             showBody()
         } else {
-            let pill = PillView()
-            pill.pressed = { [weak self] in self?.open(keyboard: true) }
-            pill.translatesAutoresizingMaskIntoConstraints = false
-            surface.addSubview(pill)
-            NSLayoutConstraint.activate([
-                pill.leadingAnchor.constraint(equalTo: surface.leadingAnchor), pill.trailingAnchor.constraint(equalTo: surface.trailingAnchor),
-                pill.topAnchor.constraint(equalTo: surface.topAnchor), pill.bottomAnchor.constraint(equalTo: surface.bottomAnchor)
-            ])
-            let icon = NSImageView(image: NSImage(systemSymbolName: "circle.lefthalf.filled", accessibilityDescription: "QNotch")!)
-            icon.contentTintColor = .white
-            let name = label("QNotch", size: 12, color: .white)
-            let items = [icon, name] + registries.segments.items.map { $0.makeView() }
-            let stack = row(items)
-            stack.translatesAutoresizingMaskIntoConstraints = false
-            pill.addSubview(stack)
-            NSLayoutConstraint.activate([stack.centerXAnchor.constraint(equalTo: pill.centerXAnchor), stack.centerYAnchor.constraint(equalTo: pill.centerYAnchor)])
-            pill.setAccessibilityElement(true)
-            pill.setAccessibilityLabel("QNotch. Click to open panel, or use the menu-bar item.")
-            pill.setAccessibilityRole(.button)
+            addPill(to: surface, topBandOnly: false)
         }
         panel.alphaValue = 1
         reposition()
         surface.layoutSubtreeIfNeeded()
+    }
+
+    private func addPill(to surface: NSView, topBandOnly: Bool) {
+        let pill = PillView()
+        let integrated = layout?.integratesCameraHousing == true
+        pill.flatTop = integrated
+        pill.cornerRadius = topBandOnly ? 0 : 14
+        pill.pressed = { [weak self] in self?.open(keyboard: true) }
+        pill.translatesAutoresizingMaskIntoConstraints = false
+        surface.addSubview(pill)
+        NSLayoutConstraint.activate([
+            pill.leadingAnchor.constraint(equalTo: surface.leadingAnchor), pill.trailingAnchor.constraint(equalTo: surface.trailingAnchor),
+            pill.topAnchor.constraint(equalTo: surface.topAnchor)
+        ])
+        if topBandOnly {
+            pill.heightAnchor.constraint(equalToConstant: layout?.topBandHeight ?? 0).isActive = true
+        } else { pill.bottomAnchor.constraint(equalTo: surface.bottomAnchor).isActive = true }
+        let icon = NSImageView(image: NSImage(systemSymbolName: "circle.lefthalf.filled", accessibilityDescription: "QNotch")!)
+        icon.contentTintColor = .white
+        icon.widthAnchor.constraint(equalToConstant: 16).isActive = true
+        icon.heightAnchor.constraint(equalToConstant: 16).isActive = true
+        let segments = row(registries.segments.items.map { $0.makeView() })
+        if let layout, let wings = layout.wings(expanded: state.expanded) {
+            let window = layout.surface(expanded: state.expanded)
+            for (view, area, id) in [(icon as NSView, wings.left, "notch-left-wing"), (segments as NSView, wings.right, "notch-right-wing")] {
+                view.identifier = NSUserInterfaceItemIdentifier(id)
+                view.translatesAutoresizingMaskIntoConstraints = false
+                pill.addSubview(view)
+                NSLayoutConstraint.activate([
+                    view.centerXAnchor.constraint(equalTo: surface.leadingAnchor, constant: area.midX - window.minX),
+                    view.centerYAnchor.constraint(equalTo: surface.topAnchor, constant: area.height / 2),
+                    view.widthAnchor.constraint(lessThanOrEqualToConstant: max(0, area.width - 16))
+                ])
+            }
+        } else {
+            let stack = row([icon, label("QNotch", size: 12, color: .white), segments])
+            stack.translatesAutoresizingMaskIntoConstraints = false
+            pill.addSubview(stack)
+            NSLayoutConstraint.activate([stack.centerXAnchor.constraint(equalTo: pill.centerXAnchor), stack.centerYAnchor.constraint(equalTo: pill.centerYAnchor)])
+        }
+        pill.setAccessibilityElement(true)
+        pill.setAccessibilityLabel("QNotch. Click to open panel, or use the menu-bar item.")
+        pill.setAccessibilityRole(.button)
     }
 
     @objc private func tabChanged() {
@@ -355,7 +396,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate, NSSearchFi
     }
 
     private func systemDidWake() {
-        resolveDisplay(); reposition()
+        resolveDisplay(); rebuildSurface()
         modules.forEach { $0.systemDidWake() }
     }
 

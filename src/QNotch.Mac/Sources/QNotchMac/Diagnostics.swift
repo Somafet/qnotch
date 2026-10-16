@@ -8,11 +8,13 @@ enum NativeSmokeTest {
             do {
                 try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
                 guard let layout = shell.layout else { throw Failure("No display available for native UI validation") }
-                let placement = "camera_housing=\(layout.hasCameraHousing)\nsafe_top_points=\(layout.safeTop)\ndisplay_frame=\(layout.frame)\ncollapsed_frame=\(layout.surface(expanded: false))\nexpanded_frame=\(layout.surface(expanded: true))\n"
+                let placement = "camera_housing=\(layout.hasCameraHousing)\nintegrated=\(layout.integratesCameraHousing)\nsafe_top_points=\(layout.safeTop)\ndisplay_frame=\(layout.frame)\ncollapsed_frame=\(layout.surface(expanded: false))\nexpanded_frame=\(layout.surface(expanded: true))\npanel_body=\(layout.panelBody)\n"
                 try Data(placement.utf8).write(to: output.appendingPathComponent("placement.txt"))
                 shell.updateGeneral { $0.reduceMotion = true }
+                try checkPlacement(shell: shell, layout: layout)
                 try shell.snapshot(to: output.appendingPathComponent("pill.png"))
                 shell.open(keyboard: false)
+                try checkPlacement(shell: shell, layout: layout)
                 guard shell.state.presentation == .hover, !shell.panel.isKeyWindow, !shell.panel.canBecomeKey else {
                     throw Failure("Hover took keyboard focus")
                 }
@@ -23,6 +25,8 @@ enum NativeSmokeTest {
                 guard let timer = shell.modules.first as? TimerModule else { throw Failure("Timer module was not constructed") }
                 timer.startShortTimer(seconds: 1)
                 shell.close(restoreFocus: false)
+                try shell.snapshot(to: output.appendingPathComponent("pill-running.png"))
+                try checkPlacement(shell: shell, layout: layout)
                 guard !shell.panel.canBecomeKey else { throw Failure("Collapsed panel accepts keyboard") }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) {
                     do {
@@ -42,7 +46,7 @@ enum NativeSmokeTest {
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                             do {
                                 try shell.snapshotSettings(to: output.appendingPathComponent("settings.png"))
-                                let report = "Native UI smoke: hover preserves focus; explicit summon grants keyboard; Escape collapses; timer completes hidden with one wake; disabled module not constructed; interactive controls named.\nstartup_seconds=\(ready)\ndone\n"
+                                let report = "Native UI smoke: actual window placement verified; camera center reserved; hover preserves focus; explicit summon grants keyboard; Escape collapses; timer completes hidden with one wake; disabled module not constructed; interactive controls named.\nstartup_seconds=\(ready)\ndone\n"
                                 try Data(report.utf8).write(to: output.appendingPathComponent("smoke.txt"))
                                 NSApp.terminate(nil)
                             } catch { fail(error, output: output) }
@@ -51,6 +55,26 @@ enum NativeSmokeTest {
                 }
             } catch { fail(error, output: output) }
         }
+    }
+    private static func checkPlacement(shell: ShellController, layout: DisplayLayout) throws {
+        let expected = layout.surface(expanded: shell.state.expanded)
+        guard abs(shell.panel.frame.maxY - expected.maxY) <= 0.5,
+              abs(shell.panel.frame.minX - expected.minX) <= 0.5 else { throw Failure("AppKit displaced the surface from the bezel: actual=\(shell.panel.frame), expected=\(expected)") }
+        guard let housing = layout.cameraHousing, let wings = layout.wings(expanded: shell.state.expanded) else { return }
+        guard shell.panel.level == .statusBar else { throw Failure("Integrated surface is below the menu bar level") }
+        func walk(_ view: NSView) throws {
+            let global = shell.panel.convertToScreen(view.convert(view.bounds, to: nil))
+            let id = view.identifier?.rawValue
+            if id == "notch-panel-body", global.maxY > housing.minY + 0.5 { throw Failure("Panel controls overlap the camera band") }
+            if (id == "notch-left-wing" || id == "notch-right-wing"), global.width > 0, global.height > 0 {
+                let clearArea = id == "notch-left-wing" ? wings.left : wings.right
+                guard clearArea.insetBy(dx: -0.5, dy: -0.5).contains(global), !global.intersects(housing) else {
+                    throw Failure("Status content overlaps the camera or bezel: \(id ?? "") \(global)")
+                }
+            }
+            for child in view.subviews { try walk(child) }
+        }
+        if let view = shell.panel.contentView { try walk(view) }
     }
     private struct Failure: Error, CustomStringConvertible {
         let description: String

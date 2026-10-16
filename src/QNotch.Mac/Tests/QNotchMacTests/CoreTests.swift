@@ -68,9 +68,29 @@ final class CoreTests: XCTestCase {
                                    safeTop: 37, cameraGap: CGRect(x: 760, y: 1145, width: 192, height: 37))
         for expanded in [false, true] {
             let surface = layout.surface(expanded: expanded)
-            XCTAssertEqual(surface.maxY, 1145)
+            XCTAssertEqual(surface.maxY, layout.frame.maxY, "The surface must join the physical bezel, not sit below the notch")
             XCTAssertEqual(surface.midX, 856)
             XCTAssertTrue(layout.frame.contains(surface))
+            let wings = layout.wings(expanded: expanded)!
+            XCTAssertEqual(wings.left.maxX, layout.cameraHousing!.minX)
+            XCTAssertEqual(wings.right.minX, layout.cameraHousing!.maxX)
+            XCTAssertFalse(wings.left.intersects(layout.cameraHousing!))
+            XCTAssertFalse(wings.right.intersects(layout.cameraHousing!))
+            XCTAssertEqual(wings.left.maxY, layout.frame.maxY)
+            XCTAssertTrue(surface.contains(wings.left))
+            XCTAssertTrue(surface.contains(wings.right))
+        }
+        XCTAssertEqual(layout.panelBody.maxY, layout.cameraHousing!.minY)
+    }
+
+    func testUnknownCameraGeometryFallsBackWithoutCoveringControls() {
+        let frame = CGRect(x: 0, y: 0, width: 1512, height: 982)
+        for gap in [nil, CGRect(x: -100, y: 945, width: 200, height: 37)] as [CGRect?] {
+            let layout = DisplayLayout(frame: frame, visibleFrame: frame, safeTop: 37, cameraGap: gap)
+            XCTAssertFalse(layout.integratesCameraHousing)
+            XCTAssertNil(layout.wings(expanded: false))
+            XCTAssertEqual(layout.surface(expanded: false).maxY, 945)
+            XCTAssertEqual(layout.panelBody.maxY, 945)
         }
     }
 
