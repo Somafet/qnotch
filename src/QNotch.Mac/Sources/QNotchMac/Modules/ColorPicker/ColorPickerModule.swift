@@ -70,7 +70,8 @@ final class ColorPickerModule: NotchModule {
 private final class ColorPickerCardView: NSView {
     private weak var module: ColorPickerModule?
     private let swatches = NSStackView()
-    private let status = label("", size: 11, color: Palette.textTertiary)
+    // One line: Home rows are a fixed 148 pt, so a wrapping hint would push the card past its frame.
+    private let status = line("", size: 11, color: Palette.textTertiary)
 
     init(module: ColorPickerModule) {
         self.module = module
@@ -78,10 +79,12 @@ private final class ColorPickerCardView: NSView {
         let pick = HoverButton("Pick a color", symbol: "eyedropper", style: .plain, symbolSize: 13) { [weak module] in module?.pick() }
         pick.toolTip = "Click to pick, Esc to cancel. The hex code is copied."
         pick.setAccessibilityIdentifier("colorpicker-pick")
+        pick.setContentCompressionResistancePriority(.required, for: .horizontal)
         swatches.orientation = .horizontal
         swatches.spacing = 6
-        status.preferredMaxLayoutWidth = 180
-        let stack = column([pick, swatches, status], spacing: 12)
+        swatches.setClippingResistancePriority(.defaultLow, for: .horizontal)
+        status.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        let stack = column([pick, swatches, status], spacing: 8)
         embed(stack, in: self, inset: 0)
         update()
     }
@@ -98,7 +101,7 @@ private final class ColorPickerCardView: NSView {
             status.stringValue = "Copied \(copied)"
             status.textColor = Palette.textSecondary
         } else {
-            status.stringValue = module.recent.isEmpty ? "Picked colors show up here. Click one to copy it again." : "Click a swatch to copy it again."
+            status.stringValue = module.recent.isEmpty ? "Picked colors show up here." : "Click a swatch to copy it."
             status.textColor = Palette.textTertiary
         }
     }
