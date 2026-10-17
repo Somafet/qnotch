@@ -1,0 +1,43 @@
+{
+  "app_draw_callbacks_delta" : 0,
+  "app_version" : "0.1.0",
+  "architecture" : "arm64",
+  "cpu_percent_one_core" : 0.00019106876943408149,
+  "enabled_modules" : [
+    "stats",
+    "timer",
+    "volume",
+    "note",
+    "colorpicker",
+    "capture"
+  ],
+  "hardware_model" : "Mac14,2",
+  "interrupt_wakeups_delta" : 7,
+  "interval_seconds" : 31.49965333333239,
+  "launch_method" : "mach_absolute_time minus ri_proc_start_abstime; panel ordered front, before compositor presentation",
+  "method" : "proc_pid_rusage RUSAGE_INFO_V2; app draw counters; 30-second intervals after a warmup",
+  "os" : "Version 26.3 (Build 25D125)",
+  "panel_expanded_at_end" : false,
+  "phys_footprint_bytes_end" : 10142416,
+  "physical_memory_bytes" : 8589934592,
+  "platform" : "macOS",
+  "process_start_to_panel_ordered_seconds" : 0.6364720416666666,
+  "resident_bytes_end" : 76840960,
+  "resident_bytes_start" : 77053952,
+  "source_dirty" : true,
+  "source_revision" : "90adfc162778a69429bcf4d6331c299ccea0d558",
+  "state" : "collapsed, all modules enabled, nothing active",
+  "stats_wings_interval" : {
+    "app_draw_callbacks_delta" : 0,
+    "cpu_percent_one_core" : 0.0011021619811334199,
+    "interrupt_wakeups_delta" : 18,
+    "interval_seconds" : 31.499725624991697,
+    "panel_expanded_at_end" : false,
+    "phys_footprint_bytes_end" : 10502864,
+    "resident_bytes_end" : 77889536,
+    "resident_bytes_start" : 77955072,
+    "state" : "collapsed, default System stats wings (CPU, memory)",
+    "surface_rebuilds_delta" : 0
+  },
+  "surface_rebuilds_delta" : 0
+}

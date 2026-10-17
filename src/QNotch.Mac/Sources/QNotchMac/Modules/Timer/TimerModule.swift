@@ -26,6 +26,7 @@ final class TimerModule: NotchModule {
         preferences = context.settings.load("timer", default: TimerSettings())
         preferences.minutes = min(180, max(1, preferences.minutes))
         countdown = Countdown(duration: TimeInterval(preferences.minutes * 60))
+        context.sounds.add("timer.done", title: "Timer is up", hint: "A countdown reached zero.", defaultName: "Glass", order: 30)
         let registry = context.registries
         registry.cards.register(ViewContribution(id: "timer", title: "Timer", order: 26, symbol: "timer") { [unowned self] in
             self.track(TimerCardView(module: self))
@@ -104,7 +105,15 @@ final class TimerModule: NotchModule {
         let now = Date()
         if countdown.refresh(at: now) {
             completionUnseen = !visible
-            if preferences.playSound { (NSSound(named: "Glass") ?? NSSound(named: "Ping"))?.play() }
+            if preferences.playSound { context.sounds.play("timer.done") }
+            let minutes = Int(countdown.duration / 60)
+            if countdown.duration.truncatingRemainder(dividingBy: 60) == 0 {
+                countdown.lineUp(duration: TimeInterval(Countdown.nextBlock(after: minutes) * 60))
+            }
+            if preferences.openWhenDone, !visible {
+                // Opening makes the card visible, which refreshes the views and the wings.
+                DispatchQueue.main.async { [weak self] in self?.context.shell?.tryOpenPanel(tab: "home", linger: 5) }
+            }
         }
         if visible {
             for case let view as TimerDisplay in displays.allObjects { view.update(countdown: countdown, now: now, animated: animated || countdown.isRunning) }
@@ -157,10 +166,16 @@ final class TimerModule: NotchModule {
         let length = ActionPopUp("Default length", items: titles, selected: values.firstIndex(of: preferences.minutes) ?? 0) { [weak self] index in
             self?.choose(minutes: values[index])
         }
+        let open = ActionSwitch("Open the panel when time is up", value: preferences.openWhenDone) { [weak self] value in
+            guard let self else { return }
+            self.preferences.openWhenDone = value
+            self.context.settings.save("timer", self.preferences)
+        }
         return settingsGroup([
-            settingsRow("Play a sound", detail: "A short chime when the countdown finishes. QNotch never takes focus.", control: sound, width: width),
+            settingsRow("Open the panel when time is up", detail: "Shows Home for five seconds without taking the keyboard. Off: the notch shows Done until you open the panel.", control: open, width: width),
+            settingsRow("Play a sound", detail: "When the countdown finishes. Pick the sound in Settings, Sounds. QNotch never takes focus.", control: sound, width: width),
             settingsRow("Length", detail: "Also set from the presets in the panel, or scroll over the Home card.", control: length, width: width)
-        ], footer: "The length is saved on this Mac. A running timer keeps going through sleep and stops when QNotch quits.", width: width)
+        ], footer: "After a 25 or 50 minute block, a 5 minute break is lined up; after a break, 25 minutes. The length is saved on this Mac. A running timer keeps going through sleep and stops when QNotch quits.", width: width)
     }
 
     func status(at now: Date) -> String {
@@ -171,7 +186,7 @@ final class TimerModule: NotchModule {
 // MARK: - Home card
 
 private final class TimerCardView: NSView, TimerDisplay {
-    private let time = line("25:00", size: 34, weight: .semibold, color: Palette.textPrimary)
+    private let time = line("25:00", size: 30, weight: .semibold, color: Palette.textPrimary)
     private let status = line("Ready", size: 12, color: Palette.textTertiary)
     private let start: HoverButton
     private let resetButton: HoverButton
@@ -186,7 +201,7 @@ private final class TimerCardView: NSView, TimerDisplay {
         resetButton = HoverButton(symbol: "arrow.counterclockwise", style: .icon, symbolSize: 14, label: "Reset countdown") { [weak module] in module?.reset() }
         presets = ChipPicker(values: TimerModule.presets, format: { "\($0)" }, label: { "\($0) minutes" }) { [weak module] in module?.choose(minutes: $0) }
         super.init(frame: .zero)
-        time.font = .rounded(34, weight: .semibold, monospacedDigits: true)
+        time.font = .rounded(30, weight: .semibold, monospacedDigits: true)
         time.setAccessibilityIdentifier("timer-remaining")
         start.setAccessibilityIdentifier("timer-toggle")
         start.tint = Palette.textPrimary

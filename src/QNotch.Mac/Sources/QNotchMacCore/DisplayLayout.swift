@@ -6,12 +6,15 @@ public struct DisplayLayout {
     /// Concave top corners that let the surface flow out of the bezel beside the camera housing.
     public static let flare: CGFloat = 6
     /// Expanded panel body, below the camera band.
-    public static let panelSize = CGSize(width: 540, height: 232)
+    public static let panelSize = CGSize(width: 700, height: 376)
 
     public let frame: CGRect
     public let visibleFrame: CGRect
     public let safeTop: CGFloat
     public let cameraGap: CGRect?
+    /// Sideways offset of a floating pill from the display's center (Windows NotchNudge). A notch
+    /// that wraps the camera housing never moves.
+    public var offset: CGFloat = 0
 
     public init(frame: CGRect, visibleFrame: CGRect, safeTop: CGFloat, cameraGap: CGRect?) {
         self.frame = frame
@@ -48,7 +51,7 @@ public struct DisplayLayout {
         let width = min(expanded ? max(Self.panelSize.width, collapsed.width) : collapsed.width, available.width)
         let wantedHeight = expanded ? Self.panelSize.height + topBandHeight : collapsed.height
         let height = min(wantedHeight, max(32, top - available.minY))
-        let center = cameraHousing?.midX ?? frame.midX
+        let center = cameraHousing?.midX ?? frame.midX + offset
         let x = min(max(center - width / 2, available.minX), available.maxX - width)
         return CGRect(x: x, y: max(available.minY, top - height), width: width, height: height)
     }
@@ -69,5 +72,16 @@ public struct DisplayLayout {
             CGRect(x: left, y: housing.minY, width: max(0, housing.minX - left), height: safeTop),
             CGRect(x: housing.maxX, y: housing.minY, width: max(0, right - housing.maxX), height: safeTop)
         )
+    }
+}
+
+extension DisplayLayout {
+    /// Where a released pill settles: the center or flush against an edge when within 56 points.
+    public func snapped(offset: CGFloat, width: CGFloat) -> CGFloat {
+        let limit = max(0, (frame.width - 16 - width) / 2)
+        let clamped = min(limit, max(-limit, offset))
+        if abs(clamped) < 56 { return 0 }
+        if limit - abs(clamped) < 56 { return clamped < 0 ? -limit : limit }
+        return clamped
     }
 }

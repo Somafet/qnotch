@@ -1,8 +1,11 @@
 import AppKit
+import QNotchMacCore
+import ServiceManagement
+import UniformTypeIdentifiers
 
 /// Sidebar settings window, laid out like the Windows one (navigation left, titled pages of
 /// label/detail/control rows right) and styled like System Settings. Follows the system appearance.
-final class SettingsController: NSObject {
+final class SettingsController: NSObject, NSTextFieldDelegate {
     static let contentWidth: CGFloat = 460
     private static let sidebarWidth: CGFloat = 210
     private static let pagePadding: CGFloat = 30
@@ -42,11 +45,20 @@ final class SettingsController: NSObject {
         window.center()
     }
 
+    /// App pages before the module sections, with extra search words (Search, Settings source).
+    static let appPages: [(id: String, title: String, symbol: String, tint: NSColor, keywords: String)] = [
+        ("general", "General", "gearshape.fill", .systemGray, "display monitor motion animation preferences"),
+        ("features", "Features", "square.grid.2x2.fill", .systemBlue, "modules enable disable turn on off"),
+        ("hotkeys", "Hotkeys", "command", .systemIndigo, "shortcuts keyboard keys"),
+        ("sounds", "Sounds", "speaker.wave.2.fill", .systemPink, "audio chime alert"),
+        ("appearance", "Appearance", "paintbrush.fill", .systemPurple, "accent color name photo picture cards motion animation"),
+        ("gamemode", "Game mode", "gamecontroller.fill", .systemGreen, "games full screen fullscreen focus")
+    ]
+
     private var pages: [Page] {
-        var pages = [
-            Page(id: "general", title: "General", symbol: "gearshape.fill", tint: .systemGray) { [unowned self] in self.generalPage() },
-            Page(id: "features", title: "Features", symbol: "square.grid.2x2.fill", tint: .systemBlue) { [unowned self] in self.featuresPage() }
-        ]
+        var pages = Self.appPages.map { info in
+            Page(id: info.id, title: info.title, symbol: info.symbol, tint: info.tint) { [unowned self] in self.appPage(info.id) }
+        }
         for section in shell.registries.settingsSections.items {
             pages.append(Page(id: "module." + section.id, title: section.title, symbol: section.symbol, tint: section.tint) {
                 [unowned self] in self.page(section.title, [section.makeView()])
@@ -56,12 +68,16 @@ final class SettingsController: NSObject {
         return pages
     }
 
-    func show() {
+    func show(page: String? = nil) {
         rebuildNavigation()
-        select(selected, animated: false)
+        select(page.flatMap { id in pages.contains { $0.id == id } ? id : nil } ?? selected, animated: false)
         NSApp.activate(ignoringOtherApps: true)
         window.makeKeyAndOrderFront(nil)
     }
+
+    /// A shortcut changed (recorded, taken by another app, or a module was turned off).
+    func refreshShortcuts() { if window.isVisible, selected == "hotkeys", !recording { select("hotkeys", animated: false) } }
+    private var recording: Bool { window.firstResponder is ShortcutRecorder }
 
     func refreshDisplays() { if window.isVisible, selected == "general" { select("general", animated: false) } }
 
@@ -125,7 +141,7 @@ final class SettingsController: NSObject {
             rows[page.id] = item
             // Gaps separate app pages, module pages and About, as in System Settings.
             let next = index + 1 < pages.count ? pages[index + 1].id : nil
-            if page.id == "features" || next == "about" { navigation.setCustomSpacing(14, after: item) }
+            if page.id == Self.appPages.last?.id || next == "about" { navigation.setCustomSpacing(14, after: item) }
         }
     }
 
@@ -181,36 +197,383 @@ final class SettingsController: NSObject {
             self?.shell.updateGeneral { $0.displayID = ids[index] }
             self?.refreshIssue()
         }
-        let motion = ActionSwitch("Reduce motion", value: shell.general.reduceMotion) { [weak self] value in
-            self?.shell.updateGeneral { $0.reduceMotion = value }
+        let hover = SettingsSlider("Hover delay", value: shell.general.hoverDelayMs, range: GeneralSettings.hoverRange, step: 10) { [weak self] value in
+            self?.shell.updateGeneral { $0.hoverDelayMs = value }
         }
+        let leave = SettingsSlider("Close delay", value: shell.general.closeDelayMs, range: GeneralSettings.closeRange, step: 50) { [weak self] value in
+            self?.shell.updateGeneral { $0.closeDelayMs = value }
+        }
+        let pin = ActionSwitch("Keep panel open", value: shell.general.pinned) { [weak self] _ in self?.shell.togglePin() }
         return page("General", [
             banner(),
             settingsGroup([
                 settingsRow("Display", detail: "Where the notch lives. If the chosen display is disconnected, QNotch moves to the main display.", control: picker, width: width)
             ], width: width),
             settingsGroup([
-                settingsRow("Reduce motion", detail: "Opens, closes and switches tabs without animation. The macOS Reduce Motion setting is always honored.", control: motion, width: width)
-            ], width: width)
+                settingsRow("Hover delay", detail: "How long the pointer rests on the notch before the panel opens.", control: hover, width: width),
+                settingsRow("Close delay", detail: "How long after the pointer leaves before the panel closes.", control: leave, width: width),
+                settingsRow("Keep panel open", detail: "The panel stays open until you close it with Escape, the pin, or the toggle hotkey. Also the pin in the panel header.", control: pin, width: width)
+            ], header: "Panel", width: width),
+            settingsGroup([loginRow(width: width)], width: width),
+            setupGroup(width: width)
         ])
+    }
+
+    // MARK: Setup codes
+
+    private var setupSnapshot: SetupCode.Snapshot {
+        let store = shell.store
+        return SetupCode.Snapshot(general: shell.general, gameMode: shell.gameMode.settings,
+                                  timer: store.load("timer", default: TimerSettings()), weather: store.load("weather", default: WeatherSettings()),
+                                  notifications: store.load("notifications", default: NotificationSettings()),
+                                  ai: store.load("ai", default: AiSettings()), agents: store.load("agents", default: AgentsSettings()))
+    }
+    private var setupPlan: SetupCode.Plan?
+
+    private func setupGroup(width: CGFloat) -> NSView {
+        let note = label("", size: 11, color: .secondaryLabelColor)
+        note.preferredMaxLayoutWidth = width - 30
+        let copy = actionButton("Copy Code") { [weak self, weak note] in
+            guard let self else { return }
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(SetupCode.export(self.setupSnapshot), forType: .string)
+            note?.stringValue = "Copied. Paste it into QNotch on another Mac or PC."
+        }
+        let field = NSTextField()
+        field.placeholderString = "qnotch-setup-1:…"
+        field.widthAnchor.constraint(equalToConstant: 200).isActive = true
+        field.setAccessibilityLabel("Setup code")
+        let apply = actionButton("Apply and Restart") { [weak self] in self?.applySetup() }
+        apply.isEnabled = false
+        let check = actionButton("Check") { [weak self, weak field, weak note, weak apply] in
+            guard let self, let field else { return }
+            do {
+                let plan = try SetupCode.read(field.stringValue, current: self.setupSnapshot, modules: ModuleList.all.map(\.id))
+                self.setupPlan = plan
+                let on: [String] = plan.turnsOn.compactMap { id in ModuleList.all.first { $0.id == id }?.title }
+                let changes: String = "Changes \(plan.titles.joined(separator: ", "))."
+                let extra: String = on.isEmpty ? "" : " Turns on \(on.joined(separator: ", "))."
+                note?.stringValue = changes + extra
+                apply?.isEnabled = true
+            } catch {
+                self.setupPlan = nil
+                note?.stringValue = (error as? SetupCode.Failure)?.message ?? "This code could not be read."
+                apply?.isEnabled = false
+            }
+        }
+        let box = NSView()
+        embed(note, in: box, inset: NSEdgeInsets(top: 0, left: 14, bottom: 8, right: 14), fill: true)
+        return settingsGroup([
+            settingsRow("Share your setup", detail: "A code with your layout, features and preferences (no accounts, tokens, history, display or hotkeys). It also works with QNotch for Windows.", control: copy, width: width),
+            settingsRow("Apply a setup code", control: row([field, check], spacing: 6), width: width),
+            box,
+            settingsRow("", control: apply, width: width)
+        ], width: width)
+    }
+
+    private func applySetup() {
+        guard let plan = setupPlan else { return }
+        let store = shell.store, s = plan.result
+        store.save("general", s.general)
+        store.save("gamemode", s.gameMode)
+        store.save("timer", s.timer)
+        store.save("weather", s.weather)
+        store.save("notifications", s.notifications)
+        store.save("ai", s.ai)
+        store.save("agents", s.agents)
+        Self.relaunch()
+    }
+
+    /// Starts a new copy once this one has quit (one instance per data folder). The helper waits
+    /// for this process to exit, which releases instance.lock, rather than for a fixed time;
+    /// a slow teardown must not leave the new copy exiting as "already running".
+    static func relaunch() {
+        let bundle = Bundle.main.bundlePath
+        var command = "i=0; while kill -0 \"$1\" 2>/dev/null && [ $i -lt 300 ]; do sleep 0.1; i=$((i+1)); done; /usr/bin/open -n \"$0\""
+        var arguments = [bundle, String(ProcessInfo.processInfo.processIdentifier)]
+        if let directory = ProcessInfo.processInfo.environment["QNOTCH_MAC_DATA_DIR"] ?? {
+            let args = ProcessInfo.processInfo.arguments
+            return args.firstIndex(of: "--data-dir").flatMap { $0 + 1 < args.count ? args[$0 + 1] : nil }
+        }() {
+            command += " --args --data-dir \"$2\""
+            arguments.append(directory)
+        }
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/bin/sh")
+        process.arguments = ["-c", command] + arguments
+        try? process.run()
+        NSApp.terminate(nil)
+    }
+
+    private func loginRow(width: CGFloat) -> NSView {
+        let service = SMAppService.mainApp
+        let status = service.status
+        let toggle = ActionSwitch("Open at login", value: status == .enabled || status == .requiresApproval) { [weak self] value in
+            do {
+                if value { try service.register() } else { try service.unregister() }
+            } catch {
+                let alert = NSAlert()
+                alert.messageText = value ? "QNotch could not be added to your login items." : "QNotch could not be removed from your login items."
+                alert.informativeText = "You can manage login items in System Settings, General, Login Items."
+                if let window = self?.window { alert.beginSheetModal(for: window) }
+            }
+            self?.select("general", animated: false)
+        }
+        var detail = "Starts QNotch when you log in. macOS lists it in System Settings, General, Login Items."
+        var control: NSView = toggle
+        if status == .requiresApproval {
+            detail = "Waiting for your approval in System Settings, General, Login Items."
+            let open = NSButton(title: "Open Login Items", target: nil, action: nil)
+            open.bezelStyle = .rounded
+            open.target = self
+            open.action = #selector(openLoginItems)
+            control = row([open, toggle], spacing: 8)
+        }
+        return settingsRow("Open at login", detail: detail, control: control, width: width)
+    }
+
+    @objc private func openLoginItems() { SMAppService.openSystemSettingsLoginItems() }
+
+    private func appearancePage() -> NSView {
+        let width = Self.contentWidth
+        let accent = AccentPicker(selected: shell.general.accent) { [weak self] value in
+            self?.shell.updateGeneral { $0.accent = value }
+            self?.select("appearance", animated: false)
+        }
+        let motion = ActionSwitch("Reduce motion", value: shell.general.reduceMotion) { [weak self] value in
+            self?.shell.updateGeneral { $0.reduceMotion = value }
+        }
+        let name = NSTextField(string: shell.general.profileName ?? "")
+        name.placeholderString = GeneralSettings.displayName(chosen: nil, fullUserName: NSFullUserName())
+        name.setAccessibilityLabel("Display name")
+        name.widthAnchor.constraint(equalToConstant: 160).isActive = true
+        name.target = self
+        name.action = #selector(nameChanged(_:))
+        name.delegate = self
+        let choose = NSButton(title: "Choose…", target: self, action: #selector(chooseProfileImage))
+        choose.bezelStyle = .rounded
+        let remove = NSButton(title: "Remove", target: self, action: #selector(removeProfileImage))
+        remove.bezelStyle = .rounded
+        remove.isHidden = shell.profile.image == nil
+        var photoControls: [NSView] = [remove, choose]
+        if let image = shell.profile.image {
+            let preview = NSImageView(image: image)
+            preview.wantsLayer = true
+            preview.layer?.cornerRadius = 14
+            preview.layer?.masksToBounds = true
+            size(preview, width: 28, height: 28)
+            photoControls.insert(preview, at: 0)
+        }
+        var cards: [NSView] = shell.registries.cards.items.map { card in
+            let toggle = ActionSwitch(card.title, value: shell.general.isCardVisible(card.id)) { [weak self] value in
+                self?.shell.updateGeneral { $0.setCardVisible(card.id, value) }
+            }
+            return settingsRow(card.title, control: toggle, width: width)
+        }
+        if cards.isEmpty { cards = [settingsRow("No cards", detail: "Turn on features to add their cards to Home.", width: width)] }
+        return page("Appearance", [
+            settingsGroup([
+                settingsRow("Accent color", detail: "Buttons, progress and highlights in the notch. Automatic follows the macOS accent color.", control: accent, width: width),
+                settingsRow("Reduce motion", detail: "Opens, closes and switches tabs without animation. The macOS Reduce Motion setting is always honored.", control: motion, width: width)
+            ], footer: "The notch is always dark, like the hardware around it. Settings follows the macOS appearance.", width: width),
+            settingsGroup([
+                settingsRow("Display name", detail: "Shown in the panel header. Empty uses your account's first name.", control: name, width: width),
+                settingsRow("Profile picture", detail: "A picture for the panel header. QNotch keeps a small copy.", control: row(photoControls, spacing: 8), width: width)
+            ], header: "Profile", width: width),
+            settingsGroup(cards, header: "Home cards", footer: "Hidden cards keep their place and come back where they were.", width: width)
+        ])
+    }
+
+    @objc private func nameChanged(_ sender: NSTextField) {
+        let value = sender.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        let next: String? = value.isEmpty ? nil : String(value.prefix(40))
+        guard next != shell.general.profileName else { return }
+        shell.updateGeneral { $0.profileName = next }
+    }
+
+    @objc private func chooseProfileImage() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.png, .jpeg, .heic, .tiff, .bmp, .webP].compactMap { $0 }
+        panel.allowsMultipleSelection = false
+        panel.message = "Choose a profile picture"
+        panel.beginSheetModal(for: window) { [weak self] response in
+            guard let self, response == .OK, let url = panel.url else { return }
+            if !self.shell.setProfileImage(from: url) {
+                let alert = NSAlert()
+                alert.messageText = "That picture could not be used."
+                alert.informativeText = "Choose a PNG, JPEG, HEIC or similar image."
+                alert.beginSheetModal(for: self.window)
+            }
+            self.select("appearance", animated: false)
+        }
+    }
+
+    @objc private func removeProfileImage() {
+        _ = shell.setProfileImage(from: nil)
+        select("appearance", animated: false)
+    }
+
+    private func appPage(_ id: String) -> NSView {
+        switch id {
+        case "features": return featuresPage()
+        case "hotkeys": return hotkeysPage()
+        case "sounds": return soundsPage()
+        case "appearance": return appearancePage()
+        case "gamemode": return gameModePage()
+        default: return generalPage()
+        }
     }
 
     private func featuresPage() -> NSView {
         let width = Self.contentWidth
-        let countdown = ActionSwitch("Countdown", value: shell.general.timerEnabled) { [weak self] value in
-            self?.shell.updateGeneral { $0.timerEnabled = value }
-            self?.rebuildNavigation()
-            self?.rows["features"]?.isSelected = true
+        let rows = ModuleList.all.map { info -> NSView in
+            let toggle = ActionSwitch(info.title, value: shell.general.isEnabled(info.id)) { [weak self] value in
+                self?.shell.updateGeneral { $0.setEnabled(info.id, value) }
+                self?.rebuildNavigation()
+                self?.rows["features"]?.isSelected = true
+            }
+            return featureRow(info.title, detail: info.detail, symbol: info.symbol, tint: info.tint, control: toggle, width: width)
         }
-        return page("Features", subtitle: "Turn modules on or off. A module that is off is not loaded and uses no resources.", [
-            settingsGroup([
-                featureRow("Countdown", detail: "Timer card on Home, a Timer tab, and the time left beside the notch.", symbol: "timer", tint: .systemOrange, control: countdown, width: width)
-            ], width: width),
-            settingsGroup([
-                featureRow("Not on Mac yet", detail: "Media, clipboard history, scheduled jobs and mic/camera attribution are available in QNotch for Windows.",
-                           symbol: "hourglass", tint: .systemGray, control: nil, width: width)
-            ], width: width)
+        return page("Features", subtitle: "Turn modules on or off. A module that is off is not loaded and uses no resources. Changes apply right away.", [
+            settingsGroup(rows, width: width)
         ])
+    }
+
+    private func hotkeysPage() -> NSView {
+        let width = Self.contentWidth
+        let rows = shell.shortcuts.items.map { shortcut -> NSView in
+            let recorder = ShortcutRecorder(registry: shell.shortcuts, id: shortcut.id)
+            recorder.finished = { [weak self] in self?.select("hotkeys", animated: false) }
+            let reset = HoverButton(symbol: "arrow.uturn.backward", style: .icon, symbolSize: 12, label: "Reset \(shortcut.title) to \(shortcut.defaultCombo?.display ?? "off")") { [weak self] in
+                self?.shell.shortcuts.reset(shortcut.id)
+                self?.select("hotkeys", animated: false)
+            }
+            reset.tint = .secondaryLabelColor
+            reset.isHidden = shortcut.combo == shortcut.defaultCombo
+            var detail = shortcut.hint
+            if let owner = shortcut.usedBy { detail += " Used by \(owner)." }
+            else if shortcut.taken { detail += " Taken by another app. Pick another shortcut." }
+            return settingsRow(shortcut.title, detail: detail, control: row([reset, recorder], spacing: 4), width: width)
+        }
+        return page("Hotkeys", subtitle: "Click a shortcut, then press the new keys. A shortcut needs ⌃, ⌥ or ⌘. Esc cancels; Delete turns it off.", [
+            settingsGroup(rows, footer: "Hotkeys work from any app without Accessibility access. If another app already uses a key, QNotch leaves it alone.", width: width)
+        ])
+    }
+
+    private func soundsPage() -> NSView {
+        let width = Self.contentWidth
+        let sounds = shell.sounds.items
+        guard !sounds.isEmpty else {
+            return page("Sounds", [settingsGroup([settingsRow("No sounds", detail: "Features that play sounds list them here when they are on.", width: width)], width: width)])
+        }
+        let names = SoundRegistry.systemNames
+        let rows = sounds.map { sound -> NSView in
+            let current = shell.sounds.choice(for: sound.id)
+            var titles = names
+            var values = names
+            if current.hasPrefix("/") { titles.append(SoundRegistry.title(of: current)); values.append(current) }
+            titles.append("Choose File…")
+            let popUp = ActionPopUp(sound.title, items: titles, selected: values.firstIndex(of: current) ?? names.firstIndex(of: sound.defaultName) ?? 0) { [weak self] index in
+                guard let self else { return }
+                if index < values.count {
+                    self.shell.sounds.choose(sound.id, values[index])
+                    self.shell.sounds.play(sound.id)
+                } else { self.chooseSoundFile(sound.id) }
+                self.select("sounds", animated: false)
+            }
+            let play = HoverButton(symbol: "play.fill", style: .icon, symbolSize: 11, label: "Play \(sound.title)") { [weak self] in self?.shell.sounds.play(sound.id) }
+            play.tint = .secondaryLabelColor
+            let reset = HoverButton(symbol: "arrow.uturn.backward", style: .icon, symbolSize: 12, label: "Reset \(sound.title) to \(sound.defaultName)") { [weak self] in
+                self?.shell.sounds.choose(sound.id, nil)
+                self?.select("sounds", animated: false)
+            }
+            reset.tint = .secondaryLabelColor
+            reset.isHidden = shell.sounds.isDefault(sound.id)
+            return settingsRow(sound.title, detail: sound.hint, control: row([reset, play, popUp], spacing: 2), width: width)
+        }
+        return page("Sounds", subtitle: "Pick a system sound or your own audio file. Turn a sound on or off on its feature's page.", [
+            settingsGroup(rows, footer: "Sounds follow the alert volume in System Settings, Sound.", width: width)
+        ])
+    }
+
+    func refreshGameMode() { if window.isVisible, selected == "gamemode" { select("gamemode", animated: false) } }
+
+    private func gameModePage() -> NSView {
+        let width = Self.contentWidth
+        let game = shell.gameMode!
+        let modes: [GameOverride] = [.auto, .on, .off]
+        let mode = ActionPopUp("Mode", items: ["Automatic", "On", "Off"], selected: modes.firstIndex(of: game.override) ?? 0) { [weak self] index in
+            self?.shell.gameMode.override = modes[index]
+        }
+        let auto = ActionSwitch("Automatic detection", value: game.settings.autoDetect) { value in game.set { $0.autoDetect = value } }
+        let any = ActionSwitch("Any full-screen app", value: game.settings.anyFullScreen) { value in game.set { $0.anyFullScreen = value } }
+        let opacity = NSSlider(value: Double(game.settings.opacity), minValue: 30, maxValue: 100, target: nil, action: nil)
+        opacity.controlSize = .small
+        opacity.widthAnchor.constraint(equalToConstant: 140).isActive = true
+        opacity.onAction { [weak opacity] in
+            guard let opacity, NSApp.currentEvent?.type != .leftMouseDragged else { return }
+            game.set { $0.opacity = Int(opacity.doubleValue.rounded()) }
+        }
+        opacity.isContinuous = true
+        opacity.setAccessibilityLabel("Opacity")
+        // One switch per feature that shows something beside the notch.
+        let owners = Array(Set(shell.registries.segments.items.compactMap { shell.registries.segments.owner(of: $0.id) }))
+        let features = ModuleList.all.filter { owners.contains($0.id) }
+        let segmentRows = features.map { info -> NSView in
+            let toggle = ActionSwitch(info.title, value: !game.settings.hiddenModules.contains(info.id)) { value in
+                game.set { settings in
+                    settings.hiddenModules.removeAll { $0 == info.id }
+                    if !value { settings.hiddenModules.append(info.id) }
+                }
+            }
+            return settingsRow(info.title, control: toggle, width: width)
+        }
+        func appList(_ title: String, _ key: WritableKeyPath<GameModeSettings, [String]>, detail: String) -> NSView {
+            let running = NSWorkspace.shared.runningApplications.filter { $0.activationPolicy == .regular && $0.bundleIdentifier != nil }
+                .sorted { ($0.localizedName ?? "") < ($1.localizedName ?? "") }
+            let add = ActionPopUp("Add an app", items: ["Add a running app…"] + running.map { $0.localizedName ?? $0.bundleIdentifier! }, selected: 0) { [weak self] index in
+                guard index > 0, let id = running[index - 1].bundleIdentifier else { return }
+                game.set { settings in
+                    settings.always.removeAll { $0 == id }; settings.never.removeAll { $0 == id }
+                    settings[keyPath: key].append(id)
+                }
+                self?.select("gamemode", animated: false)
+            }
+            var rows: [NSView] = [settingsRow(title, detail: detail, control: add, width: width)]
+            for id in game.settings[keyPath: key] {
+                let name = NSWorkspace.shared.urlForApplication(withBundleIdentifier: id).map { FileManager.default.displayName(atPath: $0.path).replacingOccurrences(of: ".app", with: "") } ?? id
+                let remove = ActionSwitch(name, value: true) { [weak self] _ in
+                    game.set { $0[keyPath: key].removeAll { $0 == id } }
+                    self?.select("gamemode", animated: false)
+                }
+                rows.append(settingsRow(name, detail: id, control: remove, width: width))
+            }
+            return settingsGroup(rows, width: width)
+        }
+        return page("Game mode", subtitle: "While a game or full-screen app is in front, the notch steps aside: it does not open, ignores the pointer and shows only a quiet status line.", [
+            settingsGroup([
+                settingsRow("Mode", detail: game.status + ". ⌃⌥G cycles it; also in the QNotch menu.", control: mode, width: width),
+                settingsRow("Automatic detection", detail: "A game (by its App Store category) with a window covering the whole display, checked when apps or Spaces change.", control: auto, width: width),
+                settingsRow("Any full-screen app", detail: "Also step aside for full-screen apps that are not games, as QNotch for Windows does. Off, so the notch keeps working in full-screen Spaces.", control: any, width: width),
+                settingsRow("Opacity", detail: "Of the status beside the notch while game mode is on.", control: opacity, width: width)
+            ], width: width),
+            settingsGroup(segmentRows.isEmpty ? [settingsRow("Nothing to show", width: width)] : segmentRows, header: "Show in game mode", width: width),
+            appList("Always use game mode", \.always, detail: "Even in a window. Add games that do not declare the games category."),
+            appList("Never use game mode", \.never, detail: "Never wins.")
+        ])
+    }
+
+    private func chooseSoundFile(_ id: String) {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = SoundRegistry.fileTypes.compactMap { UTType(filenameExtension: $0) }
+        panel.allowsMultipleSelection = false
+        panel.message = "Choose a sound"
+        panel.beginSheetModal(for: window) { [weak self] response in
+            guard response == .OK, let url = panel.url, let self else { return }
+            self.shell.sounds.choose(id, url.path)
+            self.shell.sounds.play(id)
+            self.select("sounds", animated: false)
+        }
     }
 
     private func aboutPage() -> NSView {
@@ -228,7 +591,7 @@ final class SettingsController: NSObject {
         let stack = column([
             identity,
             settingsGroup([
-                settingsRow("Automatic updates", detail: "Not available in development builds. This build makes no network requests.", control: unavailable, width: width)
+                settingsRow("Automatic updates", detail: "Not available in development builds: installing updates needs Developer ID signing.", control: unavailable, width: width)
             ], width: width),
             settingsGroup([
                 settingsRow("Hover the notch", detail: "Opens the panel without taking the keyboard.", width: width),
@@ -263,6 +626,10 @@ final class SettingsController: NSObject {
         return box
     }
 
+    func controlTextDidEndEditing(_ notification: Notification) {
+        if let field = notification.object as? NSTextField, field.accessibilityLabel() == "Display name" { nameChanged(field) }
+    }
+
     // MARK: Diagnostics
 
     /// Renders every page into `directory` as settings-<id>.png (and settings.png for General).
@@ -290,10 +657,6 @@ func iconTile(_ name: String, tint: NSColor, size side: CGFloat = 22) -> NSView 
     tile.addSubview(glyph)
     NSLayoutConstraint.activate([glyph.centerXAnchor.constraint(equalTo: tile.centerXAnchor), glyph.centerYAnchor.constraint(equalTo: tile.centerYAnchor)])
     return tile
-}
-
-private final class FlippedView: NSView {
-    override var isFlipped: Bool { true }
 }
 
 /// Sidebar item: tinted icon tile and title; accent fill when selected.
@@ -348,4 +711,100 @@ private final class NavRow: NSButton {
         text.font = .systemFont(ofSize: 13, weight: isSelected ? .medium : .regular)
         setAccessibilityValue(isSelected ? "selected" : nil)
     }
+}
+
+/// Slider with a live "120 ms" readout; saves when the drag ends (not on every pixel).
+private final class SettingsSlider: NSStackView {
+    private let slider: NSSlider
+    private let readout = NSTextField(labelWithString: "")
+    private let step: Int
+    private let changed: (Int) -> Void
+
+    init(_ title: String, value: Int, range: ClosedRange<Int>, step: Int, changed: @escaping (Int) -> Void) {
+        slider = NSSlider(value: Double(value), minValue: Double(range.lowerBound), maxValue: Double(range.upperBound), target: nil, action: nil)
+        self.step = step
+        self.changed = changed
+        super.init(frame: .zero)
+        orientation = .horizontal
+        spacing = 8
+        slider.isContinuous = true
+        slider.controlSize = .small
+        slider.target = self
+        slider.action = #selector(moved)
+        slider.setAccessibilityLabel(title)
+        slider.widthAnchor.constraint(equalToConstant: 120).isActive = true
+        readout.font = .monospacedDigitSystemFont(ofSize: 12, weight: .regular)
+        readout.textColor = .secondaryLabelColor
+        readout.alignment = .right
+        readout.widthAnchor.constraint(equalToConstant: 58).isActive = true
+        addArrangedSubview(slider)
+        addArrangedSubview(readout)
+        show(value)
+    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    private var snapped: Int { Int((slider.doubleValue / Double(step)).rounded()) * step }
+    private func show(_ value: Int) {
+        readout.stringValue = "\(value) ms"
+        slider.setAccessibilityValue("\(value) milliseconds")
+    }
+
+    @objc private func moved() {
+        show(snapped)
+        let event = NSApp.currentEvent?.type
+        if event != .leftMouseDragged { slider.doubleValue = Double(snapped); changed(snapped) }
+    }
+}
+
+/// "Automatic" plus the Windows accent swatches, as round buttons.
+private final class AccentPicker: NSStackView {
+    init(selected: String?, changed: @escaping (String?) -> Void) {
+        super.init(frame: .zero)
+        orientation = .horizontal
+        spacing = 6
+        let options: [(String?, NSColor, String)] = [(nil, .controlAccentColor, "Automatic")] +
+            GeneralSettings.accents.map { ($0, Palette.hex($0) ?? .systemBlue, $0) }
+        for (value, color, title) in options {
+            let button = AccentSwatch(color: color, multicolor: value == nil, selected: value == selected, label: title) { changed(value) }
+            addArrangedSubview(button)
+        }
+        setAccessibilityElement(true)
+        setAccessibilityRole(.radioGroup)
+        setAccessibilityLabel("Accent color")
+    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+}
+
+private final class AccentSwatch: NSButton {
+    private let handler: () -> Void
+    init(color: NSColor, multicolor: Bool, selected: Bool, label: String, action: @escaping () -> Void) {
+        handler = action
+        super.init(frame: .zero)
+        title = ""
+        isBordered = false
+        wantsLayer = true
+        size(self, width: 18, height: 18)
+        layer?.cornerRadius = 9
+        if multicolor {
+            let gradient = CAGradientLayer()
+            gradient.type = .conic
+            gradient.colors = [NSColor.systemRed, .systemOrange, .systemYellow, .systemGreen, .systemBlue, .systemPurple, .systemRed].map(\.cgColor)
+            gradient.startPoint = CGPoint(x: 0.5, y: 0.5)
+            gradient.endPoint = CGPoint(x: 0.5, y: 0)
+            gradient.frame = CGRect(x: 0, y: 0, width: 18, height: 18)
+            gradient.cornerRadius = 9
+            layer?.addSublayer(gradient)
+        } else {
+            layer?.backgroundColor = color.cgColor
+        }
+        layer?.borderWidth = selected ? 2 : 0.5
+        layer?.borderColor = selected ? NSColor.labelColor.withAlphaComponent(0.85).cgColor : NSColor.black.withAlphaComponent(0.15).cgColor
+        target = self
+        self.action = #selector(invoke)
+        toolTip = label
+        setAccessibilityLabel(label)
+        setAccessibilityValue(selected ? "selected" : nil)
+    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+    @objc private func invoke() { handler() }
 }
