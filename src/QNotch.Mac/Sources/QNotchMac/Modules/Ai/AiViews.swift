@@ -6,53 +6,189 @@ protocol AiDisplay: AnyObject { func reload() }
 
 private func usageColor(_ percent: Double) -> NSColor { percent >= 90 ? .systemRed : percent >= 75 ? .systemOrange : Palette.accent }
 
-/// One provider in compact form: name and plan, the first window's bar, a sub line.
-private func providerSummary(_ provider: AiModule.Provider, now: Date = Date()) -> NSView {
-    let name = line(provider.name, size: 12, weight: .semibold, color: Palette.textPrimary)
-    guard case .ok(let windows, let plan, _, _)? = provider.result, let first = windows.first else {
-        let reason: String
-        if case .unavailable(let text)? = provider.result { reason = text } else { reason = "Checking…" }
-        let detail = line(reason, size: 11, color: Palette.textTertiary)
-        detail.toolTip = reason
-        return column([row([name, spacer()], spacing: 4), detail], spacing: 3)
+/// Thin bar that turns orange, then red, as usage climbs (Windows UsageBar).
+private final class UsageBar: FillView {
+    private let bar = FillView(radius: 2.5)
+    private let percent: Double
+
+    init(percent: Double) {
+        self.percent = min(100, max(0, percent))
+        super.init(fill: Palette.controlHover, radius: 2.5)
+        bar.fill = usageColor(self.percent)
+        addSubview(bar)
+        heightAnchor.constraint(equalToConstant: 5).isActive = true
+        setAccessibilityElement(true)
+        setAccessibilityRole(.levelIndicator)
+        setAccessibilityValue("\(Int(self.percent.rounded())) percent used")
     }
-    let headline = line(first.usedText, size: 12, weight: .semibold, color: usageColor(first.usedPercent))
-    headline.font = .rounded(12, weight: .semibold, monospacedDigits: true)
-    let planLabel = line(plan ?? "", size: 10, weight: .medium, color: Palette.textTertiary)
-    let bar = ProgressBar()
-    bar.set(progress: first.usedPercent / 100, animated: false)
-    let reset = first.resetText(now: now)
-    let sub = windows.count > 1 ? "\(windows[1].label) \(windows[1].usedText)  ·  \(reset.isEmpty ? first.label : reset.lowercased())" : (reset.isEmpty ? first.label : reset.lowercased())
-    let stack = column([row([name, planLabel, spacer(), headline], spacing: 5), bar, line(sub, size: 10, color: Palette.textTertiary)], spacing: 4)
-    bar.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
-    return stack
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override func layout() {
+        super.layout()
+        bar.isHidden = percent <= 0
+        bar.frame = NSRect(x: 0, y: 0, width: max(bounds.height, bounds.width * percent / 100), height: bounds.height)
+    }
 }
 
-final class AiUsageCardView: NSView, AiDisplay {
+/// The Claude row's account choice, drawn as text with a chevron (Windows AccountPicker): click for
+/// a menu of the signed-in accounts.
+private final class AccountPicker: NSButton {
+    private let prefix: String
+    private let size: CGFloat
+    private let names: [String]
+    private let selected: Int
+    private let changed: (Int) -> Void
+    private weak var shell: ModuleShell?
+    private var hovering = false
+    private var tracking: NSTrackingArea?
+
+    init(prefix: String = "", names: [String], selected: Int, size: CGFloat, shell: ModuleShell?, changed: @escaping (Int) -> Void) {
+        self.prefix = prefix
+        self.size = size
+        self.names = names
+        self.selected = selected
+        self.changed = changed
+        self.shell = shell
+        super.init(frame: .zero)
+        isBordered = false
+        bezelStyle = .regularSquare
+        setButtonType(.momentaryChange)
+        imagePosition = .noImage
+        focusRingType = .exterior
+        target = self
+        action = #selector(open)
+        setContentHuggingPriority(.required, for: .horizontal)
+        setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        lineBreakMode = .byTruncatingTail
+        setAccessibilityLabel("Claude account: \(names[selected])")
+        toolTip = "Account"
+        refresh()
+    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override var alignmentRectInsets: NSEdgeInsets { NSEdgeInsetsZero }
+
+    private func refresh() {
+        let color = hovering ? Palette.textPrimary : Palette.textSecondary
+        let text = NSMutableAttributedString(string: prefix + names[selected], attributes: [.foregroundColor: color, .font: NSFont.systemFont(ofSize: size, weight: .regular)])
+        if let chevron = NSImage(systemSymbolName: "chevron.down", accessibilityDescription: nil)?
+            .withSymbolConfiguration(.init(pointSize: size - 4, weight: .semibold)) {
+            let attachment = NSTextAttachment()
+            attachment.image = chevron
+            attachment.bounds = NSRect(x: 0, y: 1, width: chevron.size.width, height: chevron.size.height)
+            text.append(NSAttributedString(string: " "))
+            text.append(NSAttributedString(attachment: attachment))
+            text.addAttribute(.foregroundColor, value: color, range: NSRange(location: 0, length: text.length))
+        }
+        attributedTitle = text
+        contentTintColor = color
+    }
+
+    override func updateTrackingAreas() {
+        if let tracking { removeTrackingArea(tracking) }
+        let area = NSTrackingArea(rect: .zero, options: [.mouseEnteredAndExited, .activeAlways, .inVisibleRect], owner: self)
+        tracking = area
+        addTrackingArea(area)
+        super.updateTrackingAreas()
+    }
+    override func mouseEntered(with event: NSEvent) { hovering = true; refresh() }
+    override func mouseExited(with event: NSEvent) { hovering = false; refresh() }
+
+    @objc private func open() {
+        let menu = NSMenu()
+        for (index, name) in names.enumerated() {
+            let item = ClosureMenuItem(title: name) { [changed] in changed(index) }
+            item.state = index == selected ? .on : .off
+            menu.addItem(item)
+        }
+        // The menu tracks synchronously; the hold keeps the panel open while the pointer is in it.
+        let hold = shell?.holdOpen()
+        menu.popUp(positioning: nil, at: NSPoint(x: 0, y: bounds.height + 4), in: self)
+        withExtendedLifetime(hold) {}
+    }
+}
+
+private extension AiModule {
+    /// The account picker for the Claude row, or nil with fewer than two accounts.
+    func accountPicker(for provider: Provider, prefix: String, size: CGFloat) -> NSView? {
+        guard provider.id == "claude", accounts.count > 1, let shown = shownAccount else { return nil }
+        let list = accounts
+        return AccountPicker(prefix: prefix, names: list.map(name(of:)), selected: list.firstIndex(of: shown) ?? 0, size: size, shell: contextShell) { [weak self] index in
+            self?.showAccount(list[index])
+        }
+    }
+}
+
+/// The Home card (Windows AiUsageCard): per provider its name or account, the first window's
+/// percentage and bar, then the second window and the reset. Unavailable never shows a number.
+final class AiUsageCardView: NSView, AiDisplay, NSGestureRecognizerDelegate {
     private weak var module: AiModule?
     private let list = NSStackView()
+    private let empty = label("No usage providers enabled.\nTurn them on in Settings.", size: 11, color: Palette.textTertiary)
+
     init(module: AiModule) {
         self.module = module
         super.init(frame: .zero)
         list.orientation = .vertical
         list.alignment = .leading
-        list.spacing = 10
+        list.spacing = 8
         embed(list, in: self, inset: 0)
-        addGestureRecognizer(NSClickGestureRecognizer(target: self, action: #selector(open)))
+        empty.alignment = .center
+        empty.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(empty)
+        NSLayoutConstraint.activate([empty.centerXAnchor.constraint(equalTo: centerXAnchor), empty.centerYAnchor.constraint(equalTo: centerYAnchor)])
+        let click = NSClickGestureRecognizer(target: self, action: #selector(open))
+        click.delegate = self
+        addGestureRecognizer(click)
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
     @objc private func open() { module?.contextShell?.selectTab("ai") }
+
+    /// A click on the account picker chooses an account; anywhere else opens the AI tab.
+    func gestureRecognizer(_ gestureRecognizer: NSGestureRecognizer, shouldAttemptToRecognizeWith event: NSEvent) -> Bool {
+        !(hitTest(convert(event.locationInWindow, from: nil)) is AccountPicker)
+    }
 
     func reload() {
         guard let module else { return }
         list.arrangedSubviews.forEach { $0.removeFromSuperview() }
         let providers = module.providers
-        if providers.isEmpty { list.addArrangedSubview(line("Usage providers are off in Settings, AI.", size: 12, color: Palette.textTertiary)) }
+        empty.isHidden = !providers.isEmpty
         for provider in providers {
-            let view = providerSummary(provider)
+            let view = summary(provider, module: module)
             list.addArrangedSubview(view)
             view.widthAnchor.constraint(equalTo: list.widthAnchor).isActive = true
         }
+    }
+
+    private func summary(_ provider: AiModule.Provider, module: AiModule) -> NSView {
+        let (headlineText, percent, subText) = AiFormat.summary(provider.result)
+        let title = module.accountPicker(for: provider, prefix: "Claude: ", size: 11) ?? line(provider.name, size: 11, color: Palette.textSecondary)
+        let ok = percent != nil
+        let headline = line(headlineText, size: 12, weight: ok ? .semibold : .regular, color: ok ? Palette.textPrimary : Palette.textTertiary)
+        if ok { headline.font = .rounded(12, weight: .semibold, monospacedDigits: true) }
+        headline.setContentCompressionResistancePriority(.required, for: .horizontal)
+        let top = row([title, spacer(), headline], spacing: 8)
+        var views: [NSView] = [top]
+        if let percent { views.append(UsageBar(percent: percent)) }
+        if !subText.isEmpty {
+            let sub = line(subText, size: 11, color: Palette.textTertiary)
+            sub.lineBreakMode = .byTruncatingTail
+            sub.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+            views.append(sub)
+        }
+        let stack = column(views, spacing: 0)
+        if views.count > 1 { stack.setCustomSpacing(4, after: top) }
+        if let bar = views.dropFirst().first as? UsageBar, views.count > 2 { stack.setCustomSpacing(3, after: bar) }
+        views.forEach { $0.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true }
+        stack.toolTip = {
+            switch provider.result {
+            case .ok(_, _, let asOf, _)?: return "Updated " + AiTabView.when(asOf)
+            case .unavailable(let reason)?: return reason
+            case nil: return "Waiting for the first reading"
+            }
+        }()
+        return stack
     }
 }
 
@@ -128,26 +264,38 @@ private final class AppTile: FillView {
     override func mouseExited(with event: NSEvent) { setFill(nil, animated: true) }
 }
 
-/// The AI tab: each provider's windows with bars and resets, then the apps.
+/// The AI tab (Windows AiTab): a card per provider with every usage window, then the apps.
 final class AiTabView: NSView, AiDisplay {
     private weak var module: AiModule?
     private let usage = NSStackView()
     private let status = line("", size: 11, color: Palette.textTertiary)
+    private let refreshButton: HoverButton
     private let apps: AiAppsView
+
+    /// "14:05" today, "Mon 14:05" on another day (Windows AiFormat.When).
+    static func when(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = .current
+        formatter.setLocalizedDateFormatFromTemplate(Calendar.current.isDateInToday(date) ? "jmm" : "EEEjmm")
+        return formatter.string(from: date)
+    }
 
     init(module: AiModule) {
         self.module = module
         apps = AiAppsView(module: module, compact: false)
+        refreshButton = HoverButton(symbol: "arrow.clockwise", style: .icon, symbolSize: 11, label: "Refresh now") { [weak module] in module?.refresh() }
         super.init(frame: .zero)
         usage.orientation = .vertical
         usage.alignment = .leading
-        usage.spacing = 12
-        let refresh = HoverButton(symbol: "arrow.clockwise", style: .icon, symbolSize: 11, label: "Refresh usage") { [weak module] in module?.refresh() }
-        let settings = HoverButton(symbol: "slider.horizontal.3", style: .icon, symbolSize: 11, label: "AI settings") { [weak module] in module?.contextShell?.openSettings(section: "ai") }
-        let header = row([line("Usage", size: 13, weight: .semibold, color: Palette.textPrimary), status, spacer(), refresh, settings], spacing: 6)
-        let appsHeader = row([line("Apps", size: 13, weight: .semibold, color: Palette.textPrimary), line("⌃⌥1 to ⌃⌥6 open numbered apps", size: 11, color: Palette.textTertiary)], spacing: 8)
-        let stack = column([header, usage, appsHeader, apps], spacing: 10)
-        stack.setCustomSpacing(18, after: usage)
+        usage.spacing = 10
+        let settings = HoverButton(symbol: "gearshape", style: .icon, symbolSize: 12, label: "AI settings") { [weak module] in module?.contextShell?.openSettings(section: "ai") }
+        let header = row([line("Usage", size: 14, weight: .semibold, color: Palette.textPrimary), spacer(), status, refreshButton, settings], spacing: 4)
+        header.setCustomSpacing(8, after: status)
+        let appsHeader = row([line("Apps", size: 14, weight: .semibold, color: Palette.textPrimary), spacer(),
+                              line("Numbered apps open with ⌃⌥1 to ⌃⌥6 (Settings, Hotkeys)", size: 11, color: Palette.textTertiary),
+                              HoverButton(symbol: "arrow.clockwise", style: .icon, symbolSize: 11, label: "Scan for AI apps") { [weak module] in module?.scan() }], spacing: 8)
+        let stack = column([header, usage, appsHeader, apps], spacing: 8)
+        stack.setCustomSpacing(16, after: usage)
         // Several windows per provider can outgrow the panel: the tab scrolls.
         let document = AiFlippedView()
         document.translatesAutoresizingMaskIntoConstraints = false
@@ -164,45 +312,115 @@ final class AiTabView: NSView, AiDisplay {
             document.trailingAnchor.constraint(equalTo: scroll.contentView.trailingAnchor),
             document.topAnchor.constraint(equalTo: scroll.contentView.topAnchor)
         ])
-        for view in [header, usage] { view.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true }
+        for view in [header, usage, appsHeader] { view.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true }
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     func reload() {
         guard let module else { return }
-        status.stringValue = module.refreshing ? "Checking…" : module.checked.map { "Checked " + DateFormatter.localizedString(from: $0, dateStyle: .none, timeStyle: .short) } ?? ""
+        status.stringValue = module.refreshing ? "Checking…" : module.checked.map { "Checked " + Self.when($0) } ?? ""
+        refreshButton.isEnabled = !module.refreshing
         usage.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        for provider in module.providers {
-            let view = providerDetail(provider)
-            usage.addArrangedSubview(view)
-            view.widthAnchor.constraint(equalTo: usage.widthAnchor).isActive = true
+        let providers = module.providers
+        if providers.isEmpty {
+            let open = HoverButton("Open Settings", style: .plain) { [weak module] in module?.contextShell?.openSettings(section: "ai") }
+            let empty = column([line("No usage providers enabled", size: 14, weight: .semibold, color: Palette.textPrimary),
+                                line("Turn on Claude Code or Codex in the AI settings.", size: 11, color: Palette.textTertiary), open], spacing: 6, alignment: .centerX)
+            empty.setCustomSpacing(10, after: empty.arrangedSubviews[1])
+            usage.addArrangedSubview(empty)
+            empty.widthAnchor.constraint(equalTo: usage.widthAnchor).isActive = true
+        }
+        // Two cards to a row, as on Windows; an odd last card keeps its half width.
+        var index = 0
+        while index < providers.count {
+            let pair = providers[index..<min(index + 2, providers.count)].map { card($0, module: module) as NSView }
+            let line = row(pair.count == 2 ? pair : pair + [NSView()], spacing: 10)
+            line.distribution = .fillEqually
+            line.alignment = .top
+            usage.addArrangedSubview(line)
+            line.widthAnchor.constraint(equalTo: usage.widthAnchor).isActive = true
+            index += 2
         }
         apps.reload()
     }
 
-    private func providerDetail(_ provider: AiModule.Provider) -> NSView {
-        let name = line(provider.name, size: 12, weight: .semibold, color: Palette.textPrimary)
-        guard case .ok(let windows, let plan, let asOf, let banked)? = provider.result else {
-            let reason: String
-            if case .unavailable(let text)? = provider.result { reason = text } else { reason = "Checking…" }
-            return column([name, label(reason, size: 11, color: Palette.textTertiary)], spacing: 3)
-        }
-        var rows: [NSView] = [row([name, line(plan ?? "", size: 11, weight: .medium, color: Palette.textTertiary), spacer(),
-                                   line("Updated " + DateFormatter.localizedString(from: asOf, dateStyle: .none, timeStyle: .short), size: 10, color: Palette.textTertiary)], spacing: 6)]
-        for window in windows {
-            let bar = ProgressBar()
-            bar.set(progress: window.usedPercent / 100, animated: false)
-            let used = line("\(window.usedText) used", size: 11, weight: .semibold, color: usageColor(window.usedPercent))
-            let top = row([line(window.label, size: 11, weight: .medium, color: Palette.textSecondary), spacer(), used,
-                           line("· \(window.leftText)", size: 11, color: Palette.textTertiary)], spacing: 4)
-            let block = column([top, bar, line(window.resetText(), size: 10, color: Palette.textTertiary)], spacing: 3)
-            for view in [top, bar] { view.widthAnchor.constraint(equalTo: block.widthAnchor).isActive = true }
+    private func card(_ provider: AiModule.Provider, module: AiModule) -> NSView {
+        let name = line(provider.name, size: 14, weight: .semibold, color: Palette.textPrimary)
+        var header: [NSView] = [name]
+        if let picker = module.accountPicker(for: provider, prefix: "", size: 12) { header.append(picker) }
+        var rows: [NSView] = []
+        switch provider.result {
+        case .ok(let windows, let plan, let asOf, let banked)?:
+            let updated = line("Updated " + Self.when(asOf), size: 11, color: Palette.textTertiary)
+            updated.lineBreakMode = .byTruncatingTail
+            updated.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+            header.append(updated)
+            header.append(spacer())
+            if let plan, !plan.isEmpty { header.append(Self.chip(plan)) }
+            for window in windows { rows.append(Self.window(window)) }
+            if let banked {
+                let text = line(banked.text(), size: 11, color: Palette.textTertiary)
+                let expiry = banked.expiresAt.map { "Expires " + DateFormatter.localizedString(from: $0, dateStyle: .medium, timeStyle: .short) } ?? "Does not expire"
+                text.toolTip = banked.label.map { $0.isEmpty ? expiry : "\($0)\n\(expiry)" } ?? expiry
+                rows.append(text)
+            }
+        case .unavailable(let reason)?:
+            header.append(spacer())
+            let icon = symbol("exclamationmark.triangle.fill", size: 13, weight: .medium, color: .systemOrange)
+            let detail = label(reason, size: 11, color: Palette.textSecondary)
+            detail.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+            let text = column([line("Unavailable", size: 13, weight: .semibold, color: Palette.textPrimary), detail], spacing: 2)
+            let block = row([icon, text], spacing: 8)
+            block.alignment = .top
             rows.append(block)
+        case nil:
+            header.append(spacer())
+            rows.append(line("Checking…", size: 11, color: Palette.textTertiary))
         }
-        if let banked { rows.append(line(banked.text(), size: 11, color: Palette.accent)) }
-        let stack = column(rows, spacing: 6)
-        rows.forEach { $0.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true }
-        return stack
+        let top = row(header, spacing: 8)
+        let stack = column([top] + rows, spacing: 10)
+        stack.setCustomSpacing(12, after: top)
+        ([top] + rows).forEach { $0.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true }
+        let card = FillView(fill: Palette.card, stroke: Palette.stroke, radius: 14)
+        embed(stack, in: card, inset: NSEdgeInsets(top: 12, left: 16, bottom: 14, right: 16), fill: true)
+        card.setAccessibilityElement(true)
+        card.setAccessibilityRole(.group)
+        card.setAccessibilityLabel(provider.name)
+        return card
+    }
+
+    /// "5-hour   Resets in 2h 5m" on the left, "38% used   62% left" on the right, the bar below.
+    private static func window(_ window: UsageWindow) -> NSView {
+        let left = NSMutableAttributedString(string: window.label, attributes: [.font: NSFont.systemFont(ofSize: 12, weight: .semibold), .foregroundColor: Palette.textPrimary])
+        let reset = window.resetText()
+        if !reset.isEmpty {
+            left.append(NSAttributedString(string: "   " + reset, attributes: [.font: NSFont.systemFont(ofSize: 11), .foregroundColor: Palette.textTertiary]))
+        }
+        let right = NSMutableAttributedString(string: window.usedText, attributes: [.font: NSFont.rounded(13, weight: .semibold, monospacedDigits: true), .foregroundColor: Palette.textPrimary])
+        right.append(NSAttributedString(string: " used", attributes: [.font: NSFont.systemFont(ofSize: 11), .foregroundColor: Palette.textTertiary]))
+        right.append(NSAttributedString(string: "   " + window.leftText, attributes: [.font: NSFont.systemFont(ofSize: 11), .foregroundColor: Palette.textSecondary]))
+        let leftField = NSTextField(labelWithAttributedString: left)
+        leftField.lineBreakMode = .byTruncatingTail
+        leftField.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        let rightField = NSTextField(labelWithAttributedString: right)
+        rightField.setContentCompressionResistancePriority(.required, for: .horizontal)
+        let top = row([leftField, spacer(), rightField], spacing: 8)
+        top.alignment = .lastBaseline
+        let bar = UsageBar(percent: window.usedPercent)
+        let block = column([top, bar], spacing: 6)
+        [top, bar].forEach { $0.widthAnchor.constraint(equalTo: block.widthAnchor).isActive = true }
+        if let at = window.resetsAt { block.toolTip = "Resets " + when(at) }
+        return block
+    }
+
+    /// The plan in an accent chip ("Max 20x").
+    private static func chip(_ text: String) -> NSView {
+        let chip = FillView(fill: Palette.accentSoft, radius: 6)
+        let title = line(text, size: 11, weight: .semibold, color: Palette.accent)
+        embed(title, in: chip, inset: NSEdgeInsets(top: 2, left: 8, bottom: 2, right: 8), fill: true)
+        chip.setContentCompressionResistancePriority(.required, for: .horizontal)
+        title.setContentCompressionResistancePriority(.required, for: .horizontal)
+        return chip
     }
 }
 
@@ -216,16 +434,29 @@ extension AiModule {
             self?.set { $0.refreshMinutes = AiSettings.refreshChoices[index] }
         }
         var usageRows = [
-            settingsRow("Claude Code", detail: "Reads the sign-in Claude Code keeps in your Keychain (macOS asks once) and asks Anthropic for your plan usage.", control: claudeSwitch, width: width),
+            settingsRow("Claude Code", detail: "Asks Claude Code's own command line tool for your plan usage, as T3 Code does. For banked resets, QNotch reads Claude Code's sign-in the way Claude Code does (no macOS prompt) and sends it only to Anthropic. Every signed-in ~/.claude-* folder is an account; pick one on the usage row.", control: claudeSwitch, width: width),
             settingsRow("Codex", detail: "Reads the rate limits Codex writes to its session files. Nothing is sent anywhere.", control: codexSwitch, width: width),
             settingsRow("Refresh every", control: every, width: width)
         ]
-        let accounts = claudeAccounts
+        // With several Claude Code accounts, each can be given a name for the usage row's picker.
         if accounts.count > 1 {
-            let picker = ActionPopUp("Claude account", items: accounts.map(\.name), selected: accounts.firstIndex { $0.path == settings.claudeAccount } ?? 0) { [weak self] index in
-                self?.set { $0.claudeAccount = accounts[index].path }
+            let rows = accounts.map { account -> NSView in
+                let field = NSTextField(string: name(of: account))
+                field.placeholderString = account.folderName
+                field.widthAnchor.constraint(equalToConstant: 170).isActive = true
+                field.cell?.sendsActionOnEndEditing = true
+                field.setAccessibilityLabel("Name of the Claude account in \(account.path)")
+                let target = ClosureTarget { [weak self, weak field] in
+                    guard let self, let field else { return }
+                    self.renameAccount(account, to: field.stringValue)
+                    field.stringValue = self.name(of: account)
+                }
+                field.target = target
+                field.action = #selector(ClosureTarget.run)
+                objc_setAssociatedObject(field, "action", target, .OBJC_ASSOCIATION_RETAIN)
+                return settingsRow("Claude account name", detail: account.path.replacingOccurrences(of: NSHomeDirectory(), with: "~"), control: field, width: width)
             }
-            usageRows.insert(settingsRow("Claude account", detail: "Which Claude Code config folder to show.", control: picker, width: width), at: 1)
+            usageRows.insert(contentsOf: rows, at: 1)
         }
         let choices: [(String?, String)] = [(nil, "None")] + apps.map { ($0.id, $0.name) }
         let slotRows = (1...6).map { slot -> NSView in

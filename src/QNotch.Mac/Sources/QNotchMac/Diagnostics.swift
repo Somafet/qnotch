@@ -87,6 +87,13 @@ enum NativeSmokeTest {
                     shell.selectTab(tab.id)
                     try shell.snapshot(to: output.appendingPathComponent("tab-\(tab.id).png"))
                 }
+                if let media = shell.modules.lazy.compactMap({ $0 as? MediaModule }).first {
+                    media.clearForSmoke()
+                    shell.selectTab("media")
+                    try shell.snapshot(to: output.appendingPathComponent("media-empty.png"))
+                    shell.selectTab("home")
+                    try snapshotCards(shell: shell, output: output, only: "media", suffix: "-empty")
+                }
                 if let clipboard = shell.modules.lazy.compactMap({ $0 as? ClipboardModule }).first {
                     // A private pasteboard: the user's clipboard is never read or written by the smoke test.
                     let board = NSPasteboard(name: NSPasteboard.Name("dev.qnotch.smoke.\(UUID().uuidString)"))
@@ -111,6 +118,11 @@ enum NativeSmokeTest {
                     try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
                     let files = ["Quarterly report.pdf", "Notes.txt", "Screenshot.png", "Archive.zip", "Budget.numbers"].map { folder.appendingPathComponent($0) }
                     for file in files { try Data("QNotch smoke".utf8).write(to: file) }
+                    shell.selectTab("files")
+                    tray.dropActive = true
+                    tray.reloadNow()
+                    try shell.snapshot(to: output.appendingPathComponent("files-drop.png"))
+                    tray.dropActive = false
                     tray.add(files)
                     try FileManager.default.removeItem(at: files[4])
                     shell.selectTab("files")
@@ -339,7 +351,7 @@ enum NativeSmokeTest {
     }
 
     /// One PNG per Home card (cards past the first rows are scrolled out of home.png).
-    private static func snapshotCards(shell: ShellController, output: URL) throws {
+    private static func snapshotCards(shell: ShellController, output: URL, only: String? = nil, suffix: String = "") throws {
         guard let root = shell.panel.contentView else { return }
         var found: [String: NSView] = [:]
         func walk(_ view: NSView) {
@@ -347,9 +359,9 @@ enum NativeSmokeTest {
             view.subviews.forEach(walk)
         }
         walk(root)
-        for card in shell.registries.cards.items {
+        for card in shell.registries.cards.items where only == nil || card.id == only {
             guard let view = found[card.id] else { throw Failure("Home card \(card.id) is not on Home") }
-            try ShellController.snapshot(view: view, to: output.appendingPathComponent("card-\(card.id).png"))
+            try ShellController.snapshot(view: view, to: output.appendingPathComponent("card-\(card.id)\(suffix).png"))
         }
     }
 

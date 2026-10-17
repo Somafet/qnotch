@@ -34,6 +34,8 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     private var searchView: SearchView?
     private var leading = NSStackView()
     private var trailing = NSStackView()
+    /// Each wing's own segment slots, in contribution order, wherever they are shown now.
+    private var leadingSlots: [SegmentSlotView] = [], trailingSlots: [SegmentSlotView] = []
     private var pill = NSStackView()
     private var pillIdle = NSView()
     private var screen: NSScreen?
@@ -233,6 +235,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     }
 
     func closePanel() { close() }
+    func dismissPanel() { close(restoreFocus: false) }
 
     private var lingerTask: DispatchWorkItem?
 
@@ -336,13 +339,23 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
 
     // MARK: Hover, open and close
 
+    /// After an explicit close (Escape, Settings, Show, a pick) with the pointer still on the
+    /// notch, hover stays off until the pointer leaves, so the panel does not spring back open.
+    private var hoverSuppressed = false
+
     func pointerEntered() {
         leaveTask?.cancel()
         guard !gameActive else { return }
         guard !state.expanded else { return }
+        if hoverSuppressed {
+            guard !(expectedFrame?.contains(NSEvent.mouseLocation) ?? false) else { return }
+            hoverSuppressed = false
+        }
         hoverTask?.cancel()
+        // The settled shape, not the window: while a close morph runs, the window still covers
+        // the panel's old area, and a pointer there must not reopen it.
         let task = DispatchWorkItem { [weak self] in
-            guard let self, self.panel.frame.contains(NSEvent.mouseLocation) else { return }
+            guard let self, !self.hoverSuppressed, self.expectedFrame?.contains(NSEvent.mouseLocation) == true else { return }
             self.open(keyboard: false)
         }
         hoverTask = task
@@ -352,6 +365,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     func pointerLeft() {
         hoverTask?.cancel()
         leaveTask?.cancel()
+        hoverSuppressed = false
         guard state.presentation == .hover, !general.pinned, holds == 0 else { return }
         let task = DispatchWorkItem { [weak self] in
             guard let self, !self.general.pinned, self.holds == 0, !self.panel.frame.contains(NSEvent.mouseLocation) else { return }
@@ -383,6 +397,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         hoverTask?.cancel(); leaveTask?.cancel()
         guard state.expanded else { return }
         let restore = restoreFocus && panel.isKeyWindow
+        hoverSuppressed = panel.frame.contains(NSEvent.mouseLocation)
         setEditing(false)
         state.close()
         panel.keyboardAllowed = false
@@ -558,12 +573,13 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         func stack(_ slot: SegmentSlot) -> NSStackView {
             // Each segment sits in a shell-owned slot, so a full wing can drop whole segments
             // (farthest from the camera first) without touching the module's own visibility.
-            let slots = segments.filter { $0.slot == slot }.map { item -> NSView in
+            let slots = segments.filter { $0.slot == slot }.map { item -> SegmentSlotView in
                 let container = SegmentSlotView()
                 container.owner = registries.segments.owner(of: item.id)
                 embed(item.makeView(), in: container, inset: 0, fill: true)
                 return container
             }
+            if slot == .leading { leadingSlots = slots } else { trailingSlots = slots }
             return row(slots, spacing: 6)
         }
         leading = stack(.leading)
@@ -629,23 +645,35 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         stack.arrangedSubviews.contains { !$0.isHidden } ? stack.fittingSize.width : 0
     }
 
-    /// Shows the slots whose segment is visible, in order, while they fit in `maxWidth`.
-    private func fit(_ stack: NSStackView, maxWidth: CGFloat) {
-        var used: CGFloat = 0
+    /// Shows each wing's visible segments while they fit, spilling over to the other wing (WingFit).
+    private func fitWings(maxWidth: CGFloat) {
         let hidden = gameActive ? Set(gameMode.settings.hiddenModules) : []
-        for case let slot as SegmentSlotView in stack.arrangedSubviews {
-            guard let segment = slot.subviews.first, !segment.isHidden, !hidden.contains(slot.owner ?? "") else { slot.isHidden = true; continue }
-            let width = segment.fittingSize.width + (used > 0 ? stack.spacing : 0)
-            slot.isHidden = used + width > maxWidth
-            if !slot.isHidden { used += width }
+        func widths(_ slots: [SegmentSlotView]) -> [(ObjectIdentifier, Double?)] {
+            slots.map { slot in
+                guard let segment = slot.subviews.first, !segment.isHidden, !hidden.contains(slot.owner ?? "") else { return (ObjectIdentifier(slot), nil) }
+                return (ObjectIdentifier(slot), Double(segment.fittingSize.width))
+            }
+        }
+        let shown = WingFit.fit(leading: widths(leadingSlots), trailing: widths(trailingSlots), maxWidth: Double(maxWidth), spacing: Double(leading.spacing))
+        let all = leadingSlots + trailingSlots
+        func slots(_ ids: [ObjectIdentifier]) -> [SegmentSlotView] { ids.compactMap { id in all.first { ObjectIdentifier($0) == id } } }
+        let left = slots(shown.leading), right = slots(shown.trailing)
+        // Hidden slots stay in their own wing; spilled ones sit at the other wing's outer end.
+        let leftOrder = left.filter { !leadingSlots.contains($0) } + leadingSlots.filter { !right.contains($0) }
+        let rightOrder = trailingSlots.filter { !left.contains($0) } + right.filter { !trailingSlots.contains($0) }
+        for (stack, order, visible) in [(leading, leftOrder, left), (trailing, rightOrder, right)] {
+            if !stack.arrangedSubviews.elementsEqual(order, by: ===) {
+                stack.arrangedSubviews.forEach { stack.removeArrangedSubview($0); $0.removeFromSuperview() }
+                order.forEach(stack.addArrangedSubview)
+            }
+            for slot in order { slot.isHidden = !visible.contains(slot) }
         }
     }
 
     private func measureWing() -> CGFloat {
         let integrated = layout?.integratesCameraHousing == true
         // The wing grows to at most 170 points (content plus 24 of margin); a pill to 300.
-        fit(leading, maxWidth: integrated ? 146 : 150)
-        fit(trailing, maxWidth: integrated ? 146 : 150)
+        fitWings(maxWidth: integrated ? 146 : 150)
         let left = peekShown ? peekLeft.fittingSize.width : visibleWidth(leading)
         let right = peekShown ? peekRight.fittingSize.width : visibleWidth(trailing)
         guard left > 0 || right > 0 else { return 0 }
@@ -824,6 +852,8 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     private func settle() {
         guard let frame = expectedFrame else { return }
         setFrame(frame)
+        // The pointer may have been left outside the shrunken window without an exit event.
+        if hoverSuppressed, !frame.contains(NSEvent.mouseLocation) { hoverSuppressed = false }
         if !state.expanded, let closingPanel {
             closingPanel.removeFromSuperview()
             closingPanel.layer?.removeAllAnimations()

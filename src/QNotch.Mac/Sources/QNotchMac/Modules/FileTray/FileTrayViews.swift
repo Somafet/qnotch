@@ -104,7 +104,8 @@ final class FileTrayTabView: NSView, FileTrayDisplay {
         drop.translatesAutoresizingMaskIntoConstraints = false
         overlay.addSubview(drop)
         NSLayoutConstraint.activate([drop.centerXAnchor.constraint(equalTo: overlay.centerXAnchor), drop.centerYAnchor.constraint(equalTo: overlay.centerYAnchor)])
-        embed(overlay, in: self, inset: 0, fill: true)
+        // Over the body only, as on Windows: the header and its buttons stay readable.
+        embed(overlay, in: self, inset: NSEdgeInsets(top: 40, left: 0, bottom: 0, right: 0), fill: true)
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
@@ -121,7 +122,8 @@ final class FileTrayTabView: NSView, FileTrayDisplay {
         overlay.isHidden = !module.dropActive
         title.stringValue = items.isEmpty ? "Files" : FileTrayList.countText(items.count, missing: items.filter(\.missing).count)
         status.stringValue = module.status ?? ""
-        emptyView.isHidden = !items.isEmpty
+        // The drop target replaces the empty state rather than showing it through its tint.
+        emptyView.isHidden = !items.isEmpty || module.dropActive
         scroll.isHidden = items.isEmpty
         buttons.dropFirst().forEach { $0.isHidden = items.isEmpty }
         if let selected, !items.contains(where: { $0.url == selected }) { self.selected = nil }

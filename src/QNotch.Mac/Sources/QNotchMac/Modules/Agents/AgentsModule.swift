@@ -310,7 +310,7 @@ final class AgentsModule: NotchModule {
         } else if let pid = session.pid, let app = NotificationsModule.appOwning(pid) { app.activate(options: [.activateAllWindows]) }
         if let link = session.link, AgentEvent.isValidLink(link) || (session.t3Thread != nil && link.hasPrefix("t3code://threads/")),
            let url = URL(string: link) { NSWorkspace.shared.open(url) }
-        context.shell?.closePanel()
+        context.shell?.dismissPanel()
     }
 
     func dismiss(_ session: AgentSession) {
@@ -352,9 +352,11 @@ final class AgentsModule: NotchModule {
     }
 
     func set(_ change: (inout AgentsSettings) -> Void) {
+        let before = settings
         change(&settings)
         context.settings.save("agents", settings)
         applySounds()
+        if before.showCost != settings.showCost { refresh() }
     }
 
     // MARK: Connections

@@ -359,11 +359,14 @@ public struct AgentBoard: Equatable {
 public struct AgentsSettings: Codable, Equatable {
     public var soundNeedsYou = true
     public var soundDone = true
+    /// What each session's tokens would cost at API list prices, beside its token count.
+    public var showCost = true
     public init() {}
-    private enum CodingKeys: String, CodingKey { case soundNeedsYou, soundDone }
+    private enum CodingKeys: String, CodingKey { case soundNeedsYou, soundDone, showCost }
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         soundNeedsYou = c.value(.soundNeedsYou, true)
         soundDone = c.value(.soundDone, true)
+        showCost = c.value(.showCost, true)
     }
 }

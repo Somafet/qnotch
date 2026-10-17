@@ -4,8 +4,12 @@ import QNotchMacCore
 
 /// AI apps and plan usage (Windows AiModule): Claude Code and Codex usage bars on a Home card and
 /// in the AI tab, and up to six AI apps with ⌃⌥1…6. Usage refreshes on one-shot timers (every 5–60
-/// minutes). Claude Code keeps its login in the Keychain on macOS; reading it shows a one-time
-/// macOS prompt. Codex usage comes from its local session files (no network).
+/// minutes). Every Claude Code account (config folder) is read; they share one row, and its account
+/// picker chooses which reading it shows. Claude usage comes from Claude Code's own CLI (its
+/// `get_usage` control request, as T3 Code reads it), which reads its login itself. Banked resets
+/// are not in that answer: for them the login is read the way Claude Code stores it, through
+/// /usr/bin/security (already on the item's access list, so macOS shows no prompt), and sent only
+/// to api.anthropic.com. Codex usage comes from its local session files.
 final class AiModule: NotchModule {
     struct App: Equatable {
         let id: String
@@ -27,6 +31,9 @@ final class AiModule: NotchModule {
     private(set) var settings = AiSettings()
     private(set) var apps: [App] = []
     private(set) var claude = Provider(id: "claude", name: "Claude Code")
+    /// Claude Code accounts found at the last refresh, and the latest reading of each by folder path.
+    private(set) var accounts: [ClaudeAccount] = []
+    private var claudeResults: [String: UsageResult] = [:]
     private(set) var codex = Provider(id: "codex", name: "Codex")
     private(set) var checked: Date?
     private(set) var refreshing = false
@@ -34,7 +41,6 @@ final class AiModule: NotchModule {
     private var clock: Timer?
     private let io = DispatchQueue(label: "qnotch.ai", qos: .utility)
     private let views = NSHashTable<AnyObject>.weakObjects()
-    private lazy var session = URLSession(configuration: .ephemeral)
     var contextShell: ModuleShell? { context.shell }
 
     func initialize(_ context: ModuleContext) {
@@ -65,6 +71,7 @@ final class AiModule: NotchModule {
         }
         scan()
         if Runtime.diagnostics { seedDemo(); return }
+        accounts = Self.discoverAccounts()
         schedule(after: 4)
     }
 
@@ -86,7 +93,7 @@ final class AiModule: NotchModule {
     }
 
     func systemDidWake() {}
-    func stop() { timer?.invalidate(); timer = nil; clock?.invalidate(); clock = nil; session.invalidateAndCancel() }
+    func stop() { timer?.invalidate(); timer = nil; clock?.invalidate(); clock = nil; }
 
     func refreshViews() { for case let view as AiDisplay in views.allObjects { view.reload() } }
 
@@ -127,7 +134,7 @@ final class AiModule: NotchModule {
     func launch(slot: Int) { if let app = app(inSlot: slot) { launch(app) } }
 
     func launch(_ app: App) {
-        context.shell?.closePanel()
+        context.shell?.dismissPanel()
         NSWorkspace.shared.openApplication(at: app.url, configuration: NSWorkspace.OpenConfiguration())
     }
 
@@ -162,37 +169,39 @@ final class AiModule: NotchModule {
         self.timer = timer
     }
 
-    /// Claude Code config folders: ~/.claude (or CLAUDE_CONFIG_DIR) and every ~/.claude-* in use.
-    var claudeAccounts: [(path: String, name: String, isDefault: Bool)] {
-        let home = FileManager.default.homeDirectoryForCurrentUser
-        let standard = home.appendingPathComponent(".claude").path
-        let main = ProcessInfo.processInfo.environment["CLAUDE_CONFIG_DIR"] ?? standard
-        func display(_ path: String) -> String {
-            let name = URL(fileURLWithPath: path).lastPathComponent
-            return path == standard ? "Default" : name.hasPrefix(".claude-") ? String(name.dropFirst(".claude-".count)) : name
-        }
-        var list = [(main, display(main), main == standard)]
-        let names = ((try? FileManager.default.contentsOfDirectory(atPath: home.path)) ?? []).filter { $0 == ".claude" || $0.hasPrefix(".claude-") }.sorted()
-        for name in names {
-            let path = home.appendingPathComponent(name).path
-            guard path != main, Self.hasClaudeLogin(path, isDefault: path == standard) else { continue }
-            list.append((path, display(path), path == standard))
-        }
-        return list
-    }
-
-    static func service(for path: String, isDefault: Bool) -> String {
-        ClaudeUsage.keychainService(configDir: path, isDefault: isDefault) { text in
-            SHA256.hash(data: Data(text.utf8)).map { String(format: "%02x", $0) }.joined()
+    /// Claude Code config folders: ~/.claude (or CLAUDE_CONFIG_DIR) and every signed-in ~/.claude-*.
+    static func discoverAccounts() -> [ClaudeAccount] {
+        let home = FileManager.default.homeDirectoryForCurrentUser.path
+        return ClaudeAccount.discover(home: home, configDir: ProcessInfo.processInfo.environment["CLAUDE_CONFIG_DIR"],
+                                      entries: (try? FileManager.default.contentsOfDirectory(atPath: home)) ?? []) { path, isDefault in
+            hasClaudeLogin(ClaudeAccount(path: path, folderName: "", isDefault: isDefault))
         }
     }
 
-    /// Whether a login exists, without reading the secret (no Keychain prompt).
-    static func hasClaudeLogin(_ path: String, isDefault: Bool) -> Bool {
-        if FileManager.default.fileExists(atPath: path + "/.credentials.json") { return true }
-        let query: [String: Any] = [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service(for: path, isDefault: isDefault),
-                                    kSecMatchLimit as String: kSecMatchLimitOne, kSecReturnAttributes as String: true]
-        return SecItemCopyMatching(query as CFDictionary, nil) == errSecSuccess
+    /// The account the Claude row shows.
+    var shownAccount: ClaudeAccount? { settings.shown(in: accounts) }
+    func name(of account: ClaudeAccount) -> String { settings.name(of: account) }
+
+    /// Shows another account's reading on the Claude row (no new request: every account is read on each refresh).
+    func showAccount(_ account: ClaudeAccount) {
+        guard account.path != shownAccount?.path else { return }
+        settings.claudeAccount = account.path
+        context.settings.save("ai", settings)
+        claude.result = claudeResults[account.path]
+        refreshViews()
+    }
+
+    func renameAccount(_ account: ClaudeAccount, to name: String) {
+        let before = settings
+        settings.rename(account, to: name)
+        guard settings != before else { return }
+        context.settings.save("ai", settings)
+        refreshViews()
+    }
+
+    /// Whether a folder has a Claude login, from its account record (no secret, no Keychain).
+    static func hasClaudeLogin(_ account: ClaudeAccount) -> Bool {
+        ClaudeUsage.login(FileManager.default.contents(atPath: ClaudeUsage.accountFile(for: account, home: NSHomeDirectory()))).signedIn
     }
 
     func refresh() {
@@ -201,8 +210,18 @@ final class AiModule: NotchModule {
         refreshViews()
         let group = DispatchGroup()
         if settings.claude {
-            group.enter()
-            fetchClaude { [weak self] result in self?.claude.result = result; group.leave() }
+            accounts = Self.discoverAccounts()
+            claudeResults = claudeResults.filter { path, _ in accounts.contains { $0.path == path } }
+            // Each account has its own request, timeout and failure; one never affects another.
+            for account in accounts {
+                group.enter()
+                fetchClaude(account) { [weak self] result in
+                    guard let self else { return group.leave() }
+                    self.claudeResults[account.path] = result
+                    if account.path == self.shownAccount?.path { self.claude.result = result }
+                    group.leave()
+                }
+            }
         }
         if settings.codex {
             group.enter()
@@ -220,44 +239,113 @@ final class AiModule: NotchModule {
         }
     }
 
-    private func fetchClaude(done: @escaping (UsageResult) -> Void) {
-        let accounts = claudeAccounts
-        let account = accounts.first { $0.path == settings.claudeAccount } ?? accounts[0]
-        io.async { [weak self] in
-            // macOS keeps Claude Code's login in the Keychain; older installs also write a file.
-            let secret = Keychain.read(Self.service(for: account.path, isDefault: account.isDefault), account: NSUserName()).flatMap { Data($0.utf8) }
-                ?? Self.keychainAnyAccount(Self.service(for: account.path, isDefault: account.isDefault))
-                ?? (try? Data(contentsOf: URL(fileURLWithPath: account.path + "/.credentials.json")))
-            guard let secret else { return DispatchQueue.main.async { done(.unavailable("Not signed in. Sign in to Claude Code to see usage.")) } }
-            guard let credentials = ClaudeUsage.credentials(secret) else {
-                return DispatchQueue.main.async { done(.unavailable("Signed in without a subscription. Usage needs a Claude Pro or Max login.")) }
-            }
-            var request = URLRequest(url: ClaudeUsage.url)
-            request.timeoutInterval = 25
-            request.setValue("Bearer \(credentials.token)", forHTTPHeaderField: "Authorization")
-            request.setValue("oauth-2025-04-20", forHTTPHeaderField: "anthropic-beta")
-            request.setValue("claude-cli/\(Self.cliVersion) (external, cli)", forHTTPHeaderField: "User-Agent")
-            self?.session.dataTask(with: request) { body, response, error in
-                let result: UsageResult = error != nil ? .unavailable("No connection to Anthropic.")
-                    : ClaudeUsage.parse(status: (response as? HTTPURLResponse)?.statusCode ?? 0, body: body, plan: credentials.plan)
-                DispatchQueue.main.async { done(result) }
-            }.resume()
+    private func fetchClaude(_ account: ClaudeAccount, done: @escaping (UsageResult) -> Void) {
+        io.async {
+            var result = Self.readClaude(account)
+            if case .ok = result { result = ClaudeUsage.adding(Self.readClaudeBanked(account), to: result) }
+            DispatchQueue.main.async { done(result) }
         }
     }
 
-    private static func keychainAnyAccount(_ service: String) -> Data? {
-        let query: [String: Any] = [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service,
-                                    kSecReturnData as String: true, kSecMatchLimit as String: kSecMatchLimitOne]
-        var result: CFTypeRef?
-        guard Keychain.inMemory == nil, SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess else { return nil }
-        return result as? Data
+    /// Where Claude Code's CLI usually is; an app started from Finder has no shell PATH.
+    static func claudeExecutable() -> String? {
+        let home = NSHomeDirectory()
+        let path: [String] = (ProcessInfo.processInfo.environment["PATH"] ?? "").split(separator: ":").map { String($0) + "/claude" }
+        let candidates: [String] = [home + "/.local/bin/claude", home + "/.claude/local/claude", "/opt/homebrew/bin/claude", "/usr/local/bin/claude"] + path
+        return candidates.first(where: { FileManager.default.isExecutableFile(atPath: $0) })
     }
 
-    /// The newest installed Claude Code version, for the usage request's User-Agent.
-    static let cliVersion: String = {
-        let folder = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".local/share/claude/versions").path
+    /// Asks Claude Code's CLI for the account's plan usage (20-second cap, then it is stopped).
+    /// The CLI gets the folder through CLAUDE_CONFIG_DIR, reads its own login, and sends the
+    /// request to Anthropic itself. Blocking; call off the main thread.
+    static func readClaude(_ account: ClaudeAccount) -> UsageResult {
+        let login = ClaudeUsage.login(FileManager.default.contents(atPath: ClaudeUsage.accountFile(for: account, home: NSHomeDirectory())))
+        guard login.signedIn else { return .unavailable("Not signed in. Sign in to Claude Code to see usage.") }
+        guard let executable = claudeExecutable() else { return .unavailable("Claude Code's command line tool was not found.") }
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: executable)
+        process.arguments = ClaudeUsage.arguments
+        process.currentDirectoryURL = FileManager.default.temporaryDirectory
+        var environment = ProcessInfo.processInfo.environment
+        environment["CLAUDE_CONFIG_DIR"] = account.isDefault ? nil : account.path
+        environment["CLAUDE_CODE_AUTO_CONNECT_IDE"] = "0"
+        environment["CLAUDE_CODE_IDE_SKIP_AUTO_INSTALL"] = "1"
+        environment["ENABLE_CLAUDEAI_MCP_SERVERS"] = "false"
+        process.environment = environment
+        let input = Pipe(), output = Pipe()
+        process.standardInput = input
+        process.standardOutput = output
+        process.standardError = FileHandle.nullDevice
+        guard (try? process.run()) != nil else { return .unavailable("Claude Code could not be started.") }
+        defer { if process.isRunning { process.terminate() } }
+        // Reading blocks; stopping the process ends the read.
+        DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + 20) { if process.isRunning { process.terminate() } }
+        input.fileHandleForWriting.write(Data(ClaudeUsage.requests.utf8))
+        var buffer = Data()
+        let reader = output.fileHandleForReading
+        while true {
+            let chunk = reader.availableData
+            if chunk.isEmpty { break }
+            buffer.append(chunk)
+            while let end = buffer.firstIndex(of: 0x0A) {
+                let line = buffer[buffer.startIndex..<end]
+                buffer.removeSubrange(buffer.startIndex...end)
+                switch ClaudeUsage.answer(line: Data(line)) {
+                case .usage(let usage)?: return ClaudeUsage.parse(usage: usage, tier: login.tier)
+                case .failed(let message)?: return .unavailable(message)
+                case nil: continue
+                }
+            }
+        }
+        return .unavailable("Claude Code did not answer. Open it once to check its sign-in.")
+    }
+
+    /// The banked resets of an account; nil on any failure, so the usage bars never depend on it.
+    /// Blocking; call off the main thread.
+    static func readClaudeBanked(_ account: ClaudeAccount) -> BankedResets? {
+        guard let token = claudeToken(account) else { return nil }
+        var request = URLRequest(url: ClaudeUsage.bankedURL)
+        request.timeoutInterval = 10
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue("oauth-2025-04-20", forHTTPHeaderField: "anthropic-beta")
+        request.setValue("claude-cli/\(claudeVersion) (external, cli)", forHTTPHeaderField: "User-Agent")
+        let done = DispatchSemaphore(value: 0)
+        var banked: BankedResets?
+        URLSession.shared.dataTask(with: request) { body, response, _ in
+            if let status = (response as? HTTPURLResponse)?.statusCode, (200..<300).contains(status) { banked = ClaudeUsage.banked(body: body) }
+            done.signal()
+        }.resume()
+        _ = done.wait(timeout: .now() + 12)
+        return banked
+    }
+
+    /// Claude Code's login, read as Claude Code itself reads it: `security find-generic-password`
+    /// (5-second cap), or the folder's .credentials.json when there is no Keychain item.
+    private static func claudeToken(_ account: ClaudeAccount) -> String? {
+        let service = ClaudeUsage.keychainService(configDir: account.path, isDefault: account.isDefault) { text in
+            SHA256.hash(data: Data(text.utf8)).map { String(format: "%02x", $0) }.joined()
+        }
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/security")
+        process.arguments = ["find-generic-password", "-a", NSUserName(), "-s", service, "-w"]
+        let output = Pipe()
+        process.standardOutput = output
+        process.standardError = FileHandle.nullDevice
+        process.standardInput = FileHandle.nullDevice
+        if (try? process.run()) != nil {
+            DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + 5) { if process.isRunning { process.terminate() } }
+            let data = output.fileHandleForReading.readDataToEndOfFile()
+            process.waitUntilExit()
+            if process.terminationStatus == 0, let token = ClaudeUsage.accessToken(data) { return token }
+        }
+        return FileManager.default.contents(atPath: account.path + "/.credentials.json").flatMap(ClaudeUsage.accessToken)
+    }
+
+    /// The newest installed Claude Code version, for the request's User-Agent.
+    static let claudeVersion: String = {
+        let folder = NSHomeDirectory() + "/.local/share/claude/versions"
         let versions = ((try? FileManager.default.contentsOfDirectory(atPath: folder)) ?? []).filter { $0.first?.isNumber == true }
-        return versions.max { $0.compare($1, options: .numeric) == .orderedAscending } ?? "2.1.289"
+        return versions.max { $0.compare($1, options: .numeric) == .orderedAscending } ?? "2.1.300"
     }()
 
     /// Codex writes its rate limits into the session rollouts; the newest reading wins.
@@ -331,9 +419,9 @@ final class AiModule: NotchModule {
         let before = settings
         change(&settings)
         context.settings.save("ai", settings)
-        if before.claude != settings.claude { claude.result = nil }
+        if before.claude != settings.claude { claude.result = nil; claudeResults = [:] }
         if before.codex != settings.codex { codex.result = nil }
-        if before.refreshMinutes != settings.refreshMinutes || before.claudeAccount != settings.claudeAccount { refresh() }
+        if before.refreshMinutes != settings.refreshMinutes || (!before.claude && settings.claude) || (!before.codex && settings.codex) { refresh() }
         refreshViews()
     }
 
@@ -341,9 +429,15 @@ final class AiModule: NotchModule {
 
     private func seedDemo() {
         let now = Date()
+        let home = NSHomeDirectory()
+        accounts = [ClaudeAccount(path: home + "/.claude", folderName: "Default", isDefault: true),
+                    ClaudeAccount(path: home + "/.claude-work", folderName: "work", isDefault: false)]
+        settings.claudeAccount = accounts[0].path
         claude.result = .ok(windows: [UsageWindow(label: "5-hour", usedPercent: 38, resetsAt: now.addingTimeInterval(7500)),
                                       UsageWindow(label: "Weekly", usedPercent: 61, resetsAt: now.addingTimeInterval(3 * 86400))],
                             plan: "Max 20x", asOf: now, banked: BankedResets(count: 2, expiresAt: now.addingTimeInterval(5 * 86400), label: nil))
+        claudeResults = [accounts[0].path: claude.result!,
+                         accounts[1].path: .ok(windows: [UsageWindow(label: "5-hour", usedPercent: 81, resetsAt: now.addingTimeInterval(2400))], plan: "Pro", asOf: now, banked: nil)]
         codex.result = .ok(windows: [UsageWindow(label: "5-hour", usedPercent: 12, resetsAt: now.addingTimeInterval(9000))], plan: "Pro", asOf: now, banked: nil)
         checked = now
         refreshViews()

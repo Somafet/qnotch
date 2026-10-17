@@ -110,8 +110,12 @@ protocol ModuleShell: AnyObject {
     /// Files dropped on the notch. `entered` runs once when a file drag reaches it; the shell opens
     /// the panel itself. Only one module receives drops.
     func acceptFileDrops(entered: @escaping () -> Void, dropped: @escaping ([URL]) -> Void)
-    /// Collapses the panel (e.g. before picking from the screen under it).
+    /// Collapses the panel (e.g. before picking from the screen under it) and gives the keyboard
+    /// back to the app that had it.
     func closePanel()
+    /// Collapses the panel because another app or window takes over now (a session's terminal,
+    /// a launched app): no focus is handed back, and hover does not reopen it under the pointer.
+    func dismissPanel()
     /// A segment became visible, hidden, or changed width.
     func segmentsChanged()
 }

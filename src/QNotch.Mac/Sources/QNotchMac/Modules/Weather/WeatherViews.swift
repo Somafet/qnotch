@@ -1,9 +1,34 @@
 import AppKit
 import QNotchMacCore
 
+/// The yr.no weather symbols (github.com/metno/weathericons, MIT), 96-pixel PNGs that the build
+/// copies into Resources/WeatherIcons, decoded once each. Multicolor SF Symbols stand in when a
+/// file is missing (a `swift run` build has no app bundle).
+private enum WeatherIcons {
+    private static var cache: [String: NSImage?] = [:]
+    private static let folder = Bundle.main.resourceURL?.appendingPathComponent("WeatherIcons", isDirectory: true)
+
+    static func image(_ symbol: String) -> NSImage? {
+        if let cached = cache[symbol] { return cached }
+        // Two file names in the set carry a typo; the MET symbol codes do not.
+        let file = symbol.replacingOccurrences(of: "lightsleetshowersandthunder", with: "lightssleetshowersandthunder")
+            .replacingOccurrences(of: "lightsnowshowersandthunder", with: "lightssnowshowersandthunder")
+        let image = folder.flatMap { NSImage(contentsOf: $0.appendingPathComponent(file + ".png")) }
+        image?.accessibilityDescription = WeatherFormat.condition(symbol)
+        cache[symbol] = image
+        return image
+    }
+}
+
+/// The symbol at `size` points square (the Windows sizes: 16 in the wing, 44 now, 30 per day).
 func weatherImage(_ symbol: String, size: CGFloat) -> NSImage? {
-    NSImage(systemSymbolName: WeatherFormat.sfSymbol(symbol), accessibilityDescription: WeatherFormat.condition(symbol))?
-        .withSymbolConfiguration(NSImage.SymbolConfiguration(pointSize: size, weight: .regular).applying(.preferringMulticolor()))
+    guard !symbol.isEmpty else { return nil }
+    if let icon = WeatherIcons.image(symbol)?.copy() as? NSImage {
+        icon.size = NSSize(width: size, height: size)
+        return icon
+    }
+    return NSImage(systemSymbolName: WeatherFormat.sfSymbol(symbol), accessibilityDescription: WeatherFormat.condition(symbol))?
+        .withSymbolConfiguration(NSImage.SymbolConfiguration(pointSize: (size * 0.72).rounded(), weight: .regular).applying(.preferringMulticolor()))
 }
 
 /// Icon and temperature in the right wing.
@@ -25,7 +50,7 @@ final class WeatherPillView: NSStackView {
     func update(view: WeatherView?) {
         isHidden = view == nil
         guard let view else { return }
-        icon.image = weatherImage(view.symbol, size: 12)
+        icon.image = weatherImage(view.symbol, size: 16)
         temp.stringValue = view.temp
         setAccessibilityLabel("\(view.condition), \(view.temp)")
     }
@@ -83,7 +108,7 @@ final class WeatherCardView: NSView {
             }
             return
         }
-        icon.image = weatherImage(view.symbol, size: 30)
+        icon.image = weatherImage(view.symbol, size: 44)
         temp.stringValue = view.temp
         condition.stringValue = view.condition
         detail.stringValue = [place.name, view.detail].filter { !$0.isEmpty }.joined(separator: " · ")
@@ -91,7 +116,7 @@ final class WeatherCardView: NSView {
         status.textColor = module.stale ? .systemOrange : Palette.textTertiary
         days.arrangedSubviews.forEach { $0.removeFromSuperview() }
         for day in view.days {
-            let image = NSImageView(image: weatherImage(day.symbol, size: 16) ?? NSImage())
+            let image = NSImageView(image: weatherImage(day.symbol, size: 30) ?? NSImage())
             let high = line(day.high, size: 12, weight: .semibold, color: Palette.textPrimary)
             let low = line(day.low, size: 11, color: Palette.textTertiary)
             let item = column([line(day.name, size: 11, weight: .medium, color: Palette.textSecondary), image, row([high, low], spacing: 3)], spacing: 4, alignment: .centerX)
@@ -161,6 +186,6 @@ extension WeatherModule {
             settingsRow("Units", control: units, width: width),
             settingsRow("Show in the notch", detail: "The current temperature beside the notch.", control: pill, width: width),
             settingsRow("Forecast", detail: updatedText.isEmpty ? "Refreshes when MET Norway publishes new data, about every 30 minutes." : "\(updatedText). Refreshes when MET Norway publishes new data.", control: refreshButton, width: width)
-        ], footer: "Weather data from MET Norway (api.met.no), place search from yr.no (MET Norway and NRK), CC BY 4.0. The only data sent is the place's coordinates.", width: width)
+        ], footer: "Weather data from MET Norway (api.met.no), place search from yr.no (MET Norway and NRK), CC BY 4.0; symbols by yr.no under MIT. The only data sent is the place's coordinates.", width: width)
     }
 }

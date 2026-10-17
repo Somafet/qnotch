@@ -41,7 +41,6 @@ final class AgentsTabView: NSView {
         list.orientation = .vertical
         list.alignment = .leading
         list.spacing = 6
-        header.toolTip = "Today's tokens at API list prices, from Claude Code transcripts. Subscriptions are not billed this way."
         let scroll = NSScrollView()
         let document = FlippedView()
         document.translatesAutoresizingMaskIntoConstraints = false
@@ -70,7 +69,9 @@ final class AgentsTabView: NSView {
         let leftRunning = module.groups.filter(\.group.leftRunning)
         emptyView.isHidden = !module.board.sessions.isEmpty || !leftRunning.isEmpty
         let today = module.today
-        header.stringValue = today.tokens > 0 ? "Today: \(today.text) at API prices" : ""
+        let showCost = module.settings.showCost
+        header.stringValue = today.tokens == 0 ? "" : showCost ? "Today: \(today.text) at API prices" : "Today: \(AgentUsage.tokens(today.tokens)) tokens"
+        header.toolTip = showCost ? "Today's tokens at API list prices, from Claude Code transcripts. Subscriptions are not billed this way." : "Today's tokens, from Claude Code transcripts."
         header.isHidden = today.tokens == 0
         for session in module.board.sessions {
             let row = SessionRow(session: session, module: module)
@@ -159,10 +160,15 @@ private final class SessionRow: FillView {
         let text = column([title, row(subtitle, spacing: 4)], spacing: 2)
         var buttons: [NSView] = []
         if let usage = module.usage[session.id]?.today, usage.tokens > 0 {
-            let cost = line(usage.costText, size: 12, weight: .medium, color: Palette.textPrimary)
-            let tokens = line("\(AgentUsage.tokens(usage.tokens)) tokens", size: 10, color: Palette.textTertiary)
-            cost.alignment = .right; tokens.alignment = .right
-            buttons.append(column([cost, tokens], spacing: 0, alignment: .trailing))
+            let tokens = line("\(AgentUsage.tokens(usage.tokens)) tokens", size: module.settings.showCost ? 10 : 11, color: Palette.textTertiary)
+            tokens.alignment = .right
+            if module.settings.showCost {
+                let cost = line(usage.costText, size: 12, weight: .medium, color: Palette.textPrimary)
+                cost.alignment = .right
+                let usageColumn = column([cost, tokens], spacing: 0, alignment: .trailing)
+                usageColumn.toolTip = "Today: \(usage.text)\nAt API list prices. A Pro or Max plan is not billed per token."
+                buttons.append(usageColumn)
+            } else { buttons.append(tokens) }
         }
         if session.pid != nil || session.link != nil {
             buttons.append(HoverButton(session.link != nil ? "Open" : "Show", style: session.status == .needsYou ? .accent : .plain) { [weak module] in module?.show(session) })
@@ -204,6 +210,7 @@ extension AgentsModule {
         }
         let needs = ActionSwitch("Sound when an agent needs you", value: settings.soundNeedsYou) { [weak self] value in self?.set { $0.soundNeedsYou = value } }
         let done = ActionSwitch("Sound when an agent finishes", value: settings.soundDone) { [weak self] value in self?.set { $0.soundDone = value } }
+        let cost = ActionSwitch("Show API cost", value: settings.showCost) { [weak self] value in self?.set { $0.showCost = value } }
         return column([
             settingsGroup(rows.isEmpty ? [settingsRow("No agents found", detail: "Install Claude Code or Codex, then come back here.", width: width)] : rows,
                           header: "Connections",
@@ -212,7 +219,10 @@ extension AgentsModule {
             settingsGroup([
                 settingsRow("Sound when an agent needs you", detail: "Not during calls. Pick the sound in Settings, Sounds.", control: needs, width: width),
                 settingsRow("Sound when an agent finishes", detail: "Only for a finished turn, not when you interrupt it.", control: done, width: width)
-            ], header: "Alerts", width: width)
+            ], header: "Alerts", width: width),
+            settingsGroup([
+                settingsRow("Show API cost", detail: "Beside each session's tokens today, what they would cost at API list prices. A Pro or Max plan is not billed per token.", control: cost, width: width)
+            ], header: "Usage", footer: "Tokens are read from Claude Code transcripts on this Mac. Nothing is sent anywhere.", width: width)
         ], spacing: 22)
     }
 

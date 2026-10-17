@@ -203,6 +203,13 @@ final class MediaModule: NotchModule {
         run(session.source, "set player position to \(seconds)")
     }
 
+    /// Smoke snapshots only: back to "Nothing playing".
+    func clearForSmoke() {
+        sessions = [:]
+        selected = nil
+        changed()
+    }
+
     private func seedDemo() {
         sessions[.music] = NowPlaying(source: .music, title: "Teardrop", artist: "Massive Attack", album: "Mezzanine", playing: true,
                                       duration: 330, position: 84, positionAt: Date(), trackID: "demo")
@@ -265,7 +272,9 @@ final class MediaView: NSView, MediaDisplay {
     private let chips = NSStackView()
     private let play: HoverButton
     private let content: NSView
-    private let empty: NSTextField
+    /// Nothing playing (Windows MediaViews.Nothing): a glyph, a title and a hint, centered.
+    private let empty: NSStackView
+    private let emptyDetail: NSTextField
 
     init(module: MediaModule, large: Bool) {
         self.module = module
@@ -273,7 +282,13 @@ final class MediaView: NSView, MediaDisplay {
         title = line("", size: large ? 22 : 15, weight: .semibold, color: Palette.textPrimary)
         artist = line("", size: large ? 14 : 12, color: Palette.textSecondary)
         play = HoverButton(symbol: "play.fill", style: large ? .accentCircle : .icon, symbolSize: large ? 17 : 15, label: "Play") { [weak module] in module?.playPause() }
-        empty = line("Nothing playing in Music or Spotify", size: 13, color: Palette.textTertiary)
+        emptyDetail = label(Self.emptyHint(large: large), size: 12, color: Palette.textTertiary)
+        emptyDetail.alignment = .center
+        emptyDetail.preferredMaxLayoutWidth = 300
+        let glyph = symbol("music.note", size: large ? 26 : 22, weight: .light, color: Palette.textTertiary)
+        empty = column([glyph, line("Nothing playing", size: large ? 15 : 14, weight: .semibold, color: Palette.textPrimary), emptyDetail],
+                       spacing: 4, alignment: .centerX)
+        empty.setCustomSpacing(8, after: glyph)
         let previous = HoverButton(symbol: "backward.fill", style: .icon, symbolSize: 13, label: "Previous") { [weak module] in module?.previous() }
         let next = HoverButton(symbol: "forward.fill", style: .icon, symbolSize: 13, label: "Next") { [weak module] in module?.next() }
         let side: CGFloat = large ? 200 : 74
@@ -300,7 +315,14 @@ final class MediaView: NSView, MediaDisplay {
         seek.changed = { [weak module] value in module?.seek(to: value) }
         embed(content, in: self, inset: large ? NSEdgeInsets(top: 20, left: 20, bottom: 20, right: 20) : NSEdgeInsetsZero, fill: !large)
         info.widthAnchor.constraint(greaterThanOrEqualToConstant: large ? 360 : 250).isActive = true
-        embed(empty, in: self, inset: 0)
+        empty.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(empty)
+        NSLayoutConstraint.activate([empty.centerXAnchor.constraint(equalTo: centerXAnchor), empty.centerYAnchor.constraint(equalTo: centerYAnchor),
+                                     empty.widthAnchor.constraint(lessThanOrEqualTo: widthAnchor)])
+    }
+
+    private static func emptyHint(large: Bool) -> String {
+        large ? "Play something in Music or Spotify and it shows up here." : "Play something in Music or Spotify."
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
@@ -309,7 +331,7 @@ final class MediaView: NSView, MediaDisplay {
         let session = module.current
         content.isHidden = session == nil
         empty.isHidden = session != nil
-        empty.stringValue = module.message.isEmpty ? "Nothing playing in Music or Spotify" : module.message
+        emptyDetail.stringValue = module.message.isEmpty ? Self.emptyHint(large: large) : module.message
         guard let session else { return }
         art.image = module.artwork[session.source] ?? playerIcon(session.source)
         title.stringValue = session.title

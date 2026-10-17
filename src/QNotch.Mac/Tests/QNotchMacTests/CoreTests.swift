@@ -748,8 +748,11 @@ final class GithubTests: XCTestCase {
 final class AiUsageTests: XCTestCase {
     func testClaudeAndCodexReadingsLikeWindows() throws {
         let now = ISO8601DateFormatter().date(from: "2026-10-16T12:00:00Z")!
-        let body = #"{"five_hour":{"utilization":42.4,"resets_at":"2026-10-16T14:05:00Z"},"seven_day":{"utilization":120,"resets_at":null},"cedar_ember":{"eligible":true,"next_grant_id":"g1","grants":[{"id":"g1","resets_left":2,"ends_at":"2026-10-20T12:00:00Z","label":"Bonus"},{"id":"g2","resets_left":5,"paused":true}]}}"#
-        guard case let .ok(windows, plan, _, banked) = ClaudeUsage.parse(status: 200, body: Data(body.utf8), plan: "Max 20x", now: now) else { return XCTFail() }
+        let line = #"{"type":"control_response","response":{"subtype":"success","request_id":"qnotch-usage","response":{"subscription_type":"max","rate_limits_available":true,"rate_limits":{"five_hour":{"utilization":42.4,"resets_at":"2026-10-16T14:05:00Z"},"seven_day":{"utilization":120,"resets_at":null},"seven_day_opus":null,"cedar_ember":{"eligible":true,"next_grant_id":"g1","grants":[{"id":"g1","resets_left":2,"ends_at":"2026-10-20T12:00:00Z","label":"Bonus"},{"id":"g2","resets_left":5,"paused":true}]}}}}}"#
+        XCTAssertNil(ClaudeUsage.answer(line: Data(#"{"type":"control_response","response":{"subtype":"success","request_id":"qnotch-init","response":{}}}"#.utf8)))
+        XCTAssertNil(ClaudeUsage.answer(line: Data(#"{"type":"system","subtype":"init"}"#.utf8)))
+        guard case .usage(let usage)? = ClaudeUsage.answer(line: Data(line.utf8)),
+              case let .ok(windows, plan, _, banked) = ClaudeUsage.parse(usage: usage, tier: "default_claude_max_20x", now: now) else { return XCTFail() }
         XCTAssertEqual(windows.map(\.label), ["5-hour", "Weekly"])
         XCTAssertEqual(windows[0].usedText, "42%")
         XCTAssertEqual(windows[1].usedPercent, 100)
@@ -757,11 +760,24 @@ final class AiUsageTests: XCTestCase {
         XCTAssertEqual(plan, "Max 20x")
         XCTAssertEqual(banked?.count, 2)
         XCTAssertEqual(banked?.text(now: now), "2 banked resets  ·  expires in 4d 0h")
-        XCTAssertEqual(ClaudeUsage.parse(status: 401, body: nil, plan: ""), .unavailable("Sign-in expired. Open Claude Code once to renew it."))
-        let credentials = #"{"claudeAiOauth":{"accessToken":"t","subscriptionType":"max","rateLimitTier":"default_claude_max_20x"}}"#
-        XCTAssertEqual(ClaudeUsage.credentials(Data(credentials.utf8))?.plan, "Max 20x")
-        XCTAssertNil(ClaudeUsage.credentials(Data("{}".utf8)))
+        guard case .failed(let message)? = ClaudeUsage.answer(line: Data(#"{"type":"control_response","response":{"subtype":"error","request_id":"qnotch-usage","error":"Not logged in"}}"#.utf8)) else { return XCTFail() }
+        XCTAssertEqual(message, "Claude Code could not read usage (Not logged in).")
+        XCTAssertEqual(ClaudeUsage.parse(usage: ["rate_limits_available": false], tier: nil), .unavailable("Signed in without a subscription. Usage needs a Claude Pro or Max login."))
+        XCTAssertTrue(ClaudeUsage.login(Data(#"{"oauthAccount":{"organizationRateLimitTier":"default_claude_max_5x"}}"#.utf8)) == (true, "default_claude_max_5x"))
+        XCTAssertFalse(ClaudeUsage.login(Data("{}".utf8)).signedIn)
         XCTAssertEqual(ClaudeUsage.keychainService(configDir: "/x", isDefault: false, sha256Hex: { _ in "95d6dcc1ffff" }), "Claude Code-credentials-95d6dcc1")
+        XCTAssertEqual(ClaudeUsage.keychainService(configDir: "/x", isDefault: true, sha256Hex: { _ in "" }), "Claude Code-credentials")
+        XCTAssertEqual(ClaudeUsage.accessToken(Data(#"{"claudeAiOauth":{"accessToken":" t "}}"#.utf8)), "t")
+        XCTAssertNil(ClaudeUsage.accessToken(Data("{}".utf8)))
+        let bankedBody = #"{"cedar_ember":{"eligible":true,"next_grant_id":"g1","grants":[{"id":"g1","resets_left":1,"ends_at":"2026-10-20T12:00:00Z"}]}}"#
+        let extra = ClaudeUsage.banked(body: Data(bankedBody.utf8), now: now)
+        XCTAssertEqual(extra?.count, 1)
+        guard case .ok(_, _, _, let added) = ClaudeUsage.adding(extra, to: .ok(windows: windows, plan: plan, asOf: now, banked: nil)) else { return XCTFail() }
+        XCTAssertEqual(added?.count, 1)
+        XCTAssertEqual(ClaudeUsage.adding(extra, to: .unavailable("x")), .unavailable("x"))
+        let home = "/Users/me"
+        XCTAssertEqual(ClaudeUsage.accountFile(for: ClaudeAccount(path: home + "/.claude", folderName: "Default", isDefault: true), home: home), home + "/.claude.json")
+        XCTAssertEqual(ClaudeUsage.accountFile(for: ClaudeAccount(path: home + "/.claude-work", folderName: "work", isDefault: false), home: home), home + "/.claude-work/.claude.json")
         let tail = """
         {"timestamp":"2026-10-16T11:00:00Z","payload":{"rate_limits":{"plan_type":"prolite","primary":{"used_percent":12,"window_minutes":300,"resets_in_seconds":7200},"secondary":{"used_percent":40,"window_minutes":10080,"resets_at":1000}}}}
         """
@@ -775,6 +791,51 @@ final class AiUsageTests: XCTestCase {
         settings.slots[0] = nil
         settings.autoPlace(["claude", "cursor"])
         XCTAssertEqual(settings.slots.prefix(3).map { $0 }, ["cursor", "chatgpt", nil], "A removed app is not placed again")
+    }
+
+    func testClaudeAccountsAreDiscoveredNamedAndChosen() throws {
+        let entries = [".zshrc", ".claude-work", ".claude", ".claude-old", ".claude.json", ".claude-gmail"]
+        let found = ClaudeAccount.discover(home: "/Users/a", configDir: nil, entries: entries) { path, _ in path != "/Users/a/.claude-old" }
+        XCTAssertEqual(found.map(\.path), ["/Users/a/.claude", "/Users/a/.claude-gmail", "/Users/a/.claude-work"], "Default first, then signed-in folders by name")
+        XCTAssertEqual(found.map(\.folderName), ["Default", "gmail", "work"])
+        XCTAssertEqual(found.map(\.isDefault), [true, false, false])
+        let custom = ClaudeAccount.discover(home: "/Users/a", configDir: "/Users/a/.claude-work/", entries: entries) { _, _ in true }
+        XCTAssertEqual(custom.first?.path, "/Users/a/.claude-work", "CLAUDE_CONFIG_DIR comes first and is not listed twice")
+        XCTAssertEqual(custom.filter { $0.path == "/Users/a/.claude-work" }.count, 1)
+        XCTAssertTrue(custom.contains { $0.path == "/Users/a/.claude" && $0.isDefault })
+
+        var settings = AiSettings()
+        XCTAssertEqual(settings.shown(in: found), found[0])
+        settings.claudeAccount = found[2].path
+        XCTAssertEqual(settings.shown(in: found), found[2])
+        settings.claudeAccount = "/gone"
+        XCTAssertEqual(settings.shown(in: found), found[0], "A folder that is gone falls back to the first account")
+        settings.rename(found[1], to: "  Personal ")
+        XCTAssertEqual(settings.name(of: found[1]), "Personal")
+        settings.rename(found[1], to: " ")
+        XCTAssertEqual(settings.name(of: found[1]), "gmail", "An empty name goes back to the folder's")
+        XCTAssertTrue(settings.accountNames.isEmpty)
+        settings.rename(found[2], to: "Work")
+        let saved = try JSONDecoder().decode(AiSettings.self, from: JSONEncoder().encode(settings))
+        XCTAssertEqual(saved.accountNames, [found[2].path: "Work"])
+        XCTAssertEqual(try JSONDecoder().decode(AiSettings.self, from: Data("{}".utf8)).accountNames, [:])
+    }
+
+    func testUsageSummaryNeverShowsANumberWhenUnavailable() {
+        let now = Date(timeIntervalSince1970: 1_000_000)
+        let ok = UsageResult.ok(windows: [UsageWindow(label: "5-hour", usedPercent: 38.4, resetsAt: now.addingTimeInterval(7500)),
+                                          UsageWindow(label: "Weekly", usedPercent: 61, resetsAt: nil)], plan: "Max", asOf: now, banked: nil)
+        let summary = AiFormat.summary(ok, now: now)
+        XCTAssertEqual(summary.headline, "38%")
+        XCTAssertEqual(summary.percent, 38.4)
+        XCTAssertEqual(summary.sub, "Weekly 61%  ·  resets in 2h 5m")
+        let single = AiFormat.summary(.ok(windows: [UsageWindow(label: "Weekly", usedPercent: 5, resetsAt: nil)], plan: nil, asOf: now, banked: nil), now: now)
+        XCTAssertEqual(single.sub, "Weekly", "Without a reset time the window's name stands in")
+        let down = AiFormat.summary(.unavailable("Not signed in."), now: now)
+        XCTAssertEqual(down.headline, "Unavailable")
+        XCTAssertNil(down.percent)
+        XCTAssertEqual(down.sub, "Not signed in.")
+        XCTAssertEqual(AiFormat.summary(nil, now: now).headline, "Checking")
     }
 }
 
@@ -910,11 +971,14 @@ final class SetupCodeTests: XCTestCase {
         mine.weather.units = .imperial
         mine.gameMode.opacity = 55
         mine.gameMode.anyFullScreen = true
+        mine.agents.showCost = false
         let code = SetupCode.export(mine)
         XCTAssertTrue(code.hasPrefix(SetupCode.prefix))
         XCTAssertFalse(code.contains("="))
         let plan = try SetupCode.read(code, current: base, modules: ["clipboard", "timer"])
         XCTAssertEqual(plan.result, mine)
+        XCTAssertFalse(plan.result.agents.showCost, "The Mac-only cost switch travels in the mac section")
+        XCTAssertTrue(try JSONDecoder().decode(AgentsSettings.self, from: Data("{}".utf8)).showCost, "API cost shows by default, as on Windows")
         XCTAssertTrue(plan.turnsOn.isEmpty)
         XCTAssertTrue(plan.titles.contains("Timer"))
         // A code from QNotch for Windows: shared fields apply, Windows-only ones (Theme, Height, hotkeys) are ignored.
@@ -952,5 +1016,27 @@ final class NudgeTests: XCTestCase {
         let before = notch.surface(expanded: false)
         notch.offset = 300
         XCTAssertEqual(notch.surface(expanded: false), before)
+    }
+}
+
+final class WingFitTests: XCTestCase {
+    func testFullWingSpillsToTheOuterEndOfTheOtherWing() {
+        // Right: notifications, agents, weather, memory, battery; left: CPU only.
+        let fit = WingFit.fit(leading: [("cpu", 40)], trailing: [("bell", 24), ("agents", 70), ("weather", 40), ("ram", 40), ("battery", 50)],
+                              maxWidth: 146, spacing: 6)
+        XCTAssertEqual(fit.trailing, ["bell", "agents", "weather"])
+        XCTAssertEqual(fit.leading, ["battery", "ram", "cpu"])
+    }
+
+    func testDropsOnlyWhenNeitherWingHasRoom() {
+        let fit = WingFit.fit(leading: [("a", 100), ("b", 60)], trailing: [("c", 140), ("d", 50)], maxWidth: 146, spacing: 6)
+        XCTAssertEqual(fit.leading, ["a"])
+        XCTAssertEqual(fit.trailing, ["c"])
+    }
+
+    func testHiddenSegmentsTakeNoRoomAndFittingWingsStayPut() {
+        let fit = WingFit.fit(leading: [("a", nil), ("b", 50)], trailing: [("c", 50), ("d", nil)], maxWidth: 146, spacing: 6)
+        XCTAssertEqual(fit.leading, ["b"])
+        XCTAssertEqual(fit.trailing, ["c"])
     }
 }

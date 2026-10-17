@@ -53,7 +53,8 @@ public enum SetupCode {
                               "OpenOnError": s.notifications.openOnError, "Sound": s.notifications.sound, "QuietDuringCalls": s.notifications.quietDuringCalls],
             "ai": ["RefreshMinutes": s.ai.refreshMinutes],
             "agents": ["SoundNeedsYou": s.agents.soundNeedsYou, "SoundDone": s.agents.soundDone],
-            "mac": ["accent": s.general.accent ?? "auto", "anyFullScreen": s.gameMode.anyFullScreen, "hiddenGameModules": s.gameMode.hiddenModules]
+            "mac": ["accent": s.general.accent ?? "auto", "anyFullScreen": s.gameMode.anyFullScreen, "hiddenGameModules": s.gameMode.hiddenModules,
+                    "agentsShowCost": s.agents.showCost]
         ]
         let json = (try? JSONSerialization.data(withJSONObject: root, options: [.sortedKeys])) ?? Data()
         return prefix + base64url(deflate(json))
@@ -142,6 +143,7 @@ public enum SetupCode {
             if let accent = mac["accent"] as? String { s.general.accent = accent == "auto" ? nil : GeneralSettings.accents.first { $0 == accent } }
             if let any = mac["anyFullScreen"] as? Bool { s.gameMode.anyFullScreen = any }
             if let hidden = mac["hiddenGameModules"] as? [String] { s.gameMode.hiddenModules = hidden }
+            if let show = mac["agentsShowCost"] as? Bool { s.agents.showCost = show }
         }
         guard !titles.isEmpty else { throw Failure(message: "This code has no settings this version of QNotch knows.") }
         let turnsOn = modules.filter { !current.general.isEnabled($0) && s.general.isEnabled($0) }
