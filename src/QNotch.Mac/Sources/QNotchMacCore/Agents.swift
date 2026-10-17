@@ -25,12 +25,29 @@ public struct AgentHookFile {
         }
     }
 
-    /// Hooks run through /bin/sh on macOS: a quoted path and the verb.
-    public var command: String { "\(OrderedJSON.quote(executable)) agent" + (kind == .codex ? " codex" : "") }
+    /// Hooks run through /bin/sh on macOS: a shell-quoted path and the verb.
+    public var command: String { "\(Self.shellQuote(executable)) agent" + (kind == .codex ? " codex" : "") }
 
+    /// Single quotes: sh expands nothing inside them, unlike `$`, backticks and backslashes in double quotes.
+    public static func shellQuote(_ value: String) -> String { "'" + value.replacingOccurrences(of: "'", with: "'\\''") + "'" }
+
+    /// The executable path inside one of our commands, in either quoting style.
+    public static func executable(in command: String) -> String {
+        var quoted = command.trimmingCharacters(in: .whitespaces)
+        for verb in [" agent codex", " agent"] where quoted.hasSuffix(verb) { quoted = String(quoted.dropLast(verb.count)); break }
+        if quoted.count >= 2, quoted.hasPrefix("'"), quoted.hasSuffix("'") {
+            return String(quoted.dropFirst().dropLast()).replacingOccurrences(of: "'\\''", with: "'")
+        }
+        return quoted.trimmingCharacters(in: CharacterSet(charactersIn: "\""))
+    }
+
+    /// Also recognizes the double-quoted form older builds installed, so Disconnect removes those too.
     public func isOurs(_ command: String?) -> Bool {
         guard let command = command?.trimmingCharacters(in: .whitespaces), command.lowercased().contains("qnotch") else { return false }
-        return kind == .codex ? command.hasSuffix("\" agent codex") : command.hasSuffix("\" agent")
+        let verb = kind == .codex ? " agent codex" : " agent"
+        guard command.hasSuffix(verb) else { return false }
+        let quoted = command.dropLast(verb.count)
+        return quoted.hasSuffix("'") || quoted.hasSuffix("\"")
     }
 
     /// Async wherever the agent allows it, so a tool call never waits on QNotch. Codex runs
@@ -55,10 +72,7 @@ public struct AgentHookFile {
         do {
             let commands = commands(in: try Self.root(text))
             guard !commands.isEmpty else { return .notInstalled }
-            if let other = commands.first(where: { $0 != command }) {
-                let path = other.components(separatedBy: "\" agent").first?.trimmingCharacters(in: CharacterSet(charactersIn: "\" ")) ?? other
-                return .otherCopy(path)
-            }
+            if let other = commands.first(where: { $0 != command }) { return .otherCopy(Self.executable(in: other)) }
             // Some events missing (removed by hand): Connect puts them back.
             return commands.count >= events.count ? .connected : .notInstalled
         } catch { return .error("\(error)") }

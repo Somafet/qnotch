@@ -308,29 +308,21 @@ extension GithubModule {
         field.setAccessibilityLabel("Personal access token")
         let note = label(message, size: 11, color: .secondaryLabelColor)
         note.preferredMaxLayoutWidth = width - 30
-        func button(_ title: String, _ action: @escaping () -> Void) -> NSButton {
-            let target = ClosureTarget(action)
-            let button = NSButton(title: title, target: target, action: #selector(ClosureTarget.run))
-            button.bezelStyle = .rounded
-            button.controlSize = .small
-            objc_setAssociatedObject(button, "action", target, .OBJC_ASSOCIATION_RETAIN)
-            return button
-        }
-        let save = button("Save") { [weak self, weak field, weak note] in
+        let save = actionButton("Save") { [weak self, weak field, weak note] in
             guard let self, let field else { return }
             note?.stringValue = self.save(field.stringValue) ? "Saved. Loading your contributions…" : "Enter a token first, or the Keychain refused it."
             field.stringValue = ""
         }
-        let test = button("Test") { [weak self, weak field, weak note] in
+        let test = actionButton("Test") { [weak self, weak field, weak note] in
             note?.stringValue = "Testing…"
             self?.test(field?.stringValue) { _, text in note?.stringValue = text }
         }
-        let remove = button("Remove Token") { [weak self] in
+        let remove = actionButton("Remove Token") { [weak self] in
             self?.removeToken()
             self?.contextShell?.openSettings(section: "github")
         }
         remove.isEnabled = hasToken
-        let refresh = button("Refresh Now") { [weak self] in self?.refresh() }
+        let refresh = actionButton("Refresh Now") { [weak self] in self?.refresh() }
         refresh.isEnabled = hasToken
         let box = NSView()
         embed(note, in: box, inset: NSEdgeInsets(top: 0, left: 14, bottom: 8, right: 14), fill: true)

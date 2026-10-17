@@ -145,7 +145,7 @@ extension WeatherModule {
         results.spacing = 2
         let note = label("", size: 11, color: .secondaryLabelColor)
         note.preferredMaxLayoutWidth = width - 30
-        let search = ClosureTarget { [weak self, weak field, weak results, weak note] in
+        field.onAction { [weak self, weak field, weak results, weak note] in
             guard let self, let field, field.stringValue.trimmingCharacters(in: .whitespaces).count >= 2 else { note?.stringValue = "Type at least two letters."; return }
             note?.stringValue = "Searching…"
             self.search(field.stringValue) { result in
@@ -154,28 +154,20 @@ extension WeatherModule {
                 case .success(let places):
                     note?.stringValue = places.isEmpty ? "No places found." : ""
                     for place in places {
-                        let target = ClosureTarget { [weak self] in self?.choose(place); self?.contextShell?.openSettings(section: "weather") }
-                        let button = NSButton(title: place.detail.isEmpty ? place.name : "\(place.name), \(place.detail)", target: target, action: #selector(ClosureTarget.run))
-                        button.bezelStyle = .inline
-                        objc_setAssociatedObject(button, "action", target, .OBJC_ASSOCIATION_RETAIN)
+                        let button = actionButton(place.detail.isEmpty ? place.name : "\(place.name), \(place.detail)", size: .regular, bezel: .inline) { [weak self] in
+                            self?.choose(place); self?.contextShell?.openSettings(section: "weather")
+                        }
                         results?.addArrangedSubview(button)
                     }
                 case .failure(let error): note?.stringValue = error.message
                 }
             }
         }
-        field.target = search
-        field.action = #selector(ClosureTarget.run)
-        objc_setAssociatedObject(field, "action", search, .OBJC_ASSOCIATION_RETAIN)
         let units = ActionPopUp("Units", items: ["°C, m/s", "°F, mph"], selected: settings.units == .metric ? 0 : 1) { [weak self] index in
             self?.set { $0.units = index == 0 ? .metric : .imperial }
         }
         let pill = ActionSwitch("Show in the notch", value: settings.showInPill) { [weak self] value in self?.set { $0.showInPill = value } }
-        let refreshTarget = ClosureTarget { [weak self] in self?.refresh() }
-        let refreshButton = NSButton(title: "Refresh Now", target: refreshTarget, action: #selector(ClosureTarget.run))
-        refreshButton.bezelStyle = .rounded
-        refreshButton.controlSize = .small
-        objc_setAssociatedObject(refreshButton, "action", refreshTarget, .OBJC_ASSOCIATION_RETAIN)
+        let refreshButton = actionButton("Refresh Now") { [weak self] in self?.refresh() }
         let place = settings.place.map { $0.detail.isEmpty ? $0.name : "\($0.name), \($0.detail)" } ?? "No place yet"
         let searchBox = NSView()
         embed(column([note, results], spacing: 4), in: searchBox, inset: NSEdgeInsets(top: 0, left: 14, bottom: 8, right: 14), fill: true)

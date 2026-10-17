@@ -297,7 +297,7 @@ final class AiTabView: NSView, AiDisplay {
         let stack = column([header, usage, appsHeader, apps], spacing: 8)
         stack.setCustomSpacing(16, after: usage)
         // Several windows per provider can outgrow the panel: the tab scrolls.
-        let document = AiFlippedView()
+        let document = FlippedView()
         document.translatesAutoresizingMaskIntoConstraints = false
         embed(stack, in: document, inset: NSEdgeInsets(top: 0, left: 0, bottom: 8, right: 0), fill: true)
         let scroll = NSScrollView()
@@ -446,14 +446,11 @@ extension AiModule {
                 field.widthAnchor.constraint(equalToConstant: 170).isActive = true
                 field.cell?.sendsActionOnEndEditing = true
                 field.setAccessibilityLabel("Name of the Claude account in \(account.path)")
-                let target = ClosureTarget { [weak self, weak field] in
+                field.onAction { [weak self, weak field] in
                     guard let self, let field else { return }
                     self.renameAccount(account, to: field.stringValue)
                     field.stringValue = self.name(of: account)
                 }
-                field.target = target
-                field.action = #selector(ClosureTarget.run)
-                objc_setAssociatedObject(field, "action", target, .OBJC_ASSOCIATION_RETAIN)
                 return settingsRow("Claude account name", detail: account.path.replacingOccurrences(of: NSHomeDirectory(), with: "~"), control: field, width: width)
             }
             usageRows.insert(contentsOf: rows, at: 1)
@@ -465,7 +462,7 @@ extension AiModule {
             }
             return settingsRow("⌃⌥\(slot)", control: picker, width: width)
         }
-        let addTarget = ClosureTarget { [weak self] in
+        let add = actionButton("Add App…", size: .regular) { [weak self] in
             let panel = NSOpenPanel()
             panel.allowedContentTypes = [.application]
             panel.directoryURL = URL(fileURLWithPath: "/Applications")
@@ -473,15 +470,8 @@ extension AiModule {
             if panel.runModal() == .OK, let url = panel.url { self?.addCustom(url) }
             self?.contextShell?.openSettings(section: "ai")
         }
-        let add = NSButton(title: "Add App…", target: addTarget, action: #selector(ClosureTarget.run))
-        add.bezelStyle = .rounded
-        objc_setAssociatedObject(add, "action", addTarget, .OBJC_ASSOCIATION_RETAIN)
         var customRows: [NSView] = apps.filter(\.custom).map { app in
-            let target = ClosureTarget { [weak self] in self?.removeCustom(app); self?.contextShell?.openSettings(section: "ai") }
-            let remove = NSButton(title: "Remove", target: target, action: #selector(ClosureTarget.run))
-            remove.bezelStyle = .rounded
-            remove.controlSize = .small
-            objc_setAssociatedObject(remove, "action", target, .OBJC_ASSOCIATION_RETAIN)
+            let remove = actionButton("Remove") { [weak self] in self?.removeCustom(app); self?.contextShell?.openSettings(section: "ai") }
             return settingsRow(app.name, detail: app.url.path, control: remove, width: width)
         }
         customRows.append(settingsRow("Other apps", detail: "Found: ChatGPT, Claude, Codex, Cursor and Antigravity when installed. Add any other app here.", control: add, width: width))
@@ -491,8 +481,4 @@ extension AiModule {
             settingsGroup(customRows, header: "Apps", width: width)
         ], spacing: 22)
     }
-}
-
-private final class AiFlippedView: NSView {
-    override var isFlipped: Bool { true }
 }

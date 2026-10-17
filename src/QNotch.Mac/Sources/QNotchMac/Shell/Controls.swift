@@ -668,3 +668,39 @@ final class LevelSlider: NSControl {
     override func accessibilityPerformIncrement() -> Bool { set(value + step); return true }
     override func accessibilityPerformDecrement() -> Bool { set(value - step); return true }
 }
+
+// MARK: - Closure actions
+
+/// Target-action adapter for a closure. Controls hold their target weakly, so `NSControl.onAction`
+/// attaches the adapter to the control and it lives exactly as long as the control does.
+final class ClosureTarget: NSObject {
+    private let handler: () -> Void
+    init(_ handler: @escaping () -> Void) { self.handler = handler }
+    @objc func run() { handler() }
+}
+
+private var closureTargetKey = 0
+
+extension NSControl {
+    /// Runs `handler` when the control fires its action.
+    func onAction(_ handler: @escaping () -> Void) {
+        let target = ClosureTarget(handler)
+        self.target = target
+        self.action = #selector(ClosureTarget.run)
+        objc_setAssociatedObject(self, &closureTargetKey, target, .OBJC_ASSOCIATION_RETAIN)
+    }
+}
+
+/// A push button that runs a closure: small and rounded unless told otherwise.
+func actionButton(_ title: String, size: NSControl.ControlSize = .small, bezel: NSButton.BezelStyle = .rounded, _ action: @escaping () -> Void) -> NSButton {
+    let button = NSButton(title: title, target: nil, action: nil)
+    button.bezelStyle = bezel
+    button.controlSize = size
+    button.onAction(action)
+    return button
+}
+
+/// A view whose origin is the top-left corner, for scroll-view documents laid out top to bottom.
+final class FlippedView: NSView {
+    override var isFlipped: Bool { true }
+}

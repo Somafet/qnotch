@@ -137,10 +137,6 @@ private final class GroupRow: NSView {
     }
 }
 
-private final class FlippedView: NSView {
-    override var isFlipped: Bool { true }
-}
-
 private final class SessionRow: FillView {
     init(session: AgentSession, module: AgentsModule) {
         let color: NSColor = switch session.status {
@@ -195,14 +191,14 @@ extension AgentsModule {
             switch status {
             case .connected:
                 detail = connection.connectedHint
-                buttons.append(button("Disconnect") { [weak self] in self?.toggle(connection, false) })
+                buttons.append(actionButton("Disconnect") { [weak self] in self?.toggle(connection, false) })
             case .otherCopy(let path):
                 detail = "Connected to another copy of QNotch: \(path)"
-                buttons.append(button("Use This Copy") { [weak self] in self?.toggle(connection, true) })
-                buttons.append(button("Disconnect") { [weak self] in self?.toggle(connection, false) })
+                buttons.append(actionButton("Use This Copy") { [weak self] in self?.toggle(connection, true) })
+                buttons.append(actionButton("Disconnect") { [weak self] in self?.toggle(connection, false) })
             case .notInstalled:
                 detail = "Adds hooks to \(connection.path.path.replacingOccurrences(of: NSHomeDirectory(), with: "~")). Your own hooks stay; a backup is kept."
-                buttons.append(button("Connect") { [weak self] in self?.toggle(connection, true) })
+                buttons.append(actionButton("Connect") { [weak self] in self?.toggle(connection, true) })
             case .error(let message):
                 detail = "\(connection.fileName) could not be read: \(message)"
             }
@@ -234,14 +230,5 @@ extension AgentsModule {
             alert.runModal()
         }
         contextShell?.openSettings(section: "agents")
-    }
-
-    private func button(_ title: String, _ action: @escaping () -> Void) -> NSButton {
-        let target = ClosureTarget(action)
-        let button = NSButton(title: title, target: target, action: #selector(ClosureTarget.run))
-        button.bezelStyle = .rounded
-        button.controlSize = .small
-        objc_setAssociatedObject(button, "action", target, .OBJC_ASSOCIATION_RETAIN)
-        return button
     }
 }

@@ -93,7 +93,8 @@ final class T3Watch {
     /// One short read-only snapshot; nil (not a partial result) on a busy or changed database.
     static func rows(_ path: String, _ query: String) -> [[String]]? {
         var db: OpaquePointer?
-        guard sqlite3_open_v2("file:\(path)?mode=ro", &db, SQLITE_OPEN_READONLY | SQLITE_OPEN_URI, nil) == SQLITE_OK else {
+        // A plain path, not a file: URI, so `?`, `#` or `%` in the home folder cannot change which file opens.
+        guard sqlite3_open_v2(path, &db, SQLITE_OPEN_READONLY, nil) == SQLITE_OK else {
             sqlite3_close(db)
             return nil
         }

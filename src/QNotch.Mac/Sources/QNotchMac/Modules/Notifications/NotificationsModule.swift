@@ -144,9 +144,10 @@ final class NotificationsModule: NotchModule {
     func systemDidWake() {}
 
     func stop() {
+        // Waiting senders get their "timeout" reply (exit 2) before the connections go away.
+        for note in items where note.pending { close(note, status: "Expired", result: "timeout") }
         server?.stopAll()
         server = nil
-        for note in items where note.pending { close(note, status: "Expired", result: "timeout") }
         ages?.invalidate(); ages = nil
         toastTask?.cancel()
         endPeek()

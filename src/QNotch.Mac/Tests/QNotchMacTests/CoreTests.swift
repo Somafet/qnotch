@@ -569,6 +569,23 @@ final class AgentsTests: XCTestCase {
         if case .error = file.status(of: "[1]") {} else { XCTFail("A non-object file is an error") }
     }
 
+    func testHookCommandIsShellQuoted() throws {
+        // The hook runs through /bin/sh, where `$`, backticks and backslashes expand inside double quotes but not single ones.
+        let odd = AgentHookFile(kind: .claude, executable: "/Users/me/My$Apps/Don't `Touch`/QNotch")
+        XCTAssertEqual(odd.command, #"'/Users/me/My$Apps/Don'\''t `Touch`/QNotch' agent"#)
+        XCTAssertTrue(odd.isOurs(odd.command))
+        XCTAssertEqual(AgentHookFile.executable(in: odd.command), odd.executable)
+        let codex = AgentHookFile(kind: .codex, executable: "/Applications/QNotch.app/Contents/MacOS/QNotch")
+        XCTAssertEqual(codex.command, "'/Applications/QNotch.app/Contents/MacOS/QNotch' agent codex")
+        XCTAssertTrue(codex.isOurs(codex.command))
+        XCTAssertFalse(AgentHookFile(kind: .claude, executable: "/x/QNotch").isOurs(codex.command))
+        // Hooks written by earlier builds used JSON-style double quotes; Disconnect still has to find them.
+        let legacy = "\"/Applications/QNotch.app/Contents/MacOS/QNotch\" agent"
+        XCTAssertTrue(AgentHookFile(kind: .claude, executable: "/x/QNotch").isOurs(legacy))
+        XCTAssertFalse(AgentHookFile(kind: .claude, executable: "/x/QNotch").isOurs("say done"))
+        XCTAssertFalse(AgentHookFile(kind: .claude, executable: "/x/QNotch").isOurs("/x/qnotch agent"), "An unquoted path is not one we wrote")
+    }
+
     func testHookInputIsTranslatedAndLinksValidated() throws {
         let ask = #"{"hook_event_name":"PreToolUse","session_id":"s1","cwd":"/code/api","tool_name":"AskUserQuestion","tool_input":{"questions":[{"question":"Which database?"}]},"transcript_path":"/t.jsonl"}"#
         let event = try XCTUnwrap(AgentEvent.from(hookInput: Data(ask.utf8), codex: false, pid: 7, link: nil, at: 1))
@@ -999,6 +1016,29 @@ final class SetupCodeTests: XCTestCase {
         }
         let outOfRange = SetupCode.prefix + SetupCode.base64url(SetupCode.deflate(Data(#"{"timer":{"Minutes":999}}"#.utf8)))
         XCTAssertThrowsError(try SetupCode.read(outOfRange, current: base, modules: []))
+    }
+
+    func testZeroAndOneAreNumbersNotBooleansAndTruncatedCodesFail() throws {
+        // 0 and 1 bridge to Bool, so a naive `is Bool` check used to reject "Off" toasts, 1-day history and a 0 ms hover.
+        let edges = Data(#"{"general":{"HoverDwellMs":0},"notifications":{"ToastSeconds":0,"RetentionDays":1,"Sound":true}}"#.utf8)
+        let plan = try SetupCode.read(SetupCode.prefix + SetupCode.base64url(SetupCode.deflate(edges)), current: base, modules: [])
+        XCTAssertEqual(plan.result.general.hoverDelayMs, 0)
+        XCTAssertEqual(plan.result.notifications.toastSeconds, 0)
+        XCTAssertEqual(plan.result.notifications.retentionDays, 1)
+        XCTAssertTrue(plan.result.notifications.sound)
+        // A JSON boolean is still not a number, and a number is still not a boolean.
+        for bad in [#"{"notifications":{"ToastSeconds":true}}"#, #"{"notifications":{"Sound":1}}"#] {
+            let code = SetupCode.prefix + SetupCode.base64url(SetupCode.deflate(Data(bad.utf8)))
+            XCTAssertThrowsError(try SetupCode.read(code, current: base, modules: [])) {
+                XCTAssertEqual(($0 as? SetupCode.Failure)?.message, "This code has a value QNotch cannot use (Notifications).")
+            }
+        }
+        // A code that lost its tail when pasted still base64-decodes; the decoder must give up, not wait forever.
+        let full = SetupCode.deflate(edges)
+        let truncated = SetupCode.prefix + SetupCode.base64url(full.prefix(full.count / 2))
+        XCTAssertThrowsError(try SetupCode.read(truncated, current: base, modules: [])) {
+            XCTAssertEqual(($0 as? SetupCode.Failure)?.message, "This code is damaged or incomplete. Copy it again.")
+        }
     }
 }
 

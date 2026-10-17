@@ -8,6 +8,7 @@ final class ScheduledModule: NotchModule {
     private var context: ModuleContext!
     private(set) var jobs: [LaunchAgentJob] = []
     private(set) var loadedOnce = false
+    private var panelOpen = false
     private(set) var error = ""
     var showAppAgents = false { didSet { refreshViews() } }
     private(set) var confirming: String?
@@ -42,7 +43,12 @@ final class ScheduledModule: NotchModule {
         return view
     }
 
-    func setVisibility(panel: Bool, activeTab: String) { if panel { reload() } else { confirming = nil } }
+    /// Reads once per panel opening, not on every tab switch while it is open.
+    func setVisibility(panel: Bool, activeTab: String) {
+        guard panel != panelOpen else { return }
+        panelOpen = panel
+        if panel { reload() } else { confirming = nil }
+    }
     func systemDidWake() {}
     func stop() {}
 
@@ -206,7 +212,7 @@ final class ScheduledTabView: NSView, ScheduledDisplay {
         let refresh = HoverButton(symbol: "arrow.clockwise", style: .icon, symbolSize: 11, label: "Reload") { [weak module] in module?.reload() }
         let header = row([line("Launch agents", size: 13, weight: .semibold, color: Palette.textPrimary), count, spacer(), showApps, refresh], spacing: 8)
         error.preferredMaxLayoutWidth = 640
-        let document = ScheduledFlippedView()
+        let document = FlippedView()
         document.translatesAutoresizingMaskIntoConstraints = false
         embed(list, in: document, inset: NSEdgeInsets(top: 0, left: 0, bottom: 6, right: 0), fill: true)
         let scroll = NSScrollView()
@@ -245,10 +251,6 @@ final class ScheduledTabView: NSView, ScheduledDisplay {
             row.widthAnchor.constraint(equalTo: list.widthAnchor).isActive = true
         }
     }
-}
-
-private final class ScheduledFlippedView: NSView {
-    override var isFlipped: Bool { true }
 }
 
 private final class JobRow: FillView {

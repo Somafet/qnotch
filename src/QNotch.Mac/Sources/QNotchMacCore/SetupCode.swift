@@ -81,14 +81,17 @@ public enum SetupCode {
             try apply(fields)
             titles.append(title)
         }
+        // JSONSerialization gives NSNumber for both numbers and booleans, and `0 is Bool` is true
+        // under Foundation's bridging, so the CoreFoundation type is what tells a JSON `true` from a `1`.
+        func isJSONBool(_ value: Any) -> Bool { (value as? NSNumber).map { CFGetTypeID($0) == CFBooleanGetTypeID() } ?? false }
         func int(_ value: Any?, _ range: ClosedRange<Int>, _ title: String) throws -> Int? {
             guard let value else { return nil }
-            guard let number = value as? NSNumber, !(value is Bool), range.contains(number.intValue) else { throw Failure(message: "This code has a value QNotch cannot use (\(title)).") }
+            guard let number = value as? NSNumber, !isJSONBool(value), range.contains(number.intValue) else { throw Failure(message: "This code has a value QNotch cannot use (\(title)).") }
             return number.intValue
         }
         func bool(_ value: Any?, _ title: String) throws -> Bool? {
             guard let value else { return nil }
-            guard let flag = value as? Bool else { throw Failure(message: "This code has a value QNotch cannot use (\(title)).") }
+            guard isJSONBool(value), let flag = value as? Bool else { throw Failure(message: "This code has a value QNotch cannot use (\(title)).") }
             return flag
         }
         func strings(_ value: Any?, _ title: String) throws -> [String]? {
@@ -192,11 +195,16 @@ public enum SetupCode {
             while true {
                 stream.pointee.dst_ptr = buffer
                 stream.pointee.dst_size = size
+                let remaining = stream.pointee.src_size
                 let status = compression_stream_process(stream, Int32(COMPRESSION_STREAM_FINALIZE.rawValue))
-                output.append(buffer, count: size - stream.pointee.dst_size)
+                let produced = size - stream.pointee.dst_size
+                output.append(buffer, count: produced)
                 if output.count > limit { return output }
                 switch status {
-                case COMPRESSION_STATUS_OK: continue
+                case COMPRESSION_STATUS_OK:
+                    // Nothing read and nothing written: a truncated stream the decoder would wait on forever.
+                    if produced == 0, stream.pointee.src_size == remaining { return nil }
+                    continue
                 case COMPRESSION_STATUS_END: return output
                 default: return nil
                 }

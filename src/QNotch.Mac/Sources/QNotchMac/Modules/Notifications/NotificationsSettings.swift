@@ -18,7 +18,7 @@ extension NotificationsModule {
                                selected: NotificationSettings.retentionChoices.firstIndex(of: settings.retentionDays) ?? 2) { [weak self] index in
             self?.set { $0.retentionDays = NotificationSettings.retentionChoices[index] }
         }
-        let test = button("Send Test") { [weak self] in self?.sendTest() }
+        let test = actionButton("Send Test") { [weak self] in self?.sendTest() }
         var quietDetail = "While an app uses the microphone: no toasts (except notifications waiting for an answer) and no automatic panel. History and the unread count still update."
         if !quietStatus.isEmpty { quietDetail += " " + quietStatus }
         let behavior = settingsGroup([
@@ -31,7 +31,7 @@ extension NotificationsModule {
         ], width: width)
 
         let command = "\(Self.commandPath) notify \"Build done\""
-        let copyCommand = button("Copy") {
+        let copyCommand = actionButton("Copy") {
             NSPasteboard.general.clearContents()
             NSPasteboard.general.setString("\"\(Self.commandPath)\" notify", forType: .string)
         }
@@ -50,25 +50,22 @@ extension NotificationsModule {
         port.alignment = .right
         port.widthAnchor.constraint(equalToConstant: 70).isActive = true
         port.setAccessibilityLabel("Port")
-        let portAction = ClosureTarget { [weak self, weak port] in
+        port.onAction { [weak self, weak port] in
             guard let self, let port else { return }
             guard let value = Int(port.stringValue), (1024...65535).contains(value) else { port.stringValue = "\(self.settings.httpPort)"; NSSound.beep(); return }
             self.set { $0.httpPort = value }
         }
-        port.target = portAction
-        port.action = #selector(ClosureTarget.run)
-        objc_setAssociatedObject(port, "action", portAction, .OBJC_ASSOCIATION_RETAIN)
         let tokenPreview = line("••••••", size: 12, color: .secondaryLabelColor)
-        let show = button("Show") { [weak self, weak tokenPreview] in
+        let show = actionButton("Show") { [weak self, weak tokenPreview] in
             guard let self else { return }
             tokenPreview?.stringValue = String(self.currentToken().prefix(6)) + "…"
         }
-        let copyToken = button("Copy") { [weak self] in
+        let copyToken = actionButton("Copy") { [weak self] in
             guard let self else { return }
             NSPasteboard.general.clearContents()
             NSPasteboard.general.setString(self.currentToken(), forType: .string)
         }
-        let renew = button("New Token") { [weak self] in
+        let renew = actionButton("New Token") { [weak self] in
             self?.renewToken()
             tokenPreview.stringValue = "••••••"
         }
@@ -95,15 +92,6 @@ extension NotificationsModule {
         }
         let mute = settingsGroup(appRows, header: "Apps", footer: "A muted app still goes into the history, but never toasts, counts as unread or opens the panel.", width: width)
         return column([behavior, cli, local, mute], spacing: 22)
-    }
-
-    private func button(_ title: String, _ action: @escaping () -> Void) -> NSButton {
-        let target = ClosureTarget(action)
-        let button = NSButton(title: title, target: target, action: #selector(ClosureTarget.run))
-        button.bezelStyle = .rounded
-        button.controlSize = .small
-        objc_setAssociatedObject(button, "action", target, .OBJC_ASSOCIATION_RETAIN)
-        return button
     }
 
     private func wrap(_ view: NSView, width: CGFloat) -> NSView {

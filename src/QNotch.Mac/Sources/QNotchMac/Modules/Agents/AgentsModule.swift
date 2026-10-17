@@ -243,7 +243,8 @@ final class AgentsModule: NotchModule {
             DispatchQueue.main.async {
                 self.reading.remove(id)
                 if self.stale.contains(id), let session = self.board.sessions.first(where: { $0.id == id }) { self.readUsage(session) }
-                if today.tokens > 0 { self.usage[id] = (cwd, today) }
+                // Past midnight the reader's "today" starts at zero; keeping yesterday's total would show it as today.
+                if today.tokens > 0 { self.usage[id] = (cwd, today) } else { self.usage[id] = nil }
                 if let title, self.appTitles[id] == nil, self.board.sessions.first(where: { $0.id == id })?.t3Thread == nil {
                     self.board.setTitle(title, for: id)
                 }

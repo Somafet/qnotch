@@ -71,8 +71,16 @@ final class AiModule: NotchModule {
         }
         scan()
         if Runtime.diagnostics { seedDemo(); return }
-        accounts = Self.discoverAccounts()
+        loadAccounts { [weak self] accounts in self?.accounts = accounts; self?.refreshViews() }
         schedule(after: 4)
+    }
+
+    /// Lists the home folder and reads each account file off the main thread; ~/.claude.json can be many megabytes.
+    private func loadAccounts(_ done: @escaping ([ClaudeAccount]) -> Void) {
+        io.async {
+            let accounts = Self.discoverAccounts()
+            DispatchQueue.main.async { done(accounts) }
+        }
     }
 
     private func track<V: NSView & AiDisplay>(_ view: V) -> NSView {
@@ -210,17 +218,22 @@ final class AiModule: NotchModule {
         refreshViews()
         let group = DispatchGroup()
         if settings.claude {
-            accounts = Self.discoverAccounts()
-            claudeResults = claudeResults.filter { path, _ in accounts.contains { $0.path == path } }
-            // Each account has its own request, timeout and failure; one never affects another.
-            for account in accounts {
-                group.enter()
-                fetchClaude(account) { [weak self] result in
-                    guard let self else { return group.leave() }
-                    self.claudeResults[account.path] = result
-                    if account.path == self.shownAccount?.path { self.claude.result = result }
-                    group.leave()
+            group.enter()
+            loadAccounts { [weak self] accounts in
+                guard let self else { return group.leave() }
+                self.accounts = accounts
+                self.claudeResults = self.claudeResults.filter { path, _ in accounts.contains { $0.path == path } }
+                // Each account has its own request, timeout and failure; one never affects another.
+                for account in accounts {
+                    group.enter()
+                    self.fetchClaude(account) { [weak self] result in
+                        guard let self else { return group.leave() }
+                        self.claudeResults[account.path] = result
+                        if account.path == self.shownAccount?.path { self.claude.result = result }
+                        group.leave()
+                    }
                 }
+                group.leave()
             }
         }
         if settings.codex {

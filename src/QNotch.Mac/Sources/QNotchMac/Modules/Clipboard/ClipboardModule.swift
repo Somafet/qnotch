@@ -208,12 +208,7 @@ final class ClipboardModule: NotchModule {
     private func makeSettings() -> NSView {
         let width = SettingsController.contentWidth
         let keep = ActionSwitch("Keep history between sessions", value: settings.keepHistory) { [weak self] value in self?.setKeepHistory(value) }
-        let clear = NSButton(title: "Clear History", target: nil, action: nil)
-        clear.bezelStyle = .rounded
-        let clearAction = ClosureTarget { [weak self] in self?.clear() }
-        clear.target = clearAction
-        clear.action = #selector(ClosureTarget.run)
-        objc_setAssociatedObject(clear, "action", clearAction, .OBJC_ASSOCIATION_RETAIN)
+        let clear = actionButton("Clear History", size: .regular) { [weak self] in self?.clear() }
         var rows = [
             settingsRow("Keep history between sessions", detail: "Saves text entries and pins to clipboard.json on this Mac. Images are never saved. Turning this off deletes the file.", control: keep, width: width),
             settingsRow("Clear history", detail: "Removes every entry except pinned ones. History holds the last 40 entries.", control: clear, width: width)
@@ -253,11 +248,4 @@ final class ClipboardImages {
         return image
     }
     func removeAll() { cache.removeAll() }
-}
-
-/// Target-action adapter for a closure.
-final class ClosureTarget: NSObject {
-    private let handler: () -> Void
-    init(_ handler: @escaping () -> Void) { self.handler = handler }
-    @objc func run() { handler() }
 }
