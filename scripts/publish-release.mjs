@@ -19,6 +19,15 @@ function getRelease(run, endpoint) {
   }
 }
 
+// GitHub's releases/tags/{tag} never returns drafts; only the authenticated release list includes them.
+// Drafts are the newest releases, so the first page holds one this publisher just created.
+function getTaggedRelease(run, tag) {
+  const published = getRelease(run, `tags/${encodeURIComponent(tag)}`);
+  if (published) return published;
+  const releases = JSON.parse(run(['api', `repos/${repository}/releases?per_page=100`]));
+  return releases.find(release => release.tag_name === tag) ?? null;
+}
+
 async function describeAsset(path) {
   const size = statSync(path).size;
   if (size <= 0) throw new Error(`Empty release asset: ${basename(path)}`);
@@ -50,7 +59,7 @@ export async function publishRelease({ tag, platform, paths }, run = gh) {
   }
   const latest = getRelease(run, 'latest');
   validateLatest(policy, latest);
-  const existing = getRelease(run, `tags/${encodeURIComponent(tag)}`);
+  const existing = getTaggedRelease(run, tag);
   if (existing && !existing.draft) throw new Error('Refusing to modify a published release.');
   if (existing) {
     run(['release', 'upload', tag, ...assets.map(asset => asset.path), '--repo', repository, '--clobber']);
@@ -61,12 +70,12 @@ export async function publishRelease({ tag, platform, paths }, run = gh) {
     if (platform === 'windows' && latest) args.push('--notes-start-tag', latest.tag_name);
     run(args);
   }
-  verifyUploadedRelease(getRelease(run, `tags/${encodeURIComponent(tag)}`), policy, assets);
+  verifyUploadedRelease(getTaggedRelease(run, tag), policy, assets);
   // Recheck immediately before promotion, including when resuming a failed draft upload.
   validateLatest(policy, getRelease(run, 'latest'));
   run(['release', 'edit', tag, '--repo', repository, '--draft=false', `--latest=${policy.latest}`,
     `--prerelease=${policy.prerelease}`]);
-  const published = getRelease(run, `tags/${encodeURIComponent(tag)}`);
+  const published = getTaggedRelease(run, tag);
   if (!published || published.draft || published.prerelease !== policy.prerelease) throw new Error('Release was not published as requested.');
   const latestAfter = getRelease(run, 'latest');
   const expectedLatest = policy.latest ? tag : latest?.tag_name;
