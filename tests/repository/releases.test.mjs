@@ -40,7 +40,8 @@ test('Windows latest cannot go backwards or point at another platform', () => {
 
 // Exercise the publishing transaction with local files and a fake gh transport. No releases are created by tests.
 function scenario(t, { platform = 'windows', tag = 'v0.5.0', corrupt = false, missing = false,
-  existingPublished = false, existingDraft = false, newerDuringUpload = false, apiError = null } = {}) {
+  existingPublished = false, existingDraft = false, newerDuringUpload = false, untaggedAfterPublish = false,
+  apiError = null } = {}) {
   const dir = mkdtempSync(join(tmpdir(), 'qnotch release ü '));
   t.after(() => rmSync(dir, { recursive: true }));
   const names = platform === 'windows' ? ['QNotch.exe', 'QNotch-self-contained.zip'] : ['QNotch-macos-arm64.dmg'];
@@ -63,13 +64,17 @@ function scenario(t, { platform = 'windows', tag = 'v0.5.0', corrupt = false, mi
     if (args[1] === 'create' || args[1] === 'upload') {
       release = { tag_name: tag, draft: true, prerelease: tag.includes('-beta.'), assets: names.map(name => ({
         name, size: 13, state: 'uploaded', digest: corrupt ? 'sha256:' + '0'.repeat(64) : digest,
-        browser_download_url: `https://github.com/${repository}/releases/download/${tag}/${name}`,
+        // Like GitHub: a draft's assets live at an untagged-<id> address until it is published.
+        browser_download_url: `https://github.com/${repository}/releases/download/untagged-0123abcd/${name}`,
       })) };
       if (missing) release.assets.pop();
       if (newerDuringUpload) currentLatest = { tag_name: 'v0.6.0' };
     }
     if (args[1] === 'edit') {
       release.draft = false;
+      if (!untaggedAfterPublish) for (const asset of release.assets) {
+        asset.browser_download_url = `https://github.com/${repository}/releases/download/${tag}/${asset.name}`;
+      }
       if (args.includes('--latest=true')) currentLatest = release;
     }
     return '';
@@ -104,6 +109,11 @@ for (const failure of ['corrupt', 'missing', 'existingPublished', 'newerDuringUp
     if (failure === 'existingPublished') assert.ok(!s.calls.some(args => args[0] === 'release'));
   });
 }
+
+test('a published release whose downloads are not at the tag address fails verification', async t => {
+  const s = scenario(t, { untaggedAfterPublish: true });
+  await assert.rejects(publishRelease(s.options, s.run), /Published asset verification failed/);
+});
 
 test('a failed draft can be resumed without recreating a release', async t => {
   const s = scenario(t, { existingDraft: true });

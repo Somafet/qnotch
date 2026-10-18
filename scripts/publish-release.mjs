@@ -36,6 +36,11 @@ async function describeAsset(path) {
   return { path: resolve(path), name: basename(path), size, digest: `sha256:${hash.digest('hex')}` };
 }
 
+function downloadUrl(tag, name) {
+  return `https://github.com/${repository}/releases/download/${encodeURIComponent(tag)}/${name}`;
+}
+
+// A draft serves its assets from an untagged-<id> address; the tag address exists only once published.
 export function verifyUploadedRelease(release, policy, assets) {
   if (!release?.draft || release.tag_name !== policy.tag || release.prerelease !== policy.prerelease) {
     throw new Error('Expected a draft release with the matching tag and channel.');
@@ -43,9 +48,21 @@ export function verifyUploadedRelease(release, policy, assets) {
   validateAssetNames(policy, release.assets.map(asset => asset.name));
   for (const local of assets) {
     const remote = release.assets.find(asset => asset.name === local.name);
-    const url = `https://github.com/${repository}/releases/download/${encodeURIComponent(policy.tag)}/${local.name}`;
-    if (remote?.state !== 'uploaded' || remote.size !== local.size || remote.digest?.toLowerCase() !== local.digest
-      || remote.browser_download_url !== url) throw new Error(`Uploaded asset verification failed: ${local.name}`);
+    if (remote?.state !== 'uploaded' || remote.size !== local.size || remote.digest?.toLowerCase() !== local.digest) {
+      throw new Error(`Uploaded asset verification failed: ${local.name}`);
+    }
+  }
+}
+
+export function verifyPublishedRelease(release, policy, assets) {
+  if (!release || release.draft || release.prerelease !== policy.prerelease) throw new Error('Release was not published as requested.');
+  validateAssetNames(policy, release.assets.map(asset => asset.name));
+  for (const local of assets) {
+    const remote = release.assets.find(asset => asset.name === local.name);
+    if (remote?.size !== local.size || remote.digest?.toLowerCase() !== local.digest
+      || remote.browser_download_url !== downloadUrl(policy.tag, local.name)) {
+      throw new Error(`Published asset verification failed: ${local.name}`);
+    }
   }
 }
 
@@ -75,8 +92,7 @@ export async function publishRelease({ tag, platform, paths }, run = gh) {
   validateLatest(policy, getRelease(run, 'latest'));
   run(['release', 'edit', tag, '--repo', repository, '--draft=false', `--latest=${policy.latest}`,
     `--prerelease=${policy.prerelease}`]);
-  const published = getTaggedRelease(run, tag);
-  if (!published || published.draft || published.prerelease !== policy.prerelease) throw new Error('Release was not published as requested.');
+  verifyPublishedRelease(getTaggedRelease(run, tag), policy, assets);
   const latestAfter = getRelease(run, 'latest');
   const expectedLatest = policy.latest ? tag : latest?.tag_name;
   if (latestAfter?.tag_name !== expectedLatest) throw new Error('The global latest release does not match the platform policy.');
