@@ -21,6 +21,9 @@ jobs:
     timeout-minutes: 60
     permissions:
       contents: write
+    outputs:
+      signature: ${{ steps.update.outputs.signature }}
+      length: ${{ steps.update.outputs.length }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -89,15 +92,58 @@ jobs:
           printf '%s' "${APP_STORE_CONNECT_PRIVATE_KEY:?APP_STORE_CONNECT_PRIVATE_KEY_BASE64 is missing}" | base64 --decode > "$APP_STORE_CONNECT_KEY_PATH"
           bash scripts/macos/release.sh
 
+      # The EdDSA signature installed copies check before extracting the update (Sparkle).
+      - name: Sign the Sparkle update
+        id: update
+        env:
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        run: |
+          set +x
+          node scripts/macos/appcast.mjs check-key --plist src/QNotch.Mac/Info.plist
+          tools=src/QNotch.Mac/.build/artifacts/sparkle/Sparkle/bin
+          update=dist/macos/QNotch-macos-arm64.zip
+          signature="$(printf '%s' "$SPARKLE_PRIVATE_KEY" | "$tools/sign_update" --ed-key-file - -p "$update")"
+          printf '%s' "$SPARKLE_PRIVATE_KEY" | "$tools/sign_update" --ed-key-file - --verify "$update" "$signature"
+          { echo "signature=$signature"; echo "length=$(stat -f%z "$update")"; } >> "$GITHUB_OUTPUT"
+
       - name: Publish verified release
         env:
           GH_TOKEN: ${{ github.token }}
         run: >-
           node scripts/publish-release.mjs --platform macos --tag "$GITHUB_REF_NAME"
-          --asset dist/macos/QNotch-macos-arm64.dmg
+          --asset dist/macos/QNotch-macos-arm64.dmg --asset dist/macos/QNotch-macos-arm64.zip
 
       - name: Remove signing material
         if: always()
         run: |
           security delete-keychain "$RUNNER_TEMP/qnotch-signing.keychain-db" 2>/dev/null || true
           rm -f "$RUNNER_TEMP/AuthKey.p8" "$RUNNER_TEMP/certificate.p12"
+
+  # Separate from release so a failed push can be rerun on its own once the release is public.
+  appcast:
+    needs: release
+    if: github.repository == 'Somafet/qnotch'
+    runs-on: macos-14
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Fetch Sparkle's tools
+        run: source scripts/macos/toolchain.sh && xcrun swift package --package-path src/QNotch.Mac resolve
+
+      - name: Publish the signed appcast
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+          SIGNATURE: ${{ needs.release.outputs.signature }}
+          LENGTH: ${{ needs.release.outputs.length }}
+          BUILD: ${{ github.run_number }}
+        run: bash scripts/macos/publish-appcast.sh "$GITHUB_REF_NAME" "$BUILD" "$SIGNATURE" "$LENGTH"

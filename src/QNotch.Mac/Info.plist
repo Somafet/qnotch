@@ -14,5 +14,14 @@
     <key>NSHighResolutionCapable</key><true/>
     <key>NSAppleEventsUsageDescription</key><string>QNotch controls playback and reads the current position and artwork in Music and Spotify.</string>
     <key>NSSupportsAutomaticGraphicsSwitching</key><true/>
+    <!-- Sparkle: the feed URL comes from UpdateChannel. Feed and archives must carry an EdDSA
+         signature from this key, verified before the archive is extracted. Without
+         SUEnableAutomaticChecks, Sparkle asks on the second launch whether to check
+         automatically, as Windows asks on its first start. -->
+    <key>SUPublicEDKey</key><string>D3Cin3SwrpqCUdqKVxS996g62llRgWF/1kfTEe50wLc=</string>
+    <key>SURequireSignedFeed</key><true/>
+    <key>SUVerifyUpdateBeforeExtraction</key><true/>
+    <key>SUEnableInstallerLauncherService</key><false/>
+    <key>SUEnableDownloaderService</key><false/>
 </dict>
 </plist>

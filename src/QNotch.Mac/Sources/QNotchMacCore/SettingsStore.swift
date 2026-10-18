@@ -32,6 +32,8 @@ public struct GeneralSettings: Codable, Equatable {
     public var tabOrder: [String] = []
     /// Floating-pill offsets by display id (points from the display's center).
     public var pillOffsets: [String: Double] = [:]
+    /// Offer beta (prerelease) Mac versions as updates, not only stable ones.
+    public var betaUpdates = false
     public init() {}
 
     public func isEnabled(_ module: String) -> Bool { !disabledModules.contains(module) }
@@ -52,7 +54,7 @@ public struct GeneralSettings: Codable, Equatable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case displayID, reduceMotion, disabledModules, timerEnabled, hoverDelayMs, closeDelayMs, pinned, accent, profileName, hiddenCards, cardOrder, tabOrder, pillOffsets
+        case displayID, reduceMotion, disabledModules, timerEnabled, hoverDelayMs, closeDelayMs, pinned, accent, profileName, hiddenCards, cardOrder, tabOrder, pillOffsets, betaUpdates
     }
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -70,6 +72,7 @@ public struct GeneralSettings: Codable, Equatable {
         cardOrder = c.value(.cardOrder, [])
         tabOrder = c.value(.tabOrder, [])
         pillOffsets = c.value(.pillOffsets, [:])
+        betaUpdates = c.value(.betaUpdates, false)
     }
     public func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
@@ -85,6 +88,7 @@ public struct GeneralSettings: Codable, Equatable {
         try c.encode(cardOrder, forKey: .cardOrder)
         try c.encode(tabOrder, forKey: .tabOrder)
         try c.encode(pillOffsets, forKey: .pillOffsets)
+        try c.encode(betaUpdates, forKey: .betaUpdates)
     }
 }
 

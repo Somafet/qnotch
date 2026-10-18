@@ -1,6 +1,8 @@
 #!/bin/bash
 # Signs dist/macos/QNotch.app with Developer ID, notarizes and staples it, and packages
-# dist/macos/QNotch-macos-arm64.dmg (also signed, notarized and stapled). Run build.sh first.
+# dist/macos/QNotch-macos-arm64.dmg (also signed, notarized and stapled) and the Sparkle update
+# dist/macos/QNotch-macos-arm64.zip. Run build.sh first. The update's EdDSA signature is added
+# by the release workflow; this script needs no Sparkle key.
 #
 # APPLE_TEAM_ID selects the Developer ID Application identity for that team from your keychains
 # (MACOS_SIGNING_IDENTITY overrides it). Notarization credentials, one of:
@@ -20,6 +22,7 @@ if [[ -z "$identity" ]]; then
 fi
 app="$repo_root/dist/macos/QNotch.app"
 dmg="$repo_root/dist/macos/QNotch-macos-arm64.dmg"
+update="$repo_root/dist/macos/QNotch-macos-arm64.zip"
 entitlements="$repo_root/src/QNotch.Mac/QNotch.entitlements"
 [[ -d "$app" ]] || { echo "Run scripts/macos/build.sh first: $app is missing." >&2; exit 1; }
 [[ "$identity" == *"($team_id)" ]] || { echo "Signing identity is not on team $team_id." >&2; exit 1; }
@@ -54,7 +57,13 @@ notarize() {
     echo "Notarization $id accepted"
 }
 
-# 1. The app: hardened runtime, secure timestamp, Now playing's Apple Events entitlement.
+# 1. Sparkle's helpers, inside out, then the app: hardened runtime, secure timestamp, Now playing's
+#    Apple Events entitlement. Under the hardened runtime the app only loads its own team's code.
+sparkle="$app/Contents/Frameworks/Sparkle.framework"
+[[ -d "$sparkle" ]] || { echo "Sparkle.framework is missing from $app." >&2; exit 1; }
+for nested in "$sparkle/Versions/B/Autoupdate" "$sparkle/Versions/B/Updater.app" "$sparkle"; do
+    codesign --force --sign "$identity" --options runtime --timestamp "$nested"
+done
 codesign --force --sign "$identity" --options runtime --timestamp --entitlements "$entitlements" "$app"
 codesign --verify --deep --strict --verbose=2 "$app"
 signed_team="$(codesign -dv "$app" 2>&1 | sed -n 's/^TeamIdentifier=//p')"
@@ -66,7 +75,11 @@ ditto -c -k --keepParent "$app" "$scratch/QNotch.zip"
 notarize "$scratch/QNotch.zip"
 xcrun stapler staple "$app"
 
-# 3. The disk image: the stapled app and an Applications shortcut.
+# 3. The Sparkle update: the stapled app, zipped the way Sparkle extracts it.
+rm -f "$update"
+ditto -c -k --sequesterRsrc --keepParent "$app" "$update"
+
+# 4. The disk image: the stapled app and an Applications shortcut.
 stage="$scratch/dmg"
 mkdir -p "$stage"
 ditto "$app" "$stage/QNotch.app"
@@ -77,9 +90,9 @@ codesign --force --sign "$identity" --timestamp "$dmg"
 notarize "$dmg"
 xcrun stapler staple "$dmg"
 
-# 4. Check what a downloading user's Mac will check.
+# 5. Check what a downloading user's Mac will check.
 xcrun stapler validate "$app"
 xcrun stapler validate "$dmg"
 spctl --assess --type execute --verbose=2 "$app"
 spctl --assess --type open --context context:primary-signature --verbose=2 "$dmg"
-echo "Signed, notarized and stapled $dmg"
+echo "Signed, notarized and stapled $dmg and $update"

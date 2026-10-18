@@ -41,15 +41,30 @@ This command publishes remotely. Repository tests use a fake GitHub CLI transpor
 ## Mac channel
 
 - Tags are `macos-vX.Y.Z`, optionally with `-alpha.N`, `-beta.N`, or `-rc.N`. Versions can differ from Windows; only suffixed tags are prereleases.
-- Assets are `QNotch-macos-arm64.dmg`, `QNotch-macos-x64.dmg`, or `QNotch-macos-universal.dmg`, with `.zip` as an alternative. Ship only architectures actually supported and tested; today that is `QNotch-macos-arm64.dmg`.
+- Assets are `QNotch-macos-arm64.dmg`, `QNotch-macos-x64.dmg`, or `QNotch-macos-universal.dmg`, with `.zip` as an alternative. Ship only architectures actually supported and tested; today that is `QNotch-macos-arm64.dmg` for first installs and `QNotch-macos-arm64.zip`, the same stapled app, as the Sparkle update.
 - Pushing a `macos-v*` tag runs `.github/workflows/release-macos.yml` on an Apple silicon runner. It validates the tag, runs repository checks, builds with the tag's version (`CFBundleVersion` is the workflow run number), runs the Mac regressions and UI smoke test, imports the Developer ID certificate into a temporary keychain, then runs `scripts/macos/release.sh`: hardened-runtime signing with `src/QNotch.Mac/QNotch.entitlements`, notarization and stapling of the app, then of the signed disk image, and Gatekeeper assessment of both. It publishes through the same guarded publisher with `--platform macos`, which derives `--latest=false` from the channel and offers no override, including for stable Mac releases. It shares the `qnotch-release` concurrency group with Windows. The Windows tag workflow does not run on `macos-v*`.
-- Resolve Mac downloads from the Mac channel rather than `/releases/latest`. If Sparkle is adopted, provide a separate appcast and its signed updates. Do not use global latest as a platform feed.
+- Resolve Mac downloads from the Mac channel rather than `/releases/latest`. Updates use a separate Sparkle appcast (below). Do not use global latest as a platform feed.
 
-The workflow reads the repository variable `APPLE_TEAM_ID` (and optionally `MACOS_SIGNING_IDENTITY`) and the secrets `MACOS_CERTIFICATE_P12_BASE64`, `MACOS_CERTIFICATE_PASSWORD`, `APP_STORE_CONNECT_PRIVATE_KEY_BASE64`, `APP_STORE_CONNECT_KEY_ID`, and `APP_STORE_CONNECT_ISSUER_ID`. Set them once with `bash scripts/macos/setup-signing.sh` on the Mac that holds the certificate; it checks that the `.p12` contains a Developer ID Application identity with its private key for the chosen team and that Apple accepts the API key before uploading anything. Account names and credential values do not belong in documentation or issues.
+The workflow reads the repository variable `APPLE_TEAM_ID` (and optionally `MACOS_SIGNING_IDENTITY`) and the secrets `MACOS_CERTIFICATE_P12_BASE64`, `MACOS_CERTIFICATE_PASSWORD`, `APP_STORE_CONNECT_PRIVATE_KEY_BASE64`, `APP_STORE_CONNECT_KEY_ID`, `APP_STORE_CONNECT_ISSUER_ID`, and, for updates, `SPARKLE_PRIVATE_KEY` (set with `bash scripts/macos/setup-sparkle.sh`). Set them once with `bash scripts/macos/setup-signing.sh` on the Mac that holds the certificate; it checks that the `.p12` contains a Developer ID Application identity with its private key for the chosen team and that Apple accepts the API key before uploading anything. Account names and credential values do not belong in documentation or issues.
 
 To produce the same signed disk image locally, save the API key as a notarytool profile (the setup script offers to), then run `scripts/macos/build.sh` and `APPLE_TEAM_ID=<team> NOTARY_KEYCHAIN_PROFILE=qnotch bash scripts/macos/release.sh`. That submits to Apple's notary service but publishes nothing.
 
 Before the first public Mac release, verify installation of the published disk image on a clean Mac and on macOS 13, the deployment target.
+
+## Mac updates (Sparkle)
+
+Installed copies use [Sparkle 2](https://sparkle-project.org). They read `https://raw.githubusercontent.com/Somafet/qnotch/macos-appcast/appcast.xml` (`UpdateChannel.feedURL`), an RSS feed on the `macos-appcast` branch, which holds nothing else and is written only by the release workflow. The host is not trusted: the app's `SUPublicEDKey` must verify the feed (`SURequireSignedFeed`) and each update before extraction (`SUVerifyUpdateBeforeExtraction`), and Sparkle installs only a copy signed by the same Developer ID team.
+
+The release workflow, after notarization:
+
+1. `release.sh` signs Sparkle's `Autoupdate`, `Updater.app` and framework inside out before the app (the build removes Sparkle's XPC services, which only sandboxed apps use), and zips the stapled app as `QNotch-macos-arm64.zip`.
+2. **Sign the Sparkle update** checks that the `SPARKLE_PRIVATE_KEY` secret belongs to `SUPublicEDKey` (`appcast.mjs check-key`; a mismatch would make every installed copy reject the update), signs the zip with Sparkle's `sign_update` and verifies the signature. Only this step and the appcast job receive the key.
+3. The guarded publisher publishes the disk image and the zip.
+4. The separate `appcast` job runs `scripts/macos/publish-appcast.sh`: it checks that GitHub serves the published zip with the signed length, adds an item (newest first, at most 30) with `sparkle:version` = the workflow run number (`CFBundleVersion`), the tag's short version, macOS 13 and arm64 requirements, the release notes as Markdown and a link to the release, signs the whole feed, verifies it, and pushes the branch. Prerelease tags go to Sparkle's `beta` channel, which only copies with **Beta versions** on read. Rerunning the job for the same tag replaces its item. If it fails, rerun only that job; the release is already public.
+
+Sparkle compares `CFBundleVersion`, the run number, so a later stable release always supersedes an earlier beta. A beta tagged after a stable release with a lower marketing version would also be offered to beta users; tag versions in order.
+
+The signing key lives in the login keychain of the release Mac (`generate_keys --account qnotch`, from `src/QNotch.Mac/.build/artifacts/sparkle/Sparkle/bin` after a build). `bash scripts/macos/setup-sparkle.sh` checks it against `SUPublicEDKey` and uploads it as `SPARKLE_PRIVATE_KEY`. Back it up (`generate_keys --account qnotch -x <file>`) somewhere safe: without it, installed copies can never be updated again except by a manual download of a build with a new key.
 
 ## Required checks
 

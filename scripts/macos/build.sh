@@ -17,6 +17,13 @@ temporary_executable="$(mktemp "$app/Contents/MacOS/.QNotch.XXXXXX")"
 cp "$binary_dir/QNotch" "$temporary_executable"
 chmod +x "$temporary_executable"
 mv -f "$temporary_executable" "$app/Contents/MacOS/QNotch"
+# Sparkle (updates). QNotch is not sandboxed, so Sparkle's XPC services are unused and removed;
+# release.sh signs what remains (Autoupdate, Updater.app, the framework) inside out.
+frameworks="$app/Contents/Frameworks"
+rm -rf "$frameworks"
+mkdir -p "$frameworks"
+ditto "$binary_dir/Sparkle.framework" "$frameworks/Sparkle.framework"
+rm -rf "$frameworks/Sparkle.framework/Versions/B/XPCServices" "$frameworks/Sparkle.framework/XPCServices"
 cp "$package/Info.plist" "$app/Contents/Info.plist"
 # The release workflow passes the tag's version and a monotonic build number.
 if [[ -n "${QNOTCH_VERSION:-}" ]]; then
