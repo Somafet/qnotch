@@ -9,7 +9,7 @@ Free and open source under the [MIT license](LICENSE). No account required.
 - **Windows: available.** The existing C#/.NET 10 WPF app stays in `src/QNotch/`. [Download Windows](https://github.com/Somafet/qnotch/releases/latest) · [Windows guide](docs/windows/README.md) · [Build and test](docs/windows/development.md).
 - **macOS: development milestone.** Native Swift/AppKit menu-bar shell and countdown timer for Apple silicon, macOS 13+. No public download yet. [Build, run, test, and limitations](docs/macos/README.md).
 
-Both ports belong in this repository and can release independently. A feature being available on Windows does not imply Mac support. The landing page and interactive demo currently describe Windows.
+Both ports belong in this repository and can release independently. A feature being available on Windows does not imply Mac support. The landing page and interactive demo cover both, with a Windows/Mac switch.
 
 ![The QNotch Windows panel](docs/images/home.png)
 

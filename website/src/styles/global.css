@@ -110,6 +110,12 @@ pre {
   flex: none;
 }
 
+/* Content for one platform only: <html data-os> is set before the first paint (Base.astro). */
+:root:not([data-os='mac']) .os-mac,
+:root[data-os='mac'] .os-win {
+  display: none !important;
+}
+
 .wrap {
   width: min(1160px, 100% - 32px);
   margin-inline: auto;

@@ -2,6 +2,7 @@ import { svg, type IconName } from '../icons';
 import { initDesktop, put, fmtSize, fileIcon, setDrag, isFileDrag, readDrop, FILES, type FileItem, type GameSetting } from './desktop';
 import { shareQr } from './shareqr';
 import { WX, wxDays } from './weather';
+import { isMac as mac, onOS } from './platform';
 
 type Mode = 'collapsed' | 'open' | 'game';
 type OpenedBy = 'hover' | 'scenario' | 'keys';
@@ -10,10 +11,12 @@ type Tone = 'accent' | 'warn' | 'ok' | 'danger';
 type Scenario = 'open' | 'agent' | 'notify' | 'files' | 'share' | 'clipboard' | 'search' | 'game';
 
 interface Clip { id: number; kind: 'link' | 'code' | 'image' | 'text' | 'color'; text: string; at: number; pinned?: boolean }
-type TermTab = 'claude' | 'web' | 'pwsh';
+type TermTab = 'claude' | 'web' | 'shell';
 interface Agent { id: string; title: string; status: 'working' | 'needs' | 'done'; since: number; procs?: [string, string, string][]; cost?: string; tokens?: string; tab?: TermTab; codex?: boolean; expanded?: boolean }
 interface Action { id: string; label: string; url?: string; focus?: boolean }
 interface Note { id: number; title: string; body: string; app: string; at: number; icon: IconName; tone: Tone; actions?: Action[]; answered?: string; answerVar?: string }
+/** A peek widens the collapsed notch for a moment. On the Mac the glyph and lead sit in the left wing, the text in the right. */
+interface Peek { icon: IconName; text: string; tone: Tone; lead?: string; tab?: Tab; note?: number }
 interface TrayFile extends FileItem { id: number; at: number }
 
 const TRACKS = [
@@ -31,9 +34,21 @@ const TABS: [Tab, IconName, string][] = [
   ['notifications', 'bell', 'Notifications'],
 ];
 
-const SETTINGS = ['General', 'Features', 'Hotkeys', 'Appearance', 'Game mode', 'Clipboard', 'AI', 'GitHub', 'Weather', 'Notifications'];
+const SETTINGS = {
+  win: ['General', 'Features', 'Hotkeys', 'Appearance', 'Game mode', 'Clipboard', 'AI', 'GitHub', 'Weather', 'Notifications'],
+  mac: ['General', 'Features', 'Hotkeys', 'Sounds', 'Appearance', 'Game mode', 'Clipboard', 'AI', 'Agents', 'GitHub', 'Weather', 'Notifications', 'About'],
+};
 const NOTE_TEXT = 'Deploy checklist: tag, release notes, then the game bar screenshots.';
 const PS = `<span class="t-acc">PS C:\\code\\api&gt;</span> `;
+const ZSH = `<span class="t-acc">alex@MacBook-Air api %</span> `;
+const prompt = () => (mac() ? ZSH : PS);
+const shellIntro = () => mac()
+  ? [`<span class="t-dim">Last login: ${new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} on ttys001</span>`,
+     `<span class="t-dim"># ~/.zshrc: alias qnotch=/Applications/QNotch.app/Contents/MacOS/QNotch</span>`,
+     `<span class="t-dim">Try: qnotch notify "Hello" "From my terminal" --action ok=Nice</span>`]
+  : [`<span class="t-dim">PowerShell 7.5. Try: QNotch.exe notify "Hello" "From my terminal" --action ok=Nice</span>`];
+// The Mac's camera housing between the wings, and the menu bar it sits in.
+const CAM = 150, MENU_BAR = 30;
 const LEVELS: Record<string, [IconName, Tone]> = { success: ['check', 'ok'], error: ['xcircle', 'danger'], warning: ['bolt', 'warn'], info: ['bell', 'accent'] };
 
 // Phone sharing: the address the app would show (the QR code in shareqr.ts goes elsewhere), and the session length in minutes.
@@ -41,18 +56,26 @@ const SHARE_URL = 'http://192.168.1.42:51327/s/dQw4w9WgXcQ/';
 const SHARE_MIN = 15, SHARE_MAX = 120;
 
 const touch = typeof matchMedia === 'function' && !matchMedia('(hover: hover)').matches;
-const CAPTIONS: Record<Scenario | 'idle', string> = {
-  idle: touch ? 'It is live, and every button works. Tap the pill, or pick a moment below.' : 'It is live, and every button works. Hover the pill, or pick a moment below.',
-  open: touch ? 'Tap the pill and it opens. Tap outside and it tucks back in.' : 'Hover the pill and it opens. Move away and it tucks back in.',
-  agent: 'Claude stops to ask while you work in another session. The pill chimes, and Answer takes you to the one that asked.',
-  notify: 'Any script can post to the notch, with buttons, and wait for your answer. Type your own in the pwsh tab.',
-  files: touch ? 'Tap a file in Downloads to drop it on the notch. It stays within reach on the Files tab.' : 'Drag a file from Downloads onto the pill. The notch keeps it within reach on the Files tab.',
-  clipboard: 'Copy any text on this page and it lands here. Click an entry to copy it again.',
-  search: 'One box searches your clipboard, notifications, notes, tabs and settings.',
-  share: 'Tick the files your phone may download, then Start sharing. The phone scans the code, no app needed.',
-  game: 'A game goes fullscreen and the notch shrinks to one quiet line. Esc quits the game.',
-};
+function caption(name: Scenario | 'idle') {
+  const pill = mac() ? 'notch' : 'pill';
+  return {
+    idle: `It is live, and every button works. ${touch ? 'Tap' : 'Hover'} the ${pill}, or pick a moment below.`,
+    open: touch ? `Tap the ${pill} and it opens. Tap outside and it tucks back in.` : `Hover the ${pill} and it opens. Move away and it tucks back in.`,
+    agent: `Claude stops to ask while you work in another session. The ${pill} chimes, and Answer takes you to the one that asked.`,
+    notify: mac()
+      ? 'Any script can post to the notch, with buttons, and wait for your answer. Click the notch to answer, or type your own in the zsh tab.'
+      : 'Any script can post to the notch, with buttons, and wait for your answer. Type your own in the pwsh tab.',
+    files: touch ? 'Tap a file in Downloads to drop it on the notch. It stays within reach on the Files tab.' : `Drag a file from Downloads onto the ${pill}. The notch keeps it within reach on the Files tab.`,
+    clipboard: 'Copy any text on this page and it lands here. Click an entry to copy it again.',
+    search: 'One box searches your clipboard, notifications, notes, tabs and settings.',
+    share: 'Tick the files your phone may download, then Start sharing. The phone scans the code, no app needed.',
+    game: mac()
+      ? 'A game goes full screen and the notch steps aside: no panel, clicks pass through, the wings keep your stats. Esc quits the game.'
+      : 'A game goes fullscreen and the notch shrinks to one quiet line. Esc quits the game.',
+  }[name];
+}
 
+const gameLabel = (g: GameSetting) => (g === 'auto' ? (mac() ? 'Automatic' : 'Auto') : g === 'on' ? 'On' : 'Off');
 const esc = (t: string) => t.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
 const mmss = (sec: number) => `${Math.floor(sec / 60)}:${String(Math.floor(sec % 60)).padStart(2, '0')}`;
 const ago = (ms: number) => {
@@ -95,7 +118,7 @@ export function initDemo(root: HTMLElement) {
   const toast = q('[data-toast]');
   const term = q('[data-term]');
   const termIn = q<HTMLInputElement>('[data-termin]');
-  const caption = q('[data-caption]');
+  const captionEl = q('[data-caption]');
   const tabBody = (t: Tab) => q(`[data-tab="${t}"]`);
   const T0 = Date.now();
 
@@ -107,7 +130,7 @@ export function initDemo(root: HTMLElement) {
     tab: 'home' as Tab,
     game: 'auto' as GameSetting,
     gaming: false,
-    peek: null as null | { icon: IconName; text: string; tone: Tone; tab?: Tab },
+    peek: null as null | Peek,
     cpu: 13, gpu: 0, ram: 21.3, down: 8, up: 7,
     track: 0, pos: 72, playing: true,
     volume: 62, muted: false,
@@ -157,7 +180,7 @@ export function initDemo(root: HTMLElement) {
       `<span class="t-warn">✻</span> Checking the page in the browser…`,
     ],
     prompt: false,
-    pwsh: [`<span class="t-dim">PowerShell 7.5. Try: QNotch.exe notify "Hello" "From my terminal" --action ok=Nice</span>`],
+    shell: shellIntro(),
     vars: {} as Record<string, string>,
     sides: {} as Record<string, number>,
     history: [] as string[],
@@ -184,7 +207,7 @@ export function initDemo(root: HTMLElement) {
     quitQNotch: quit,
     running: () => s.running,
     game: () => s.game,
-    setGame: g => { s.game = g; render(); flashCaption(`Game mode: ${g === 'auto' ? 'Auto' : g === 'on' ? 'On' : 'Off'}`); },
+    setGame: g => { s.game = g; render(); flashCaption(`Game mode: ${gameLabel(g)}`); },
     openPanel: () => open(s.tab, 'scenario'),
     sound: on => (on === undefined ? s.sound : (s.sound = on)),
     toTray: f => addToTray([f]),
@@ -196,8 +219,8 @@ export function initDemo(root: HTMLElement) {
   let renderedLines: string[] = [];
   function renderTerm() {
     term.querySelectorAll<HTMLElement>('[data-act="term"]').forEach(b => b.classList.toggle('on', b.dataset.arg === s.termTab));
-    const claude = s.termTab === 'claude', agent = s.termTab !== 'pwsh';
-    const lines = (claude ? s.claude : agent ? s.web : s.pwsh).map(l => `<div>${l}</div>`);
+    const claude = s.termTab === 'claude', agent = s.termTab !== 'shell';
+    const lines = (claude ? s.claude : agent ? s.web : s.shell).map(l => `<div>${l}</div>`);
     if (claude && s.prompt) lines.push(
         `<div class="t-box"><div class="t-warn"><b>Bash command</b></div><div>  npm test</div><div class="t-dim">  Run the test suite</div>` +
         `<div style="margin-top:6px">Do you want to proceed?</div>` +
@@ -219,7 +242,7 @@ export function initDemo(root: HTMLElement) {
       renderedLines = lines;
       renderedTermTab = s.termTab;
     }
-    put(q('[data-ps]'), agent ? '<span class="t-user">&gt; </span>' : PS);
+    put(q('[data-ps]'), agent ? '<span class="t-user">&gt; </span>' : prompt());
     q('[data-inline]').hidden = claude && s.prompt;
     termIn.placeholder = agent ? 'Ask Claude something' : '';
     if (changed && (tabChanged || atBottom)) body.scrollTop = body.scrollHeight;
@@ -245,14 +268,15 @@ export function initDemo(root: HTMLElement) {
     renderTerm();
     if (term.contains(document.activeElement)) q<HTMLElement>('.t-opt')?.focus();
     if (s.running) {
-      peek('terminal', 'api: Needs you', 'warn', 4000, 'agents');
+      peek({ icon: 'terminal', lead: 'api', text: 'Needs you', tone: 'warn', tab: 'agents' }, 4000);
       chime([659.3, 880]);
     }
     if (s.tab === 'agents') renderAgents();
     render();
   }
 
-  function out(...lines: string[]) { s.pwsh.push(...lines); }
+  function out(...lines: string[]) { s.shell.push(...lines); }
+  const runShell = (line: string) => (mac() ? runZsh(line) : runPwsh(line));
   function runPwsh(line: string) {
     out(PS + esc(line));
     const assign = line.match(/^\$(\w+)\s*=\s*(.+)$/);
@@ -263,7 +287,7 @@ export function initDemo(root: HTMLElement) {
     if (!cmd) return;
     if (/^\$\w+$/.test(cmd)) { const v = s.vars[cmd.slice(1)]; if (v !== undefined) out(esc(v)); return; }
     switch (cmd) {
-      case 'cls': case 'clear': s.pwsh = []; return;
+      case 'cls': case 'clear': s.shell = []; return;
       case 'help': case 'get-help':
         out('Try these:', '  QNotch.exe notify "Build finished" "142 tests passed" --level success',
           '  $answer = QNotch.exe notify "Ship it?" --action yes=Ship --action no="Not yet"', '  $answer', '  ls, echo, npm test, ./deploy.ps1, claude, cls, exit');
@@ -289,26 +313,73 @@ export function initDemo(root: HTMLElement) {
     }
   }
 
+  // zsh, as on a Mac. The demo's ~/.zshrc aliases qnotch to the app's executable.
+  function runZsh(line: string) {
+    out(ZSH + esc(line));
+    const capture = line.match(/^(\w+)=\$\((.+)\)$/);
+    const varName = capture?.[1];
+    const t = tokenize(capture ? capture[2] : line).map(w => w.replace(/^\$(\w+)$/, (m, v: string) => s.vars[v] ?? ''));
+    const cmd = (t[0] ?? '').replace(/^\.\//, '');
+    const err = (msg: string) => out(`<span class="t-err">${esc(msg)}</span>`);
+    if (!cmd) return;
+    const assign = line.match(/^(\w+)=(\S*)$/);
+    if (assign) { s.vars[assign[1]] = assign[2]; return; }
+    switch (cmd) {
+      case 'clear': s.shell = []; return;
+      case 'help':
+        out('Try these:', '  qnotch notify "Build finished" "142 tests passed" --level success',
+          '  answer=$(qnotch notify "Ship it?" --action yes=Ship --action no="Not yet")', '  echo $answer', '  ls, echo, npm test, ./deploy.sh, claude, clear, exit');
+        return;
+      case 'echo': out(esc(t.slice(1).join(' '))); return;
+      case 'ls': out('README.md    deploy.sh    package.json    src    tests'); return;
+      case 'claude': setTermTab('claude'); return;
+      case 'exit': desk.launch('term'); return;
+      case 'npm':
+        if (t[1] === 'test' || t[1] === 't') out('<span class="t-ok">✓ 142 passed</span> <span class="t-dim">in 38 s</span>');
+        else err(`npm error Unknown command: "${t[1] ?? ''}". Try npm test.`);
+        return;
+      case 'deploy.sh':
+        out('Deploying main to production…');
+        window.setTimeout(() => { out('<span class="t-ok">Deployed main to production in 41 s.</span>'); renderTerm(); }, 1200);
+        return;
+      case 'qnotch': case 'QNotch': case '/Applications/QNotch.app/Contents/MacOS/QNotch':
+        if (t[1] !== 'notify') { err(`Unknown command "${t[1] ?? ''}". Try qnotch notify --help.`); return; }
+        notifyCli(t.slice(2), varName);
+        return;
+      default:
+        err(`zsh: command not found: ${t[0]}`);
+    }
+  }
+
   function notifyCli(args: string[], varName?: string) {
-    if (args.includes('--help') || !args.length) {
-      out('Usage: QNotch.exe notify "title" ["body"] [--app name] [--level info|success|warning|error]',
+    const exe = mac() ? 'qnotch' : 'QNotch.exe';
+    if (args.includes('--help') || args.includes('-h') || !args.length) {
+      if (mac()) out('Usage: qnotch notify [title] [body] [-a app] [-l info|success|warning|error]',
+        '                     [--action id=Label]... [--url address] [--focus] [--wait]',
+        'Exit codes: 0 sent or answered, 1 dismissed, 2 timed out, 3 QNotch not running, 4 error.');
+      else out('Usage: QNotch.exe notify "title" ["body"] [--app name] [--level info|success|warning|error]',
         '                         [--action id=Label]... [--url address] [--focus]');
       return;
     }
     if (!s.running) { out('<span class="t-err">QNotch is not running. (exit code 3)</span>'); return; }
     const pos: string[] = [], actions: Action[] = [];
     let app = 'Terminal', level = 'info';
+    // The Mac CLI also takes short options.
+    const long: Record<string, string> = { '-t': '--title', '-b': '--body', '-a': '--app', '-l': '--level', '-i': '--icon' };
     for (let i = 0; i < args.length; i++) {
-      const a = args[i];
-      if (!a.startsWith('--')) { pos.push(a); continue; }
+      const a = (mac() && long[args[i]]) || args[i];
+      if (!a.startsWith('-')) { pos.push(a); continue; }
+      if (a === '--focus') { actions.push({ id: 'show', label: 'Show', focus: true }); continue; }
+      if (a === '--wait' && mac()) continue;
       const v = args[++i] ?? '';
       if (a === '--app') app = v;
       else if (a === '--level') level = v in LEVELS ? v : 'info';
       else if (a === '--action') { const [id, ...rest] = v.split('='); actions.push({ id, label: rest.join('=') || id }); }
       else if (a === '--url') actions.push({ id: 'open', label: 'Open', url: v });
-      else if (a === '--focus') { actions.push({ id: 'show', label: 'Show', focus: true }); i--; }
-      else if (a === '--icon') continue;
-      else { out(`<span class="t-err">Unknown option ${esc(a)}. Try QNotch.exe notify --help.</span>`); return; }
+      else if (a === '--title' && mac()) pos[0] = v;
+      else if (a === '--body' && mac()) pos[1] = v;
+      else if (a === '--icon' || (mac() && (a === '--id' || a === '--ttl' || a === '--timeout'))) continue;
+      else { out(`<span class="t-err">Unknown option ${esc(a)}. Try ${exe} notify --help.</span>`); return; }
     }
     const asks = actions.some(x => !x.url && !x.focus);
     const [icon, tone] = asks ? ['chat', 'accent'] as [IconName, Tone] : LEVELS[level];
@@ -329,7 +400,7 @@ export function initDemo(root: HTMLElement) {
     run++;
     if (s.termTab === 'claude') { if (line) runClaude(line); }
     else if (s.termTab === 'web') { if (line) runWeb(line); }
-    else { if (line) runPwsh(line); else out(PS); }
+    else { if (line) runShell(line); else out(prompt()); }
     renderTerm();
   });
   term.addEventListener('keydown', e => {
@@ -398,7 +469,7 @@ export function initDemo(root: HTMLElement) {
         </div>
       </div>
       <div class="qn-card"><div class="qn-h">Volume</div>
-        <div class="qn-vol"><button class="qn-icon" data-act="mute" title="Mute" aria-label="Mute">${svg('volume')}</button><b data-k="vol"></b></div>
+        <div class="qn-vol"><button class="qn-icon" data-act="mute" title="Mute" aria-label="Mute">${svg('volume')}</button><div><b data-k="vol"></b><small class="os-mac">MacBook Air Speakers</small></div></div>
         <input class="qn-range" type="range" min="0" max="100" data-vol aria-label="Volume" />
       </div>
       <div class="qn-card"><div class="qn-h">Timer</div>
@@ -427,7 +498,7 @@ export function initDemo(root: HTMLElement) {
     set('date', new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }));
     set('shortdate', new Date().toLocaleDateString([], { day: 'numeric', month: 'numeric', year: 'numeric' }));
     set('cpu', `${Math.round(s.cpu)}%`); w('cpu', s.cpu);
-    set('ram', `${s.ram.toFixed(1)}/31.9 GB`); w('ram', (s.ram / 31.9) * 100);
+    set('ram', mac() ? `${macRam().toFixed(1)}/16 GB` : `${s.ram.toFixed(1)}/31.9 GB`); w('ram', (s.ram / 31.9) * 100);
     set('gpu', `${Math.round(s.gpu)}%`);
     set('net', `↓ ${Math.round(s.down)} KB/s  ↑ ${Math.round(s.up)} KB/s`);
     set('title', t.title); set('artist', t.artist);
@@ -446,6 +517,8 @@ export function initDemo(root: HTMLElement) {
     set('swatchNote', s.swatchNote);
     set('pickLabel', s.picking ? 'Click anything…' : 'Pick a color');
     set('clock', clock());
+    // A narrow menu bar keeps only the time, as macOS does when the notch takes the room.
+    set('macclock', stage.classList.contains('compact') ? clock() : `${new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).replace(',', '')}  ${clock()}`);
     root.querySelectorAll<HTMLElement>('[data-since]').forEach(e => {
       const since = Number(e.dataset.since);
       e.textContent = e.dataset.fmt === 'done' ? `Done ${ago(since)}` : `Working for ${dur(since)}`;
@@ -477,7 +550,31 @@ export function initDemo(root: HTMLElement) {
     return `<span class="seg"><img class="qn-wx-ico" src="${WX.icon}" width="16" height="16" alt="${WX.condition}" /><b>${WX.temp}</b></span>`;
   }
 
+  // The Mac reads 16 GB, Windows 31.9: the same ups and downs at half the size.
+  const macRam = () => s.ram / 2;
+
+  /** Both wings are as wide as the fuller one, so the camera housing stays centered between them. */
+  function wings(el: HTMLElement, left: string, right: string) {
+    put(el, `<span class="wing l">${left}</span><span class="cam"></span><span class="wing r">${right}</span>`);
+    const [l, r] = el.querySelectorAll<HTMLElement>('.wing');
+    l.style.width = r.style.width = '';
+    l.style.width = r.style.width = `${Math.max(l.offsetWidth, r.offsetWidth)}px`;
+  }
+
+  function renderMacPill() {
+    const t = TRACKS[s.track];
+    const cpu = `<span class="seg"><span class="dim sm">CPU</span>${Math.round(s.cpu)}%</span>`;
+    const ram = `<span class="seg"><span class="dim sm">RAM</span>${Math.round((macRam() / 16) * 100)}%</span>`;
+    const bell = s.unread ? `<span class="seg">${svg('bell', 'i acc')}<b>${s.unread}</b></span>` : '';
+    // Game mode keeps only the stats chosen for it in Settings, Game mode.
+    if (s.mode === 'game') wings(pill, `${cpu}<span class="seg"><span class="dim sm">GPU</span>${Math.round(s.gpu)}%</span>`, `${agentSeg()}${ram}`);
+    // The narrow desktop has less room beside the notch, so the Mac drops the stats and the forecast.
+    else if (stage.classList.contains('compact')) wings(pill, `<span class="seg media"><span class="qn-mi mac">${svg('music')}</span><b>${t.title}</b></span>`, `${agentSeg()}${bell}${timerSeg()}`);
+    else wings(pill, `<span class="seg media"><span class="qn-mi mac">${svg('music')}</span><b>${t.title}</b></span>${cpu}`, `${agentSeg()}${bell}${timerSeg()}${wxSeg()}`);
+  }
+
   function renderPill() {
+    if (mac()) { renderMacPill(); return; }
     const t = TRACKS[s.track];
     put(pill, `
       <span class="seg media"><span class="qn-mi">${svg('music')}</span><b>${t.title}</b><span class="dim">${t.artist}</span></span>
@@ -504,12 +601,16 @@ export function initDemo(root: HTMLElement) {
   }
 
   function renderPeek() {
-    if (s.peek) put(peekEl, `${svg(s.peek.icon, `i ${s.peek.tone}`)}<b>${esc(s.peek.text)}</b>`);
+    const p = s.peek;
+    if (!p) return;
+    if (mac()) wings(peekEl, `${svg(p.icon, `i ${p.tone}`)}<b class="${p.tone}">${esc(p.lead ?? '')}</b>`, `<b>${esc(p.text)}</b>`);
+    else put(peekEl, `${svg(p.icon, `i ${p.tone}`)}<b>${esc(p.lead ? `${p.lead}: ${p.text}` : p.text)}</b>`);
   }
 
+  // The glance strip and toasts are Windows only: the Mac shows notifications as a peek in the wings.
   function renderGlance() {
     const n = s.notes[0];
-    const show = s.mode === 'collapsed' && s.unread > 0 && !!n && !visibleToast();
+    const show = !mac() && s.mode === 'collapsed' && s.unread > 0 && !!n && !visibleToast();
     const t = TRACKS[s.track];
     glance.classList.toggle('show', show);
     if (show) put(glance, `${svg('music', 'i acc')}<span>${t.title} · ${t.artist}</span>${svg(n.icon, `i ${n.tone}`)}<span>${esc(n.app)}: ${esc(n.title)}</span>`);
@@ -517,7 +618,7 @@ export function initDemo(root: HTMLElement) {
 
   function visibleToast() {
     const n = s.notes.find(x => x.id === s.toastId);
-    return s.mode === 'collapsed' && n ? n : null;
+    return !mac() && s.mode === 'collapsed' && n ? n : null;
   }
 
   function noteHtml(n: Note, inToast = false) {
@@ -588,8 +689,9 @@ export function initDemo(root: HTMLElement) {
   }
 
   function renderFiles() {
-    if (s.share.open) { renderShare(); return; }
-    const share = sharing()
+    if (s.share.open && !mac()) { renderShare(); return; }
+    // Phone sharing is Windows only. On the Mac, Share… in the app hands files to AirDrop.
+    const share = mac() ? '' : sharing()
       ? `<button class="qn-btn accent" data-act="shareOpen" title="Phone sharing is on: show the code">${svg('phone')} Sharing</button>`
       : `<button class="qn-btn" data-act="shareOpen" title="Send tray files to your phone, or receive files from it, over Wi-Fi">${svg('phone')} ${s.tray.length ? 'Share with phone' : 'Receive from your phone'}</button>`;
     tabBody('files').innerHTML = s.tray.length
@@ -670,7 +772,7 @@ export function initDemo(root: HTMLElement) {
       ['Note', 'note', [NOTE_TEXT].filter(t => t.toLowerCase().includes(query)).map(t => ({ title: t, run: () => { copyText(t); addClip(t); flashCaption('Note copied.'); } }))],
       ['Notifications', 'bell', s.notes.filter(n => `${n.title} ${n.body}`.toLowerCase().includes(query)).map(n => ({ title: n.title, run: () => selectTab('notifications') }))],
       ['Tabs', 'tabs', TABS.filter(([, , l]) => l.toLowerCase().includes(query)).map(([id, , l]) => ({ title: l, run: () => selectTab(id) }))],
-      ['Settings', 'sliders', SETTINGS.filter(l => l.toLowerCase().includes(query)).map(l => ({ title: `Settings, ${l}`, run: () => flashCaption(`Settings, ${l} opens in its own window in the app.`) }))],
+      ['Settings', 'sliders', SETTINGS[mac() ? 'mac' : 'win'].filter(l => l.toLowerCase().includes(query)).map(l => ({ title: `Settings, ${l}`, run: () => flashCaption(`Settings, ${l} opens in its own window in the app.`) }))],
     ];
     const html = groups.filter(([, , h]) => h.length).map(([name, icon, h]) => h.slice(0, 5).map(hit => {
       hits.push(hit.run);
@@ -695,13 +797,19 @@ export function initDemo(root: HTMLElement) {
     stage.classList.toggle('quit', !s.running);
     shell.classList.toggle('peeking', !!s.peek && s.mode === 'collapsed');
     let width: number, height: number;
-    if (s.mode === 'open') { width = 720; height = 400; }
+    if (mac()) {
+      // The surface grows out of the camera housing. Open, the wings stay on top of the panel.
+      if (s.mode === 'open') { width = 720; height = 400 + MENU_BAR; }
+      else { width = Math.max(s.peek && s.mode === 'collapsed' ? peekEl.offsetWidth : pill.offsetWidth, CAM); height = MENU_BAR; }
+    }
+    else if (s.mode === 'open') { width = 720; height = 400; }
     else if (s.mode === 'game') { width = bar.offsetWidth + 36; height = 28; }
     else { width = pill.offsetWidth + 28; height = 38; if (s.peek) width += 64; }
     shell.style.width = `${width}px`;
     shell.style.height = `${height}px`;
     const max = maxOffset();
-    const nx = dragX ?? (s.sides[desk.active() ?? 'desktop'] ?? 0) * max;
+    // A notch around the camera never moves. Only the Windows pill can be dragged aside.
+    const nx = mac() ? 0 : dragX ?? (s.sides[desk.active() ?? 'desktop'] ?? 0) * max;
     notch.style.setProperty('--nx', `${Math.max(-max, Math.min(max, nx))}px`);
     root.querySelectorAll<HTMLElement>('.qn-tabbtn').forEach(b => b.classList.toggle('on', b.dataset.arg === s.tab));
     root.querySelectorAll<HTMLElement>('[data-tab]').forEach(t => (t.hidden = t.dataset.tab !== s.tab));
@@ -742,6 +850,7 @@ export function initDemo(root: HTMLElement) {
     s.mode = 'collapsed';
     s.pinned = false;
     if (q('.qn-panel').contains(document.activeElement)) (document.activeElement as HTMLElement).blur();
+    peekWaiting();
     render();
   }
   function selectTab(tab: Tab) {
@@ -761,7 +870,7 @@ export function initDemo(root: HTMLElement) {
     s.peek = null;
     s.toastId = 0;
     render();
-    flashCaption('QNotch quit. Start it again from the Start menu.');
+    flashCaption(`QNotch quit. Start it again from ${mac() ? 'Launchpad' : 'the Start menu'}.`);
   }
   function start() {
     if (s.running) return;
@@ -772,12 +881,22 @@ export function initDemo(root: HTMLElement) {
   }
 
   let peekTimer = 0;
-  function peek(icon: IconName, text: string, tone: Tone, ms = 4000, tab?: Tab) {
+  /** ms 0 keeps it up: a Mac notification waiting for an answer stays until answered. */
+  function peek(p: Peek, ms = 4000) {
     if (s.mode === 'game' || !s.running) return;
-    s.peek = { icon, text, tone, tab };
+    s.peek = p;
     render();
     clearTimeout(peekTimer);
-    peekTimer = window.setTimeout(() => { s.peek = null; render(); }, ms);
+    if (ms) peekTimer = window.setTimeout(() => { s.peek = null; peekWaiting(); render(); }, ms);
+  }
+  const waiting = (n: Note) => !!n.actions && !n.answered && n.answerVar !== undefined;
+  /** On the Mac, a notification still waiting for an answer comes back beside the notch. */
+  function peekWaiting() {
+    const n = mac() && s.mode === 'collapsed' && !s.peek ? s.notes.find(waiting) : undefined;
+    if (n) s.peek = { icon: 'chat', lead: n.app, text: n.title, tone: 'accent', tab: 'notifications', note: n.id };
+  }
+  function unpeek(note: number) {
+    if (s.peek?.note === note) { s.peek = null; clearTimeout(peekTimer); }
   }
 
   let ac: AudioContext | null = null;
@@ -884,17 +1003,17 @@ export function initDemo(root: HTMLElement) {
   /* ---------- scenarios ---------- */
   let run = 0;
   let active: Scenario | null = null;
-  function setCaption(text: string) { caption.textContent = text; }
+  function setCaption(text: string) { captionEl.textContent = text; }
   let capTimer = 0;
   function flashCaption(text: string) {
     setCaption(text);
     clearTimeout(capTimer);
-    capTimer = window.setTimeout(() => setCaption(CAPTIONS[active ?? 'idle']), 4000);
+    capTimer = window.setTimeout(() => setCaption(caption(active ?? 'idle')), 4000);
   }
   function setActive(name: Scenario | null) {
     active = name;
     root.querySelectorAll<HTMLElement>('[data-scenario]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.scenario === name)));
-    setCaption(CAPTIONS[name ?? 'idle']);
+    setCaption(caption(name ?? 'idle'));
   }
 
   function setTermTab(tab: TermTab) { s.termTab = tab; renderTerm(); }
@@ -919,7 +1038,7 @@ export function initDemo(root: HTMLElement) {
         a.status = 'done';
         a.since = Date.now();
         a.cost = '$2.31';
-        peek('check', 'api: Done', 'ok', 3200, 'agents');
+        peek({ icon: 'check', lead: 'api', text: 'Done', tone: 'ok', tab: 'agents' }, 3200);
         chime([880, 1174.7]);
         renderTerm();
         if (s.tab === 'agents') renderAgents();
@@ -945,6 +1064,8 @@ export function initDemo(root: HTMLElement) {
     s.toastId = note.id;
     chime([659.3]);
     if (s.tab === 'notifications' && s.mode === 'open') { s.unread = 0; renderNotes(); }
+    // The Mac shows it beside the notch: the sender in the left wing, the title in the right.
+    if (mac() && s.mode === 'collapsed') peek({ icon: note.icon, lead: note.app, text: note.title, tone: note.tone, tab: 'notifications', note: note.id }, waiting(note) ? 0 : 5000);
     render();
     window.setTimeout(() => { if (s.toastId === note.id) { s.toastId = 0; render(); } }, note.actions ? 60000 : 7000);
     return note;
@@ -957,14 +1078,17 @@ export function initDemo(root: HTMLElement) {
     const a = n?.actions?.find(x => x.id === act);
     if (!n || !a || n.answered) return;
     if (a.url) { window.open(/^https?:\/\//.test(a.url) ? a.url : `https://${a.url}`, '_blank', 'noopener'); return; }
-    if (a.focus) { goTerm('pwsh'); return; }
+    if (a.focus) { goTerm('shell'); return; }
     n.answered = a.label;
     if (s.toastId === n.id) s.toastId = 0;
+    unpeek(n.id);
     s.unread = Math.max(0, s.unread - 1);
     if (n.answerVar) {
       s.vars[n.answerVar] = act;
-      flashCaption(`$${n.answerVar} is now "${act}". Type $${n.answerVar} in the pwsh tab to read it.`);
-      if (n.app === 'Deploy' && act === 'ship') runPwsh('./deploy.ps1 -Prod');
+      flashCaption(mac()
+        ? `${n.answerVar} is now "${act}". Type echo $${n.answerVar} in the zsh tab to read it.`
+        : `$${n.answerVar} is now "${act}". Type $${n.answerVar} in the pwsh tab to read it.`);
+      if (n.app === 'Deploy' && act === 'ship') runShell(mac() ? './deploy.sh --prod' : './deploy.ps1 -Prod');
       renderTerm();
     }
     renderNotes();
@@ -1034,19 +1158,20 @@ export function initDemo(root: HTMLElement) {
     }
     if (name === 'notify') {
       close();
-      goTerm('pwsh');
-      const cmd = '$answer = QNotch.exe notify "Deploy to production?" "main passed CI in 4m 12s" --app Deploy --action ship=Deploy --action later="Not now"';
+      goTerm('shell');
+      const ask = 'notify "Deploy to production?" "main passed CI in 4m 12s" --app Deploy --action ship=Deploy --action later="Not now"';
+      const cmd = mac() ? `answer=$(qnotch ${ask})` : `$answer = QNotch.exe ${ask}`;
       if (!await typeInto(termIn, cmd, alive)) { termIn.value = ''; return; }
       await sleep(200);
       if (!alive()) return;
       termIn.value = '';
       s.history.push(cmd);
-      runPwsh(cmd);
+      runShell(cmd);
       renderTerm();
     }
   }
   function askPermissionAgain() {
-    peek('terminal', 'api: Needs you', 'warn', 4000, 'agents');
+    peek({ icon: 'terminal', lead: 'api', text: 'Needs you', tone: 'warn', tab: 'agents' }, 4000);
     chime([659.3, 880]);
   }
 
@@ -1102,7 +1227,7 @@ export function initDemo(root: HTMLElement) {
       case 'notesClear': s.notes = s.notes.filter(n => n.actions && !n.answered && n.answerVar !== undefined); s.unread = 0; renderNotes(); render(); return;
       case 'noteAction': noteAction(arg); return;
       case 'closeToast': s.toastId = 0; render(); return;
-      case 'dismissNote': s.notes = s.notes.filter(n => n.id !== num); renderNotes(); render(); return;
+      case 'dismissNote': s.notes = s.notes.filter(n => n.id !== num); unpeek(num); renderNotes(); render(); return;
       case 'openNotes': s.toastId = 0; open('notifications', 'scenario'); return;
       case 'hit': hits[num]?.(); return;
       case 'goterm': {
@@ -1175,7 +1300,7 @@ export function initDemo(root: HTMLElement) {
   const APP_NAMES: Record<string, string> = { term: 'Terminal', browser: 'the browser', files: 'File Explorer', music: 'Music', desktop: 'the desktop' };
   shell.addEventListener('pointerdown', e => {
     const t = e.target as HTMLElement;
-    if (e.button !== 0 || s.mode === 'game' || !(t.closest('[data-pill]') || (t.closest('.qn-head') && !t.closest('button')))) return;
+    if (mac() || e.button !== 0 || s.mode === 'game' || !(t.closest('[data-pill]') || (t.closest('.qn-head') && !t.closest('button')))) return;
     drag = { x0: e.clientX, nx0: parseFloat(notch.style.getPropertyValue('--nx')) || 0, moved: false, last: e.clientX, t: performance.now(), v: 0 };
   });
   window.addEventListener('pointermove', e => {
@@ -1208,7 +1333,7 @@ export function initDemo(root: HTMLElement) {
   });
   shell.addEventListener('dblclick', e => {
     const t = e.target as HTMLElement;
-    if (t.closest('button, input') || !(t.closest('[data-pill]') || t.closest('.qn-head'))) return;
+    if (mac() || t.closest('button, input') || !(t.closest('[data-pill]') || t.closest('.qn-head'))) return;
     s.sides[desk.active() ?? 'desktop'] = 0;
     layout();
   });
@@ -1276,14 +1401,15 @@ export function initDemo(root: HTMLElement) {
     if (!e.ctrlKey || !e.altKey || e.getModifierState('AltGraph') || !s.running) return;
     const el = e.target as HTMLElement;
     if (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) return;
-    const k = e.key.toLowerCase();
+    // By physical key: on a Mac, Option turns N into a dead key.
+    const k = /^Key[A-Z]$/.test(e.code) ? e.code.slice(3).toLowerCase() : e.key.toLowerCase();
     if (k === 'n') { e.preventDefault(); s.mode === 'open' ? close() : open(s.tab, 'keys'); }
     else if (k === 'f') { e.preventDefault(); open('search', 'keys'); q<HTMLInputElement>('[data-search]').focus({ preventScroll: true }); }
     else if (k === 'g') {
       e.preventDefault();
       s.game = s.game === 'auto' ? 'on' : s.game === 'on' ? 'off' : 'auto';
       render();
-      flashCaption(`Game mode: ${s.game === 'auto' ? 'Auto' : s.game === 'on' ? 'On' : 'Off'}`);
+      flashCaption(`Game mode: ${gameLabel(s.game)}`);
     }
   });
 
@@ -1313,14 +1439,33 @@ export function initDemo(root: HTMLElement) {
     s.up = Math.max(1, s.up + rand(-4, 4));
     if (s.playing) s.pos++;
     if (s.pos >= TRACKS[s.track].len) { s.track = (s.track + 1) % TRACKS.length; s.pos = 0; }
-    if (s.timer.running && --s.timer.left <= 0) { s.timer.left = 0; s.timer.running = false; peek('timer', 'Time is up', 'accent', 3000); chime([784, 1046.5, 784]); }
+    if (s.timer.running && --s.timer.left <= 0) { s.timer.left = 0; s.timer.running = false; peek({ icon: 'timer', lead: mac() ? 'Timer' : undefined, text: 'Time is up', tone: 'accent' }, 3000); chime([784, 1046.5, 784]); }
     if (sharing() && Date.now() >= s.share.ends) endShare('Sharing ended after the time ran out.');
     if (s.gaming) { lap += 1; set('lap', `${String(Math.floor(lap / 60)).padStart(2, '0')}:${(lap % 60).toFixed(3).padStart(6, '0')}`); }
     if (inView()) render();
   }, 1000);
 
+  // The page switched between Windows and Mac: the same demo, on the other desktop.
+  onOS(() => {
+    run++;
+    stopPicking();
+    clearTimeout(peekTimer);
+    Object.assign(s, { mode: 'collapsed', pinned: false, peek: null, toastId: 0, gaming: false, sides: {} });
+    s.share.open = false;
+    dragX = null;
+    s.shell = shellIntro();
+    s.vars = {};
+    q('[data-sleep]').classList.remove('show');
+    desk.applyOS();
+    desk.show('term');
+    if (s.termTab === 'shell') renderedTermTab = undefined;
+    renderTerm();
+    setActive(null);
+    render();
+  });
+
   renderTerm();
   render();
-  setCaption(CAPTIONS.idle);
+  setCaption(caption('idle'));
   requestAnimationFrame(() => stage.classList.add('ready'));
 }
