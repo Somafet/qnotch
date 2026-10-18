@@ -72,6 +72,34 @@ test('Mac validation builds a real native app, runs regressions and UI smoke, wi
   assert.ok(!build.includes('dist/QNotch.exe'));
 });
 
+test('Mac release workflow tests, signs, notarizes and publishes only through the guarded Mac channel', () => {
+  const release = yaml('.github/workflows/release-macos.yml');
+  assert.deepEqual(release.on.push.tags, ['macos-v*']);
+  assert.equal(release.concurrency.group, 'qnotch-release');
+  assert.equal(release.concurrency['cancel-in-progress'], false);
+  assert.equal(release.permissions.contents, 'read');
+  const job = release.jobs.release;
+  assert.equal(job.if, "github.repository == 'Somafet/qnotch'");
+  assert.equal(job.permissions.contents, 'write');
+  const runs = job.steps.filter(step => step.run).map(step => step.run);
+  const order = ['scripts/release-policy.mjs', 'npm test', 'scripts/macos/build.sh', 'scripts/macos/test.sh',
+    'scripts/macos/smoke.sh', 'security import', 'scripts/macos/release.sh', 'scripts/publish-release.mjs']
+    .map(text => runs.findIndex(run => run.includes(text)));
+  assert.ok(order.every((index, i) => index >= 0 && (i === 0 || index > order[i - 1])), JSON.stringify(order));
+  assert.ok(runs[order[0]].includes('--platform macos'));
+  assert.ok(runs[order[7]].includes('--platform macos') && runs[order[7]].includes('QNotch-macos-arm64.dmg'));
+  assert.ok(!runs.some(run => run.includes('gh release create') || run.includes('gh release edit') || run.includes('--latest')));
+  const cleanup = job.steps.at(-1);
+  assert.equal(cleanup.if, 'always()');
+  assert.ok(cleanup.run.includes('delete-keychain') && cleanup.run.includes('AuthKey.p8'));
+  const script = readFileSync(resolve(root, 'scripts/macos/release.sh'), 'utf8');
+  for (const text of ['--options runtime', '--timestamp', 'QNotch.entitlements', 'notarytool submit', 'stapler staple', 'spctl --assess']) {
+    assert.ok(script.includes(text), text);
+  }
+  const entitlements = readFileSync(resolve(root, 'src/QNotch.Mac/QNotch.entitlements'), 'utf8');
+  assert.ok(entitlements.includes('com.apple.security.automation.apple-events'));
+});
+
 test('issue forms and labels are valid YAML and use existing managed label names', () => {
   const labels = yaml('.github/labels.yml').map(label => label.name);
   for (const path of ['.github/ISSUE_TEMPLATE/bug_report.yml', '.github/ISSUE_TEMPLATE/feature_request.yml']) {

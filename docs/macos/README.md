@@ -66,7 +66,7 @@ Alternatively, launch the executable with `--data-dir /absolute/temporary/direct
 - Turning a feature off or on in Settings, Features constructs or stops only that module; the others keep running (a countdown survives turning Note off).
 - Turning Countdown off takes effect immediately, stops its scheduler, and removes all five contributions. The panel explains how to enable it instead of showing a fake timer.
 - Reduced motion follows both the user's local setting and the OS setting and turns every animation off. All animations are finite Core Animation transactions. No display link, frame loop, repeating idle timer, or hidden countdown animation runs.
-- Not available on the Mac: media sessions of apps other than Music and Spotify (no public API), GPU temperature, per-app camera attribution, the Windows phone-share server (AirDrop through Share covers Apple devices), in-place automatic updates (they need Developer ID signing). A notch that wraps the camera housing never moves. See the [parity table](parity.md) for each feature's status.
+- Not available on the Mac: media sessions of apps other than Music and Spotify (no public API), GPU temperature, per-app camera attribution, the Windows phone-share server (AirDrop through Share covers Apple devices), in-place automatic updates (not built yet). A notch that wraps the camera housing never moves. See the [parity table](parity.md) for each feature's status.
 
 ## Module and platform boundaries
 
@@ -100,10 +100,10 @@ This waits three seconds, then records one 30-second collapsed-idle interval usi
 
 ## CI and future releases
 
-The `macos` CI job uses an Apple silicon `macos-14` runner to build the real target, run XCTest regressions, and run native UI smoke validation. It is part of the required `build` aggregate alongside Windows, repository, and website validation; any failure, cancellation, or skipped dependency rejects the gate. PR builds do not use signing secrets. No release is published by these scripts or CI changes.
+The `macos` CI job uses an Apple silicon `macos-14` runner to build the real target, run XCTest regressions, and run native UI smoke validation. It is part of the required `build` aggregate alongside Windows, repository, and website validation; any failure, cancellation, or skipped dependency rejects the gate. PR builds do not use signing secrets and publish nothing.
 
 The Mac update channel is reserved separately in `QNotchMacCore/UpdateChannel.swift`: filter the releases collection for valid `macos-vX.Y.Z` tags, never GitHub's global `/releases/latest`. Automatic updates and an appcast are unavailable in this milestone; adopting Sparkle remains a later decision.
 
-Mac release tags use `macos-vX.Y.Z`; artifacts use the supported `QNotch-macos-arm64.{dmg,zip}` convention. Use the existing [guarded publisher](../releases.md) with `--platform macos`, which always keeps `--latest=false`. Do not create a Mac release through an unguarded command. Windows tags, updater endpoint, filenames, ZIP layout, and publish profiles remain unchanged.
+Mac releases are signed with Developer ID under the hardened runtime, notarized, stapled, and published as `QNotch-macos-arm64.dmg` by the `macos-v*` tag workflow; see [Releases](../releases.md#mac-channel) for the workflow, its credentials, and a local signed build. Windows tags, updater endpoint, filenames, ZIP layout, and publish profiles remain unchanged.
 
-Before a public download, configure Developer ID signing, hardened runtime, notarization, and stapling where applicable, then verify installation on a clean Mac. Store all actual identities and credentials privately. No release or signing setup is part of this milestone.
+Before the first public download, verify installation of the published disk image on a clean Mac and on macOS 13.

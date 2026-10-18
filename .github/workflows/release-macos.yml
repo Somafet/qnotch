@@ -1,0 +1,103 @@
+name: Release macOS
+
+# macos-vX.Y.Z[-alpha|beta|rc.N] is the Mac channel. It never becomes the global latest release,
+# which already-installed Windows clients read.
+on:
+  push:
+    tags: ['macos-v*']
+
+permissions:
+  contents: read
+
+# Shared with the Windows release so two publishers never race on the latest check.
+concurrency:
+  group: qnotch-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.repository == 'Somafet/qnotch'
+    runs-on: macos-14
+    timeout-minutes: 60
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Validate Mac release tag
+        id: policy
+        run: node scripts/release-policy.mjs --platform macos --tag "$GITHUB_REF_NAME"
+
+      - name: Install repository tooling
+        run: npm ci
+
+      - name: Repository checks
+        run: npm test
+
+      - name: Build native Mac app
+        env:
+          QNOTCH_VERSION: ${{ steps.policy.outputs.version }}
+          QNOTCH_BUILD_NUMBER: ${{ github.run_number }}
+        run: bash scripts/macos/build.sh
+
+      - name: Mac regression tests
+        run: bash scripts/macos/test.sh
+
+      - name: Native Mac UI smoke test
+        run: bash scripts/macos/smoke.sh
+
+      - name: Import Developer ID certificate
+        env:
+          CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE_P12_BASE64 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
+        run: |
+          set +x
+          keychain="$RUNNER_TEMP/qnotch-signing.keychain-db"
+          keychain_password="$(uuidgen)"
+          printf '%s' "${CERTIFICATE:?MACOS_CERTIFICATE_P12_BASE64 is missing}" | base64 --decode > "$RUNNER_TEMP/certificate.p12"
+          security create-keychain -p "$keychain_password" "$keychain"
+          security set-keychain-settings -lut 3600 "$keychain"
+          security unlock-keychain -p "$keychain_password" "$keychain"
+          security import "$RUNNER_TEMP/certificate.p12" -k "$keychain" -P "$CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$keychain_password" "$keychain" > /dev/null
+          existing_keychains=()
+          while IFS= read -r line; do
+            line="${line#"${line%%[![:space:]]*}"}"
+            existing_keychains+=("${line//\"/}")
+          done < <(security list-keychains -d user)
+          security list-keychains -d user -s "$keychain" "${existing_keychains[@]}"
+          rm -f "$RUNNER_TEMP/certificate.p12"
+          security find-identity -v -p codesigning "$keychain" | grep -F 'Developer ID Application:' | grep -qF "(${TEAM_ID:?APPLE_TEAM_ID is missing})"
+
+      - name: Sign, notarize and package
+        env:
+          APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
+          MACOS_SIGNING_IDENTITY: ${{ vars.MACOS_SIGNING_IDENTITY }}
+          APP_STORE_CONNECT_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY_BASE64 }}
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+        run: |
+          set +x
+          export APP_STORE_CONNECT_KEY_PATH="$RUNNER_TEMP/AuthKey.p8"
+          printf '%s' "${APP_STORE_CONNECT_PRIVATE_KEY:?APP_STORE_CONNECT_PRIVATE_KEY_BASE64 is missing}" | base64 --decode > "$APP_STORE_CONNECT_KEY_PATH"
+          bash scripts/macos/release.sh
+
+      - name: Publish verified release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          node scripts/publish-release.mjs --platform macos --tag "$GITHUB_REF_NAME"
+          --asset dist/macos/QNotch-macos-arm64.dmg
+
+      - name: Remove signing material
+        if: always()
+        run: |
+          security delete-keychain "$RUNNER_TEMP/qnotch-signing.keychain-db" 2>/dev/null || true
+          rm -f "$RUNNER_TEMP/AuthKey.p8" "$RUNNER_TEMP/certificate.p12"
