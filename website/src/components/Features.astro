@@ -10,7 +10,8 @@ const extras = [
   { icon: 'volume', label: 'Volume' },
   { icon: 'timer', label: 'Timer' },
   { icon: 'pipette', label: 'Color picker' },
-  { icon: 'calendar', label: 'Scheduled tasks' },
+  { icon: 'calendar', label: 'Scheduled tasks', os: 'win' },
+  { icon: 'calendar', label: 'Launch agents', os: 'mac' },
 ] as const;
 ---
 <section id="features">
@@ -31,7 +32,7 @@ const extras = [
         </div>
         <div class="txt">
           <h3>See when an agent is waiting on you.</h3>
-          <p>I kept coming back to terminals that had been sitting on a yes/no question for 20 minutes, so I built this. The pill shows every Claude Code and Codex session by title and status. When one needs you, it widens and plays a sound. Click it and you're straight back in that session.</p>
+          <p>I kept coming back to terminals that had been sitting on a yes/no question for 20 minutes, so I built this. <span class="os-win">The pill shows every Claude Code and Codex session by title and status. When one needs you, it widens and plays a sound.</span><span class="os-mac">The notch shows every Claude Code and Codex session by title and status. When one needs you, its wings say so and it plays a sound.</span> Click it and you're straight back in that session.</p>
           <p>See today's token usage for each Claude Code session. Check the dev servers a session left running and stop them with a button.</p>
           <button class="try" data-try="agent">Try it in the demo <Icon name="arrow" /></button>
         </div>
@@ -39,12 +40,12 @@ const extras = [
 
       <article class="card f-notify">
         <div class="viz code">
-          <code><span class="c-k">QNotch.exe</span> notify <span class="c-s">"Build finished"</span> <span class="c-s">"142 tests passed"</span> <span class="c-f">--level</span> success</code>
+          <code><span class="c-k"><span class="os-win">QNotch.exe</span><span class="os-mac">qnotch</span></span> notify <span class="c-s">"Build finished"</span> <span class="c-s">"142 tests passed"</span> <span class="c-f">--level</span> success</code>
           <div class="v-toast"><span class="v-ico ok"><Icon name="check" /></span><div><b>Build finished</b><span>142 tests passed</span></div></div>
         </div>
         <div class="txt">
           <h3>Send notifications from scripts.</h3>
-          <p>Post through the command line, a named pipe or local HTTP. Add buttons and wait for the user's answer.</p>
+          <p>Post through the command line, <span class="os-win">a named pipe</span><span class="os-mac">a Unix socket</span> or local HTTP. Add buttons and wait for the user's answer.</p>
           <button class="try" data-try="notify">Try it <Icon name="arrow" /></button>
         </div>
       </article>
@@ -55,19 +56,20 @@ const extras = [
         </div>
         <div class="txt">
           <h3>Control your music.</h3>
-          <p>See the track and artwork. Pause or skip media playing in Spotify, your browser or another media app.</p>
+          <p class="os-win">See the track and artwork. Pause or skip media playing in Spotify, your browser or another media app.</p>
+          <p class="os-mac">See the track and artwork, seek, pause or skip in Music and Spotify, without switching apps.</p>
         </div>
       </article>
 
       <article class="card f-clip">
         <div class="viz">
           <div class="v-clip"><Icon name="link" class="i acc" /><span class="acc">github.com/Somafet/qnotch</span></div>
-          <div class="v-clip"><Icon name="code" class="i acc" /><code>dotnet build -c Release</code></div>
+          <div class="v-clip"><Icon name="code" class="i acc" /><code class="os-win">dotnet build -c Release</code><code class="os-mac">swift build -c release</code></div>
           <div class="v-clip"><Icon name="pipette" class="i acc" /><span><i class="v-sw"></i>#5B9DFF</span></div>
         </div>
         <div class="txt">
           <h3>Find something you copied.</h3>
-          <p>Keep a history of copied text, code, links and images. Pin entries to keep them. History stays in memory unless you choose to save it.</p>
+          <p>Keep a history of copied text, code, links and images. Pin entries to keep them. History stays in memory unless you choose to save it.<span class="os-mac"> Passwords your password manager marks as concealed never get in.</span></p>
           <button class="try" data-try="clipboard">Try it <Icon name="arrow" /></button>
         </div>
       </article>
@@ -80,22 +82,24 @@ const extras = [
         </div>
         <div class="txt">
           <h3>Search across the panel.</h3>
-          <p>Press <kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>F</kbd> to search clipboard history, files, notes, notifications, tasks, tabs and settings.</p>
+          <p>Press <span class="os-win"><kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>F</kbd></span><span class="os-mac"><kbd>⌃</kbd> <kbd>⌥</kbd> <kbd>F</kbd></span> to search clipboard history, files, notes, notifications, tasks, tabs and settings.</p>
         </div>
       </article>
 
       <article class="card f-game">
         <div class="viz game">
-          <div class="v-bar"><b>Midnight City</b> · M83 <span><em>CPU</em> 13%</span><span class="opt"><em>GPU</em> 61% 71°C</span><span><em>RAM</em> 21.2/31.9 GB</span><b>21:09</b></div>
+          <div class="v-bar os-win"><b>Midnight City</b> · M83 <span><em>CPU</em> 13%</span><span class="opt"><em>GPU</em> 61% 71°C</span><span><em>RAM</em> 21.2/31.9 GB</span><b>21:09</b></div>
+          <div class="v-wings dim os-mac"><span><span><em>CPU</em> 13%</span><span><em>GPU</em> 61%</span></span><i class="v-cam"></i><span><span><em>RAM</em> 68%</span><b>21:09</b></span></div>
         </div>
         <div class="txt">
           <h3>Keep stats visible during games.</h3>
-          <p>When a game or fullscreen video is running, QNotch shrinks to one status line, ignores hover and lets clicks straight through. Missed shots are on you now.</p>
+          <p class="os-win">When a game or fullscreen video is running, QNotch shrinks to one status line, ignores hover and lets clicks straight through. Missed shots are on you now.</p>
+          <p class="os-mac">When a game is in front, the notch steps aside: the panel stays shut, clicks pass through and the wings show only the stats you pick. Missed shots are on you now.</p>
           <button class="try" data-try="game">Try it <Icon name="arrow" /></button>
         </div>
       </article>
 
-      <article class="card f-share">
+      <article class="card f-share os-win">
         <div class="viz">
           <div class="v-share">
             <div class="v-qr" set:html={shareQr} />
@@ -115,13 +119,34 @@ const extras = [
         </div>
       </article>
 
+      <article class="card f-share os-mac">
+        <div class="viz">
+          <div class="v-tray">
+            <div class="v-files">
+              <div class="v-file"><span class="v-thumb shot"></span><div><b>screenshot-0927.png</b><small>471 KB · Downloads</small></div></div>
+              <div class="v-file on"><span class="v-thumb doc"><Icon name="file" /></span><div><b>invoice-0925.pdf</b><small>86 KB · Downloads</small></div></div>
+              <div class="v-file"><span class="v-thumb wall"></span><div><b>wallpaper-bloom.jpg</b><small>2.2 MB · Pictures</small></div></div>
+            </div>
+            <div class="v-menu" aria-hidden="true"><span>Open</span><span>Quick Look</span><span>Show in Finder</span><i></i><span class="on">Share…</span><span>Export to Folder…</span><span>Copy Path</span></div>
+          </div>
+        </div>
+        <div class="txt">
+          <h3>Keep files within reach.</h3>
+          <p>Drop files on the notch and they wait on the Files tab: Quick Look with Space, drag them out, or Share to send them over AirDrop.</p>
+          <p>QNotch keeps references, not copies, and follows a file when you rename or move it.</p>
+          <button class="try" data-try="files">Try it <Icon name="arrow" /></button>
+        </div>
+      </article>
+
       <article class="card f-mic">
         <div class="viz">
-          <div class="v-pill"><Icon name="mic" class="i warn" /><Icon name="camera" class="i warn" /><span class="dim">In a call</span><span><em>CPU</em> 9%</span><b>10:02</b></div>
+          <div class="v-pill os-win"><Icon name="mic" class="i warn" /><Icon name="camera" class="i warn" /><span class="dim">In a call</span><span><em>CPU</em> 9%</span><b>10:02</b></div>
+          <div class="v-wings os-mac"><span><span><em>CPU</em> 9%</span></span><i class="v-cam"></i><span><Icon name="mic" class="i mic" /><Icon name="camera" class="i cam" /><span class="dim">Zoom</span></span></div>
         </div>
         <div class="txt">
           <h3>See when apps use your mic or camera.</h3>
-          <p>The pill shows an icon while an app uses your microphone or camera. QNotch silences notification alerts during calls.</p>
+          <p class="os-win">The pill shows an icon while an app uses your microphone or camera. QNotch silences notification alerts during calls.</p>
+          <p class="os-mac">An orange mic and a green camera show in the wing while an app uses them, with the app's name on macOS 14.2 or newer. QNotch silences notification alerts during calls.</p>
         </div>
       </article>
 
@@ -133,7 +158,7 @@ const extras = [
         </div>
         <div class="txt">
           <h3>Launch AI apps with a shortcut.</h3>
-          <p>Use <kbd>Alt</kbd> <kbd>1</kbd> through <kbd>Alt</kbd> <kbd>6</kbd> to launch your AI apps. Check Claude Code and Codex usage limits and your remaining banked resets.</p>
+          <p>Use <span class="os-win"><kbd>Alt</kbd> <kbd>1</kbd> through <kbd>Alt</kbd> <kbd>6</kbd></span><span class="os-mac"><kbd>⌃</kbd> <kbd>⌥</kbd> <kbd>1</kbd> through <kbd>⌃</kbd> <kbd>⌥</kbd> <kbd>6</kbd></span> to launch your AI apps. Check Claude Code and Codex usage limits and your remaining banked resets.</p>
         </div>
       </article>
 
@@ -152,7 +177,7 @@ const extras = [
         </div>
         <div class="txt">
           <h3>Check the weather.</h3>
-          <p>Pick your town and get the yr.no forecast: right now and the next three days on Home, plus the temperature in the pill and the game bar. No account or API key.</p>
+          <p>Pick your town and get the yr.no forecast: right now and the next three days on Home, plus the temperature <span class="os-win">in the pill and the game bar</span><span class="os-mac">beside the notch</span>. No account or API key, and no location access.</p>
           <button class="try" data-try="open">Try it <Icon name="arrow" /></button>
         </div>
       </article>
@@ -161,10 +186,12 @@ const extras = [
         <div class="txt">
           <h3>More tools and settings.</h3>
           <ul class="extras">
-            {extras.map(x => <li><Icon name={x.icon} />{x.label}</li>)}
+            {extras.map(x => <li class={'os' in x ? `os-${x.os}` : undefined}><Icon name={x.icon} />{x.label}</li>)}
           </ul>
-          <p>Drag the pill sideways or onto another display. QNotch remembers its position for each app. In Edit mode, drag Home cards and tabs to reorder them.</p>
-          <p>Choose an audio file for each alert. Copy your appearance, layout and shortcut settings as a setup code to use on another PC.</p>
+          <p class="os-win">Drag the pill sideways or onto another display. QNotch remembers its position for each app. In Edit mode, drag Home cards and tabs to reorder them.</p>
+          <p class="os-win">Choose an audio file for each alert. Copy your appearance, layout and shortcut settings as a setup code to use on another PC, Windows or Mac.</p>
+          <p class="os-mac">Pause, resume or delete your own launch agents from the Scheduled tab. In Edit mode, drag Home cards and tabs to reorder them. No notch? Drag the floating pill sideways and it remembers the spot for each display.</p>
+          <p class="os-mac">Pick a system sound or an audio file for each alert. Copy your layout and settings as a setup code to use on another Mac, or on Windows.</p>
         </div>
       </article>
     </div>
@@ -526,6 +553,83 @@ const extras = [
   }
 
   .v-pill :global(.i) { font-size: 16px; }
+
+  .v-wings {
+    position: absolute;
+    top: 0;
+    align-self: center;
+    display: flex;
+    align-items: center;
+    height: 30px;
+    padding: 0 14px;
+    border-radius: 0 0 12px 12px;
+    background: #000;
+    font-size: 12.5px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .v-wings > span { display: flex; align-items: center; gap: 10px; min-width: 96px; }
+  .v-wings > span:last-child { justify-content: flex-end; }
+  .v-wings em { font-style: normal; font-size: 10.5px; font-weight: 700; color: var(--t3); margin-right: 3px; }
+  .v-wings :global(.i) { font-size: 15px; }
+  .v-wings :global(.mic) { color: #ff9f0a; }
+  .v-wings :global(.cam) { color: #30d158; }
+  .v-wings.dim { opacity: 0.7; }
+  .v-cam { width: 92px; height: 100%; flex: none; }
+
+  .v-tray {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .v-files { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+
+  .v-file {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 8px;
+    border-radius: 9px;
+  }
+
+  .v-file.on { background: rgba(91, 157, 255, 0.22); }
+  .v-file > div { min-width: 0; display: flex; flex-direction: column; }
+  .v-file b { overflow: hidden; font-size: 12.5px; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
+  .v-file small { color: var(--t3); font-size: 11px; }
+
+  .v-thumb {
+    width: 30px;
+    height: 30px;
+    flex: none;
+    display: grid;
+    place-items: center;
+    border-radius: 7px;
+    color: var(--t2);
+    font-size: 16px;
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .v-thumb.shot { background: linear-gradient(135deg, #5b9dff, #7a5cff 60%, #ff6aa2); }
+  .v-thumb.wall { background: linear-gradient(180deg, #0a1128, #18307a 60%, #8ec0ff); }
+
+  .v-menu {
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    width: 148px;
+    padding: 5px;
+    border-radius: 9px;
+    background: rgba(40, 40, 46, 0.96);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 14px 30px -10px rgba(0, 0, 0, 0.7);
+    font-size: 12px;
+  }
+
+  .v-menu span { padding: 2px 8px; border-radius: 5px; }
+  .v-menu span.on { background: #2f6fe4; }
+  .v-menu i { height: 1px; margin: 4px 6px; background: rgba(255, 255, 255, 0.12); }
   .v-pill b { font-weight: 600; }
 
   .f-mic .viz::after {

@@ -5,48 +5,108 @@ import Demo from '../components/Demo.astro';
 import Features from '../components/Features.astro';
 import OpenSource from '../components/OpenSource.astro';
 import ThemeSwitch from '../components/ThemeSwitch.astro';
+import OsSwitch from '../components/OsSwitch.astro';
 import og from '../assets/og.png';
 
 const GH = 'https://github.com/Somafet/qnotch';
 const DL = `${GH}/releases/latest`;
 
-const numbers = [
-  { v: '0.08%', l: 'of one core, idle' },
-  { v: '42 MB', l: 'of memory, idle' },
-  { v: '1 exe', l: 'native WPF, no web view' },
-  { v: '0', l: 'disabled extensions loaded' },
-];
+// Mac downloads come from the newest stable macos-v* release. Never /releases/latest: that one is Windows.
+// Resolved at build time; if GitHub can't be reached, the last known release still downloads.
+const MAC_FALLBACK = { url: `${GH}/releases/download/macos-v0.1.1/QNotch-macos-arm64.dmg`, mb: 3 };
+async function macDownload() {
+  try {
+    const token = import.meta.env.GITHUB_TOKEN ?? process.env.GITHUB_TOKEN;
+    const res = await fetch('https://api.github.com/repos/Somafet/qnotch/releases?per_page=40', {
+      headers: { accept: 'application/vnd.github+json', ...(token ? { authorization: `Bearer ${token}` } : {}) },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) throw new Error(`GitHub answered ${res.status}`);
+    const releases: { tag_name: string; draft: boolean; prerelease: boolean; assets: { name: string; size: number; browser_download_url: string }[] }[] = await res.json();
+    for (const r of releases) {
+      if (r.draft || r.prerelease || !/^macos-v\d+\.\d+\.\d+$/.test(r.tag_name)) continue;
+      const dmg = r.assets.find(a => a.name === 'QNotch-macos-arm64.dmg');
+      if (dmg) return { url: dmg.browser_download_url, mb: Math.max(1, Math.round(dmg.size / 1048576)) };
+    }
+    throw new Error('no stable Mac release with a disk image');
+  } catch (e) {
+    console.warn(`Mac download: using ${MAC_FALLBACK.url} (${(e as Error).message})`);
+    return MAC_FALLBACK;
+  }
+}
+const MAC = await macDownload();
 
-const keys = [
-  { k: ['Ctrl', 'Alt', 'N'], l: 'Open or close the panel' },
-  { k: ['Ctrl', 'Alt', 'F'], l: 'Search' },
-  { k: ['Ctrl', 'Alt', 'G'], l: 'Game mode: Auto, On, Off' },
-  { k: ['Alt', '1-6'], l: 'Launch the AI app in that slot' },
-  { k: ['Esc'], l: 'Close the panel' },
-];
+const numbers = {
+  win: [
+    { v: '0.08%', l: 'of one core, idle' },
+    { v: '42 MB', l: 'of memory, idle' },
+    { v: '1 exe', l: 'native WPF, no web view' },
+    { v: '0', l: 'disabled extensions loaded' },
+  ],
+  mac: [
+    { v: '<0.01%', l: 'of one core, idle' },
+    { v: '11 MB', l: 'of memory, idle' },
+    { v: `${MAC.mb} MB`, l: 'download, native AppKit' },
+    { v: '0', l: 'disabled extensions loaded' },
+  ],
+};
 
-const privacy = [
-  { icon: 'shield', t: 'Local settings and notes', d: 'Settings, notes and logs live in %APPDATA%\\QNotch on your PC. You do not need an account.' },
-  { icon: 'bolt', t: 'Tokens in Credential Manager', d: 'QNotch stores tokens in Windows Credential Manager, never in a file.' },
-  { icon: 'copy', t: 'Clipboard history in memory', d: 'QNotch keeps clipboard history in memory unless you choose to save it.' },
-  { icon: 'link', t: 'Two optional online requests', d: 'QNotch fetches your GitHub contribution graph and Claude Code usage limits. You can turn off both in Settings.' },
-] as const;
+const keys = {
+  win: [
+    { k: ['Ctrl', 'Alt', 'N'], l: 'Open or close the panel' },
+    { k: ['Ctrl', 'Alt', 'F'], l: 'Search' },
+    { k: ['Ctrl', 'Alt', 'G'], l: 'Game mode: Auto, On, Off' },
+    { k: ['Alt', '1-6'], l: 'Launch the AI app in that slot' },
+    { k: ['Esc'], l: 'Close the panel' },
+  ],
+  mac: [
+    { k: ['⌃', '⌥', 'N'], l: 'Open or close the panel' },
+    { k: ['⌃', '⌥', 'F'], l: 'Search' },
+    { k: ['⌃', '⌥', 'G'], l: 'Game mode: Automatic, On, Off' },
+    { k: ['⌃', '⌥', '1-6'], l: 'Launch the AI app in that slot' },
+    { k: ['Esc'], l: 'Close the panel' },
+  ],
+};
 
-const faq = [
-  { q: 'Is it free?', a: 'Yes. QNotch is free under the MIT license. It needs no account or subscription. The source is on GitHub.' },
-  { q: 'Windows says "Windows protected your PC". Is that normal?', a: "Yep, for now. The exe isn't code-signed yet, so SmartScreen has no clue who I am. Click More info, then Run anyway. Or if you'd rather not run a random exe from the internet (fair), build it from source with the .NET 10 SDK." },
-  { q: 'Which download do I need?', a: 'QNotch-self-contained.zip (80 MB) runs as is. QNotch.exe (27 MB) is smaller but needs the .NET 10 Desktop Runtime.' },
-  { q: 'Does it work on Windows 10?', a: 'Yes. It needs Windows 10 version 2004 or newer, on x64.' },
-  { q: 'Will it get in the way of my games?', a: 'No. When a game or fullscreen video is in front, Game mode shrinks the notch to one line of status, turns off hover and lets clicks pass straight through. Ctrl+Alt+G cycles Auto, On and Off.' },
-  { q: 'How does the Agents tab know what Claude Code and Codex are doing?', a: "One click in Settings, Agents adds a hook to Claude Code's settings.json or Codex's hooks.json, with a backup. Codex then asks you to trust it once. The hook talks to QNotch over a local pipe. Token counts come from the transcripts Claude Code already keeps on your PC." },
+const privacy = {
+  win: [
+    { icon: 'shield', t: 'Local settings and notes', d: 'Settings, notes and logs live in %APPDATA%\\QNotch on your PC. You do not need an account.' },
+    { icon: 'bolt', t: 'Tokens in Credential Manager', d: 'QNotch stores tokens in Windows Credential Manager, never in a file.' },
+    { icon: 'copy', t: 'Clipboard history in memory', d: 'QNotch keeps clipboard history in memory unless you choose to save it.' },
+    { icon: 'link', t: 'Two optional online requests', d: 'QNotch fetches your GitHub contribution graph and Claude Code usage limits. You can turn off both in Settings.' },
+  ],
+  mac: [
+    { icon: 'shield', t: 'Local settings and notes', d: 'Settings, notes and logs live in ~/Library/Application Support/QNotch.Mac. You do not need an account.' },
+    { icon: 'bolt', t: 'Tokens in the Keychain', d: 'QNotch stores your GitHub and notification tokens in the macOS Keychain, never in a file.' },
+    { icon: 'copy', t: 'Clipboard history in memory', d: 'QNotch keeps clipboard history in memory unless you choose to save it, and skips what password managers mark as concealed.' },
+    { icon: 'link', t: 'Online only for what you turn on', d: 'The forecast, your GitHub graph, Claude Code usage limits and update checks. Each one is a switch in Settings.' },
+  ],
+} as const;
+
+// os: which version the answer is about. JSON-LD lists them all, so questions stay distinct.
+const faq: { q: string; a: string; os?: 'win' | 'mac' }[] = [
+  { q: 'Is it free?', a: 'Yes. QNotch is free under the MIT license, on Windows and Mac. It needs no account or subscription. The source is on GitHub.' },
+  { q: 'Windows says "Windows protected your PC". Is that normal?', os: 'win', a: "Yep, for now. The exe isn't code-signed yet, so SmartScreen has no clue who I am. Click More info, then Run anyway. Or if you'd rather not run a random exe from the internet (fair), build it from source with the .NET 10 SDK." },
+  { q: 'Which download do I need?', os: 'win', a: 'QNotch-self-contained.zip (80 MB) runs as is. QNotch.exe (27 MB) is smaller but needs the .NET 10 Desktop Runtime.' },
+  { q: 'Does it work on Windows 10?', os: 'win', a: 'Yes. It needs Windows 10 version 2004 or newer, on x64.' },
+  { q: 'Which Macs does it run on?', os: 'mac', a: 'Apple silicon Macs (M1 or newer) with macOS 13 Ventura or newer. There is no Intel build.' },
+  { q: 'Is the Mac app signed?', os: 'mac', a: 'Yes. It is signed with a Developer ID and notarized by Apple, so it opens like any other app. Updates come through Sparkle, which installs only a copy signed the same way.' },
+  { q: 'Does my Mac need a notch?', os: 'mac', a: 'No. On a Mac or an external display without one, QNotch is a floating pill under the menu bar. Drag it sideways and it snaps to the center or an edge, and remembers the spot for each display.' },
+  { q: 'Which permissions does it ask for?', os: 'mac', a: "None up front: no Accessibility, Screen Recording or notification permission. macOS asks once before QNotch controls Music or Spotify, and on macOS 15.4 or newer it may ask once whether QNotch can read the clipboard." },
+  { q: 'Why does Now playing only show Music and Spotify?', os: 'mac', a: "macOS has no public way to read other apps' media sessions, and QNotch doesn't use private frameworks. Music and Spotify announce their tracks publicly and accept remote controls." },
+  { q: 'Will it get in the way of my games?', os: 'win', a: 'No. When a game or fullscreen video is in front, Game mode shrinks the notch to one line of status, turns off hover and lets clicks pass straight through. Ctrl+Alt+G cycles Auto, On and Off.' },
+  { q: 'Does it get in the way of full-screen games on a Mac?', os: 'mac', a: 'No. When a game is in front, the notch steps aside: the panel stays shut, clicks pass through and the wings show only the stats you pick. ⌃⌥G switches between Automatic, On and Off.' },
+  { q: 'How does the Agents tab know what Claude Code and Codex are doing?', a: "One click in Settings, Agents adds a hook to Claude Code's settings.json or Codex's hooks.json, with a backup. Codex then asks you to trust it once. The hook talks to QNotch over a local pipe on Windows or a Unix socket on the Mac. Token counts come from the transcripts Claude Code already keeps on your computer." },
   { q: 'Where does the button on an agent take me?', a: 'It opens that session or thread in the Claude or Codex app. For a terminal session, it brings the terminal to the front.' },
   { q: 'Is the cost what I am billed?', a: "No. It's what those tokens would cost at API list prices. Pro and Max plans don't bill per token, so think of it as a 'look how much I'm getting out of my plan' number, not your bill." },
-  { q: 'Can I put it on my other monitor?', a: 'Yes. Drag the pill onto it, or pick the monitor in Settings, General. It follows DPI changes without a restart.' },
-  { q: 'How do I add a feature of my own?', a: 'Open an issue with a sentence on what it does and where it shows, then build it in its own folder under src/QNotch/Modules. The contributing guide walks through it.' },
+  { q: 'Can I put it on my other monitor?', os: 'win', a: 'Yes. Drag the pill onto it, or pick the monitor in Settings, General. It follows DPI changes without a restart.' },
+  { q: 'Can I use it on an external display?', os: 'mac', a: 'Yes. Pick the main display or a specific one in Settings, General. If that display disconnects, QNotch moves to the main display and comes back when you reconnect it.' },
+  { q: 'Can I move my settings between Windows and Mac?', a: 'Yes. Settings, General, Share your setup copies a code with your layout, features and preferences. Paste it into QNotch on the other computer, on either platform. Accounts, tokens and history never leave.' },
+  { q: 'How do I add a feature of my own?', a: 'Open an issue with a sentence on what it does and where it shows, then build it in its own folder: src/QNotch/Modules on Windows, src/QNotch.Mac/Sources/QNotchMac/Modules on the Mac. The contributing guide walks through it.' },
 ];
 
-const title = 'QNotch: a notch for Windows 11';
-const description = 'QNotch puts music, system stats and your coding agents at the top of your screen. Free and open source for Windows.';
+const title = 'QNotch: a notch for Windows 11 and macOS';
+const description = 'QNotch puts music, system stats and your coding agents at the top of your screen. Free and open source for Windows and Mac.';
 const site = Astro.site!.href;
 const author = { '@type': 'Person', name: 'Soma Somorjai', url: 'https://github.com/Somafet' };
 
@@ -71,10 +131,9 @@ const jsonLd = {
       url: site,
       image: new URL(og.src, site).href,
       applicationCategory: 'UtilitiesApplication',
-      operatingSystem: 'Windows 10 version 2004 or newer, Windows 11 (x64)',
-      fileSize: '27 MB',
-      downloadUrl: DL,
-      installUrl: DL,
+      operatingSystem: 'Windows 10 version 2004 or newer, Windows 11 (x64); macOS 13 or newer (Apple silicon)',
+      downloadUrl: [DL, MAC.url],
+      installUrl: [DL, MAC.url],
       softwareHelp: `${GH}#readme`,
       license: 'https://opensource.org/licenses/MIT',
       isAccessibleForFree: true,
@@ -108,7 +167,8 @@ const jsonLd = {
       <div class="nav-cta">
         <ThemeSwitch />
         <a class="gh-link" href={GH} aria-label="QNotch on GitHub"><Icon name="github" /></a>
-        <a class="btn btn-primary btn-sm" href={DL}><Icon name="download" />Download</a>
+        <a class="btn btn-primary btn-sm os-win" href={DL}><Icon name="download" />Download</a>
+        <a class="btn btn-primary btn-sm os-mac" href={MAC.url}><Icon name="download" />Download</a>
       </div>
     </div>
   </header>
@@ -117,13 +177,20 @@ const jsonLd = {
     <section class="hero">
       <div class="wrap center">
         <a class="badge" href={GH}><span class="badge-dot"></span>Free and open source<span class="sep">·</span>MIT</a>
-        <h1>A <span class="grad">notch</span> for<br />your Windows desktop.</h1>
-        <p class="lead hero-lead">Your music, system stats and coding agents in a little pill at the top of your screen. Hover over it and you get clipboard history, files and quite a bit more.</p>
+        <h1>
+          <span class="os-win">A <span class="grad">notch</span> for<br />your Windows desktop.</span>
+          <span class="os-mac">Put your Mac's<br /><span class="grad">notch</span> to work.</span>
+        </h1>
+        <p class="lead hero-lead os-win">Your music, system stats and coding agents in a little pill at the top of your screen. Hover over it and you get clipboard history, files and quite a bit more.</p>
+        <p class="lead hero-lead os-mac">Your music, system stats and coding agents in the wings beside the notch. Hover over it and you get clipboard history, files and quite a bit more.</p>
+        <div class="hero-os"><OsSwitch /></div>
         <div class="hero-cta">
-          <a class="btn btn-primary" href={DL}><Icon name="windows" />Download for Windows</a>
+          <a class="btn btn-primary os-win" href={DL}><Icon name="windows" />Download for Windows</a>
+          <a class="btn btn-primary os-mac" href={MAC.url}><Icon name="apple" />Download for Mac</a>
           <a class="btn btn-ghost" href={GH}><Icon name="github" />Star on GitHub</a>
         </div>
-        <p class="fine">Free, no account · Windows 10 2004 or newer, x64 · 27 MB</p>
+        <p class="fine os-win">Free, no account · Windows 10 2004 or newer, x64 · 27 MB</p>
+        <p class="fine os-mac">Free, no account · macOS 13 or newer, Apple silicon · {MAC.mb} MB · No notch? It floats under the menu bar.</p>
       </div>
       <div class="wrap demo-wrap">
         <Demo />
@@ -132,13 +199,19 @@ const jsonLd = {
 
     <section class="numbers-sec">
       <div class="wrap">
-        <div class="numbers-head">
+        <div class="numbers-head os-win">
           <h2 class="h2-sm">42 MB of memory while idle.</h2>
           <p>Measured on Windows 11 with the panel closed. It's native WPF, not a browser in a trench coat.</p>
         </div>
-        <ul class="numbers">
-          {numbers.map(n => <li><b>{n.v}</b><span>{n.l}</span></li>)}
-        </ul>
+        <div class="numbers-head os-mac">
+          <h2 class="h2-sm">11 MB of memory while idle.</h2>
+          <p>Activity Monitor's Memory column on a MacBook Air (M2), every feature on, panel closed. It's native Swift and AppKit, not a browser in a trench coat.</p>
+        </div>
+        {(['win', 'mac'] as const).map(os => (
+          <ul class={`numbers os-${os}`}>
+            {numbers[os].map(n => <li><b>{n.v}</b><span>{n.l}</span></li>)}
+          </ul>
+        ))}
       </div>
     </section>
 
@@ -151,11 +224,13 @@ const jsonLd = {
           <h2 class="h2-sm">Open the panel with a shortcut.</h2>
           <p class="lead">Use these shortcuts from any app. Change them in Settings, Hotkeys, or try them in the demo above.</p>
         </div>
-        <ul class="keys">
-          {keys.map(r => (
-            <li><span class="kk">{r.k.map(k => <kbd>{k}</kbd>)}</span><span>{r.l}</span></li>
-          ))}
-        </ul>
+        {(['win', 'mac'] as const).map(os => (
+          <ul class={`keys os-${os}`}>
+            {keys[os].map(r => (
+              <li><span class="kk">{r.k.map(k => <kbd>{k}</kbd>)}</span><span>{r.l}</span></li>
+            ))}
+          </ul>
+        ))}
       </div>
     </section>
 
@@ -165,12 +240,16 @@ const jsonLd = {
       <div class="wrap">
         <div class="section-head center">
           <span class="eyebrow">Privacy</span>
-          <h2>Your data stays on your PC.</h2>
-          <p class="lead">Everything's stored locally. QNotch only goes online for two things, your GitHub graph and Claude Code usage limits, and you can switch both off. Don't take my word for it, the source is on GitHub.</p>
+          <h2 class="os-win">Your data stays on your PC.</h2>
+          <h2 class="os-mac">Your data stays on your Mac.</h2>
+          <p class="lead os-win">Everything's stored locally. QNotch only goes online for two things, your GitHub graph and Claude Code usage limits, and you can switch both off. Don't take my word for it, the source is on GitHub.</p>
+          <p class="lead os-mac">Everything's stored locally. No analytics, and no Accessibility or Screen Recording permission. Don't take my word for it, the source is on GitHub.</p>
         </div>
-        <ul class="priv">
-          {privacy.map(p => <li class="card"><Icon name={p.icon} /><b>{p.t}</b><p>{p.d}</p></li>)}
-        </ul>
+        {(['win', 'mac'] as const).map(os => (
+          <ul class={`priv os-${os}`}>
+            {privacy[os].map(p => <li class="card"><Icon name={p.icon} /><b>{p.t}</b><p>{p.d}</p></li>)}
+          </ul>
+        ))}
       </div>
     </section>
 
@@ -183,7 +262,7 @@ const jsonLd = {
         </div>
         <div class="faq">
           {faq.map(f => (
-            <details>
+            <details class={f.os && `os-${f.os}`}>
               <summary>{f.q}<span class="plus" aria-hidden="true"></span></summary>
               <p>{f.a}</p>
             </details>
@@ -195,13 +274,16 @@ const jsonLd = {
     <section class="final">
       <div class="wrap center">
         <div class="final-pill" aria-hidden="true"><span></span></div>
-        <h2>Try QNotch on<br />your desktop.</h2>
-        <p class="lead final-lead">I saw a really nice notch app on Reddit, but it was Mac only. Well, I'm on Windows. So I built one.</p>
+        <h2 class="os-win">Try QNotch on<br />your desktop.</h2>
+        <h2 class="os-mac">Try QNotch on<br />your Mac.</h2>
+        <p class="lead final-lead os-win">I saw a really nice notch app on Reddit, but it was Mac only. Well, I'm on Windows. So I built one.</p>
+        <p class="lead final-lead os-mac">I built QNotch for Windows because the nice notch apps were Mac only. Then I wanted it on my MacBook too, so I rebuilt it natively in Swift.</p>
         <div class="hero-cta">
-          <a class="btn btn-primary" href={DL}><Icon name="windows" />Download for Windows</a>
+          <a class="btn btn-primary os-win" href={DL}><Icon name="windows" />Download for Windows</a>
+          <a class="btn btn-primary os-mac" href={MAC.url}><Icon name="apple" />Download for Mac</a>
           <a class="btn btn-ghost" href={GH}><Icon name="github" />View the source</a>
         </div>
-        <p class="fine">Free and open source · MIT license</p>
+        <p class="fine">Free and open source · MIT license · <a class="inline os-win" href="?os=mac" data-os-link="mac">Also on Mac</a><a class="inline os-mac" href="?os=windows" data-os-link="win">Also on Windows</a></p>
       </div>
     </section>
   </main>
@@ -357,6 +439,9 @@ const jsonLd = {
     margin-top: 34px;
   }
 
+  .hero-os { margin-top: 34px; }
+  .hero-os + .hero-cta { margin-top: 16px; }
+
   .fine {
     margin-top: 16px;
     font-size: 13.5px;
@@ -494,7 +579,7 @@ const jsonLd = {
     border-bottom: 1px solid var(--line);
   }
 
-  .faq details:first-child { border-top: 1px solid var(--line); }
+  .faq details:first-of-type { border-top: 1px solid var(--line); }
 
   summary {
     display: flex;

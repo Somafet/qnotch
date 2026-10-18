@@ -1,6 +1,8 @@
 import { svg, type IconName } from '../icons';
+import { isMac } from './platform';
 
-/* The fake Windows around the notch: windows, taskbar, Start, calendar, tray menu, files. */
+/* The fake desktop around the notch: windows, then Windows' taskbar, Start, calendar and tray menu,
+   or the Mac's menu bar, Dock, Launchpad and menu-bar extra. File Explorer is Finder on the Mac. */
 
 export type WinId = 'term' | 'browser' | 'files' | 'music';
 export type GameSetting = 'auto' | 'on' | 'off';
@@ -58,6 +60,8 @@ export function initDesktop(stage: HTMLElement, hooks: Hooks) {
   stage.querySelectorAll<HTMLElement>('[data-win]').forEach(w => wins.set(w.dataset.win as WinId, w));
   let z = 10;
   let active: WinId | null = 'term';
+  const NAMES: Record<WinId, string> = { term: 'Terminal', browser: 'Browser', files: 'Finder', music: 'Music' };
+  const MENU_BAR = 30;
 
   /* ---------- windows ---------- */
   const isOpen = (id: WinId) => !wins.get(id)!.classList.contains('closed');
@@ -84,11 +88,13 @@ export function initDesktop(stage: HTMLElement, hooks: Hooks) {
     stage.querySelectorAll<HTMLElement>('[data-act="launch"]').forEach(b => {
       const id = b.dataset.arg as WinId;
       if (!wins.has(id)) return;
-      if (!b.closest('.qn-tb-apps')) return;
+      if (!b.closest('.qn-tb-apps, .qn-dock')) return;
       b.classList.toggle('run', isOpen(id));
       b.classList.toggle('on', isOpen(id) && !isMin(id) && active === id);
     });
     wins.forEach((w, id) => w.classList.toggle('active', id === active));
+    // With no window in front, Finder is the frontmost app on a Mac.
+    q('[data-k="appname"]').textContent = active ? NAMES[active] : 'Finder';
   }
   function launch(id: WinId) {
     if (!isOpen(id) || isMin(id)) show(id);
@@ -104,11 +110,11 @@ export function initDesktop(stage: HTMLElement, hooks: Hooks) {
     const bar = t.closest<HTMLElement>('[data-drag]');
     if (!w || !bar || t.closest('button') || w.classList.contains('max') || e.button !== 0) return;
     const s = hooks.scale(), x0 = e.clientX, y0 = e.clientY, l0 = w.offsetLeft, t0 = w.offsetTop;
-    const W = stage.offsetWidth, H = stage.offsetHeight;
+    const W = stage.offsetWidth, H = stage.offsetHeight, top = isMac() ? MENU_BAR : 0;
     bar.setPointerCapture(e.pointerId);
     const move = (ev: PointerEvent) => {
       w.style.left = `${Math.min(W - 80, Math.max(80 - w.offsetWidth, l0 + (ev.clientX - x0) / s))}px`;
-      w.style.top = `${Math.min(H - 90, Math.max(0, t0 + (ev.clientY - y0) / s))}px`;
+      w.style.top = `${Math.min(H - 90, Math.max(top, t0 + (ev.clientY - y0) / s))}px`;
     };
     const up = () => { bar.removeEventListener('pointermove', move); bar.removeEventListener('pointerup', up); };
     bar.addEventListener('pointermove', move);
@@ -135,13 +141,18 @@ export function initDesktop(stage: HTMLElement, hooks: Hooks) {
     if (fly === 'tray') renderTray();
   }
 
-  q('[data-fly="start"]').innerHTML = `
-    <div class="fl-h">Pinned</div>
-    <div class="st-grid">
-      ${([['term', 'terminal', 'Terminal'], ['browser', 'globe', 'Browser'], ['files', 'folder', 'File Explorer'], ['music', 'music', 'Music'], ['qnotch', 'pill', 'QNotch']] as [string, IconName, string][])
-        .map(([id, icon, label]) => `<button class="st-app" data-act="launch" data-arg="${id}"><span class="st-ico ${id}">${svg(icon)}</span>${label}</button>`).join('')}
-    </div>
-    <div class="st-foot"><span class="qn-avatar sm">A</span><b>Alex</b><button class="qn-icon" data-act="sleep" title="Sleep" aria-label="Sleep">${svg('power')}</button></div>`;
+  // Start on Windows, Launchpad on the Mac: the same apps, QNotch included, so a quit QNotch can start again.
+  function renderStart() {
+    const mac = isMac();
+    q('[data-fly="start"]').innerHTML = `
+      <div class="fl-h">${mac ? 'Launchpad' : 'Pinned'}</div>
+      <div class="st-grid">
+        ${([['term', 'terminal', 'Terminal'], ['browser', 'globe', 'Browser'], ['files', 'folder', mac ? 'Finder' : 'File Explorer'], ['music', 'music', 'Music'], ['qnotch', 'pill', 'QNotch']] as [string, IconName, string][])
+          .map(([id, icon, label]) => `<button class="st-app" data-act="launch" data-arg="${id}"><span class="st-ico ${id}">${svg(icon)}</span>${label}</button>`).join('')}
+      </div>
+      <div class="st-foot"><span class="qn-avatar sm">A</span><b>Alex</b><button class="qn-icon" data-act="sleep" title="Sleep" aria-label="Sleep">${svg('power')}</button></div>`;
+  }
+  renderStart();
 
   let calOffset = 0;
   function renderCal() {
@@ -165,10 +176,10 @@ export function initDesktop(stage: HTMLElement, hooks: Hooks) {
     const opt = (id: GameSetting, label: string) =>
       `<button class="fl-item" data-act="gameSet" data-arg="${id}">${g === id ? svg('check', 'i acc') : '<i class="i"></i>'}${label}</button>`;
     q('[data-fly="tray"]').innerHTML = `
-      <button class="fl-item" data-act="trayOpen"><i class="i"></i>Open QNotch<small>Ctrl+Alt+N</small></button>
+      <button class="fl-item" data-act="trayOpen"><i class="i"></i>${isMac() ? 'Open Panel<small>⌃⌥N</small>' : 'Open QNotch<small>Ctrl+Alt+N</small>'}</button>
       <div class="fl-sep"></div>
       <div class="fl-h">Game mode</div>
-      ${opt('auto', 'Auto')}${opt('on', 'On')}${opt('off', 'Off')}
+      ${opt('auto', isMac() ? 'Automatic' : 'Auto')}${opt('on', 'On')}${opt('off', 'Off')}
       <div class="fl-sep"></div>
       <button class="fl-item" data-act="quit"><i class="i"></i>Quit QNotch</button>`;
   }
@@ -269,17 +280,28 @@ export function initDesktop(stage: HTMLElement, hooks: Hooks) {
       case 'closePreview': q('[data-preview]').classList.remove('show'); return;
       case 'sound': {
         const on = hooks.sound(!hooks.sound());
-        btn!.classList.toggle('off', !on);
-        btn!.title = on ? 'Sound on' : 'Sound off';
+        stage.querySelectorAll<HTMLElement>('[data-act="sound"]').forEach(b => {
+          b.classList.toggle('off', !on);
+          b.title = on ? 'Sound on' : 'Sound off';
+        });
         return;
       }
     }
   });
 
   function syncTray() {
-    q('[data-act="trayMenu"]').hidden = !hooks.running();
+    stage.querySelectorAll<HTMLElement>('[data-act="trayMenu"]').forEach(b => (b.hidden = !hooks.running()));
+  }
+
+  /** The page switched between Windows and Mac: close menus, put windows back, relabel. */
+  function applyOS() {
+    toggleFly(null);
+    q('[data-preview]').classList.remove('show');
+    reset();
+    renderStart();
+    syncTaskbar();
   }
 
   syncTaskbar();
-  return { active: () => active, show, focus, launch, isOpen, reset, renderMusic, flashFile, syncTray, closeFlyouts: () => toggleFly(null) };
+  return { active: () => active, show, focus, launch, isOpen, reset, renderMusic, flashFile, syncTray, applyOS, closeFlyouts: () => toggleFly(null) };
 }

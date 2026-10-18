@@ -1,0 +1,290 @@
+/* The Mac around the notch: wallpaper, menu bar, Dock, traffic lights, and the notch itself, which wraps
+   the camera housing with a wing on each side (the Mac app's README, Behavior). Only for <html data-os="mac">. */
+
+:root[data-os='mac'] .qn-stage {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter Variable', system-ui, sans-serif;
+}
+
+:root[data-os='mac'] .qn-term-body,
+:root[data-os='mac'] .qn-row-mid b.code {
+  font-family: 'SF Mono', Menlo, ui-monospace, monospace;
+}
+
+:root[data-os='mac'] .qn-wall {
+  background:
+    radial-gradient(55% 45% at 18% 104%, #ff8a5c 0%, rgba(255, 138, 92, 0) 70%),
+    radial-gradient(50% 55% at 82% 98%, #b45cff 0%, rgba(180, 92, 255, 0) 70%),
+    radial-gradient(60% 50% at 50% 118%, #ffc46e 0%, rgba(255, 196, 110, 0) 70%),
+    radial-gradient(70% 50% at 50% 0%, #1a2a5c 0%, rgba(26, 42, 92, 0) 70%),
+    linear-gradient(180deg, #0d1433 0%, #24265e 55%, #5b3a86 100%);
+}
+
+/* Menu bar */
+.qn-menubar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 99000;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  height: 30px;
+  padding: 0 8px 0 18px;
+  background: rgba(16, 20, 44, 0.42);
+  backdrop-filter: blur(20px) saturate(1.5);
+  color: #fff;
+  font-size: 13px;
+  transition: opacity 0.3s ease;
+}
+
+.qn-menubar b { font-weight: 700; }
+.mb-apple { display: grid; }
+.mb-apple .i { width: 15px; height: 15px; margin-top: -2px; }
+
+.mb-right {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+}
+
+.qn-stage .qn-menubar .qn-traybtn {
+  width: 30px;
+  height: 22px;
+  border-radius: 5px;
+  font-size: 15px;
+}
+
+.qn-stage .qn-menubar .qn-traybtn:hover,
+.qn-stage .qn-menubar .qn-clock:hover { background: rgba(255, 255, 255, 0.16); }
+
+.qn-stage .qn-menubar .qn-clock {
+  flex-direction: row;
+  padding: 2px 8px;
+  border-radius: 5px;
+  font-size: 13px;
+  line-height: 18px;
+  white-space: pre;
+}
+
+.qn-stage.compact .qn-menubar [data-act='sound'] { display: none; }
+
+/* Dock */
+.qn-dock {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  z-index: 99000;
+  display: flex;
+  gap: 6px;
+  padding: 6px 7px;
+  border-radius: 18px;
+  background: rgba(36, 38, 60, 0.42);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(24px) saturate(1.5);
+  transform: translateX(-50%);
+  transition: opacity 0.3s ease;
+}
+
+.qn-stage .qn-dock .qn-app {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  font-size: 25px;
+  color: #fff;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14), 0 4px 10px -4px rgba(0, 0, 0, 0.5);
+  transition: transform 0.18s cubic-bezier(0.3, 1.4, 0.5, 1);
+}
+
+.qn-stage .qn-dock .qn-app:hover { transform: translateY(-5px) scale(1.08); }
+.qn-stage .qn-dock .qn-app.launchpad { background: linear-gradient(#f2f2f6, #c8cad6); color: #55586e; }
+.qn-stage .qn-dock .qn-app.files { background: linear-gradient(#6fd0ff, #1f7cf2); }
+.qn-stage .qn-dock .qn-app.browser { background: linear-gradient(#ffffff, #e2e6ee); color: #1f7cf2; }
+.qn-stage .qn-dock .qn-app.music { background: linear-gradient(#ff667f, #f2304c); }
+.qn-stage .qn-dock .qn-app.term { background: linear-gradient(#3c3c44, #18181c); color: #e8e8ec; }
+
+/* The running dot under the icon */
+.qn-stage .qn-dock .qn-app.run::after,
+.qn-stage .qn-dock .qn-app.on::after {
+  bottom: -5px;
+  width: 4px;
+  height: 4px;
+  margin-left: -2px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.8);
+}
+
+/* Windows get traffic lights: close, minimize, zoom, on the left. */
+:root[data-os='mac'] .qn-win {
+  border-radius: 12px;
+  background: #1c1c21;
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+:root[data-os='mac'] .qn-titlebar {
+  align-items: center;
+  padding-left: 14px;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+:root[data-os='mac'] .qn-winbtns {
+  order: -1;
+  align-self: center;
+  gap: 8px;
+  margin: 0 12px 0 0;
+}
+
+:root[data-os='mac'] .qn-winbtns button {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  color: rgba(0, 0, 0, 0.55);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+:root[data-os='mac'] .qn-winbtns button:nth-child(3) { order: 0; background: #ff5f57; }
+:root[data-os='mac'] .qn-winbtns button:nth-child(1) { order: 1; background: #febc2e; }
+:root[data-os='mac'] .qn-winbtns button:nth-child(2) { order: 2; background: #28c840; }
+:root[data-os='mac'] .qn-win:not(.active) .qn-winbtns button { background: #45454c; }
+:root[data-os='mac'] .qn-winbtns button::before { content: none; }
+:root[data-os='mac'] .qn-winbtns:hover button:nth-child(3)::before { content: '\00d7'; }
+:root[data-os='mac'] .qn-winbtns:hover button:nth-child(1)::before { content: '\2212'; }
+:root[data-os='mac'] .qn-winbtns:hover button:nth-child(2)::before { content: '+'; }
+
+:root[data-os='mac'] .qn-ttab {
+  height: 24px;
+  border-radius: 6px;
+}
+
+:root[data-os='mac'] .qn-wtitle { margin: 0; }
+:root[data-os='mac'] .qn-url { margin: 0 0 0 4px; }
+
+/* Zoom fills the space between the menu bar and the Dock. */
+:root[data-os='mac'] .qn-win.max {
+  top: 30px !important;
+  height: calc(100% - 30px - 74px) !important;
+}
+
+/* Launchpad above the Dock, menus below the menu bar */
+:root[data-os='mac'] .qn-fly {
+  border-radius: 10px;
+  background: rgba(34, 36, 48, 0.94);
+  backdrop-filter: blur(20px);
+}
+
+:root[data-os='mac'] .qn-fly.start { bottom: 78px; }
+
+:root[data-os='mac'] .qn-fly.cal,
+:root[data-os='mac'] .qn-fly.tray {
+  top: 34px;
+  bottom: auto;
+}
+
+:root[data-os='mac'] .qn-fly.cal { right: 8px; }
+:root[data-os='mac'] .qn-fly.tray { right: 168px; }
+:root[data-os='mac'] .qn-fly.cal.show,
+:root[data-os='mac'] .qn-fly.tray.show { animation-name: qn-drop; }
+
+/* A full-screen game sits below the notch: macOS letterboxes the menu bar's strip in black. */
+:root[data-os='mac'] .qn-game { border-top: 30px solid #000; }
+.gaming .qn-menubar,
+.gaming .qn-dock { opacity: 0; pointer-events: none; }
+
+/* The camera housing: hardware, always there. */
+.qn-housing {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  z-index: 99999;
+  width: 150px;
+  height: 30px;
+  margin-left: -75px;
+  border-radius: 0 0 10px 10px;
+  background: #000;
+}
+
+/* The notch: black like the bezel, grown out of the housing. */
+:root[data-os='mac'] .qn-notch,
+:root[data-os='mac'] .ready .qn-notch {
+  transform: translate(-50%, 0);
+  transition: opacity 0.3s ease;
+}
+
+:root[data-os='mac'] .quit .qn-notch { opacity: 0; }
+
+:root[data-os='mac'] .qn-shell {
+  height: 30px;
+  background: #000;
+  border: 0;
+  border-radius: 0 0 12px 12px;
+  box-shadow: none;
+}
+
+:root[data-os='mac'] [data-mode='open'] .qn-shell {
+  border-radius: 0 0 24px 24px;
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.08), 0 24px 50px -14px rgba(0, 0, 0, 0.6);
+}
+
+:root[data-os='mac'] [data-mode='game'] .qn-shell {
+  border-radius: 0 0 12px 12px;
+  background: #000;
+}
+
+:root[data-os='mac'] .qn-pill,
+:root[data-os='mac'] .qn-peek {
+  inset: 0 auto auto 50%;
+  width: max-content;
+  height: 30px;
+  gap: 0;
+  transform: translateX(-50%);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+:root[data-os='mac'] .qn-peek { justify-content: flex-start; }
+
+.wing {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 12px;
+  height: 100%;
+  padding: 0 14px;
+  white-space: nowrap;
+}
+
+.wing.r { justify-content: flex-end; }
+.wing .seg { gap: 5px; }
+.wing .seg .i { font-size: 14px; }
+.wing .dim.sm { font-size: 10px; font-weight: 700; letter-spacing: 0.02em; color: var(--t3); }
+.qn-peek .wing .i { font-size: 15px; }
+.cam { width: 150px; flex: none; }
+
+.qn-mi.mac {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  background: linear-gradient(#ff667f, #f2304c);
+  color: #fff;
+}
+
+.qn-mi.mac .i { font-size: 11px; }
+
+/* Open, the wings stay on top and the panel starts below the housing. */
+:root[data-os='mac'] [data-mode='open'] .qn-pill { opacity: 1; pointer-events: none; }
+:root[data-os='mac'] .qn-panel { top: 30px; }
+
+/* Game mode: no panel, clicks pass through, only the chosen stats, dimmed. */
+:root[data-os='mac'] .qn-bar { display: none; }
+:root[data-os='mac'] [data-mode='game'] .qn-pill { opacity: 0.65; pointer-events: none; }
+
+/* The Volume card names the output, as on the Mac. */
+.qn-vol small {
+  display: block;
+  margin-top: -2px;
+  font-size: 11.5px;
+  color: var(--t2);
+}

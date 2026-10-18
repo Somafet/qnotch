@@ -1,0 +1,90 @@
+---
+import Icon from './Icon.astro';
+---
+<div class="os-switch" role="radiogroup" aria-label="Show QNotch for">
+  <span class="thumb" aria-hidden="true"></span>
+  <button type="button" role="radio" data-os-pick="win" aria-checked="false"><Icon name="windows" />Windows</button>
+  <button type="button" role="radio" data-os-pick="mac" aria-checked="false"><Icon name="apple" />Mac</button>
+</div>
+
+<script>
+  import { currentOS, onOS, setOS, type OS } from '../scripts/platform';
+
+  const buttons = [...document.querySelectorAll<HTMLButtonElement>('[data-os-pick]')];
+  function sync() {
+    const os = currentOS();
+    for (const b of buttons) {
+      const on = b.dataset.osPick === os;
+      b.setAttribute('aria-checked', String(on));
+      b.tabIndex = on ? 0 : -1;
+    }
+  }
+  for (const b of buttons) {
+    b.addEventListener('click', () => setOS(b.dataset.osPick as OS));
+    // Arrow keys move between the two, like any radio group.
+    b.addEventListener('keydown', e => {
+      if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) return;
+      e.preventDefault();
+      setOS(currentOS() === 'mac' ? 'win' : 'mac');
+      b.parentElement!.querySelector<HTMLButtonElement>('[aria-checked="true"]')?.focus();
+    });
+  }
+  // Links elsewhere on the page ("Also on Mac") switch too.
+  document.querySelectorAll<HTMLElement>('[data-os-link]').forEach(a => a.addEventListener('click', e => {
+    e.preventDefault();
+    setOS(a.dataset.osLink as OS);
+    document.getElementById('top')?.scrollIntoView({ behavior: 'smooth' });
+  }));
+  onOS(sync);
+  sync();
+</script>
+
+<style>
+  .os-switch {
+    position: relative;
+    display: inline-grid;
+    grid-template-columns: 1fr 1fr;
+    padding: 4px;
+    border-radius: 999px;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+  }
+
+  .thumb {
+    position: absolute;
+    top: 4px;
+    bottom: 4px;
+    left: 4px;
+    width: calc(50% - 4px);
+    border-radius: 999px;
+    background: var(--card);
+    box-shadow: var(--shadow), 0 0 0 1px var(--line);
+    transition: transform 0.28s cubic-bezier(0.3, 1.25, 0.5, 1);
+  }
+
+  :global([data-os='mac']) .thumb { transform: translateX(100%); }
+
+  button {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 38px;
+    padding: 0 20px;
+    border-radius: 999px;
+    color: var(--ink-3);
+    font-size: 14.5px;
+    font-weight: 600;
+    transition: color 0.2s ease;
+  }
+
+  button:hover,
+  button[aria-checked='true'] { color: var(--ink); }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  button :global(.i) { width: 16px; height: 16px; margin-top: -1px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .thumb { transition: none; }
+  }
+</style>
