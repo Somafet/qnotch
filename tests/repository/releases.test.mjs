@@ -48,13 +48,15 @@ function scenario(t, { platform = 'windows', tag = 'v0.5.0', corrupt = false, mi
   paths.forEach(path => writeFileSync(path, 'test artifact'));
   const digest = 'sha256:' + createHash('sha256').update('test artifact').digest('hex');
   let currentLatest = { tag_name: 'v0.4.0' };
-  let release = existingDraft || existingPublished ? { draft: !existingPublished } : null;
+  let release = existingDraft || existingPublished ? { tag_name: tag, draft: !existingPublished } : null;
   const calls = [];
   const run = args => {
     calls.push(args);
     if (args[0] === 'api') {
       if (apiError) throw Object.assign(new Error('API failure'), { stderr: `gh: failure (HTTP ${apiError})` });
-      const value = args[1].endsWith('/latest') ? currentLatest : release;
+      // Like GitHub: drafts are only in the release list, never at releases/tags/{tag}.
+      if (args[1].includes('/releases?')) return JSON.stringify(release ? [release] : []);
+      const value = args[1].endsWith('/latest') ? currentLatest : release?.draft ? null : release;
       if (!value) throw Object.assign(new Error('Not found'), { stderr: 'gh: Not Found (HTTP 404)' });
       return JSON.stringify(value);
     }
