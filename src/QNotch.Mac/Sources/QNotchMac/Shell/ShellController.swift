@@ -40,6 +40,8 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     private var pillIdle = NSView()
     private var screen: NSScreen?
     var statusChanged: (() -> Void)?
+    /// Sparkle updates; nil in development, diagnostic and isolated runs.
+    var updater: Updater?
 
     init(store: SettingsStore) {
         self.store = store

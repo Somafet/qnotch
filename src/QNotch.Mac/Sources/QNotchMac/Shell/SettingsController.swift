@@ -585,14 +585,12 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
         glyph.translatesAutoresizingMaskIntoConstraints = false
         tile.addSubview(glyph)
         NSLayoutConstraint.activate([glyph.centerXAnchor.constraint(equalTo: tile.centerXAnchor), glyph.centerYAnchor.constraint(equalTo: tile.centerYAnchor)])
+        let build = shell.updater == nil ? " · Development build" : ""
         let identity = row([tile, column([label("QNotch", size: 20, weight: .bold),
-                                          label("Version \(version) · Development build", size: 12, color: .secondaryLabelColor)], spacing: 2)], spacing: 14)
-        let unavailable = label("Unavailable", size: 12, color: .secondaryLabelColor)
+                                          label("Version \(version)\(build)", size: 12, color: .secondaryLabelColor)], spacing: 2)], spacing: 14)
         let stack = column([
             identity,
-            settingsGroup([
-                settingsRow("Automatic updates", detail: "Not available in development builds: installing updates needs Developer ID signing.", control: unavailable, width: width)
-            ], width: width),
+            updatesGroup(width: width),
             settingsGroup([
                 settingsRow("Hover the notch", detail: "Opens the panel without taking the keyboard.", width: width),
                 settingsRow("Click the notch", detail: "Opens it for typing. Start typing to search, or press ⌘F.", width: width),
@@ -602,6 +600,36 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
         ], spacing: 22)
         stack.widthAnchor.constraint(equalToConstant: width).isActive = true
         return stack
+    }
+
+    private func updatesGroup(width: CGFloat) -> NSView {
+        guard let updates = shell.updater else {
+            let unavailable = label("Unavailable", size: 12, color: .secondaryLabelColor)
+            return settingsGroup([
+                settingsRow("Automatic updates", detail: "Not available in development builds: installing updates needs Developer ID signing.", control: unavailable, width: width)
+            ], width: width)
+        }
+        let sparkle = updates.updater
+        let check = actionButton("Check Now") { updates.check() }
+        check.isEnabled = updates.canCheck
+        let last = sparkle.lastUpdateCheckDate.map { "Last checked \($0.formatted(date: .abbreviated, time: .shortened))." } ?? "Not checked yet."
+        let automatic = ActionSwitch("Check for updates automatically", value: sparkle.automaticallyChecksForUpdates) { [weak self] value in
+            sparkle.automaticallyChecksForUpdates = value
+            self?.select("about", animated: false)
+        }
+        let install = ActionSwitch("Download and install automatically", value: sparkle.automaticallyDownloadsUpdates) { value in
+            sparkle.automaticallyDownloadsUpdates = value
+        }
+        install.isEnabled = sparkle.automaticallyChecksForUpdates
+        let beta = ActionSwitch("Beta versions", value: shell.general.betaUpdates) { [weak self] value in
+            self?.shell.updateGeneral { $0.betaUpdates = value }
+        }
+        return settingsGroup([
+            settingsRow("Check for updates", detail: last, control: check, width: width),
+            settingsRow("Check automatically", detail: "Once a day. Unless updates install automatically, QNotch asks before installing.", control: automatic, width: width),
+            settingsRow("Install automatically", detail: "Downloads updates in the background and installs them when QNotch quits.", control: install, width: width),
+            settingsRow("Beta versions", detail: "Also offer prerelease versions of QNotch for Mac.", control: beta, width: width)
+        ], header: "Updates", width: width)
     }
 
     private func featureRow(_ title: String, detail: String, symbol name: String, tint: NSColor, control: NSView?, width: CGFloat) -> NSView {

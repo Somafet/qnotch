@@ -47,7 +47,7 @@ A feature counts as at parity only when its Status says **done**. Inventory take
 | **Notch nudge**. Drag the pill sideways, fling, snap to center/edge, per-app spots, move between monitors. | On a notched display the surface wraps the physical camera housing, so moving it would be fake. Only meaningful for the floating pill on displays without a notch. | None | partial (non-notched displays only) | **done** for the floating pill: drag, snap to center or edge, double-click to center, remembered per display (not per app) |
 | **Game mode**. Fullscreen/game detection (foreground hook, caption-less monitor-covering window, presentation states, Always/Never lists), override Auto/On/Off (⌃⌥G, tray). Hides the pill/panel and shows a click-through one-line bar with per-segment toggles; opacity, height and position settings. | `NSWorkspace.activeSpaceDidChangeNotification` + `didActivateApplicationNotification`, then a single `CGWindowListCopyWindowInfo` bounds check of the frontmost app's windows against the display (bounds and owner PID need no Screen Recording permission). Always/Never lists by bundle ID. In a fullscreen Space the menu bar is hidden, so the "bar" is the wings with `ignoresMouseEvents`. | None | partial: macOS doesn't expose "game is running" or D3D-style exclusive fullscreen; detection is fullscreen-Space and display-covering windows | **done** (games by App Store category by default; any full-screen app optional; the bar is the notch wings, so height and position settings do not apply) |
 | **Tray icon**. Toggle, Settings, Updates, Game mode Auto/On/Off, Quit. | The existing menu-bar item (`NSStatusItem`); add the Game mode and Updates items. | None | full | **done** for Open, Settings, Game mode and Quit; the Updates item waits for updates |
-| **Updates**. Checks GitHub `releases/latest` every 6 h, verified download, self-replace and restart. | Read-only check against `macos-vX.Y.Z` tags (never `/releases/latest`), "Download" opens the release page. In-place install needs Sparkle **and** Developer ID signing and notarization. | Network. Install: signing identity (paid account) and the Sparkle decision. | full (releases are now signed and notarized) | not started (a read-only check calls api.github.com; installing in place needs Sparkle or an equivalent) |
+| **Updates**. Checks GitHub `releases/latest` every 6 h, verified download, self-replace and restart. | Sparkle 2 reads a signed appcast of `macos-vX.Y.Z` releases (never `/releases/latest`) once a day or on demand (Settings, About; the menu-bar item), verifies the feed's and the update's EdDSA signatures and the new copy's Developer ID team, then installs in place and relaunches. Sparkle asks on the second launch whether to check automatically, as Windows asks on its first start. Beta versions are opt-in. | Network (raw.githubusercontent.com, github.com). Developer ID builds only. | full | done |
 | **Setup codes**. `qnotch-setup-1:` deflated JSON of shareable preferences, validated, apply and restart. | Same format with Mac-only fields; can't import Windows-only keys. Low value until the Mac has more settings. | None | full | **done**, interchangeable with Windows for shared fields (hotkeys are not shared) |
 | **Profile name and photo**. Name defaults to the account user name; photo is a user-picked file. | Name from `NSFullUserName()` (done). Photo is a user-picked file. The account picture via Contacts "Me" card needs the Contacts permission; not proposed. | None | full | **done** |
 
@@ -71,7 +71,7 @@ High value and low risk first. Each step is one module (or one shell feature), o
 14. **Edit mode** (cards and tabs), then **Game mode**.
 15. **Scheduled** (launchd).
 16. **Now playing**: depends on your decision.
-17. **Deferred**: Updates (a check, and installing in place with Sparkle), Phone-share LAN server.
+17. **Deferred**: Phone-share LAN server. (Updates: done with Sparkle, 2026-10-18.)
 
 ## Decisions (2026-10-16)
 
@@ -84,9 +84,10 @@ High value and low risk first. Each step is one module (or one shell feature), o
 
 Signing (2026-10-18): releases are signed with Developer ID under the hardened runtime (with the Apple Events entitlement for Now playing), notarized and stapled; see [Releases](../releases.md#mac-channel).
 
+Updates (2026-10-18): Sparkle 2, with a signed appcast on the `macos-appcast` branch; see [Releases](../releases.md#mac-updates-sparkle).
+
 Still open (aggregated for later, nothing below is built):
 
-- **Updates.** A read-only check of `macos-vX.Y.Z` releases on api.github.com (no install) could ship now; installing in place needs Sparkle or an equivalent, now that releases are signed.
 - **Phone share over the LAN.** The Windows HTTP server with a QR code works for Android too, but it opens a port on the local network, so macOS shows firewall and Local Network prompts. AirDrop through Share already covers Apple devices.
 - **Spotify artwork.** Spotify exposes artwork only as a web address (i.scdn.co); fetching it would be a new network request. The app icon is shown instead.
 - **CoreLocation for Weather.** "Use my location" instead of the place search; needs the location permission.

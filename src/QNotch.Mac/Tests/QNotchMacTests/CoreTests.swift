@@ -162,7 +162,19 @@ final class CoreTests: XCTestCase {
         for tag in ["v1.0.0", "macos-v01.0.0", "macos-v1.0.0;echo bad", "macos-v1.0.0\n"] {
             XCTAssertFalse(UpdateChannel.accepts(tag: tag), tag)
         }
-        XCTAssertFalse(UpdateChannel.releasesURL.path.hasSuffix("latest"))
+        XCTAssertEqual(UpdateChannel.feedURL.scheme, "https")
+        XCTAssertFalse(UpdateChannel.feedURL.path.contains("latest"))
+    }
+
+    func testBetaUpdatesOptInAndPersist() {
+        XCTAssertEqual(UpdateChannel.channels(beta: false), [])
+        XCTAssertEqual(UpdateChannel.channels(beta: true), ["beta"])
+        XCTAssertFalse(GeneralSettings().betaUpdates)
+        var settings = GeneralSettings()
+        settings.betaUpdates = true
+        let decoded = try? JSONDecoder().decode(GeneralSettings.self, from: JSONEncoder().encode(settings))
+        XCTAssertEqual(decoded?.betaUpdates, true)
+        XCTAssertEqual(try? JSONDecoder().decode(GeneralSettings.self, from: Data("{}".utf8)).betaUpdates, false)
     }
 
     func testDisabledModuleIsNeverConstructed() {

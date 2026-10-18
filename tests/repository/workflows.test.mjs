@@ -87,15 +87,38 @@ test('Mac release workflow tests, signs, notarizes and publishes only through th
     .map(text => runs.findIndex(run => run.includes(text)));
   assert.ok(order.every((index, i) => index >= 0 && (i === 0 || index > order[i - 1])), JSON.stringify(order));
   assert.ok(runs[order[0]].includes('--platform macos'));
-  assert.ok(runs[order[7]].includes('--platform macos') && runs[order[7]].includes('QNotch-macos-arm64.dmg'));
+  assert.ok(runs[order[7]].includes('--platform macos') && runs[order[7]].includes('QNotch-macos-arm64.dmg')
+    && runs[order[7]].includes('QNotch-macos-arm64.zip'));
+  const sign = job.steps.findIndex(step => step.id === 'update');
+  assert.ok(sign > job.steps.findIndex(step => step.run?.includes('scripts/macos/release.sh')) && job.steps[sign].run.includes('check-key') && job.steps[sign].run.includes('--verify'));
+  assert.ok(sign < job.steps.findIndex(step => step.run?.includes('scripts/publish-release.mjs')));
+  assert.ok(!job.steps[sign].run.includes('GITHUB_TOKEN') && !job.steps[sign].env.GH_TOKEN);
+  const secretSteps = job.steps.filter(step => JSON.stringify(step).includes('SPARKLE_PRIVATE_KEY')).map(step => step.id);
+  assert.deepEqual(secretSteps, ['update']);
   assert.ok(!runs.some(run => run.includes('gh release create') || run.includes('gh release edit') || run.includes('--latest')));
   const cleanup = job.steps.at(-1);
   assert.equal(cleanup.if, 'always()');
   assert.ok(cleanup.run.includes('delete-keychain') && cleanup.run.includes('AuthKey.p8'));
   const script = readFileSync(resolve(root, 'scripts/macos/release.sh'), 'utf8');
-  for (const text of ['--options runtime', '--timestamp', 'QNotch.entitlements', 'notarytool submit', 'stapler staple', 'spctl --assess']) {
+  for (const text of ['--options runtime', '--timestamp', 'QNotch.entitlements', 'notarytool submit', 'stapler staple', 'spctl --assess',
+    'Contents/Frameworks/Sparkle.framework', 'Versions/B/Autoupdate', 'Versions/B/Updater.app', 'QNotch-macos-arm64.zip']) {
     assert.ok(script.includes(text), text);
   }
+  // Sparkle's helpers are signed before the app, and the update is zipped only after stapling.
+  assert.ok(script.indexOf('Updater.app') < script.indexOf('--entitlements "$entitlements" "$app"'));
+  assert.ok(script.indexOf('stapler staple "$app"') < script.indexOf('ditto -c -k --sequesterRsrc --keepParent "$app" "$update"'));
+  const appcast = release.jobs.appcast;
+  assert.equal(appcast.needs, 'release');
+  assert.equal(appcast.if, "github.repository == 'Somafet/qnotch'");
+  assert.equal(appcast.permissions.contents, 'write');
+  const publish = appcast.steps.find(step => step.run?.includes('scripts/macos/publish-appcast.sh'));
+  assert.equal(publish.env.SIGNATURE, '${{ needs.release.outputs.signature }}');
+  assert.equal(publish.env.BUILD, '${{ github.run_number }}');
+  const feed = readFileSync(resolve(root, 'scripts/macos/publish-appcast.sh'), 'utf8');
+  for (const text of ['check-key', 'releases/tags/$tag', 'sign_update" --ed-key-file - "$feed"', '--verify "$feed"', 'branch=macos-appcast']) {
+    assert.ok(feed.includes(text), text);
+  }
+  assert.ok(!feed.includes('releases/latest'));
   const entitlements = readFileSync(resolve(root, 'src/QNotch.Mac/QNotch.entitlements'), 'utf8');
   assert.ok(entitlements.includes('com.apple.security.automation.apple-events'));
 });
