@@ -19,4 +19,5 @@ trap 'rm -rf "$scratch"' EXIT
 "$tools/generate_keys" --account qnotch -x "$scratch/key" >/dev/null
 SPARKLE_PRIVATE_KEY="$(cat "$scratch/key")" node "$repo_root/scripts/macos/appcast.mjs" check-key --plist "$repo_root/src/QNotch.Mac/Info.plist"
 gh secret set SPARKLE_PRIVATE_KEY --repo "$repo" < "$scratch/key"
-echo "Uploaded SPARKLE_PRIVATE_KEY to $repo. Keep a backup of the key: generate_keys --account qnotch -x <file>."
+echo "Uploaded SPARKLE_PRIVATE_KEY to $repo. Keep a backup of the key somewhere safe:"
+echo "  $tools/generate_keys --account qnotch -x <file>"

@@ -64,7 +64,7 @@ The release workflow, after notarization:
 
 Sparkle compares `CFBundleVersion`, the run number, so a later stable release always supersedes an earlier beta. A beta tagged after a stable release with a lower marketing version would also be offered to beta users; tag versions in order.
 
-The signing key lives in the login keychain of the release Mac (`generate_keys --account qnotch`, from `src/QNotch.Mac/.build/artifacts/sparkle/Sparkle/bin` after a build). `bash scripts/macos/setup-sparkle.sh` checks it against `SUPublicEDKey` and uploads it as `SPARKLE_PRIVATE_KEY`. Back it up (`generate_keys --account qnotch -x <file>`) somewhere safe: without it, installed copies can never be updated again except by a manual download of a build with a new key.
+The signing key lives in the login keychain of the release Mac (`generate_keys --account qnotch`, from `src/QNotch.Mac/.build/artifacts/sparkle/Sparkle/bin` after a build). `bash scripts/macos/setup-sparkle.sh` checks it against `SUPublicEDKey` and uploads it as `SPARKLE_PRIVATE_KEY`. Back it up (`src/QNotch.Mac/.build/artifacts/sparkle/Sparkle/bin/generate_keys --account qnotch -x <file>`) somewhere safe: without it, installed copies can never be updated again except by a manual download of a build with a new key.
 
 ## Required checks
 
