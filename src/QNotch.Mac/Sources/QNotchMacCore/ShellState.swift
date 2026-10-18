@@ -13,4 +13,8 @@ public struct ShellState {
         if presentation == .hover { presentation = .collapsed }
     }
     public mutating func close() { presentation = .collapsed }
+    /// Keeps the panel open without the keyboard (a pinned panel losing focus).
+    public mutating func releaseKeyboard() {
+        if presentation == .keyboard { presentation = .hover }
+    }
 }

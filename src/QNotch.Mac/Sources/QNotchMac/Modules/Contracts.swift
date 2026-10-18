@@ -11,6 +11,8 @@ struct ViewContribution: Contribution {
     var symbol = "square.grid.2x2"
     /// Settings sidebar icon background.
     var tint = NSColor.systemGray
+    /// Home cards only: 1 or 2 grid columns.
+    var span = 1
     let makeView: () -> NSView
 }
 
@@ -41,10 +43,15 @@ struct SearchSource: Contribution {
 }
 
 final class Registry<T: Contribution> {
-    private var values: [String: T] = [:]
-    var items: [T] { values.values.sorted { ($0.order, $0.id) < ($1.order, $1.id) } }
-    func register(_ value: T) { values[value.id] = value }
+    private var values: [String: (owner: String?, value: T)] = [:]
+    /// The module whose `initialize` is running; its registrations are removed with it.
+    var owner: String?
+    var items: [T] { values.values.map(\.value).sorted { ($0.order, $0.id) < ($1.order, $1.id) } }
+    func register(_ value: T) { values[value.id] = (owner, value) }
     func removeAll() { values.removeAll() }
+    func removeAll(owner: String) { values = values.filter { $0.value.owner != owner } }
+    func ids(owner: String) -> [String] { values.filter { $0.value.owner == owner }.map(\.key) }
+    func owner(of id: String) -> String? { values[id]?.owner }
 }
 
 /// Mac-local equivalents of the five product extension concepts. No WPF or shared runtime.
@@ -54,15 +61,61 @@ final class ModuleRegistries {
     let segments = Registry<SegmentContribution>()
     let searchSources = Registry<SearchSource>()
     let settingsSections = Registry<ViewContribution>()
+    /// Set by the shell around each module's `initialize`.
+    var owner: String? {
+        didSet {
+            cards.owner = owner; tabs.owner = owner; segments.owner = owner
+            searchSources.owner = owner; settingsSections.owner = owner
+        }
+    }
+    func removeAll(owner: String) {
+        cards.removeAll(owner: owner); tabs.removeAll(owner: owner); segments.removeAll(owner: owner)
+        searchSources.removeAll(owner: owner); settingsSections.removeAll(owner: owner)
+    }
     func removeAll() {
         cards.removeAll(); tabs.removeAll(); segments.removeAll()
         searchSources.removeAll(); settingsSections.removeAll()
     }
 }
 
+/// A shown peek; `end()` removes it early (e.g. the agent was answered).
+final class PeekHandle {
+    fileprivate(set) var ended = false
+    private let finish: (PeekHandle) -> Void
+    init(finish: @escaping (PeekHandle) -> Void) { self.finish = finish }
+    func end() {
+        guard !ended else { return }
+        ended = true
+        finish(self)
+    }
+}
+
 protocol ModuleShell: AnyObject {
+    /// Replaces the collapsed status with one line for a moment ("api: Needs you"): `symbol` and
+    /// `leading` in the left wing, `trailing` in the right (side by side in a floating pill).
+    /// A newer peek replaces the shown one; `seconds` nil keeps it until `end()`. Nothing shows
+    /// while the panel is open. For something the user must notice now, never routine updates.
+    @discardableResult
+    func peek(symbol: String, tint: NSColor, leading: String, trailing: String, seconds: TimeInterval?) -> PeekHandle?
     func selectTab(_ id: String)
     func openSettings()
+    /// Opens Settings on a module's section (its `settingsSections` id).
+    func openSettings(section: String)
+    /// Opens the panel on `tab` without taking the keyboard. If the pointer is elsewhere it closes
+    /// again after `linger` seconds. For something the user must see now, never routine updates.
+    @discardableResult func tryOpenPanel(tab: String, linger: TimeInterval) -> Bool
+    /// While the returned token is alive the panel never auto-closes (pointer leave, outside clicks,
+    /// focus loss). Hold one around drags, share pickers, menus and file dialogs.
+    func holdOpen() -> AnyObject
+    /// Files dropped on the notch. `entered` runs once when a file drag reaches it; the shell opens
+    /// the panel itself. Only one module receives drops.
+    func acceptFileDrops(entered: @escaping () -> Void, dropped: @escaping ([URL]) -> Void)
+    /// Collapses the panel (e.g. before picking from the screen under it) and gives the keyboard
+    /// back to the app that had it.
+    func closePanel()
+    /// Collapses the panel because another app or window takes over now (a session's terminal,
+    /// a launched app): no focus is handed back, and hover does not reopen it under the pointer.
+    func dismissPanel()
     /// A segment became visible, hidden, or changed width.
     func segmentsChanged()
 }
@@ -71,6 +124,22 @@ struct ModuleContext {
     let settings: SettingsStore
     let registries: ModuleRegistries
     weak var shell: ModuleShell?
+    /// Every sound a module plays: add it in `initialize`, then `play(id)`.
+    let sounds: SoundRegistry
+    /// Every lasting global hotkey a module owns.
+    let shortcuts: ShortcutRegistry
+    /// Shared microphone and camera watcher; observe it, and remove yourself in `stop`.
+    let capture: CaptureWatch
+
+    init(settings: SettingsStore, registries: ModuleRegistries, shell: ModuleShell?,
+         sounds: SoundRegistry? = nil, shortcuts: ShortcutRegistry? = nil, capture: CaptureWatch? = nil) {
+        self.settings = settings
+        self.registries = registries
+        self.shell = shell
+        self.sounds = sounds ?? SoundRegistry(store: settings)
+        self.shortcuts = shortcuts ?? ShortcutRegistry(store: settings)
+        self.capture = capture ?? CaptureWatch()
+    }
 }
 
 protocol NotchModule: AnyObject {

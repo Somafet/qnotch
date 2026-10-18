@@ -18,6 +18,18 @@ cp "$binary_dir/QNotch" "$temporary_executable"
 chmod +x "$temporary_executable"
 mv -f "$temporary_executable" "$app/Contents/MacOS/QNotch"
 cp "$package/Info.plist" "$app/Contents/Info.plist"
+# The release workflow passes the tag's version and a monotonic build number.
+if [[ -n "${QNOTCH_VERSION:-}" ]]; then
+    /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $QNOTCH_VERSION" "$app/Contents/Info.plist"
+fi
+if [[ -n "${QNOTCH_BUILD_NUMBER:-}" ]]; then
+    /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $QNOTCH_BUILD_NUMBER" "$app/Contents/Info.plist"
+fi
+# The yr.no weather symbols (github.com/metno/weathericons, MIT), the same files Windows ships.
+icons="$app/Contents/Resources/WeatherIcons"
+rm -rf "$icons"
+mkdir -p "$icons"
+cp "$repo_root/src/QNotch/Modules/Weather/Icons/"*.png "$repo_root/src/QNotch/Modules/Weather/Icons/LICENSE" "$icons/"
 /usr/libexec/PlistBuddy -c "Add :QNotchSourceRevision string $(git -C "$repo_root" rev-parse HEAD)" "$app/Contents/Info.plist"
 source_dirty=false
 if [[ -n "$(git -C "$repo_root" status --porcelain --untracked-files=normal)" ]]; then source_dirty=true; fi

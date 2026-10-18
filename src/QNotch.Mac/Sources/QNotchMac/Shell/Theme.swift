@@ -3,6 +3,10 @@ import AppKit
 /// The notch surface is always dark, like the hardware it extends. Values mirror the Windows dark
 /// palette (Theme.Dark.xaml) so both apps read as one product; the accent follows the macOS accent.
 enum Palette {
+    static func hex(_ text: String) -> NSColor? {
+        guard let value = UInt32(text.dropFirst(), radix: 16), text.count == 7 else { return nil }
+        return rgb(value)
+    }
     static func rgb(_ hex: UInt32, alpha: CGFloat = 1) -> NSColor {
         NSColor(srgbRed: CGFloat(hex >> 16 & 0xFF) / 255, green: CGFloat(hex >> 8 & 0xFF) / 255,
                 blue: CGFloat(hex & 0xFF) / 255, alpha: alpha)
@@ -21,8 +25,12 @@ enum Palette {
     static let onAccent = rgb(0x0B0B0D)
     static let dark = NSAppearance(named: .darkAqua)
 
-    /// The system accent, resolved for the dark surface.
+    /// A Settings, Appearance swatch; nil follows the macOS accent.
+    static var accentOverride: NSColor?
+
+    /// The chosen or system accent, resolved for the dark surface.
     static var accent: NSColor {
+        if let accentOverride { return accentOverride }
         var color = NSColor.systemBlue
         dark?.performAsCurrentDrawingAppearance {
             color = NSColor.controlAccentColor.usingColorSpace(.sRGB) ?? .systemBlue

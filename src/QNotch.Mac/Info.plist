@@ -12,6 +12,7 @@
     <key>LSMinimumSystemVersion</key><string>13.0</string>
     <key>LSUIElement</key><true/>
     <key>NSHighResolutionCapable</key><true/>
+    <key>NSAppleEventsUsageDescription</key><string>QNotch controls playback and reads the current position and artwork in Music and Spotify.</string>
     <key>NSSupportsAutomaticGraphicsSwitching</key><true/>
 </dict>
 </plist>

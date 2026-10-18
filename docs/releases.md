@@ -38,15 +38,18 @@ node scripts/publish-release.mjs --platform windows --tag v0.4.1 --asset dist/QN
 
 This command publishes remotely. Repository tests use a fake GitHub CLI transport and never create releases. Normal development does not require running the publishing command.
 
-## Future Mac channel
+## Mac channel
 
-- Use `macos-vX.Y.Z`, optionally with `-alpha.N`, `-beta.N`, or `-rc.N`. Versions can differ from Windows; only suffixed tags are prereleases.
-- Use `QNotch-macos-arm64.dmg`, `QNotch-macos-x64.dmg`, or `QNotch-macos-universal.dmg`, with `.zip` as an alternative. Ship only architectures actually supported and tested.
-- Use the same guarded publisher with `--platform macos`. It derives `--latest=false` from the channel and offers no override, including for stable Mac releases. The current Windows tag workflow does not run on `macos-v*`.
+- Tags are `macos-vX.Y.Z`, optionally with `-alpha.N`, `-beta.N`, or `-rc.N`. Versions can differ from Windows; only suffixed tags are prereleases.
+- Assets are `QNotch-macos-arm64.dmg`, `QNotch-macos-x64.dmg`, or `QNotch-macos-universal.dmg`, with `.zip` as an alternative. Ship only architectures actually supported and tested; today that is `QNotch-macos-arm64.dmg`.
+- Pushing a `macos-v*` tag runs `.github/workflows/release-macos.yml` on an Apple silicon runner. It validates the tag, runs repository checks, builds with the tag's version (`CFBundleVersion` is the workflow run number), runs the Mac regressions and UI smoke test, imports the Developer ID certificate into a temporary keychain, then runs `scripts/macos/release.sh`: hardened-runtime signing with `src/QNotch.Mac/QNotch.entitlements`, notarization and stapling of the app, then of the signed disk image, and Gatekeeper assessment of both. It publishes through the same guarded publisher with `--platform macos`, which derives `--latest=false` from the channel and offers no override, including for stable Mac releases. It shares the `qnotch-release` concurrency group with Windows. The Windows tag workflow does not run on `macos-v*`.
 - Resolve Mac downloads from the Mac channel rather than `/releases/latest`. If Sparkle is adopted, provide a separate appcast and its signed updates. Do not use global latest as a platform feed.
-- Add signing, notarization, stapling where applicable, and clean-machine installation verification with the actual Mac release workflow. Configure identity and credentials privately in release secrets. Account names and credential values do not belong in documentation or issues.
 
-Do not publish a Mac release until a real app target, supported-platform documentation, signing/installation verification, and CI exist. The repository policy supports its future publication; it does not certify a Mac binary or an update feed today.
+The workflow reads the repository variable `APPLE_TEAM_ID` (and optionally `MACOS_SIGNING_IDENTITY`) and the secrets `MACOS_CERTIFICATE_P12_BASE64`, `MACOS_CERTIFICATE_PASSWORD`, `APP_STORE_CONNECT_PRIVATE_KEY_BASE64`, `APP_STORE_CONNECT_KEY_ID`, and `APP_STORE_CONNECT_ISSUER_ID`. Set them once with `bash scripts/macos/setup-signing.sh` on the Mac that holds the certificate; it checks that the `.p12` contains a Developer ID Application identity with its private key for the chosen team and that Apple accepts the API key before uploading anything. Account names and credential values do not belong in documentation or issues.
+
+To produce the same signed disk image locally, save the API key as a notarytool profile (the setup script offers to), then run `scripts/macos/build.sh` and `APPLE_TEAM_ID=<team> NOTARY_KEYCHAIN_PROFILE=qnotch bash scripts/macos/release.sh`. That submits to Apple's notary service but publishes nothing.
+
+Before the first public Mac release, verify installation of the published disk image on a clean Mac and on macOS 13, the deployment target.
 
 ## Required checks
 

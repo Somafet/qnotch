@@ -261,20 +261,31 @@ final class HoverButton: NSButton {
 
 // MARK: - Notch controls
 
-/// Icon tab strip with one sliding indicator behind the buttons (Windows TabStrip).
+/// Icon tab strip with one sliding indicator behind the buttons (Windows TabStrip). In edit mode
+/// the movable tabs (after `fixed`) jiggle and drag sideways to reorder; a press without a drag
+/// still opens the tab.
 final class TabBar: FillView {
-    private let buttons: [HoverButton]
+    private var buttons: [HoverButton]
     private let indicator = FillView(fill: Palette.controlHover, stroke: Palette.stroke, radius: 9)
     private(set) var selected: Int
+    private let changed: (Int) -> Void
+    /// Original indices in their new order, after a drag.
+    var reordered: (([Int]) -> Void)?
+    var fixed = 2
+    var editing = false { didSet { if oldValue != editing { applyEditing() } } }
+    private var order: [Int]
+    private var drag: (position: Int, start: CGFloat, moved: Bool)?
     private static let item = NSSize(width: 40, height: 28), gap: CGFloat = 2, inset: CGFloat = 3
 
     init(items: [(symbol: String, title: String)], selected: Int, changed: @escaping (Int) -> Void) {
         self.selected = selected
+        self.changed = changed
         var made: [HoverButton] = []
         for (index, item) in items.enumerated() {
             made.append(HoverButton(symbol: item.symbol, style: .tab, symbolSize: 14, label: item.title) { changed(index) })
         }
         buttons = made
+        order = Array(items.indices)
         super.init(fill: Palette.control, radius: 12)
         addSubview(indicator)
         buttons.forEach(addSubview)
@@ -289,20 +300,22 @@ final class TabBar: FillView {
         let count = CGFloat(buttons.count)
         return NSSize(width: Self.inset * 2 + count * Self.item.width + max(0, count - 1) * Self.gap, height: Self.item.height + Self.inset * 2)
     }
-    private func frame(at index: Int) -> NSRect {
-        NSRect(x: Self.inset + CGFloat(index) * (Self.item.width + Self.gap), y: Self.inset, width: Self.item.width, height: Self.item.height)
+    private func frame(at position: Int) -> NSRect {
+        NSRect(x: Self.inset + CGFloat(position) * (Self.item.width + Self.gap), y: Self.inset, width: Self.item.width, height: Self.item.height)
     }
+    private func position(of index: Int) -> Int { order.firstIndex(of: index) ?? index }
+
     override func layout() {
         super.layout()
-        for (index, button) in buttons.enumerated() { button.frame = frame(at: index) }
-        indicator.frame = frame(at: selected)
+        for (position, index) in order.enumerated() where drag?.position != position { buttons[index].frame = frame(at: position) }
+        indicator.frame = frame(at: position(of: selected))
     }
 
     func select(_ index: Int, animated: Bool) {
         guard buttons.indices.contains(index) else { return }
         selected = index
         for (offset, button) in buttons.enumerated() { button.isSelectedLook = offset == index }
-        let target = frame(at: index)
+        let target = frame(at: position(of: index))
         if animated, Motion.enabled {
             NSAnimationContext.runAnimationGroup { context in
                 context.duration = 0.32
@@ -311,6 +324,66 @@ final class TabBar: FillView {
                 indicator.frame = target
             }
         } else { indicator.frame = target }
+    }
+
+    private func applyEditing() {
+        for (position, index) in order.enumerated() {
+            let layer = buttons[index].layer
+            layer?.removeAnimation(forKey: "jiggle")
+            guard editing, position >= fixed, Motion.enabled, let bounds = layer?.bounds else { continue }
+            func tilt(_ degrees: CGFloat) -> NSValue {
+                var t = CATransform3DMakeTranslation(bounds.midX, bounds.midY, 0)
+                t = CATransform3DRotate(t, degrees * .pi / 180, 0, 0, 1)
+                return NSValue(caTransform3D: CATransform3DTranslate(t, -bounds.midX, -bounds.midY, 0))
+            }
+            let jiggle = CAKeyframeAnimation(keyPath: "transform")
+            jiggle.values = [tilt(-2.5), tilt(2.5), tilt(-2.5)]
+            jiggle.duration = 0.26
+            jiggle.repeatCount = .infinity
+            jiggle.timeOffset = Double(position) * 0.05
+            layer?.add(jiggle, forKey: "jiggle")
+        }
+    }
+
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        guard editing else { return super.hitTest(point) }
+        return frame.contains(point) ? self : nil
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        guard editing else { return super.mouseDown(with: event) }
+        let x = convert(event.locationInWindow, from: nil).x
+        let position = max(0, min(order.count - 1, Int((x - Self.inset) / (Self.item.width + Self.gap))))
+        drag = (position, x, false)
+    }
+
+    override func mouseDragged(with event: NSEvent) {
+        guard var current = drag, current.position >= fixed else { return }
+        let x = convert(event.locationInWindow, from: nil).x
+        guard current.moved || abs(x - current.start) > 4 else { return }
+        current.moved = true
+        let button = buttons[order[current.position]]
+        button.frame.origin.x = max(frame(at: fixed).minX, min(frame(at: order.count - 1).minX, x - Self.item.width / 2))
+        let target = max(fixed, min(order.count - 1, Int((button.frame.midX - Self.inset) / (Self.item.width + Self.gap))))
+        if target != current.position {
+            order.insert(order.remove(at: current.position), at: target)
+            current.position = target
+            drag = current
+            Motion.animate(0.18) { self.needsLayout = true; self.layoutSubtreeIfNeeded() }
+        }
+        drag = current
+    }
+
+    override func mouseUp(with event: NSEvent) {
+        guard let current = drag else { return }
+        drag = nil
+        if current.moved {
+            Motion.animate(0.18) { self.needsLayout = true; self.layoutSubtreeIfNeeded() }
+            applyEditing()
+            reordered?(order)
+        } else {
+            changed(order[current.position])
+        }
     }
 }
 
@@ -516,4 +589,118 @@ final class ActionPopUp: NSPopUpButton {
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
     @objc private func pick() { changed(indexOfSelectedItem) }
+}
+
+/// Horizontal level slider for the dark notch (Windows Slider style): soft track, accent fill and a
+/// light knob. Native NSSlider renders inactive in a non-key panel, which is how the notch usually
+/// is while hovered. Click or drag anywhere on the track; arrow keys step; VoiceOver sees a slider.
+final class LevelSlider: NSControl {
+    var value: Double = 0 { didSet { value = min(maxValue, max(0, value)); needsLayout = true } }
+    var maxValue: Double = 100
+    var step: Double = 2
+    var changed: ((Double) -> Void)?
+    var dimmed = false { didSet { if oldValue != dimmed { Motion.animate(0.14) { fill.animator().alphaValue = dimmed ? 0.4 : 1 } } } }
+    private let track = FillView(fill: Palette.control, radius: 2)
+    private let fill = FillView(fill: Palette.accent, radius: 2)
+    private let knob = FillView(fill: Palette.textPrimary, radius: 7)
+
+    init(label: String) {
+        super.init(frame: .zero)
+        wantsLayer = true
+        [track, fill, knob].forEach(addSubview)
+        knob.layer?.shadowOpacity = 0.35
+        knob.layer?.shadowRadius = 2
+        knob.layer?.shadowOffset = CGSize(width: 0, height: -1)
+        heightAnchor.constraint(equalToConstant: 18).isActive = true
+        setAccessibilityElement(true)
+        setAccessibilityRole(.slider)
+        setAccessibilityLabel(label)
+    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override var acceptsFirstResponder: Bool { isEnabled }
+    override var isEnabled: Bool { didSet { alphaValue = isEnabled ? 1 : 0.4 } }
+
+    override func layout() {
+        super.layout()
+        let inset: CGFloat = 7, y = bounds.midY
+        let width = max(0, bounds.width - inset * 2)
+        let x = inset + width * CGFloat(maxValue > 0 ? value / maxValue : 0)
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        track.frame = NSRect(x: inset, y: y - 2, width: width, height: 4)
+        fill.frame = NSRect(x: inset, y: y - 2, width: x - inset, height: 4)
+        knob.frame = NSRect(x: x - 7, y: y - 7, width: 14, height: 14)
+        CATransaction.commit()
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        guard isEnabled else { return }
+        track(event)
+        while let next = window?.nextEvent(matching: [.leftMouseDragged, .leftMouseUp]) {
+            track(next)
+            if next.type == .leftMouseUp { break }
+        }
+    }
+
+    private func track(_ event: NSEvent) {
+        let point = convert(event.locationInWindow, from: nil)
+        let fraction = Double((point.x - 7) / max(1, bounds.width - 14))
+        set((fraction * maxValue).rounded())
+    }
+
+    override func keyDown(with event: NSEvent) {
+        switch event.specialKey {
+        case .leftArrow?, .downArrow?: set(value - step)
+        case .rightArrow?, .upArrow?: set(value + step)
+        default: super.keyDown(with: event)
+        }
+    }
+
+    private func set(_ next: Double) {
+        let clamped = min(maxValue, max(0, next))
+        guard clamped != value else { return }
+        value = clamped
+        changed?(clamped)
+    }
+
+    override func accessibilityValue() -> Any? { "\(Int(value))%" }
+    override func accessibilityPerformIncrement() -> Bool { set(value + step); return true }
+    override func accessibilityPerformDecrement() -> Bool { set(value - step); return true }
+}
+
+// MARK: - Closure actions
+
+/// Target-action adapter for a closure. Controls hold their target weakly, so `NSControl.onAction`
+/// attaches the adapter to the control and it lives exactly as long as the control does.
+final class ClosureTarget: NSObject {
+    private let handler: () -> Void
+    init(_ handler: @escaping () -> Void) { self.handler = handler }
+    @objc func run() { handler() }
+}
+
+private var closureTargetKey = 0
+
+extension NSControl {
+    /// Runs `handler` when the control fires its action.
+    func onAction(_ handler: @escaping () -> Void) {
+        let target = ClosureTarget(handler)
+        self.target = target
+        self.action = #selector(ClosureTarget.run)
+        objc_setAssociatedObject(self, &closureTargetKey, target, .OBJC_ASSOCIATION_RETAIN)
+    }
+}
+
+/// A push button that runs a closure: small and rounded unless told otherwise.
+func actionButton(_ title: String, size: NSControl.ControlSize = .small, bezel: NSButton.BezelStyle = .rounded, _ action: @escaping () -> Void) -> NSButton {
+    let button = NSButton(title: title, target: nil, action: nil)
+    button.bezelStyle = bezel
+    button.controlSize = size
+    button.onAction(action)
+    return button
+}
+
+/// A view whose origin is the top-left corner, for scroll-view documents laid out top to bottom.
+final class FlippedView: NSView {
+    override var isFlipped: Bool { true }
 }
