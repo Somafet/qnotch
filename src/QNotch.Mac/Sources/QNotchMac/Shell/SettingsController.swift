@@ -23,6 +23,8 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
     private(set) var selected = "general"
     private let navigation = NSStackView()
     private let scroll = NSScrollView()
+    /// The page list scrolls on its own: with many features on it is taller than the window.
+    private let navigationScroll = NSScrollView()
     private var rows: [String: NavRow] = [:]
     private var issue: NSTextField?
     private var issueBanner: NSView?
@@ -106,8 +108,15 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
             view.translatesAutoresizingMaskIntoConstraints = false
             root.addSubview(view)
         }
-        navigation.translatesAutoresizingMaskIntoConstraints = false
-        sidebar.addSubview(navigation)
+        let list = FlippedView()
+        list.translatesAutoresizingMaskIntoConstraints = false
+        embed(navigation, in: list, inset: NSEdgeInsets(top: 0, left: 10, bottom: 14, right: 10), fill: true)
+        navigationScroll.drawsBackground = false
+        navigationScroll.hasVerticalScroller = true
+        navigationScroll.autohidesScrollers = true
+        navigationScroll.translatesAutoresizingMaskIntoConstraints = false
+        navigationScroll.documentView = list
+        sidebar.addSubview(navigationScroll)
         scroll.drawsBackground = false
         scroll.hasVerticalScroller = true
         scroll.autohidesScrollers = true
@@ -120,9 +129,14 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
             divider.bottomAnchor.constraint(equalTo: root.bottomAnchor), divider.widthAnchor.constraint(equalToConstant: 1),
             content.leadingAnchor.constraint(equalTo: divider.trailingAnchor), content.trailingAnchor.constraint(equalTo: root.trailingAnchor),
             content.topAnchor.constraint(equalTo: root.topAnchor), content.bottomAnchor.constraint(equalTo: root.bottomAnchor),
-            navigation.leadingAnchor.constraint(equalTo: sidebar.leadingAnchor, constant: 10),
-            navigation.trailingAnchor.constraint(equalTo: sidebar.trailingAnchor, constant: -10),
-            navigation.topAnchor.constraint(equalTo: sidebar.topAnchor, constant: 52),
+            // Below the window controls, so rows never scroll under them.
+            navigationScroll.leadingAnchor.constraint(equalTo: sidebar.leadingAnchor),
+            navigationScroll.trailingAnchor.constraint(equalTo: sidebar.trailingAnchor),
+            navigationScroll.topAnchor.constraint(equalTo: sidebar.topAnchor, constant: 52),
+            navigationScroll.bottomAnchor.constraint(equalTo: sidebar.bottomAnchor),
+            list.leadingAnchor.constraint(equalTo: navigationScroll.contentView.leadingAnchor),
+            list.trailingAnchor.constraint(equalTo: navigationScroll.contentView.trailingAnchor),
+            list.topAnchor.constraint(equalTo: navigationScroll.contentView.topAnchor),
             scroll.leadingAnchor.constraint(equalTo: content.leadingAnchor), scroll.trailingAnchor.constraint(equalTo: content.trailingAnchor),
             scroll.topAnchor.constraint(equalTo: content.topAnchor), scroll.bottomAnchor.constraint(equalTo: content.bottomAnchor)
         ])
@@ -149,6 +163,10 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
         guard let page = pages.first(where: { $0.id == id }) else { return }
         selected = id
         for (key, row) in rows { row.isSelected = key == id }
+        if let row = rows[id] {
+            navigationScroll.layoutSubtreeIfNeeded()
+            row.scrollToVisible(row.bounds)
+        }
         issue = nil
         issueBanner = nil
         let content = page.make()
@@ -668,6 +686,13 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
         for page in pages {
             select(page.id, animated: false)
             window.contentView?.layoutSubtreeIfNeeded()
+            // With every feature on, the page list is taller than the sidebar: each row must scroll into view.
+            if let row = rows[page.id] {
+                let frame = row.convert(row.bounds, to: navigationScroll.contentView)
+                guard navigationScroll.contentView.bounds.insetBy(dx: 0, dy: -0.5).contains(frame) else {
+                    throw SettingsSnapshotFailure("The sidebar cannot show \(page.title)")
+                }
+            }
             guard let view = scroll.documentView else { continue }
             let name = page.id.replacingOccurrences(of: "module.", with: "")
             try ShellController.snapshot(view: view, to: directory.appendingPathComponent("settings-\(name).png"))
@@ -675,6 +700,11 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
         }
         select(original, animated: false)
     }
+}
+
+struct SettingsSnapshotFailure: Error, CustomStringConvertible {
+    let description: String
+    init(_ description: String) { self.description = description }
 }
 
 func iconTile(_ name: String, tint: NSColor, size side: CGFloat = 22) -> NSView {

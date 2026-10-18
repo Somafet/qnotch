@@ -485,7 +485,8 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         registries.searchSources.register(SearchSource(id: "settings", order: 90) { [weak self] query in
             guard let self else { return [] }
             let pages = SettingsController.appPages.map { ($0.id, $0.title, $0.keywords) } +
-                self.registries.settingsSections.items.map { ("module." + $0.id, $0.title, "") }
+                self.registries.settingsSections.items.map { ("module." + $0.id, $0.title, "") } +
+                [("about", "About", "version updates check for updates beta")]
             return pages.filter { "\($0.1) \($0.2)".localizedCaseInsensitiveContains(query) }.map { page in
                 SearchHit(title: page.1, detail: "Settings · opens this page", symbol: "gearshape") { [weak self] in self?.openSettings(page: page.0) }
             }
