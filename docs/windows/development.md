@@ -8,9 +8,10 @@ Run all commands below from the repository root on Windows x64 with the .NET 10 
 dotnet build src/QNotch/QNotch.csproj -c Release -warnaserror
 dotnet run --project tests/QNotch.UpdateTests -c Release
 dotnet run --project tests/QNotch.PhoneShareTests -c Release
+dotnet run --project tests/QNotch.OnboardingTests -c Release
 ```
 
-The updater suite covers release selection, variant selection, checksums, executable validation, cancellation, replacement/recovery, and update settings. It consumes the shared release-tag fixtures to confirm Mac tags are ignored. The phone-sharing suite covers the existing transfer protocol.
+The updater suite covers release selection, variant selection, checksums, executable validation, cancellation, replacement/recovery, and update settings. It consumes the shared release-tag fixtures to confirm Mac tags are ignored. The phone-sharing suite covers the existing transfer protocol. The onboarding suite covers when the welcome tour shows, what its choices write to `general.json`, and the GitHub device flow against canned responses, with no network.
 
 ## Snapshots
 
@@ -20,7 +21,7 @@ src\QNotch\bin\Release\net10.0-windows10.0.22621.0\win-x64\QNotch.exe --snapshot
 Remove-Item Env:QNOTCH_DATA_DIR
 ```
 
-The snapshot command does not open the interactive app. It renders every tab and settings page to PNG and a text outline, then exits. The last line of `snapshots/snapshot.txt` must be `done`. Inspect changed PNGs and attach them to UI pull requests. CI disables native runtime error dialogs, checks the exit code, applies a 120-second timeout, and uploads `snapshots` even on failure.
+The snapshot command does not open the interactive app. It renders every tab, settings page and welcome tour step (`onboarding-<step>.png`) to PNG and a text outline, then exits. The last line of `snapshots/snapshot.txt` must be `done`. Inspect changed PNGs and attach them to UI pull requests. CI disables native runtime error dialogs, checks the exit code, applies a 120-second timeout, and uploads `snapshots` even on failure.
 
 If an old local build directory contains self-contained runtime files, a later framework-dependent build can pick up a stale local `hostfxr.dll`. Verify with a fresh output directory before diagnosing an app regression; CI starts from a clean checkout. Do not copy self-contained runtime files into the framework-dependent output.
 

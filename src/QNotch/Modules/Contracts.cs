@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Threading;
 using QNotch.Core;
 using QNotch.Shell;
@@ -44,8 +45,40 @@ public sealed record SegmentDescriptor(string Id, SegmentSlot Slot, int Order, F
     string Title = "", string? Hint = null) : IRegistryItem;
 
 /// <summary>One entry of <see cref="ModuleList.All"/>. Create is called only when the module is enabled. Early: registers pill or glance segments, so it initializes before the first frame.
-/// Shared: the fields of the module's settings file (named Id) that a setup code carries, or null for none.</summary>
-public sealed record ModuleInfo(string Id, string Title, string Description, Func<INotchModule> Create, bool Early = false, SharedSettings? Shared = null);
+/// Shared: the fields of the module's settings file (named Id) that a setup code carries, or null for none.
+/// Glyph: its icon in the welcome tour's feature tiles (Segoe Fluent Icons).
+/// Setup: optional static factory for the tour's Connect step (see <see cref="SetupContext"/>); null when there is nothing to set up right now.
+/// Tip: optional one-line tip for the tour's last step, with real gestures; null for none.</summary>
+public sealed record ModuleInfo(string Id, string Title, string Description, Func<INotchModule> Create, bool Early = false, SharedSettings? Shared = null,
+    string Glyph = "", Func<SetupContext, SetupRow?>? Setup = null, Func<SetupContext, string?>? Tip = null);
+
+/// <summary>
+/// What a setup row (<see cref="ModuleInfo.Setup"/>) and a tip may use. The welcome tour builds rows before the module exists, so a row
+/// uses only static helpers, these settings and the credential store: no providers, bus, shell or timers. The running module picks up what
+/// a row saved when it starts; a module that is already running learns about it through its own static event. UI thread only.
+/// </summary>
+public sealed class SetupContext
+{
+    public required SettingsStore Settings { get; init; }
+    /// <summary>Gestures by shortcut id, also for modules that are not created yet (saved gesture or the given default).</summary>
+    public required Shortcuts Shortcuts { get; init; }
+    /// <summary>Snapshot run: show demo values (a connected account, a chosen place), never write files or go online.</summary>
+    public bool Demo => Settings.ReadOnly;
+}
+
+/// <summary>
+/// One row of the tour's Connect step. The module keeps Status current (text and foreground brush): "Not connected", "Connected as @login".
+/// Action sits on the right (buttons, a box). Detail, if any, shows under the row (a sign-in code, search results) and the module collapses it
+/// while it has nothing to show. Work a row starts (GitHub polling) must stop when its elements unload.
+/// </summary>
+public sealed record SetupRow(string Title, string Glyph, TextBlock Status, FrameworkElement Action, FrameworkElement? Detail = null)
+{
+    /// <summary>Raised by <see cref="Success"/>; the tour plays its success moment (a check spring, the hero card).</summary>
+    public event Action? Succeeded;
+
+    /// <summary>Call when the row just connected something (signed in, picked a place), not for a state that was already there.</summary>
+    public void Success() => Succeeded?.Invoke();
+}
 
 /// <summary>
 /// Settings fields a setup code may carry (Settings, General, Share your setup). A field is its property name, with "Name:min..max" for a

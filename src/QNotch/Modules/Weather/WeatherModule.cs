@@ -18,6 +18,7 @@ public sealed class WeatherModule : INotchModule, ICadenceAware
         ctx.Segments.Register(new SegmentDescriptor("weather.pill", SegmentSlot.PillRight, 9, () => WeatherSegments.Pill(s)));
         ctx.Segments.Register(new SegmentDescriptor("weather.game", SegmentSlot.GameBar, 68, () => WeatherSegments.Game(s), "Weather", "Temperature and sky at your place."));
 
+        if (!ctx.Settings.ReadOnly) WeatherSetup.PlaceChosen += svc.SetPlace; // the welcome tour, opened from Settings while this runs
         svc.Start();
     }
 

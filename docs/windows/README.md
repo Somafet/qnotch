@@ -43,9 +43,13 @@ The exe is not code-signed yet, so Windows may say "Windows protected your PC" o
 
 Quit from the tray icon.
 
+## First start
+
+The first time QNotch starts on a PC, a short welcome tour opens before anything else loads. It shows how to open the notch (hover it, or press your shortcut, which you can try and change right there), lets you pick your features, connects GitHub, Weather and your coding agents if you use them, and asks about update checks and Start with Windows. Every step is optional: **Skip setup**, Esc or closing the window keeps what you chose so far and turns everything else on. Features you switch off are never loaded. Updating from an older version never shows the tour; open it any time from Settings, General, **Show welcome tour**.
+
 ## Updates
 
-Automatic update checks are enabled by default. On the first start with this feature, Settings, Updates asks whether to **Keep enabled** or **Turn off** and remembers your answer. Closing the window leaves checks on and keeps the choice pending for the next start. You can change the **Check for updates automatically** switch at any time. QNotch checks GitHub for a newer stable release shortly after startup and every six hours. **Check now** works with the switch off, too.
+Automatic update checks are enabled by default. A new install asks in the welcome tour. When you update from a version without the switch, Settings, Updates asks whether to **Keep enabled** or **Turn off** and remembers your answer. Closing the window leaves checks on and keeps the choice pending for the next start. You can change the **Check for updates automatically** switch at any time. QNotch checks GitHub for a newer stable release shortly after startup and every six hours. **Check now** works with the switch off, too.
 
 When an update is available, QNotch sends a Windows notification, an arrow appears in the pill, and the tray menu shows the new version. Click the notification to open Settings, Updates. QNotch remembers notified versions across restarts and defers notifications during games and Windows quiet time. Click **Update and restart** to download it, verify its SHA-256 checksum, and replace the executable. QNotch restarts through Explorer, keeps your settings and saved history, and retains the previous executable as `.QNotch.previous.exe` beside the app. Both the standalone exe and the self-contained download keep their existing runtime variant.
 
@@ -75,7 +79,7 @@ Settings, General, Share your setup copies your look, features, card layout, hot
 
 QNotch only goes online for these features, all visible in Settings:
 
-- **GitHub:** your contribution graph, once you add a token.
+- **GitHub:** your contribution graph, once you sign in or add a token. **Sign in with GitHub** (in the welcome tour and Settings, GitHub) uses GitHub's device flow: it asks `github.com/login/device/code` for a code, opens GitHub in your browser where you approve QNotch, and polls `github.com/login/oauth/access_token` until you do. Only then, and only the `read:user` scope; the token goes to Windows Credential Manager. Paste a classic token with `repo` instead if you want private activity counted.
 - **Claude Code usage:** it sends your local Claude Code sign-in to Anthropic's usage endpoint. That endpoint is undocumented, so it may break. Turn it off in Settings, AI.
 - **Weather:** once you pick a place, it fetches that place's forecast from MET Norway (the source behind yr.no) about every 30 minutes. Searching for a place sends what you type to yr.no.
 - **Updates:** automatic checks are on by default, with a first-run choice to keep them enabled or turn them off. Checks the public QNotch releases on GitHub without a token. The update download starts only when you click Update and restart.
@@ -104,11 +108,12 @@ dotnet publish src/QNotch/QNotch.csproj -p:PublishProfile=win-x64               
 dotnet publish src/QNotch/QNotch.csproj -p:PublishProfile=win-x64-self-contained   # into dist\self-contained\
 ```
 
-`QNotch.exe --snapshot <dir>` renders every tab and settings page to PNG, which is how the screenshots above were made.
+`QNotch.exe --snapshot <dir>` renders every tab, settings page and welcome tour step to PNG, which is how the screenshots above were made.
 
-Run the updater checks (release selection, package validation, cancellation, replacement and recovery) on Windows:
+Run the welcome tour checks (when it shows, feature choices, the GitHub device flow against canned responses) and the updater checks (release selection, package validation, cancellation, replacement and recovery) on Windows:
 
 ```powershell
+dotnet run --project tests/QNotch.OnboardingTests -c Release
 dotnet run --project tests/QNotch.UpdateTests -c Release
 ```
 

@@ -20,6 +20,8 @@ QNotch puts a small status surface at the top of a display and opens a panel on 
 
 ## Compatibility fixtures
 
+[Onboarding](onboarding.md) defines the first-run tour both platforms implement.
+
 [release-tags.json](../tests/fixtures/release-tags.json) defines the reserved publishing channels. Repository tests consume every case; Windows updater tests consume valid Mac cases to prove those tags do not become Windows updates. Publishing accepts a narrower stable Windows tag format than the existing updater's historical parser, which remains unchanged.
 
 [The notification reference](../docs/notifications.md) documents the released Windows protocol. A Mac implementation can reuse portable payload semantics, but must document its own CLI and local transport before claiming compatibility. Setup-code portability and cross-platform feature parity are not established by this preparation.

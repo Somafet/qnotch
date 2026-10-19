@@ -44,6 +44,11 @@ public sealed class Shortcuts(HotkeyService hotkeys, SettingsStore store)
     public IReadOnlyList<Shortcut> Items => _items.OrderBy(s => s.Order).ToList();
     public Shortcut? Find(string id) => _items.FirstOrDefault(s => s.Id == id);
 
+    /// <summary>The gesture of <paramref name="id"/> even before its owner declared it (welcome tour tips): the declared one, else the saved
+    /// one, else <paramref name="defaultGesture"/>. Empty when the user turned it off.</summary>
+    public string GestureOf(string id, string defaultGesture) =>
+        Find(id)?.Gesture ?? (_cfg.Keys.TryGetValue(id, out var saved) ? saved : defaultGesture);
+
     /// <summary>
     /// Declares a shortcut and registers it with the saved gesture, or <paramref name="defaultGesture"/> (KeyGestureConverter syntax).
     /// Call it once per id, in <c>Initialize</c>. <paramref name="action"/> runs on the UI thread.
