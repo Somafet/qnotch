@@ -43,6 +43,7 @@
     <Resource Include="Modules/Weather/Icons/*.png" />
     <InternalsVisibleTo Include="QNotch.UpdateTests" />
     <InternalsVisibleTo Include="QNotch.PhoneShareTests" />
+    <InternalsVisibleTo Include="QNotch.OnboardingTests" />
   </ItemGroup>
   <!-- Evaluate after the publish profile, so the updater preserves the installed runtime variant. -->
   <Target Name="UpdateBuildMetadata" BeforeTargets="GetAssemblyAttributes">
