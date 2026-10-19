@@ -33,6 +33,9 @@ public sealed class SettingsStore
 
     public T Get<T>(string moduleId) where T : class, new() => (T)Get(typeof(T), moduleId);
 
+    /// <summary>True when the settings file is on disk (a fresh install has no general.json yet).</summary>
+    public bool Exists(string moduleId) => File.Exists(PathFor(moduleId));
+
     /// <summary>Get for a type known only at run time (setup codes). The type needs a public parameterless constructor.</summary>
     public object Get(Type type, string moduleId)
     {

@@ -32,7 +32,7 @@ public static class SetupCode
     static readonly JsonSerializerOptions Strict = StrictOptions();
 
     /// <summary>The shell's own shared settings. Left out on purpose: monitor, pin, profile name and picture, Start with Windows, last tab,
-    /// and the Game mode app lists (they name the user's games).</summary>
+    /// update choices, OnboardingDone, and the Game mode app lists (they name the user's games).</summary>
     public static readonly IReadOnlyList<Section> ShellSections =
     [
         new("general", "Appearance and features", new(typeof(GeneralSettings), "HoverDwellMs:0..600", "LeaveDelayMs:100..1500",

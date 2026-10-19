@@ -26,6 +26,8 @@ public sealed partial class GeneralSettings : ObservableObject
     [ObservableProperty] bool _checkForUpdates = true;
     [ObservableProperty] bool _updateChecksChoiceMade;
     [ObservableProperty] string _lastNotifiedUpdateVersion = "";
+    /// <summary>The welcome tour finished, was skipped or closed (or the settings predate it). A local preference: never in setup codes.</summary>
+    [ObservableProperty] bool _onboardingDone;
     [ObservableProperty] string _lastTab = "home";
 
     /// <summary>Ids of modules the user turned off (Settings, Features). They are never created; a change applies on restart.</summary>
