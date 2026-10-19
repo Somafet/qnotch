@@ -367,7 +367,7 @@ final class OnboardingController: NSObject, NSWindowDelegate {
     /// The panel open below the notch: header, tabs and three Home cards.
     private func miniPanel() -> NSView {
         let panel = FillView(fill: Palette.surface, stroke: Palette.stroke, radius: 18)
-        size(panel, width: 500, height: 170)
+        size(panel, width: 500, height: 136)
         let tabs = row(["house.fill", "magnifyingglass", "timer", "sparkles"].enumerated().map { index, name in
             symbol(name, size: 12, weight: .medium, color: index == 0 ? Palette.accent : Palette.textTertiary)
         }, spacing: 14)
@@ -489,8 +489,9 @@ final class OnboardingController: NSObject, NSWindowDelegate {
         let tile = FillView(fill: Palette.card, stroke: Palette.stroke, radius: 10)
         let title = line(info.title, size: 12, weight: .semibold, color: Palette.textPrimary)
         let detail = label(info.detail, size: 10, color: Palette.textTertiary)
+        // Two wrapped lines, the second truncated (a truncating line break would allow only one).
         detail.maximumNumberOfLines = 2
-        detail.lineBreakMode = .byTruncatingTail
+        detail.lineBreakMode = .byWordWrapping
         detail.cell?.truncatesLastVisibleLine = true
         detail.preferredMaxLayoutWidth = 128
         let toggle = ActionSwitch(info.title, value: shell.general.isEnabled(info.id)) { [weak self] value in
