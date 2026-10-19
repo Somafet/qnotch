@@ -44,11 +44,14 @@ public static class Tour
         if (_open is { } existing) { existing.Activate(); return; }
         try
         {
-            var w = _open = new TourWindow(new TourChoices(TourMode.OnDemand, gs, modules.Select(m => m.Id)), gs, store, shortcuts, modules, openSettings);
+            var w = _open = new TourWindow(new TourChoices(TourMode.OnDemand, gs, modules.Select(m => m.Id)), gs, store, shortcuts, modules, openSettings)
+            {
+                Arrive = openPanel, // Open QNotch: the panel opens as the flying tour reaches the notch
+            };
             w.Closed += (_, _) =>
             {
                 _open = null;
-                if (w.OpenPanel) openPanel();
+                if (w.OpenPanel && !w.Arrived) openPanel();
             };
             w.Show();
             w.Activate();

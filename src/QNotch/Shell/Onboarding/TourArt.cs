@@ -107,8 +107,31 @@ internal static class TourArt
         return pill;
     }
 
+    /// <summary>The peek "QNotch is ready" with a drawn check whose stroke can be animated (dash offset from <see cref="CheckLength"/> to 0).</summary>
+    public static Border ReadyPill(out Path check)
+    {
+        var row = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center };
+        check = new Path
+        {
+            Data = Geometry.Parse("M1,7 L5.5,11.5 L14,2"), StrokeThickness = 2, StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round,
+            StrokeLineJoin = PenLineJoin.Round, Width = 15, Height = 14, Margin = new Thickness(0, 0, 9, 0), VerticalAlignment = VerticalAlignment.Center,
+            StrokeDashArray = [CheckLength, CheckLength],
+        };
+        check.SetResourceReference(Shape.StrokeProperty, "SuccessBrush");
+        System.Windows.Automation.AutomationProperties.SetName(check, "Ready");
+        row.Children.Add(check);
+        row.Children.Add(Text("QNotch is ready", 13, weight: FontWeights.SemiBold));
+        var pill = Pill(row, 300);
+        pill.Padding = new Thickness(22, 0, 24, 1);
+        return pill;
+    }
+
+    /// <summary>The check's stroke length in dash units (path length divided by the stroke thickness), with a little slack.</summary>
+    public const double CheckLength = 10.5;
+
     /// <summary>The open panel with three Home cards, fading out toward the bottom as if it were still opening.</summary>
-    public static Border MiniPanel(double width, double height)
+    /// <param name="cards">Receives the three cards, for the unfold animation.</param>
+    public static Border MiniPanel(double width, double height, List<UIElement>? cards = null)
     {
         var grid = new Grid { Margin = new Thickness(14, 10, 14, 0) };
         grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -155,13 +178,15 @@ internal static class TourArt
         header.Children.Add(actions);
         grid.Children.Add(header);
 
-        var cards = new UniformGrid3();
-        cards.Add(SystemCard());
-        cards.Add(MediaCard());
-        cards.Add(WeatherCard("Berlin"));
-        cards.Grid.VerticalAlignment = VerticalAlignment.Top;
-        Grid.SetRow(cards.Grid, 1);
-        grid.Children.Add(cards.Grid);
+        var row = new UniformGrid3();
+        foreach (var card in new[] { SystemCard(), MediaCard(), WeatherCard("Berlin") })
+        {
+            row.Add(card);
+            cards?.Add(card);
+        }
+        row.Grid.VerticalAlignment = VerticalAlignment.Top;
+        Grid.SetRow(row.Grid, 1);
+        grid.Children.Add(row.Grid);
 
         var fade = new LinearGradientBrush { StartPoint = new Point(0, 0), EndPoint = new Point(0, 1), GradientStops = { new(Colors.Black, 0), new(Colors.Black, 0.55), new(System.Windows.Media.Color.FromArgb(0x00, 0, 0, 0), 1) } };
         fade.Freeze();
@@ -266,7 +291,8 @@ internal static class TourArt
         return Card("Weather", row, height);
     }
 
-    public static Border GithubCard(double height)
+    /// <param name="cells">Receives the graph cells, each with its diagonal (column plus row) in Tag, for the fill wave.</param>
+    public static Border GithubCard(double height, List<Border>? cells = null)
     {
         // A small contribution graph: fixed pseudo-random levels, so every snapshot is the same.
         var accent = Color(Application.Current.FindResource("AccentBrush"), Colors.CornflowerBlue);
@@ -280,7 +306,8 @@ internal static class TourArt
             for (var r = 0; r < 4; r++)
             {
                 var level = (c * 7 + r * 3 + c * r) % 5;
-                var cell = new Border { Width = 7, Height = 7, CornerRadius = new CornerRadius(1.5), Margin = new Thickness(0, 0, 0, r == 3 ? 0 : 3) };
+                var cell = new Border { Width = 7, Height = 7, CornerRadius = new CornerRadius(1.5), Margin = new Thickness(0, 0, 0, r == 3 ? 0 : 3), Tag = c + r };
+                cells?.Add(cell);
                 if (level == 0) cell.SetResourceReference(Border.BackgroundProperty, "ControlHoverBrush");
                 else
                 {
