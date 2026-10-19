@@ -30,6 +30,7 @@ Use Windows x64 and the .NET 10 SDK. From the repository root:
 dotnet build src/QNotch/QNotch.csproj -c Release -warnaserror
 dotnet run --project tests/QNotch.UpdateTests -c Release
 dotnet run --project tests/QNotch.PhoneShareTests -c Release
+dotnet run --project tests/QNotch.OnboardingTests -c Release
 ```
 
 Follow [Windows development](docs/windows/development.md) for isolated snapshots and publishing. For UI changes, inspect PNGs, check `snapshot.txt` ends in `done`, and attach the changed images. For background changes, measure before/after CPU and memory against the [hard limits](ARCHITECTURE.md#performance-rules-hard), including version, hardware, panel state, and interval. Windows features should leave a fresh `dist/QNotch.exe`; interactive launches go through Explorer.
