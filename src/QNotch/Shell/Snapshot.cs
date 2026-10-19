@@ -12,15 +12,15 @@ using QNotch.Shell.GameMode;
 namespace QNotch.Shell;
 
 /// <summary>
-/// Dev tool: <c>QNotch.exe --snapshot &lt;dir&gt; [light]</c> renders the pill, every tab, the game bar (plus its corner layout) and every
-/// settings section to PNG at 2x, then exits. Runs next to a normal instance (no mutex, off-screen, nothing is saved).
+/// Dev tool: <c>QNotch.exe --snapshot &lt;dir&gt; [light]</c> renders the pill, every tab, the game bar (plus its corner layout), every
+/// settings section and every welcome tour step to PNG at 2x, then exits. Runs next to a normal instance (no mutex, off-screen, nothing is saved).
 /// </summary>
 internal static class Snapshot
 {
     static readonly Brush Desk = Frozen(Color.FromRgb(0x4A, 0x52, 0x60));
 
     public static async void Run(string dir, NotchWindow w, ShellController shell, Registry<TabDescriptor> tabs,
-        Registry<SettingsSectionDescriptor> sections, Action exit)
+        Registry<SettingsSectionDescriptor> sections, Action<Action<FrameworkElement, string>> tour, Action exit)
     {
         var report = new List<string>();
         try
@@ -65,6 +65,13 @@ internal static class Snapshot
 
             SettingsWindow.Snapshot(sections, (el, id) =>
                 Save(el, new Rect(0, 0, el.ActualWidth, el.ActualHeight), Path.Combine(dir, $"settings-{id}.png"), (Brush)el.FindResource("WindowBrush")));
+
+            // Welcome tour: every step with demo rows (a connected GitHub account, a chosen place), as onboarding-<step>.png.
+            tour((el, name) =>
+            {
+                Save(el, new Rect(0, 0, el.ActualWidth, el.ActualHeight), Path.Combine(dir, name + ".png"), (Brush)el.FindResource("WindowBrush"));
+                report.Add($"{name}: ok");
+            });
 
             foreach (var g in new[] { "Ctrl+Alt+N", "Ctrl+Alt+G", "Alt+1", "Alt+6" })
                 report.Add($"hotkey parse {g}: {(HotkeyService.TryParse(g, out var mods, out var key) ? $"{mods}+{key}" : "FAILED")}");

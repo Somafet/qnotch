@@ -85,8 +85,12 @@ public partial class App : Application
     void Boot(string? snapDir, bool light)
     {
         _store = new SettingsStore { ReadOnly = snapDir is not null };
+        var fresh = !_store.Exists("general");
         var gs = _store.Get<GeneralSettings>("general");
         if (snapDir is not null) { gs.Pinned = false; gs.DisabledModules = new(); if (light) gs.Theme = ThemeChoice.Light; } // snapshots load every module
+        // Welcome tour: only on a fresh install. Settings from before it existed record it as done, silently.
+        var tour = FirstRun.Decide(!fresh, gs.OnboardingDone, snapDir is not null);
+        if (tour == TourStart.MarkDone) { gs.OnboardingDone = true; _store.Save("general", gs); }
         Motion.Refresh(gs.ReduceMotion);
         ThemeManager.Apply(gs);
         var bus = new EventBus(Dispatcher);
@@ -105,6 +109,9 @@ public partial class App : Application
         var sounds = new Sounds(_store);
         _shell = new ShellController(window, gs, _store, shortcuts, _foreground, layout, tabs, sections, segments);
         var shell = _shell;
+        shell.AddShortcuts();
+        // Before any module and the update service: the feature choices apply now, and a completed or skipped tour has made the update choice.
+        var openAfterTour = tour == TourStart.Show && RunTour(gs, _store, shortcuts);
         _updates = new UpdateService(gs, Dispatcher, _store, () => Shutdown());
         var updates = _updates;
         segments.Register(new SegmentDescriptor("updates.pill", SegmentSlot.PillRight, 2,
@@ -120,7 +127,8 @@ public partial class App : Application
         // Built-in tab and settings sections (modules add theirs in Initialize).
         tabs.Register(new TabDescriptor("home", "Home", Glyphs.Home, 0, () => new HomeView(layout, shell)));
         sections.Register(new SettingsSectionDescriptor("features", "Features", Glyphs.Apps, 5, () => FeaturesSection.Create(gs, _store!, ModuleList.All, bootDisabled, Restart)));
-        sections.Register(new SettingsSectionDescriptor("general", "General", Glyphs.Settings, 0, () => GeneralSection.Create(gs, _store!, SetupCode.All(ModuleList.All), Restart, shell.Nudge.ResetAll)));
+        sections.Register(new SettingsSectionDescriptor("general", "General", Glyphs.Settings, 0, () => GeneralSection.Create(gs, _store!, SetupCode.All(ModuleList.All), Restart, shell.Nudge.ResetAll,
+            () => ShowTour(gs, _store!, shortcuts, shell))));
         sections.Register(new SettingsSectionDescriptor("updates", "Updates", UpdatesSection.UpdateGlyph, 6, () => UpdatesSection.Create(gs, updates)));
         sections.Register(new SettingsSectionDescriptor("appearance", "Appearance", Glyphs.Color, 10, () => AppearanceSection.Create(gs, layout)));
         sections.Register(new SettingsSectionDescriptor("hotkeys", "Hotkeys", "", 7, () => HotkeysSection.Create(shortcuts)));
@@ -166,7 +174,11 @@ public partial class App : Application
         EventManager.RegisterClassHandler(typeof(TextBoxBase), UIElement.PreviewMouseDownEvent, handler);
         EventManager.RegisterClassHandler(typeof(PasswordBox), UIElement.PreviewMouseDownEvent, handler);
 
-        if (snapDir is not null) { Snapshot.Run(snapDir, window, shell, tabs, sections, () => Shutdown()); return; }
+        if (snapDir is not null)
+        {
+            Snapshot.Run(snapDir, window, shell, tabs, sections, save => SnapshotTour(gs, _store, shortcuts, save), () => Shutdown());
+            return;
+        }
         _tray = new TrayIcon(window, shell, shortcuts, () => Shutdown(), updates);
         updates.Start();
         if (updates.State.NeedsPreferenceChoice)
@@ -182,8 +194,29 @@ public partial class App : Application
             shell.ModeChanged += PromptUpdateChoice;
             Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ApplicationIdle, () => PromptUpdateChoice(shell.Mode));
         }
+        // Open QNotch: the panel on Home with the keyboard, once the late modules registered their cards (queued after them).
+        if (openAfterTour)
+            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ApplicationIdle, () => shell.OpenPanelWithKeyboard("home"));
         Log.Info($"Started in {(DateTime.Now - System.Diagnostics.Process.GetCurrentProcess().StartTime).TotalMilliseconds:0} ms");
     }
+
+    // The tour lives in its own methods (never inlined into Boot), so a normal start does not load its types.
+
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+    static bool RunTour(GeneralSettings gs, SettingsStore store, Shortcuts shortcuts)
+    {
+        var open = Shell.Onboarding.Tour.RunFirst(gs, store, shortcuts, ModuleList.All);
+        if (gs.StartWithWindows) Autostart.Set(true); // the shell's settings reaction is not wired up yet
+        return open;
+    }
+
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+    static void ShowTour(GeneralSettings gs, SettingsStore store, Shortcuts shortcuts, ShellController shell) =>
+        Shell.Onboarding.Tour.ShowOnDemand(gs, store, shortcuts, ModuleList.All, id => shell.OpenSettings(id), () => shell.OpenPanelWithKeyboard("home"));
+
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+    static void SnapshotTour(GeneralSettings gs, SettingsStore store, Shortcuts shortcuts, Action<FrameworkElement, string> save) =>
+        Shell.Onboarding.Tour.Snapshot(gs, store, shortcuts, ModuleList.All, save);
 
     /// <summary>Starts a fresh instance (it waits for our mutex, released last in OnExit) and quits.</summary>
     public static void Restart()

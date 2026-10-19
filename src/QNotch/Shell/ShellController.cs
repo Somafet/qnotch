@@ -78,6 +78,16 @@ public sealed class ShellController : IShell
 
     // ---------- startup ----------
 
+    bool _started;
+
+    /// <summary>Declares the shell's own shortcuts. Called before the welcome tour (it shows and changes the toggle gesture) and before any
+    /// module, so the shell's keys win a clash. They do nothing until <see cref="Start"/>.</summary>
+    public void AddShortcuts()
+    {
+        _shortcuts.Add("toggle", "Toggle panel", "Opens or closes the panel and takes the keyboard.", _general.ToggleHotkey, ToggleFromUser, 0);
+        _shortcuts.Add("gamemode", "Cycle Game mode", "Auto, Force on, Force off.", _general.GameModeHotkey, () => { if (_started) GameMode.CycleOverride(); }, 10);
+    }
+
     public void Start()
     {
         BuildPill();
@@ -112,9 +122,8 @@ public sealed class ShellController : IShell
         Motion.Changed += () => { _vm.MotionEnabled = Motion.Enabled; if (!Motion.Enabled) IsEditMode = false; };
         _foreground.Changed += h => { if (h != _w.Hwnd) _w.ReassertTopmost(); };
         _w.Source.AddHook(SettingsHook);
+        _started = true;
 
-        _shortcuts.Add("toggle", "Toggle panel", "Opens or closes the panel and takes the keyboard.", _general.ToggleHotkey, ToggleFromUser, 0);
-        _shortcuts.Add("gamemode", "Cycle Game mode", "Auto, Force on, Force off.", _general.GameModeHotkey, GameMode.CycleOverride, 10);
         _w.Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, () =>
         {
             EnsurePanelBuilt();
@@ -286,7 +295,7 @@ public sealed class ShellController : IShell
     /// <summary>Hotkey and tray: an explicit summon also takes keyboard focus, so Esc works and a click elsewhere dismisses.</summary>
     internal void ToggleFromUser()
     {
-        if (_mode == ShellMode.GameBar) return;
+        if (!_started || _mode == ShellMode.GameBar) return;
         if (_mode == ShellMode.Expanded) { ClosePanel(); return; }
         OpenPanel();
         _w.EnableKeyboard();
