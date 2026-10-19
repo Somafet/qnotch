@@ -309,7 +309,8 @@ enum NativeSmokeTest {
     private static func requireNames(_ root: NSView, in place: String) throws {
         func walk(_ view: NSView) throws {
             guard !view.isHidden else { return }
-            if let control = view as? NSControl, control is NSButton || control.acceptsFirstResponder {
+            // Scrollers are AppKit's own and named by the system.
+            if let control = view as? NSControl, !(control is NSScroller), control is NSButton || control.acceptsFirstResponder {
                 let name = control.accessibilityLabel() ?? (control as? NSButton)?.title ?? ""
                 guard !name.isEmpty else { throw Failure("A \(type(of: control)) in \(place) has no accessible name") }
             }

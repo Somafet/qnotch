@@ -1149,6 +1149,22 @@ final class OnboardingTests: XCTestCase {
 final class GithubDeviceFlowTests: XCTestCase {
     private let deviceCode = "3584d83530557fdd1f46af8289938c8ef79f9dc5"
 
+    func testSignInIsOfferedOnlyWithAClientId() {
+        XCTAssertFalse(GithubOAuth.isAvailable(clientId: ""))
+        XCTAssertFalse(GithubOAuth.isAvailable(clientId: " \n"))
+        XCTAssertTrue(GithubOAuth.isAvailable(clientId: "Ov23liS199CVpbrlXUlC"))
+        // The row reads any saved token in the background; never the login Keychain in tests.
+        if Keychain.inMemory == nil { Keychain.inMemory = [:] }
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let context = ModuleSetupContext(settings: SettingsStore(directory: directory), running: { nil })
+        let tokenOnly = GithubSetupView(context: context, clientId: "")
+        XCTAssertFalse(tokenOnly.offersSignIn, "Without a client ID there is no Sign in with GitHub")
+        XCTAssertTrue(tokenOnly.showsTokenBox, "and the token box shows instead")
+        let signIn = GithubSetupView(context: context, clientId: "Iv1.test")
+        XCTAssertTrue(signIn.offersSignIn)
+        XCTAssertFalse(signIn.showsTokenBox, "The token box waits for Use a token instead")
+    }
+
     func testRequestsAreFormPostsThatAskForJSON() throws {
         let code = GithubDeviceFlow.codeRequest(clientID: "Iv1.abc")
         XCTAssertEqual(code.url?.absoluteString, "https://github.com/login/device/code")

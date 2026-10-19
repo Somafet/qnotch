@@ -1,12 +1,13 @@
 import AppKit
 import QNotchMacCore
 
-/// QNotch's GitHub OAuth App, with Device Flow enabled. A device-flow client ID is public and there
-/// is no client secret. While it is empty, every Sign in with GitHub button is hidden and the token
-/// box is shown instead.
+/// QNotch's GitHub OAuth App, with Device Flow enabled and token expiry off (no refresh tokens).
+/// A device-flow client ID is public and there is no client secret. Without one, every Sign in
+/// with GitHub button is hidden and the token box is shown instead.
 enum GithubOAuth {
-    static let clientId = ""
-    static var available: Bool { !clientId.isEmpty }
+    static let clientId = "Ov23liS199CVpbrlXUlC"
+    static var available: Bool { isAvailable(clientId: clientId) }
+    static func isAvailable(clientId: String) -> Bool { !clientId.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
 }
 
 /// Sign in with GitHub through the OAuth device flow (spec/onboarding.md): shows the code, copies
@@ -44,8 +45,11 @@ final class GithubSignInView: NSStackView {
     private var timer: Timer?
     private var closeObserver: NSObjectProtocol?
 
-    init(look: Look, save: @escaping (String) -> Bool) {
+    private let clientId: String
+
+    init(look: Look, clientId: String = GithubOAuth.clientId, save: @escaping (String) -> Bool) {
         self.look = look
+        self.clientId = clientId
         self.save = save
         let primary = look == .notch ? Palette.textPrimary : NSColor.labelColor
         let secondary = look == .notch ? Palette.textSecondary : NSColor.secondaryLabelColor
@@ -95,11 +99,11 @@ final class GithubSignInView: NSStackView {
     // MARK: Flow
 
     func begin() {
-        guard GithubOAuth.available, !Runtime.diagnostics else { return }
+        guard GithubOAuth.isAvailable(clientId: clientId), !Runtime.diagnostics else { return }
         stop()
         let current = generation
         state = .requesting
-        send(GithubDeviceFlow.codeRequest(clientID: GithubOAuth.clientId)) { [weak self] status, body, failed in
+        send(GithubDeviceFlow.codeRequest(clientID: clientId)) { [weak self] status, body, failed in
             guard let self, self.generation == current else { return }
             do {
                 let flow = try GithubDeviceFlow.parseCode(status: status, body: body, transportFailed: failed)
@@ -153,7 +157,7 @@ final class GithubSignInView: NSStackView {
     private func poll(_ current: Int) {
         guard generation == current, let flow, window != nil else { return }
         guard Date() < deadline else { return fail(GithubDeviceFlow.expiredMessage) }
-        send(GithubDeviceFlow.tokenRequest(clientID: GithubOAuth.clientId, deviceCode: flow.deviceCode)) { [weak self] status, body, failed in
+        send(GithubDeviceFlow.tokenRequest(clientID: clientId, deviceCode: flow.deviceCode)) { [weak self] status, body, failed in
             guard let self, self.generation == current else { return }
             let answer = GithubDeviceFlow.parsePoll(status: status, body: body, transportFailed: failed)
             switch answer {
@@ -255,7 +259,12 @@ final class GithubSetupView: NSStackView {
     private let note = setupStatus("")
     private var tokenBox = NSStackView()
 
-    init(context: ModuleSetupContext) {
+    /// Sign in with GitHub is offered (an OAuth client ID is set).
+    var offersSignIn: Bool { signIn != nil }
+    /// The token box shows without asking for it.
+    var showsTokenBox: Bool { !tokenBox.isHidden }
+
+    init(context: ModuleSetupContext, clientId: String = GithubOAuth.clientId) {
         self.context = context
         super.init(frame: .zero)
         orientation = .vertical
@@ -268,8 +277,8 @@ final class GithubSetupView: NSStackView {
         let save = HoverButton("Save Token", style: .plain) { [weak self] in self?.saveToken() }
         tokenBox = row([field, save], spacing: 8)
         addArrangedSubview(status)
-        if GithubOAuth.available {
-            let signIn = GithubSignInView(look: .notch) { [weak self] token in self?.store(token) ?? false }
+        if GithubOAuth.isAvailable(clientId: clientId) {
+            let signIn = GithubSignInView(look: .notch, clientId: clientId) { [weak self] token in self?.store(token) ?? false }
             signIn.connected = { [weak self] login in self?.show(login: login) }
             signIn.extras = [HoverButton("Use a token instead", style: .chip) { [weak self] in
                 self?.tokenBox.isHidden = false
