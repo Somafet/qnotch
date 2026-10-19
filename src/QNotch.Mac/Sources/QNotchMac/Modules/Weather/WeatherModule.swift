@@ -19,13 +19,17 @@ final class WeatherModule: NotchModule {
     private var timer: Timer?
     private let views = NSHashTable<AnyObject>.weakObjects()
     private let pills = NSHashTable<WeatherPillView>.weakObjects()
-    private lazy var session: URLSession = {
+    private lazy var session = Self.makeSession()
+    /// The welcome tour's place search, before the module exists.
+    private static var setupSession: URLSession?
+
+    static func makeSession() -> URLSession {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.timeoutIntervalForRequest = 20
         configuration.httpAdditionalHeaders = ["User-Agent": "QNotch/\(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0") (+https://github.com/Somafet/qnotch)"]
         configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
         return URLSession(configuration: configuration)
-    }()
+    }
     private var cacheURL: URL { context.settings.directory.appendingPathComponent("weather-cache.json") }
     var contextShell: ModuleShell? { context.shell }
 
@@ -207,8 +211,18 @@ final class WeatherModule: NotchModule {
     }
 
     func search(_ query: String, done: @escaping (Result<[WeatherPlace], SearchError>) -> Void) {
+        Self.search(query, session: session, done: done)
+    }
+
+    /// The yr.no place search (Settings, Weather and the welcome tour).
+    static func search(_ query: String, session: URLSession? = nil, done: @escaping (Result<[WeatherPlace], SearchError>) -> Void) {
         guard !Runtime.diagnostics, let url = WeatherPlace.searchURL(query) else { return done(.success([])) }
-        session.dataTask(with: url) { data, response, error in
+        let client: URLSession
+        if let session { client = session } else if let setupSession { client = setupSession } else {
+            client = makeSession()
+            setupSession = client
+        }
+        client.dataTask(with: url) { data, response, error in
             let status = (response as? HTTPURLResponse)?.statusCode ?? 0
             let result: Result<[WeatherPlace], SearchError>
             if error != nil { result = .failure(SearchError(message: "No connection to yr.no.")) }

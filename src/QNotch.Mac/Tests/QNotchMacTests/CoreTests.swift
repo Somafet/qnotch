@@ -1092,3 +1092,123 @@ final class WingFitTests: XCTestCase {
         XCTAssertEqual(fit.trailing, ["c"])
     }
 }
+
+final class OnboardingTests: XCTestCase {
+    func testFreshInstallExistingUserAndDiagnosticDecisions() {
+        func decide(exists: Bool, readable: Bool = true, done: Bool?, diagnostics: Bool = false) -> Onboarding.AtLaunch {
+            Onboarding.atLaunch(settingsExist: exists, readable: readable, done: done, diagnostics: diagnostics)
+        }
+        XCTAssertEqual(decide(exists: false, done: nil), .show, "A fresh install shows the tour")
+        XCTAssertEqual(decide(exists: true, done: nil), .markDone, "Settings from before the tour are marked done silently")
+        XCTAssertEqual(decide(exists: true, done: false), .show, "A tour that never ended shows again")
+        XCTAssertEqual(decide(exists: true, done: true), .nothing)
+        XCTAssertEqual(decide(exists: true, readable: false, done: nil), .nothing, "An unreadable file is never overwritten")
+        XCTAssertEqual(decide(exists: false, done: nil, diagnostics: true), .nothing, "--smoke-test and --measure skip the tour")
+        XCTAssertEqual(decide(exists: true, done: nil, diagnostics: true), .nothing)
+    }
+
+    func testOnboardingDoneIsOptionalAndNeverShared() throws {
+        XCTAssertNil(try JSONDecoder().decode(GeneralSettings.self, from: Data(#"{"reduceMotion":true}"#.utf8)).onboardingDone)
+        XCTAssertFalse(String(decoding: try JSONEncoder().encode(GeneralSettings()), as: UTF8.self).contains("onboardingDone"))
+        var done = GeneralSettings()
+        done.onboardingDone = true
+        XCTAssertEqual(try JSONDecoder().decode(GeneralSettings.self, from: JSONEncoder().encode(done)).onboardingDone, true)
+        // A setup code from a Mac that finished the tour leaves this Mac's own value alone.
+        func snapshot(_ general: GeneralSettings) -> SetupCode.Snapshot {
+            SetupCode.Snapshot(general: general, gameMode: GameModeSettings(), timer: TimerSettings(), weather: WeatherSettings(),
+                               notifications: NotificationSettings(), ai: AiSettings(), agents: AgentsSettings())
+        }
+        var pending = GeneralSettings()
+        pending.onboardingDone = false
+        let plan = try SetupCode.read(SetupCode.export(snapshot(done)), current: snapshot(pending), modules: [])
+        XCTAssertEqual(plan.result.general.onboardingDone, false)
+    }
+
+    func testStepsGroupsAndFeatureChoices() {
+        XCTAssertEqual(Onboarding.steps(hasConnectRows: true).map(\.rawValue), ["welcome", "open", "features", "connect", "finish"])
+        XCTAssertEqual(Onboarding.steps(hasConnectRows: false), [.welcome, .open, .features, .finish])
+        let mac = ModuleList.all.map(\.id)
+        let groups = Onboarding.groups(available: mac)
+        XCTAssertEqual(groups.map(\.title), ["At a glance", "Get things done", "For developers"])
+        XCTAssertEqual(groups.flatMap(\.modules).sorted(), mac.sorted(), "Every Mac feature is in exactly one group")
+        XCTAssertEqual(groups[1].modules, ["clipboard", "note", "filetray", "colorpicker", "scheduled"], "Search is not a Mac module")
+        XCTAssertEqual(Onboarding.groups(available: ["timer"]).map(\.title), ["At a glance"], "Empty groups are left out")
+        var settings = GeneralSettings()
+        settings.setEnabled("clipboard", false)
+        let glance = groups[0]
+        XCTAssertTrue(Onboarding.allEnabled(glance, in: settings))
+        Onboarding.setGroup(glance, enabled: false, in: &settings)
+        XCTAssertEqual(settings.disabledModules, (glance.modules + ["clipboard"]).sorted())
+        XCTAssertFalse(Onboarding.allEnabled(glance, in: settings))
+        Onboarding.setGroup(glance, enabled: true, in: &settings)
+        XCTAssertEqual(settings.disabledModules, ["clipboard"], "Turn all on leaves other groups alone")
+        XCTAssertEqual(Set(ModuleList.all.filter { $0.setup != nil }.map(\.id)), ["agents", "github", "weather"])
+    }
+}
+
+final class GithubDeviceFlowTests: XCTestCase {
+    private let deviceCode = "3584d83530557fdd1f46af8289938c8ef79f9dc5"
+
+    func testRequestsAreFormPostsThatAskForJSON() throws {
+        let code = GithubDeviceFlow.codeRequest(clientID: "Iv1.abc")
+        XCTAssertEqual(code.url?.absoluteString, "https://github.com/login/device/code")
+        XCTAssertEqual(code.httpMethod, "POST")
+        XCTAssertEqual(code.value(forHTTPHeaderField: "Accept"), "application/json")
+        XCTAssertEqual(code.value(forHTTPHeaderField: "Content-Type"), "application/x-www-form-urlencoded")
+        XCTAssertEqual(String(decoding: try XCTUnwrap(code.httpBody), as: UTF8.self), "client_id=Iv1.abc&scope=read%3Auser")
+        let token = GithubDeviceFlow.tokenRequest(clientID: "Iv1.abc", deviceCode: deviceCode)
+        XCTAssertEqual(token.url?.absoluteString, "https://github.com/login/oauth/access_token")
+        XCTAssertEqual(token.httpMethod, "POST")
+        XCTAssertEqual(String(decoding: try XCTUnwrap(token.httpBody), as: UTF8.self),
+                       "client_id=Iv1.abc&device_code=\(deviceCode)&grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Adevice_code")
+    }
+
+    func testCodeAnswersAndErrors() throws {
+        let body = Data(#"{"device_code":"\#(deviceCode)","user_code":"WDJB-MJHT","verification_uri":"https://github.com/login/device","expires_in":900,"interval":5}"#.utf8)
+        XCTAssertEqual(try GithubDeviceFlow.parseCode(status: 200, body: body, transportFailed: false),
+                       GithubDeviceFlow.Code(deviceCode: deviceCode, userCode: "WDJB-MJHT", verificationURL: URL(string: "https://github.com/login/device")!,
+                                             expiresIn: 900, interval: 5))
+        let fast = Data(#"{"device_code":"d","user_code":"AB-CD","verification_uri":"https://github.com/login/device","expires_in":900,"interval":1}"#.utf8)
+        XCTAssertEqual(try GithubDeviceFlow.parseCode(status: 200, body: fast, transportFailed: false).interval, 5, "Never polls faster than 5 seconds")
+        func failure(_ status: Int?, _ text: String?, transportFailed: Bool = false) -> GithubError? {
+            do {
+                _ = try GithubDeviceFlow.parseCode(status: status, body: text.map { Data($0.utf8) }, transportFailed: transportFailed)
+                return nil
+            } catch { return error as? GithubError }
+        }
+        XCTAssertEqual(failure(nil, nil, transportFailed: true), .message("No connection to GitHub.", offline: true))
+        XCTAssertEqual(failure(200, #"{"error":"device_flow_disabled","error_description":"Device flow must be explicitly enabled for this App"}"#)?.text,
+                       "Device flow must be explicitly enabled for this App")
+        XCTAssertEqual(failure(400, #"{"error":"unauthorized_client"}"#)?.text, "GitHub refused the sign-in (unauthorized_client).")
+        XCTAssertEqual(failure(500, "<html>")?.text, "GitHub returned 500.")
+        XCTAssertEqual(failure(200, #"{"device_code":"d","user_code":"AB-CD","verification_uri":"http://example.com","expires_in":900}"#)?.text,
+                       "GitHub sent an unexpected response.", "Only an https page is opened")
+        XCTAssertEqual(failure(200, #"{"user_code":"AB-CD","verification_uri":"https://github.com/login/device","expires_in":900}"#)?.text,
+                       "GitHub sent an unexpected response.")
+    }
+
+    func testPollAnswersAndBackoff() {
+        func poll(_ json: String, status: Int = 200) -> GithubDeviceFlow.Poll {
+            GithubDeviceFlow.parsePoll(status: status, body: Data(json.utf8), transportFailed: false)
+        }
+        XCTAssertEqual(poll(#"{"error":"authorization_pending","error_description":"The authorization request is still pending."}"#), .pending)
+        XCTAssertEqual(poll(#"{"error":"slow_down","error_description":"Too many requests.","interval":10}"#), .slowDown(interval: 10))
+        XCTAssertEqual(poll(#"{"error":"slow_down"}"#), .slowDown(interval: nil))
+        XCTAssertEqual(poll(#"{"error":"expired_token"}"#), .expired)
+        XCTAssertEqual(poll(#"{"error":"access_denied"}"#), .denied)
+        XCTAssertEqual(poll(#"{"access_token":"gho_16C7e42F292c6912E7710c838347Ae178B4a","token_type":"bearer","scope":"read:user"}"#),
+                       .token("gho_16C7e42F292c6912E7710c838347Ae178B4a"))
+        XCTAssertEqual(poll(#"{"error":"incorrect_device_code","error_description":"The device_code provided is not valid."}"#),
+                       .failed("The device_code provided is not valid."))
+        XCTAssertEqual(poll(#"{"error":"unsupported_grant_type"}"#), .failed("GitHub refused the sign-in (unsupported_grant_type)."))
+        XCTAssertEqual(poll("<html>", status: 502), .failed("GitHub returned 502."))
+        XCTAssertEqual(poll(#"{"ok":true}"#), .failed("GitHub sent an unexpected response."))
+        XCTAssertEqual(GithubDeviceFlow.parsePoll(status: nil, body: nil, transportFailed: true), .failed("No connection to GitHub."))
+        XCTAssertEqual(GithubDeviceFlow.nextInterval(after: .slowDown(interval: nil), current: 5), 10, "slow_down adds 5 seconds")
+        XCTAssertEqual(GithubDeviceFlow.nextInterval(after: .slowDown(interval: 20), current: 5), 20, "or uses GitHub's longer interval")
+        XCTAssertEqual(GithubDeviceFlow.nextInterval(after: .slowDown(interval: 6), current: 5), 10)
+        XCTAssertEqual(GithubDeviceFlow.nextInterval(after: .pending, current: 5), 5)
+        XCTAssertEqual(GithubDeviceFlow.expiredMessage, "The code expired.")
+        XCTAssertEqual(GithubDeviceFlow.deniedMessage, "Sign-in was cancelled on GitHub.")
+    }
+}

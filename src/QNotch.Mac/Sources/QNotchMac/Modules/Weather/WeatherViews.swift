@@ -180,4 +180,86 @@ extension WeatherModule {
             settingsRow("Forecast", detail: updatedText.isEmpty ? "Refreshes when MET Norway publishes new data, about every 30 minutes." : "\(updatedText). Refreshes when MET Norway publishes new data.", control: refreshButton, width: width)
         ], footer: "Weather data from MET Norway (api.met.no), place search from yr.no (MET Norway and NRK), CC BY 4.0; symbols by yr.no under MIT. The only data sent is the place's coordinates.", width: width)
     }
+
+    /// The welcome tour's Connect row: the place search from Settings, Weather.
+    static func setupRow(_ context: ModuleSetupContext) -> NSView? { WeatherSetupView(context: context) }
+}
+
+/// The chosen place, a search box and up to five results. Saves through the running module when
+/// there is one (as Settings does), else into weather.json for the module to read when it starts.
+final class WeatherSetupView: NSStackView {
+    private let context: ModuleSetupContext
+    private let status = setupStatus("")
+    private let field = NSSearchField()
+    private let results = NSStackView()
+    private let note = setupStatus("")
+
+    init(context: ModuleSetupContext) {
+        self.context = context
+        super.init(frame: .zero)
+        orientation = .vertical
+        alignment = .leading
+        spacing = 6
+        field.placeholderString = "City or place"
+        field.sendsSearchStringImmediately = false
+        field.sendsWholeSearchString = true
+        field.setAccessibilityLabel("Find a place")
+        field.widthAnchor.constraint(equalToConstant: 220).isActive = true
+        field.onAction { [weak self] in self?.find() }
+        results.orientation = .vertical
+        results.alignment = .leading
+        results.spacing = 2
+        note.isHidden = true
+        let top = row([status, spacer(), field], spacing: 10)
+        [top, note, results].forEach(addArrangedSubview)
+        top.widthAnchor.constraint(equalTo: widthAnchor).isActive = true
+        refreshStatus()
+    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    private var running: WeatherModule? { context.running() as? WeatherModule }
+
+    private var place: WeatherPlace? {
+        if let running { return running.settings.place }
+        return context.settings.load("weather", default: WeatherSettings()).place
+    }
+
+    private func refreshStatus() {
+        status.stringValue = place.map { $0.detail.isEmpty ? $0.name : "\($0.name), \($0.detail)" } ?? "No place yet. QNotch never asks for your location."
+    }
+
+    private func find() {
+        let query = field.stringValue.trimmingCharacters(in: .whitespaces)
+        note.isHidden = false
+        guard query.count >= 2 else { note.stringValue = "Type at least two letters."; return }
+        note.stringValue = "Searching…"
+        WeatherModule.search(query) { [weak self] result in
+            guard let self else { return }
+            self.results.arrangedSubviews.forEach { $0.removeFromSuperview() }
+            switch result {
+            case .success(let places):
+                self.note.stringValue = places.isEmpty ? "No places found." : ""
+                self.note.isHidden = !places.isEmpty
+                for place in places.prefix(5) {
+                    let title = place.detail.isEmpty ? place.name : "\(place.name), \(place.detail)"
+                    self.results.addArrangedSubview(HoverButton(title, style: .row, label: "Use \(title)") { [weak self] in self?.choose(place) })
+                }
+            case .failure(let error): self.note.stringValue = error.message
+            }
+        }
+    }
+
+    private func choose(_ place: WeatherPlace) {
+        if let running {
+            running.choose(place)
+        } else {
+            var settings = context.settings.load("weather", default: WeatherSettings())
+            settings.place = place
+            context.settings.save("weather", settings)
+        }
+        results.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        field.stringValue = ""
+        note.isHidden = true
+        refreshStatus()
+    }
 }

@@ -1,4 +1,14 @@
 import AppKit
+import QNotchMacCore
+
+/// What a module's one-step setup may use (the welcome tour's Connect step). It runs before the
+/// module exists on a fresh install, so it gets the settings store, never the module's providers.
+struct ModuleSetupContext {
+    let settings: SettingsStore
+    /// The running module when the feature is on and the app is running (a tour opened from
+    /// Settings), so a choice goes through the same path as Settings. Nil before modules start.
+    let running: () -> NotchModule?
+}
 
 /// A module the user can turn on or off in Settings, Features.
 struct ModuleInfo {
@@ -7,7 +17,16 @@ struct ModuleInfo {
     let detail: String
     let symbol: String
     let tint: NSColor
+    /// The welcome tour's Connect row: its status and action (the tour adds the icon and title).
+    /// Static helpers, the settings store and the Keychain only; nil when there is nothing to set up.
+    let setup: ((ModuleSetupContext) -> NSView?)?
     let make: () -> NotchModule
+
+    init(id: String, title: String, detail: String, symbol: String, tint: NSColor,
+         setup: ((ModuleSetupContext) -> NSView?)? = nil, make: @escaping () -> NotchModule) {
+        self.id = id; self.title = title; self.detail = detail; self.symbol = symbol; self.tint = tint
+        self.setup = setup; self.make = make
+    }
 }
 
 enum ModuleList {
@@ -34,11 +53,11 @@ enum ModuleList {
         ModuleInfo(id: "notifications", title: "Notifications", detail: "Lets apps and scripts post notifications to the notch: QNotch notify, a local socket or loopback HTTP.",
                    symbol: "bell.badge.fill", tint: .systemRed) { NotificationsModule() },
         ModuleInfo(id: "agents", title: "Agents", detail: "Live Claude Code and Codex sessions: working, needs you or done, beside the notch and in the Agents tab.",
-                   symbol: "sparkles", tint: .systemOrange) { AgentsModule() },
+                   symbol: "sparkles", tint: .systemOrange, setup: AgentsModule.setupRow) { AgentsModule() },
         ModuleInfo(id: "weather", title: "Weather", detail: "The MET Norway forecast for a place you pick, on a Home card and beside the notch.",
-                   symbol: "cloud.sun.fill", tint: .systemCyan) { WeatherModule() },
-        ModuleInfo(id: "github", title: "GitHub", detail: "Your GitHub contribution graph on a Home card, with a token you add in Settings.",
-                   symbol: "chart.bar.xaxis", tint: .darkGray) { GithubModule() },
+                   symbol: "cloud.sun.fill", tint: .systemCyan, setup: WeatherModule.setupRow) { WeatherModule() },
+        ModuleInfo(id: "github", title: "GitHub", detail: "Your GitHub contribution graph on a Home card, once you connect your account in Settings.",
+                   symbol: "chart.bar.xaxis", tint: .darkGray, setup: GithubModule.setupRow) { GithubModule() },
         ModuleInfo(id: "ai", title: "AI apps and usage", detail: "⌃⌥1 to ⌃⌥6 open your AI apps; plan usage for Claude Code and Codex.",
                    symbol: "gauge.with.dots.needle.33percent", tint: .systemPurple) { AiModule() },
         ModuleInfo(id: "scheduled", title: "Scheduled tasks", detail: "Your launch agents (scripts and jobs on a timer), with pause, resume and delete.",

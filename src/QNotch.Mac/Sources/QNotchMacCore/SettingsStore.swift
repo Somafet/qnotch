@@ -34,6 +34,9 @@ public struct GeneralSettings: Codable, Equatable {
     public var pillOffsets: [String: Double] = [:]
     /// Offer beta (prerelease) Mac versions as updates, not only stable ones.
     public var betaUpdates = false
+    /// The welcome tour ended (finished, skipped or closed). Nil: never recorded, as in settings
+    /// from before the tour. A local preference, never part of setup codes.
+    public var onboardingDone: Bool?
     public init() {}
 
     public func isEnabled(_ module: String) -> Bool { !disabledModules.contains(module) }
@@ -54,7 +57,7 @@ public struct GeneralSettings: Codable, Equatable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case displayID, reduceMotion, disabledModules, timerEnabled, hoverDelayMs, closeDelayMs, pinned, accent, profileName, hiddenCards, cardOrder, tabOrder, pillOffsets, betaUpdates
+        case displayID, reduceMotion, disabledModules, timerEnabled, hoverDelayMs, closeDelayMs, pinned, accent, profileName, hiddenCards, cardOrder, tabOrder, pillOffsets, betaUpdates, onboardingDone
     }
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -73,6 +76,7 @@ public struct GeneralSettings: Codable, Equatable {
         tabOrder = c.value(.tabOrder, [])
         pillOffsets = c.value(.pillOffsets, [:])
         betaUpdates = c.value(.betaUpdates, false)
+        onboardingDone = c.value(.onboardingDone, Bool?.none)
     }
     public func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
@@ -89,6 +93,7 @@ public struct GeneralSettings: Codable, Equatable {
         try c.encode(tabOrder, forKey: .tabOrder)
         try c.encode(pillOffsets, forKey: .pillOffsets)
         try c.encode(betaUpdates, forKey: .betaUpdates)
+        try c.encodeIfPresent(onboardingDone, forKey: .onboardingDone)
     }
 }
 
