@@ -1,0 +1,98 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!--
+      Welcome tour buttons: the shared looks, with motion. Hover fades a light overlay in over 120 ms, a press scales the button to 0.97.
+      Only opacity and a render transform animate. Loaded with the tour window only (never on a normal start), and only when motion is on.
+    -->
+    <Style x:Key="TourButton" TargetType="Button">
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+        <Setter Property="Padding" Value="12,6"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid x:Name="Root" RenderTransformOrigin="0.5,0.5">
+                        <Grid.RenderTransform><ScaleTransform/></Grid.RenderTransform>
+                        <Border Background="{DynamicResource ControlBrush}" CornerRadius="8"/>
+                        <Border x:Name="Hover" Background="{DynamicResource ControlBrush}" CornerRadius="8" Opacity="0"/>
+                        <ContentPresenter Margin="{TemplateBinding Padding}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Trigger.EnterActions><BeginStoryboard><Storyboard><DoubleAnimation Storyboard.TargetName="Hover" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.12"/></Storyboard></BeginStoryboard></Trigger.EnterActions>
+                            <Trigger.ExitActions><BeginStoryboard><Storyboard><DoubleAnimation Storyboard.TargetName="Hover" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.12"/></Storyboard></BeginStoryboard></Trigger.ExitActions>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Trigger.EnterActions><BeginStoryboard><Storyboard><DoubleAnimation Storyboard.TargetName="Root" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" To="0.97" Duration="0:0:0.08"/><DoubleAnimation Storyboard.TargetName="Root" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="0.97" Duration="0:0:0.08"/></Storyboard></BeginStoryboard></Trigger.EnterActions>
+                            <Trigger.ExitActions><BeginStoryboard><Storyboard><DoubleAnimation Storyboard.TargetName="Root" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" To="1" Duration="0:0:0.14"/><DoubleAnimation Storyboard.TargetName="Root" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="1" Duration="0:0:0.14"/></Storyboard></BeginStoryboard></Trigger.ExitActions>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.4"/></Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="TourAccentButton" TargetType="Button">
+        <Setter Property="Foreground" Value="{DynamicResource OnAccentBrush}"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Padding" Value="12,6"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid x:Name="Root" RenderTransformOrigin="0.5,0.5">
+                        <Grid.RenderTransform><ScaleTransform/></Grid.RenderTransform>
+                        <Border Background="{DynamicResource AccentBrush}" CornerRadius="8"/>
+                        <Border x:Name="Hover" Background="#24FFFFFF" CornerRadius="8" Opacity="0"/>
+                        <ContentPresenter Margin="{TemplateBinding Padding}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Trigger.EnterActions><BeginStoryboard><Storyboard><DoubleAnimation Storyboard.TargetName="Hover" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.12"/></Storyboard></BeginStoryboard></Trigger.EnterActions>
+                            <Trigger.ExitActions><BeginStoryboard><Storyboard><DoubleAnimation Storyboard.TargetName="Hover" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.12"/></Storyboard></BeginStoryboard></Trigger.ExitActions>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Trigger.EnterActions><BeginStoryboard><Storyboard><DoubleAnimation Storyboard.TargetName="Root" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" To="0.97" Duration="0:0:0.08"/><DoubleAnimation Storyboard.TargetName="Root" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="0.97" Duration="0:0:0.08"/></Storyboard></BeginStoryboard></Trigger.EnterActions>
+                            <Trigger.ExitActions><BeginStoryboard><Storyboard><DoubleAnimation Storyboard.TargetName="Root" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" To="1" Duration="0:0:0.14"/><DoubleAnimation Storyboard.TargetName="Root" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="1" Duration="0:0:0.14"/></Storyboard></BeginStoryboard></Trigger.ExitActions>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.4"/></Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="TourLinkButton" TargetType="Button">
+        <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid x:Name="Root" Background="Transparent" RenderTransformOrigin="0.5,0.5">
+                        <Grid.RenderTransform><ScaleTransform/></Grid.RenderTransform>
+                        <ContentPresenter Margin="{TemplateBinding Padding}" VerticalAlignment="Center"/>
+                        <!-- Hover: the same text, brighter, fading over the accent one -->
+                        <ContentPresenter x:Name="Hover" Margin="{TemplateBinding Padding}" VerticalAlignment="Center" Opacity="0"
+                                          TextElement.Foreground="{DynamicResource AccentHoverBrush}"/>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Trigger.EnterActions><BeginStoryboard><Storyboard><DoubleAnimation Storyboard.TargetName="Hover" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.12"/></Storyboard></BeginStoryboard></Trigger.EnterActions>
+                            <Trigger.ExitActions><BeginStoryboard><Storyboard><DoubleAnimation Storyboard.TargetName="Hover" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.12"/></Storyboard></BeginStoryboard></Trigger.ExitActions>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Trigger.EnterActions><BeginStoryboard><Storyboard><DoubleAnimation Storyboard.TargetName="Root" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" To="0.97" Duration="0:0:0.08"/><DoubleAnimation Storyboard.TargetName="Root" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="0.97" Duration="0:0:0.08"/></Storyboard></BeginStoryboard></Trigger.EnterActions>
+                            <Trigger.ExitActions><BeginStoryboard><Storyboard><DoubleAnimation Storyboard.TargetName="Root" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" To="1" Duration="0:0:0.14"/><DoubleAnimation Storyboard.TargetName="Root" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="1" Duration="0:0:0.14"/></Storyboard></BeginStoryboard></Trigger.ExitActions>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.4"/></Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+</ResourceDictionary>
