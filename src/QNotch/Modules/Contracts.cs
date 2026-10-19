@@ -71,7 +71,14 @@ public sealed class SetupContext
 /// Action sits on the right (buttons, a box). Detail, if any, shows under the row (a sign-in code, search results) and the module collapses it
 /// while it has nothing to show. Work a row starts (GitHub polling) must stop when its elements unload.
 /// </summary>
-public sealed record SetupRow(string Title, string Glyph, TextBlock Status, FrameworkElement Action, FrameworkElement? Detail = null);
+public sealed record SetupRow(string Title, string Glyph, TextBlock Status, FrameworkElement Action, FrameworkElement? Detail = null)
+{
+    /// <summary>Raised by <see cref="Success"/>; the tour plays its success moment (a check spring, the hero card).</summary>
+    public event Action? Succeeded;
+
+    /// <summary>Call when the row just connected something (signed in, picked a place), not for a state that was already there.</summary>
+    public void Success() => Succeeded?.Invoke();
+}
 
 /// <summary>
 /// Settings fields a setup code may carry (Settings, General, Share your setup). A field is its property name, with "Name:min..max" for a

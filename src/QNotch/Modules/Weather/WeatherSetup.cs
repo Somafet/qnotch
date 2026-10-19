@@ -18,6 +18,7 @@ internal static class WeatherSetup
     public static SetupRow Create(SetupContext ctx)
     {
         var set = ctx.Settings.Get<WeatherSettings>("weather");
+        SetupRow? row = null;
         var status = new TextBlock();
         void Status(string text, string brush)
         {
@@ -94,11 +95,12 @@ internal static class WeatherSetup
             ctx.Settings.Save("weather", set);
             PlaceChosen?.Invoke(p);
             ShowPlace(p);
+            row?.Success();
         }
 
         // Snapshot: a chosen place, no file or request.
         ShowPlace(ctx.Demo ? new WeatherPlace { Name = "Berlin", Detail = "Germany" } : set.Place);
-        return new SetupRow("Weather", WeatherModule.Sun, status, action, list);
+        return row = new SetupRow("Weather", WeatherModule.Sun, status, action, list);
     }
 
     static string Label(WeatherPlace p) => p.Detail.Length > 0 ? $"{p.Name}, {p.Detail}" : p.Name;

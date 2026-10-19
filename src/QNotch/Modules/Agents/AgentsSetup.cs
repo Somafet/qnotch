@@ -31,6 +31,7 @@ internal static class AgentsSetup
         FrameworkElement? detail = hooks.Count <= 2 ? null : buttons;
         if (detail is not null) buttons.Margin = new Thickness(0, 6, 0, 0);
         var syncs = new List<Action>();
+        SetupRow? row = null;
         string? lastHint = null;
 
         void Summary()
@@ -92,10 +93,11 @@ internal static class AgentsSetup
                 // Same message as Settings, Agents (Codex: trust the hooks once).
                 lastHint = hook.ConnectedHint;
                 Status(hook.ConnectedHint, "SuccessBrush");
+                row?.Success();
             };
         }
         foreach (var s in syncs) s();
         Summary();
-        return new SetupRow("Agents", AgentsModule.Icon, status, action, detail);
+        return row = new SetupRow("Agents", AgentsModule.Icon, status, action, detail);
     }
 }

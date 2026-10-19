@@ -28,6 +28,7 @@ internal static class GithubSetup
         action.Children.Add(controls);
         action.Children.Add(done);
         var detail = new StackPanel();
+        SetupRow? row = null;
 
         void Status(string text, string brush)
         {
@@ -40,6 +41,7 @@ internal static class GithubSetup
             controls.Visibility = Visibility.Collapsed;
             detail.Visibility = Visibility.Collapsed;
             done.Visibility = Visibility.Visible;
+            row?.Success(); // null while the demo state is set up
         }
         async Task<(bool Ok, string Message)> Save(string token)
         {
@@ -112,6 +114,6 @@ internal static class GithubSetup
                 if (t.Result is { Length: > 0 } && controls.Visibility == Visibility.Visible) Status("A token is saved", "SuccessBrush");
             }, TaskScheduler.FromCurrentSynchronizationContext());
         }
-        return new SetupRow("GitHub", Glyphs.Github, status, action, detail);
+        return row = new SetupRow("GitHub", Glyphs.Github, status, action, detail);
     }
 }
