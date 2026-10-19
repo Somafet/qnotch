@@ -17,8 +17,26 @@ A short, skippable welcome that shows what QNotch does, lets a new user pick fea
 - A standalone, centered window that has focus. It is not the notch panel. About 760 × 520, dark like the notch (near-black surface, bordered cards, accent chips), with no standard title bar. It has a close control and can be dragged.
 - Top: a hero area of about 55% of the height with an illustration of the step. It is built from the platform's own glyphs and cards (a miniature pill, Home cards, the feature tiles). Bitmaps are optional, never required. Bottom: title, a one-line subtitle and the step's content.
 - Footer: progress dots (one per step shown), **Back** (hidden on the first step), **Skip** (ends the tour with what has been chosen so far plus defaults) and the primary button (**Continue**, or the step's own label).
-- Keyboard: Return activates the primary button, Esc skips, Tab moves through controls. Every control has an accessible name. Honor reduced motion: step transitions are a short slide and fade, and only a cut when motion is reduced.
+- Keyboard: Return activates the primary button, Esc skips, Tab moves through controls. Every control has an accessible name. Motion follows [Motion](#motion), including reduced motion.
 - Closing the window counts as Skip. Skipping never discards a choice that was already made, such as a saved GitHub token or a toggled feature.
+
+## Motion
+
+Both platforms follow this contract with their own animation system (Core Animation on the Mac, WPF storyboards on Windows).
+
+**Principles.** Motion is purposeful and quick, mostly 180–320 ms. Entrances ease out, exits ease in. A gentle spring or overshoot is reserved for success moments. Only opacity and transforms animate, never layout in a loop. A looping animation runs only while its step is shown and the window is visible and not covered; otherwise it is removed, not just hidden. With reduced motion (the system setting, or QNotch's own **Reduce motion**) there are no slides, scales, loops or staggers: changes are 120 ms crossfades or cuts.
+
+1. **Window.** It enters with a fade from 0, a scale from 0.96 and a 12 pt rise, about 300 ms, ease-out. Skip and close leave with a fade and a scale to 0.98 in 160 ms.
+2. **Step transitions** are directional. Forward, the outgoing content slides about 24 pt left and fades while the incoming slides in from the right; Back mirrors it. The hero moves about half the distance of the content (parallax), and the content follows it by about 40 ms: title, subtitle, then the step's controls, about 30 ms apart. About 260 ms in all.
+3. **Progress dots.** The active dot's pill width and color animate from step to step.
+4. **Buttons and controls** give hover and press feedback (color in 120 ms, a press scale of 0.97). The primary button's label crossfades when it changes (Get started, Continue, Open QNotch).
+5. **Hero moments** play once when a step is entered; loops only where stated.
+   - `welcome`: the notch drops in from the bezel and its segments fade in one by one (about 50 ms apart); the panel then unfolds downward (scale from its top edge with a fade) and its cards stagger in (about 60 ms apart). Optional: a very slow ambient drift of the glow behind the hero (a cheap loop).
+   - `open`: the cursor glides to the notch, which takes its hover glow; then the key caps press down in order (⌃, ⌥, N) and release, repeating about every 3 s while the step is shown. When the user presses the real gesture, the caps go down together, the "That's it" check pops (spring 0.6 → 1.08 → 1) and the caps' loop stops.
+   - `features`: tiles stagger in row by row (about 20 ms per tile, at most about 300 ms in all). A switch animates its tile's icon tint and the tile's opacity (about 55% when off) in 150 ms. **Turn all off/on** ripples down the group (about 30 ms per tile).
+   - `connect`: the cards stagger in. The GitHub contribution grid fills cell by cell in a diagonal wave (about 400 ms) when it appears and again when sign-in succeeds. Row status text crossfades. The device-code panel expands once when the code arrives, and "Waiting for you…" has a subtle pulsing dot that loops only while polling. A successful connection turns the status green with the check spring.
+   - `finish`: the "QNotch is ready" check draws its stroke (about 350 ms) as its chip pops in. **Open QNotch** hands off to the product: the tour shrinks and flies to the notch at the top center of the notch's display (scale about 0.3, moving up, fading, about 350 ms, ease-in) and the real panel springs open as it arrives. The panel takes the keyboard before the tour window goes away.
+6. **Determinism.** Snapshots and smoke tests see the settled final state: they skip or complete every animation. No timer or display link outlives the tour.
 
 ## Steps
 
