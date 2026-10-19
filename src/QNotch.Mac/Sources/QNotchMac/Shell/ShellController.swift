@@ -288,6 +288,8 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     func openHome() {
         if activeTab != "home" { selectTab("home") }
         open(keyboard: true)
+        // Opening during a notification peek moves to Notifications; Open QNotch means Home.
+        if activeTab != "home" { selectTab("home") }
     }
 
     func closePanel() { close() }
