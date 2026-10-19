@@ -36,10 +36,16 @@ final class OnboardingWindow: NSWindow {
 /// The first-run welcome tour (spec/onboarding.md): welcome, open, features, connect and finish,
 /// each skippable. On a fresh install it runs before any module is constructed; from Settings,
 /// About it runs beside the running app, and its switches apply at once, as in Settings.
+///
+/// Motion (spec, Motion): the window rises in and, on Open QNotch, flies into the notch; steps
+/// slide by direction with a parallax hero and staggered text; each hero has a one-time moment.
+/// Loops (the glow drift, the key caps) run only while their step is on screen and the window is
+/// visible, and are removed otherwise. Diagnostic runs show only settled states.
 final class OnboardingController: NSObject, NSWindowDelegate {
     static let windowSize = NSSize(width: 760, height: 520)
     static let heroHeight: CGFloat = 286
     private static let margin: CGFloat = 40
+    private static let cornerRadius: CGFloat = 12
 
     let firstRun: Bool
     let window: OnboardingWindow
@@ -53,22 +59,30 @@ final class OnboardingController: NSObject, NSWindowDelegate {
 
     private unowned let shell: ShellController
     private let container = NSView()
+    private let backdrop = HeroBackdrop()
     private var page: NSView?
-    private let dots = NSStackView()
+    private let dots = ProgressDots()
     private var back: HoverButton!
     private var skip: HoverButton!
     private var primary: HoverButton!
     private var connectRows: [String: NSView] = [:]
     private var connectNone: Set<String> = []
     private var featureSwitches: [String: ActionSwitch] = [:]
+    private var featureTiles: [String: (tile: NSView, chip: FillView?, tint: NSColor)] = [:]
     private var groupButtons: [(group: Onboarding.Group, button: HoverButton)] = []
     private var featureCount: NSTextField?
     private var tryStatus: NSStackView?
+    private var heroCaps: KeyCapsView?
+    private var contentCaps: KeyCapsView?
     private var shortcutNote = ""
     private var updatesChoice = true
     private var loginChoice: Bool
     private var ending = false
-    private var reveals: [(view: NSView, delay: TimeInterval, dy: CGFloat)] = []
+    private var presented = false
+    /// The current step's parts for the step transition, and its one-time hero moment.
+    private var parts: (hero: NSView, texts: [NSView])?
+    private var moments: [() -> Void] = []
+    private var loops: [(layer: CALayer, key: String)] = []
 
     init(shell: ShellController, firstRun: Bool, isolated: Bool) {
         self.shell = shell
@@ -84,7 +98,9 @@ final class OnboardingController: NSObject, NSWindowDelegate {
         window.isMovableByWindowBackground = true
         window.isReleasedWhenClosed = false
         window.appearance = Palette.dark
-        window.backgroundColor = Palette.surface
+        // The content draws the dark surface with rounded corners, so it can scale on entrance.
+        window.isOpaque = false
+        window.backgroundColor = .clear
         window.standardWindowButton(.miniaturizeButton)?.isHidden = true
         window.standardWindowButton(.zoomButton)?.isHidden = true
         window.delegate = self
@@ -103,10 +119,31 @@ final class OnboardingController: NSObject, NSWindowDelegate {
         install(animated: false, direction: 0)
     }
 
+    /// Shows the window; the first time it rises in (fade, scale 0.96 → 1, 12 points up) and the
+    /// welcome moment plays.
     func show() {
         if !window.isVisible { window.center() }
         NSApp.activate(ignoringOtherApps: true)
-        window.makeKeyAndOrderFront(nil)
+        guard !presented else {
+            window.makeKeyAndOrderFront(nil)
+            startLoops()
+            return
+        }
+        presented = true
+        if Motion.fades, let content = window.contentView {
+            window.alphaValue = 0
+            window.makeKeyAndOrderFront(nil)
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = Motion.moves ? 0.3 : Motion.crossfadeDuration
+                context.timingFunction = Motion.easeOut
+                self.window.animator().alphaValue = 1
+            }
+            Motion.enter(content, duration: 0.3, up: -12, scale: 0.96, fade: false)
+        } else {
+            window.makeKeyAndOrderFront(nil)
+        }
+        playMoments()
+        startLoops()
     }
 
     // MARK: Navigation
@@ -157,17 +194,103 @@ final class OnboardingController: NSObject, NSWindowDelegate {
     private func end(finished: Bool, closeWindow: Bool) {
         guard !ending else { return }
         ending = true
-        // The shell releases this controller in `ended`; keep it alive until the end of this method.
-        withExtendedLifetime(self) {
-            apply(finished: finished)
-            window.delegate = nil
-            shell.shortcuts.suspend(false)
+        stopLoops()
+        apply(finished: finished)
+        window.delegate = nil
+        window.ignoresMouseEvents = true
+        shell.shortcuts.suspend(false)
+        if finished { handOff() } else { leave(closeWindow: closeWindow) }
+    }
+
+    /// Skip or close: a short fade and scale to 0.98 (160 ms, ease-in), then the shell takes over.
+    private func leave(closeWindow: Bool) {
+        let finish = { [self] in
             ended?()
-            // The panel takes the keyboard before the tour closes: closing the key window first
-            // lets AppKit move the keyboard afterwards, which would close the panel again.
-            if finished { shell.openHome() }
             if closeWindow { window.close() }
         }
+        guard closeWindow, Motion.fades, let content = window.contentView else { return withExtendedLifetime(self) { finish() } }
+        NSAnimationContext.runAnimationGroup({ context in
+            context.duration = Motion.moves ? 0.16 : Motion.crossfadeDuration
+            context.timingFunction = Motion.easeIn
+            self.window.animator().alphaValue = 0
+        }, completionHandler: finish)
+        if Motion.moves { Motion.leave(content, duration: 0.16, scale: 0.98) {} }
+    }
+
+    /// Open QNotch: the tour flies into the notch and the panel springs open as it arrives. The
+    /// panel takes the keyboard while the (invisible) tour is still key, and only then does the
+    /// tour close: closing the key window first lets AppKit move the keyboard, closing the panel.
+    private func handOff() {
+        let complete = { [self] in
+            ended?()
+            shell.openHome()
+            window.close()
+        }
+        guard Motion.fades else { return withExtendedLifetime(self) { complete() } }
+        if Motion.moves, flyToNotch(then: complete) { return }
+        NSAnimationContext.runAnimationGroup({ context in
+            context.duration = Motion.crossfadeDuration
+            self.window.animator().alphaValue = 0
+        }, completionHandler: complete)
+    }
+
+    /// A picture of the tour in a click-through overlay shrinks (to 0.3), rises into the notch and
+    /// fades: 350 ms, ease-in. The real window stays, invisible, until `then` runs.
+    private func flyToNotch(then complete: @escaping () -> Void) -> Bool {
+        guard let content = window.contentView, let target = shell.expectedFrame,
+              let bitmap = content.bitmapImageRepForCachingDisplay(in: content.bounds) else { return false }
+        content.cacheDisplay(in: content.bounds, to: bitmap)
+        guard let image = bitmap.cgImage else { return false }
+        let start = window.convertToScreen(content.convert(content.bounds, to: nil))
+        let area = start.union(target).insetBy(dx: -60, dy: -60)
+        let overlay = NSWindow(contentRect: area, styleMask: .borderless, backing: .buffered, defer: false)
+        overlay.isOpaque = false
+        overlay.backgroundColor = .clear
+        overlay.hasShadow = false
+        overlay.ignoresMouseEvents = true
+        overlay.isReleasedWhenClosed = false
+        overlay.level = .floating
+        overlay.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .transient]
+        let host = NSView(frame: NSRect(origin: .zero, size: area.size))
+        host.wantsLayer = true
+        overlay.contentView = host
+        let picture = CALayer()
+        picture.contents = image
+        picture.contentsGravity = .resize
+        picture.frame = CGRect(x: start.minX - area.minX, y: start.minY - area.minY, width: start.width, height: start.height)
+        picture.cornerRadius = Self.cornerRadius
+        picture.masksToBounds = true
+        host.layer?.addSublayer(picture)
+        overlay.orderFrontRegardless()
+        window.alphaValue = 0
+        let from = picture.position
+        let to = CGPoint(x: target.midX - area.minX, y: target.midY - area.minY)
+        let shrunk = CATransform3DMakeScale(0.3, 0.3, 1)
+        CATransaction.begin()
+        CATransaction.setCompletionBlock {
+            complete()
+            overlay.orderOut(nil)
+        }
+        CATransaction.setDisableActions(true)
+        picture.position = to
+        picture.transform = shrunk
+        picture.opacity = 0
+        let move = CABasicAnimation(keyPath: "position")
+        move.fromValue = NSValue(point: from)
+        move.toValue = NSValue(point: to)
+        let scale = CABasicAnimation(keyPath: "transform")
+        scale.fromValue = NSValue(caTransform3D: CATransform3DIdentity)
+        scale.toValue = NSValue(caTransform3D: shrunk)
+        let fade = CAKeyframeAnimation(keyPath: "opacity")
+        fade.values = [1, 1, 0]
+        fade.keyTimes = [0, 0.55, 1]
+        let group = CAAnimationGroup()
+        group.animations = [move, scale, fade]
+        group.duration = 0.35
+        group.timingFunction = Motion.easeIn
+        picture.add(group, forKey: "fly")
+        CATransaction.commit()
+        return true
     }
 
     /// First run: the finish step's choices, or the defaults when skipped (updates on, login items
@@ -181,17 +304,33 @@ final class OnboardingController: NSObject, NSWindowDelegate {
 
     // MARK: Window
 
+    /// The close control: the same short exit as Skip.
+    func windowShouldClose(_ sender: NSWindow) -> Bool {
+        guard Motion.fades, !ending else { return true }
+        skipTour()
+        return false
+    }
+
     func windowWillClose(_ notification: Notification) { end(finished: false, closeWindow: false) }
 
     // Global shortcuts pause while the tour has the keyboard, so pressing one reaches the window.
     func windowDidBecomeKey(_ notification: Notification) { shell.shortcuts.suspend(true) }
     func windowDidResignKey(_ notification: Notification) { shell.shortcuts.suspend(false) }
 
+    /// Loops stop while the window is hidden or covered.
+    func windowDidChangeOcclusionState(_ notification: Notification) {
+        if windowShown { startLoops() } else { stopLoops() }
+    }
+
+    private var windowShown: Bool { window.isVisible && window.occlusionState.contains(.visible) }
+
     private func pressed(_ event: NSEvent) -> Bool {
         guard let combo = KeyCombo(event: event), combo.isAllowedGlobally, combo == shell.shortcuts.shortcut("toggle")?.combo,
               (window.firstResponder as? ShortcutRecorder)?.isRecording != true else { return false }
         if step == .open, !triedGesture {
             triedGesture = true
+            stopLoops()
+            for caps in [heroCaps, contentCaps].compactMap({ $0 }) { pressTogether(caps) }
             if let tryStatus { showTried(tryStatus) }
         }
         return true
@@ -207,17 +346,14 @@ final class OnboardingController: NSObject, NSWindowDelegate {
     // MARK: Layout
 
     private func makeRoot() -> NSView {
-        let root = FillView(fill: Palette.surface)
-        let backdrop = HeroBackdrop()
+        let root = FillView(fill: Palette.surface, radius: Self.cornerRadius)
+        root.layer?.masksToBounds = true
         let footer = NSView()
-        dots.orientation = .horizontal
-        dots.spacing = 6
-        dots.setAccessibilityElement(true)
-        dots.setAccessibilityRole(.staticText)
         back = HoverButton("Back", style: .plain) { [weak self] in self?.goBack() }
         skip = HoverButton("Skip", style: .chip) { [weak self] in self?.skipTour() }
         primary = HoverButton("Continue", style: .accent) { [weak self] in self?.advance() }
         primary.padding = NSSize(width: 18, height: 7)
+        for button in [back, skip, primary] { button?.pressScale = 0.97 }
         let bar = row([dots, spacer(), skip, back, primary], spacing: 8)
         embed(bar, in: footer, inset: 0, fill: true)
         for view in [backdrop, container, footer] {
@@ -238,14 +374,21 @@ final class OnboardingController: NSObject, NSWindowDelegate {
         return root
     }
 
-    /// Shows the current step: a short slide and fade, or a cut when motion is reduced.
+    /// Shows the current step. Forward, the old content slides 24 points left and fades while the
+    /// new one comes in from the right: the hero first and half as far (parallax), then the title,
+    /// subtitle and controls 30 ms apart. Back mirrors it; reduced motion crossfades.
     private func install(animated: Bool, direction: CGFloat) {
-        page?.removeFromSuperview()
+        stopLoops()
+        let old = page
         featureSwitches = [:]
+        featureTiles = [:]
         groupButtons = []
         featureCount = nil
         tryStatus = nil
-        reveals = []
+        heroCaps = nil
+        contentCaps = nil
+        moments = []
+        parts = nil
         let built = build(step)
         built.wantsLayer = true
         built.translatesAutoresizingMaskIntoConstraints = false
@@ -258,23 +401,44 @@ final class OnboardingController: NSObject, NSWindowDelegate {
         refreshFooter()
         window.makeFirstResponder(nil)
         container.layoutSubtreeIfNeeded()
-        if animated { Motion.reveal(built, duration: 0.26, dx: 28 * direction) }
-        for item in reveals { Motion.reveal(item.view, delay: item.delay, duration: 0.42, dy: item.dy) }
+        if let old {
+            if animated, Motion.fades {
+                Motion.leave(old, duration: 0.18, dx: -24 * direction) { old.removeFromSuperview() }
+            } else {
+                old.removeFromSuperview()
+            }
+        }
+        guard animated else { return }
+        if let parts {
+            Motion.enter(parts.hero, duration: 0.26, dx: 12 * direction)
+            for (offset, text) in parts.texts.enumerated() {
+                Motion.enter(text, delay: 0.04 + 0.03 * Double(offset), duration: 0.22, dx: 24 * direction)
+            }
+        }
+        playMoments()
+        startLoops()
+    }
+
+    private func playMoments() {
+        guard Motion.fades else { return }
+        moments.forEach { $0() }
     }
 
     private func refreshFooter() {
-        dots.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        for position in steps.indices {
-            let dot = FillView(fill: position == index ? Palette.accent : Palette.controlPressed, radius: 3)
-            size(dot, width: position == index ? 18 : 6, height: 6)
-            dots.addArrangedSubview(dot)
-        }
-        dots.setAccessibilityLabel("Step \(index + 1) of \(steps.count)")
+        dots.set(count: steps.count, index: index)
         back.isHidden = index == 0
-        skip.text = step == .welcome ? "Skip setup" : "Skip"
-        skip.setAccessibilityLabel(skip.text)
-        primary.text = step == .welcome ? "Get started" : step == .finish ? "Open QNotch" : "Continue"
-        primary.setAccessibilityLabel(primary.text)
+        let skipText = step == .welcome ? "Skip setup" : "Skip"
+        if skip.text != skipText {
+            Motion.crossfade(skip)
+            skip.text = skipText
+            skip.setAccessibilityLabel(skipText)
+        }
+        let primaryText = step == .welcome ? "Get started" : step == .finish ? "Open QNotch" : "Continue"
+        if primary.text != primaryText {
+            Motion.crossfade(primary)
+            primary.text = primaryText
+            primary.setAccessibilityLabel(primaryText)
+        }
     }
 
     /// Hero (about 55% of the height) with the step's illustration or cards, then the title,
@@ -334,24 +498,108 @@ final class OnboardingController: NSObject, NSWindowDelegate {
             text.topAnchor.constraint(equalTo: hero.bottomAnchor, constant: 22)
         ])
         view.identifier = NSUserInterfaceItemIdentifier("onboarding-" + step.rawValue)
+        parts = (hero, texts)
         return view
+    }
+
+    // MARK: Loops
+
+    /// The current step's loop, if any, while the window is on screen.
+    private func startLoops() {
+        stopLoops()
+        guard Motion.moves, presented, !ending, windowShown else { return }
+        switch step {
+        case .welcome:
+            // A very slow drift of the glow behind the hero.
+            let drift = CABasicAnimation(keyPath: "transform")
+            drift.fromValue = NSValue(caTransform3D: CATransform3DMakeTranslation(-22, 0, 0))
+            drift.toValue = NSValue(caTransform3D: CATransform3DMakeTranslation(22, 0, 0))
+            drift.duration = 7
+            drift.autoreverses = true
+            drift.repeatCount = .infinity
+            drift.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+            loop(drift, on: backdrop.glow, key: "drift")
+        case .open:
+            if !triedGesture, let heroCaps { capsLoop(heroCaps) }
+        default:
+            break
+        }
+    }
+
+    private func loop(_ animation: CAAnimation, on layer: CALayer?, key: String) {
+        guard let layer else { return }
+        layer.add(animation, forKey: key)
+        loops.append((layer, key))
+    }
+
+    private func stopLoops() {
+        for item in loops { item.layer.removeAnimation(forKey: item.key) }
+        loops = []
+    }
+
+    /// Every 3 seconds the caps press down in order (⌃, ⌥, N) and release together.
+    private func capsLoop(_ caps: KeyCapsView) {
+        let period: CFTimeInterval = 3
+        let keys = caps.arrangedSubviews
+        let release = 0.5 + 0.14 * Double(keys.count - 1) + 0.28
+        for (offset, cap) in keys.enumerated() {
+            let down = (0.5 + 0.14 * Double(offset)) / period
+            let up = release / period
+            let times = [0, down, down + 0.05 / period, up, up + 0.12 / period, 1].map { NSNumber(value: $0) }
+            let rest = NSValue(caTransform3D: CATransform3DIdentity)
+            let pressed = NSValue(caTransform3D: Motion.transform(for: cap, up: -2, scale: 0.92))
+            let press = CAKeyframeAnimation(keyPath: "transform")
+            press.values = [rest, rest, pressed, pressed, rest, rest]
+            press.keyTimes = times
+            let card = Palette.card.cgColor, lit = Palette.accentSoft.cgColor
+            let tint = CAKeyframeAnimation(keyPath: "backgroundColor")
+            tint.values = [card, card, lit, lit, card, card]
+            tint.keyTimes = times
+            let group = CAAnimationGroup()
+            group.animations = [press, tint]
+            group.duration = period
+            group.repeatCount = .infinity
+            loop(group, on: cap.layer, key: "caps")
+        }
+    }
+
+    /// The real gesture: every cap goes down at once and comes back.
+    private func pressTogether(_ caps: KeyCapsView) {
+        guard Motion.moves else { return }
+        for cap in caps.arrangedSubviews {
+            let press = CAKeyframeAnimation(keyPath: "transform")
+            press.values = [NSValue(caTransform3D: CATransform3DIdentity),
+                            NSValue(caTransform3D: Motion.transform(for: cap, up: -2, scale: 0.9)),
+                            NSValue(caTransform3D: CATransform3DIdentity)]
+            press.keyTimes = [0, 0.35, 1]
+            press.duration = 0.28
+            press.timingFunction = Motion.easeOut
+            cap.layer?.add(press, forKey: "pressed")
+        }
     }
 
     // MARK: Welcome
 
     private func welcomeHero() -> NSView {
-        let pill = miniPill()
-        let panel = miniPanel()
+        let (pill, segments) = miniPill()
+        let (panel, cards) = miniPanel()
         let art = column([pill, panel], spacing: 12, alignment: .centerX)
-        reveals = [(pill, 0.08, -6), (panel, 0.42, -14)]
         art.setAccessibilityElement(true)
         art.setAccessibilityRole(.image)
         art.setAccessibilityLabel("The notch shows the time, the weather and what is playing; the panel opens below it.")
-        return centered(art, top: 40)
+        // The notch drops in from the bezel, its segments appear one by one, then the panel
+        // unfolds downward and its cards follow.
+        moments.append {
+            Motion.enter(pill, delay: 0.04, duration: 0.32, up: 18, scale: 0.94)
+            for (offset, segment) in segments.enumerated() { Motion.enter(segment, delay: 0.24 + 0.05 * Double(offset), duration: 0.2) }
+            Motion.enter(panel, delay: 0.42, duration: 0.3, scaleY: 0.8, anchor: .top)
+            for (offset, card) in cards.enumerated() { Motion.enter(card, delay: 0.56 + 0.06 * Double(offset), duration: 0.24, up: -8) }
+        }
+        return centered(art, top: 46)
     }
 
     /// The collapsed notch with a few live-looking segments.
-    private func miniPill() -> NSView {
+    private func miniPill() -> (pill: FillView, segments: [NSView]) {
         let pill = FillView(fill: .black, stroke: Palette.strokeStrong, radius: 17)
         size(pill, width: 380, height: 34)
         let time = row([symbol("clock", size: 11, weight: .semibold, color: Palette.textSecondary),
@@ -361,25 +609,26 @@ final class OnboardingController: NSObject, NSWindowDelegate {
         let music = row([symbol("music.note", size: 11, weight: .semibold, color: .systemPink),
                          line("Midnight City", size: 12, weight: .medium, color: Palette.textPrimary)], spacing: 5)
         pin(row([time, spacer(), weather, music], spacing: 14), in: pill, horizontal: 16)
-        return pill
+        return (pill, [time, weather, music])
     }
 
     /// The panel open below the notch: header, tabs and three Home cards.
-    private func miniPanel() -> NSView {
+    private func miniPanel() -> (panel: NSView, cards: [NSView]) {
         let panel = FillView(fill: Palette.surface, stroke: Palette.stroke, radius: 18)
         size(panel, width: 500, height: 136)
         let tabs = row(["house.fill", "magnifyingglass", "timer", "sparkles"].enumerated().map { index, name in
             symbol(name, size: 12, weight: .medium, color: index == 0 ? Palette.accent : Palette.textTertiary)
         }, spacing: 14)
         let header = row([line("Good morning", size: 13, weight: .semibold, color: Palette.textPrimary), spacer(), tabs], spacing: 8)
-        let cards = row([miniCard("timer", tint: .systemOrange, big: "25:00", small: "Focus"),
-                         miniCard("cloud.sun.fill", tint: .systemCyan, big: "18°", small: "Partly cloudy"),
-                         miniCard("music.note", tint: .systemPink, big: "Midnight City", small: "M83")], spacing: 10)
-        cards.distribution = .fillEqually
-        let stack = column([header, cards], spacing: 12)
+        let cards = [miniCard("timer", tint: .systemOrange, big: "25:00", small: "Focus"),
+                     miniCard("cloud.sun.fill", tint: .systemCyan, big: "18°", small: "Partly cloudy"),
+                     miniCard("music.note", tint: .systemPink, big: "Midnight City", small: "M83")]
+        let cardRow = row(cards, spacing: 10)
+        cardRow.distribution = .fillEqually
+        let stack = column([header, cardRow], spacing: 12)
         embed(stack, in: panel, inset: 14, fill: true)
-        for item in [header, cards] { item.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true }
-        return panel
+        for item in [header, cardRow] { item.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true }
+        return (panel, cards)
     }
 
     private func miniCard(_ name: String, tint: NSColor, big: String, small: String) -> NSView {
@@ -396,26 +645,39 @@ final class OnboardingController: NSObject, NSWindowDelegate {
     private var toggleCombo: KeyCombo? { shell.shortcuts.shortcut("toggle")?.combo }
 
     private func openHero() -> NSView {
-        let pill = miniPill()
+        let (pill, _) = miniPill()
         let pointer = symbol("cursorarrow", size: 24, weight: .regular, color: Palette.textPrimary)
         let or = line("or press", size: 12, weight: .medium, color: Palette.textTertiary)
         let caps = KeyCapsView(combo: toggleCombo, size: 46)
+        heroCaps = caps
         let art = column([pill, pointer, or, caps], spacing: 12, alignment: .centerX)
         art.setCustomSpacing(4, after: pill)
         art.setCustomSpacing(16, after: pointer)
-        reveals = [(pointer, 0.15, 10), (caps, 0.35, -8)]
         art.setAccessibilityElement(true)
         art.setAccessibilityRole(.image)
         art.setAccessibilityLabel("Hover the notch, or press \(KeyCapsView.spoken(toggleCombo)).")
+        // The hover glow is the settled state; the moment brings it in after the cursor arrives.
+        pill.layer?.shadowColor = Palette.accent.cgColor
+        pill.layer?.shadowRadius = 14
+        pill.layer?.shadowOffset = .zero
+        pill.layer?.shadowOpacity = 0.55
+        moments.append {
+            Motion.enter(pointer, delay: 0.08, duration: 0.5, dx: 70, up: -36)
+            Motion.change(pill.layer, "shadowOpacity", from: Float(0), delay: 0.5, duration: 0.3)
+            Motion.enter(or, delay: 0.5, duration: 0.2)
+            Motion.enter(caps, delay: 0.56, duration: 0.24, up: -6)
+        }
         return centered(art, top: 42)
     }
 
     /// The shortcut as key caps, Change (the Settings, Hotkeys recorder) and Try it now.
     private func openControls() -> NSView {
         let caps = KeyCapsView(combo: toggleCombo, size: 26)
+        contentCaps = caps
         let recorder = ShortcutRecorder(registry: shell.shortcuts, id: "toggle")
         recorder.isHidden = true
         let change = HoverButton("Change", style: .plain, label: "Change the shortcut") {}
+        change.pressScale = 0.97
         change.handler = { [weak self, weak recorder, weak caps, weak change] in
             caps?.isHidden = true
             change?.isHidden = true
@@ -433,13 +695,14 @@ final class OnboardingController: NSObject, NSWindowDelegate {
             DispatchQueue.main.async { [weak self] in
                 guard let self, !self.ending, self.step == .open else { return }
                 self.install(animated: false, direction: 0)
+                self.startLoops()
             }
         }
         let check = symbol("checkmark.circle.fill", size: 14, weight: .semibold, color: .systemGreen)
         let tried = line("", size: 12, weight: .medium, color: Palette.textSecondary)
         let status = row([check, tried], spacing: 5)
         tryStatus = status
-        if triedGesture { showTried(status) } else {
+        if triedGesture { showTried(status, animated: false) } else {
             check.isHidden = true
             tried.stringValue = toggleCombo == nil ? "The shortcut is off. Change sets one." : "Try it now: press it."
         }
@@ -448,13 +711,20 @@ final class OnboardingController: NSObject, NSWindowDelegate {
         return column(lines, spacing: 6)
     }
 
-    private func showTried(_ status: NSStackView) {
-        status.arrangedSubviews.first?.isHidden = false
-        (status.arrangedSubviews.last as? NSTextField)?.stringValue = "That's it"
-        (status.arrangedSubviews.last as? NSTextField)?.textColor = Palette.textPrimary
+    /// "That's it": the text crossfades and the check pops on a spring.
+    private func showTried(_ status: NSStackView, animated: Bool = true) {
+        let check = status.arrangedSubviews.first
+        let text = status.arrangedSubviews.last as? NSTextField
+        if animated, let text { Motion.crossfade(text) }
+        check?.isHidden = false
+        text?.stringValue = "That's it"
+        text?.textColor = Palette.textPrimary
         status.setAccessibilityElement(true)
         status.setAccessibilityLabel("That's it. The shortcut works.")
-        Motion.reveal(status, duration: 0.2, dx: -6)
+        if animated, let check {
+            status.layoutSubtreeIfNeeded()
+            Motion.pop(check, delay: 0.12)
+        }
     }
 
     // MARK: Features
@@ -462,17 +732,23 @@ final class OnboardingController: NSObject, NSWindowDelegate {
     private func featuresHero() -> NSView {
         let available = ModuleList.all.map(\.id)
         var sections: [NSView] = []
+        var tiles: [NSView] = []
+        var headers: [NSView] = []
         for group in Onboarding.groups(available: available) {
             let toggle = HoverButton("Turn all off", style: .chip) {}
+            toggle.pressScale = 0.97
             toggle.handler = { [weak self] in self?.toggleGroup(group) }
             groupButtons.append((group, toggle))
             let header = row([line(group.title, size: 12, weight: .semibold, color: Palette.textSecondary), spacer(), toggle], spacing: 8)
+            headers.append(header)
             let infos = group.modules.compactMap { id in ModuleList.all.first { $0.id == id } }
             var rows: [NSView] = []
             for start in stride(from: 0, to: infos.count, by: 3) {
-                var tiles: [NSView] = infos[start..<min(start + 3, infos.count)].map { featureTile($0) }
-                while tiles.count < 3 { tiles.append(NSView()) }
-                let tileRow = row(tiles, spacing: 8)
+                let made = infos[start..<min(start + 3, infos.count)].map { featureTile($0) }
+                tiles += made
+                var cells: [NSView] = made
+                while cells.count < 3 { cells.append(NSView()) }
+                let tileRow = row(cells, spacing: 8)
                 tileRow.distribution = .fillEqually
                 rows.append(tileRow)
             }
@@ -482,6 +758,11 @@ final class OnboardingController: NSObject, NSWindowDelegate {
         }
         let list = column(sections, spacing: 18)
         for item in list.arrangedSubviews { item.widthAnchor.constraint(equalTo: list.widthAnchor).isActive = true }
+        // Tiles come in row by row, 20 ms apart, all within 300 ms.
+        moments.append {
+            for header in headers { Motion.enter(header, duration: 0.2) }
+            for (offset, tile) in tiles.enumerated() { Motion.enter(tile, delay: min(0.02 * Double(offset), 0.28), duration: 0.22, up: -8) }
+        }
         return scrolling(list)
     }
 
@@ -502,23 +783,42 @@ final class OnboardingController: NSObject, NSWindowDelegate {
         featureSwitches[info.id] = toggle
         let text = column([title, detail], spacing: 2)
         text.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        let content = row([iconTile(info.symbol, tint: info.tint, size: 24), text, spacer(), toggle], spacing: 8)
+        let chip = iconTile(info.symbol, tint: info.tint, size: 24)
+        let content = row([chip, text, spacer(), toggle], spacing: 8)
         content.alignment = .top
         embed(content, in: tile, inset: NSEdgeInsets(top: 10, left: 10, bottom: 10, right: 10), fill: true)
         tile.heightAnchor.constraint(greaterThanOrEqualToConstant: 58).isActive = true
         tile.toolTip = info.detail
+        featureTiles[info.id] = (tile, chip as? FillView, info.tint)
+        setTileLook(info.id, on: shell.general.isEnabled(info.id), delay: 0, animated: false)
         return tile
+    }
+
+    /// An off feature's tile dims to 55% and its icon chip turns gray, in 150 ms.
+    private func setTileLook(_ id: String, on: Bool, delay: CFTimeInterval, animated: Bool) {
+        guard let item = featureTiles[id] else { return }
+        let opacity: Float = on ? 1 : 0.55
+        let oldOpacity = item.tile.layer?.presentation()?.opacity ?? item.tile.layer?.opacity
+        let oldColor = item.chip?.layer?.presentation()?.backgroundColor ?? item.chip?.layer?.backgroundColor
+        item.tile.alphaValue = CGFloat(opacity)
+        item.chip?.setFill(on ? item.tint : NSColor(white: 0.42, alpha: 1), animated: false)
+        guard animated, oldOpacity != opacity else { return }
+        Motion.change(item.tile.layer, "opacity", from: oldOpacity, delay: delay, duration: 0.15)
+        Motion.change(item.chip?.layer, "backgroundColor", from: oldColor, delay: delay, duration: 0.15)
     }
 
     private func setFeature(_ id: String, _ enabled: Bool) {
         shell.updateGeneral { $0.setEnabled(id, enabled) }
         refreshFeatures()
+        setTileLook(id, on: enabled, delay: 0, animated: true)
     }
 
+    /// Turn all off/on ripples down the group, 30 ms per tile.
     private func toggleGroup(_ group: Onboarding.Group) {
         let on = !Onboarding.allEnabled(group, in: shell.general)
         shell.updateGeneral { Onboarding.setGroup(group, enabled: on, in: &$0) }
         refreshFeatures()
+        for (offset, id) in group.modules.enumerated() { setTileLook(id, on: on, delay: 0.03 * Double(offset), animated: true) }
     }
 
     /// Switches, Turn all labels, the count and the dots (Connect comes and goes with its features).
@@ -527,8 +827,12 @@ final class OnboardingController: NSObject, NSWindowDelegate {
         for (id, toggle) in featureSwitches { toggle.state = general.isEnabled(id) ? .on : .off }
         for item in groupButtons {
             let all = Onboarding.allEnabled(item.group, in: general)
-            item.button.text = all ? "Turn all off" : "Turn all on"
-            item.button.setAccessibilityLabel("\(item.button.text): \(item.group.title)")
+            let text = all ? "Turn all off" : "Turn all on"
+            if item.button.text != text {
+                Motion.crossfade(item.button)
+                item.button.text = text
+            }
+            item.button.setAccessibilityLabel("\(text): \(item.group.title)")
         }
         let ids = ModuleList.all.map(\.id)
         featureCount?.stringValue = "\(ids.filter(general.isEnabled).count) of \(ids.count) features on. A feature that is off uses no resources."
@@ -556,6 +860,9 @@ final class OnboardingController: NSObject, NSWindowDelegate {
         }
         let list = column(cards, spacing: 10)
         for item in list.arrangedSubviews { item.widthAnchor.constraint(equalTo: list.widthAnchor).isActive = true }
+        moments.append {
+            for (offset, card) in cards.enumerated() { Motion.enter(card, delay: 0.06 * Double(offset), duration: 0.26, up: -10) }
+        }
         return scrolling(list)
     }
 
@@ -574,8 +881,22 @@ final class OnboardingController: NSObject, NSWindowDelegate {
         }
         let cards = row(tips, spacing: 12)
         cards.distribution = .fillEqually
-        for (offset, tip) in tips.enumerated() { reveals.append((tip, 0.06 + Double(offset) * 0.08, -8)) }
-        return centered(cards, top: 70, width: CGFloat(tips.count) * 212 - 12)
+        cards.widthAnchor.constraint(equalToConstant: CGFloat(tips.count) * 212 - 12).isActive = true
+        let check = CheckMarkView(side: 18)
+        let ready = FillView(fill: NSColor.systemGreen.withAlphaComponent(0.14), stroke: NSColor.systemGreen.withAlphaComponent(0.32), radius: 15)
+        embed(row([check, line("QNotch is ready", size: 13, weight: .semibold, color: Palette.textPrimary)], spacing: 8), in: ready,
+              inset: NSEdgeInsets(top: 6, left: 7, bottom: 6, right: 14), fill: true)
+        ready.setAccessibilityElement(true)
+        ready.setAccessibilityRole(.staticText)
+        ready.setAccessibilityLabel("QNotch is ready")
+        let art = column([ready, cards], spacing: 18, alignment: .centerX)
+        // The chip pops, its check draws, then the tips follow.
+        moments.append {
+            Motion.pop(ready, delay: 0.04)
+            check.drawStroke(delay: 0.18)
+            for (offset, tip) in tips.enumerated() { Motion.enter(tip, delay: 0.24 + 0.06 * Double(offset), duration: 0.26, up: -8) }
+        }
+        return centered(art, top: 46)
     }
 
     private func tipCard(_ name: String, tint: NSColor, title: String, detail: String) -> NSView {
@@ -620,13 +941,12 @@ final class OnboardingController: NSObject, NSWindowDelegate {
 
     // MARK: Helpers
 
-    private func centered(_ art: NSView, top: CGFloat, width: CGFloat? = nil) -> NSView {
+    private func centered(_ art: NSView, top: CGFloat) -> NSView {
         let hero = NSView()
         art.translatesAutoresizingMaskIntoConstraints = false
         hero.addSubview(art)
         art.centerXAnchor.constraint(equalTo: hero.centerXAnchor).isActive = true
         art.topAnchor.constraint(equalTo: hero.topAnchor, constant: top).isActive = true
-        if let width { art.widthAnchor.constraint(equalToConstant: width).isActive = true }
         return hero
     }
 
@@ -691,12 +1011,15 @@ final class OnboardingController: NSObject, NSWindowDelegate {
     }
 
     var connectModuleIds: [String] { connectItems().map { $0.info.id } }
+
+    /// The smoke test: no loop or animation outlives the tour.
+    var runningLoops: Int { loops.count }
 }
 
 /// The hero's backdrop: a soft accent glow from the top and a hairline at its foot.
-private final class HeroBackdrop: NSView {
-    private let glow = CAGradientLayer()
-    private let line = CALayer()
+final class HeroBackdrop: NSView {
+    let glow = CAGradientLayer()
+    private let rule = CALayer()
 
     override init(frame: NSRect) {
         super.init(frame: frame)
@@ -706,9 +1029,9 @@ private final class HeroBackdrop: NSView {
         glow.locations = [0, 0.55, 1]
         glow.startPoint = CGPoint(x: 0.5, y: 1)
         glow.endPoint = CGPoint(x: 1.15, y: 0.1)
-        line.backgroundColor = Palette.stroke.cgColor
+        rule.backgroundColor = Palette.stroke.cgColor
         layer?.addSublayer(glow)
-        layer?.addSublayer(line)
+        layer?.addSublayer(rule)
         setAccessibilityElement(false)
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -717,8 +1040,9 @@ private final class HeroBackdrop: NSView {
         super.layout()
         CATransaction.begin()
         CATransaction.setDisableActions(true)
-        glow.frame = bounds
-        line.frame = CGRect(x: 0, y: 0, width: bounds.width, height: 1)
+        // Wider than the window, so the slow drift never shows an edge.
+        glow.frame = bounds.insetBy(dx: -30, dy: 0)
+        rule.frame = CGRect(x: 0, y: 0, width: bounds.width, height: 1)
         CATransaction.commit()
     }
 }

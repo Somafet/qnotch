@@ -264,8 +264,10 @@ final class AgentsSetupView: NSStackView {
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
-    private func reload() {
+    /// `connected`: the title just connected; its line turns green and its check pops.
+    private func reload(connected: String? = nil) {
         arrangedSubviews.forEach { $0.removeFromSuperview() }
+        var pops: [NSView] = []
         for connection in connections {
             let text: String
             var action: HoverButton?
@@ -281,15 +283,26 @@ final class AgentsSetupView: NSStackView {
             case .error(let message):
                 text = "\(connection.fileName) could not be read: \(message)"
             }
-            var views: [NSView] = [setupStatus(text), spacer()]
+            action?.pressScale = 0.97
+            let status = setupStatus(text)
+            var views: [NSView] = [status, spacer()]
+            if connection.title == connected, action == nil {
+                status.textColor = .systemGreen
+                let check = symbol("checkmark.circle.fill", size: 13, weight: .semibold, color: .systemGreen)
+                views.insert(check, at: 0)
+                pops.append(check)
+            }
             if let action { views.append(action) }
             addArrangedSubview(row(views, spacing: 10))
         }
         for view in arrangedSubviews { view.widthAnchor.constraint(equalTo: widthAnchor).isActive = true }
+        guard !pops.isEmpty else { return }
+        layoutSubtreeIfNeeded()
+        pops.forEach { Motion.pop($0) }
     }
 
     private func connect(_ connection: AgentsModule.Connection) {
-        AgentsModule.change(connection, connect: true)
-        reload()
+        let done = AgentsModule.change(connection, connect: true)
+        reload(connected: done ? connection.title : nil)
     }
 }

@@ -225,6 +225,7 @@ final class WeatherSetupView: NSStackView {
     }
 
     private func refreshStatus() {
+        Motion.crossfade(status)
         status.stringValue = place.map { $0.detail.isEmpty ? $0.name : "\($0.name), \($0.detail)" } ?? "No place yet. QNotch never asks for your location."
     }
 
@@ -240,9 +241,12 @@ final class WeatherSetupView: NSStackView {
             case .success(let places):
                 self.note.stringValue = places.isEmpty ? "No places found." : ""
                 self.note.isHidden = !places.isEmpty
-                for place in places.prefix(5) {
+                for (offset, place) in places.prefix(5).enumerated() {
                     let title = place.detail.isEmpty ? place.name : "\(place.name), \(place.detail)"
-                    self.results.addArrangedSubview(HoverButton(title, style: .row, label: "Use \(title)") { [weak self] in self?.choose(place) })
+                    let result = HoverButton(title, style: .row, label: "Use \(title)") { [weak self] in self?.choose(place) }
+                    self.results.addArrangedSubview(result)
+                    self.results.layoutSubtreeIfNeeded()
+                    Motion.enter(result, delay: 0.03 * Double(offset), duration: 0.2, up: 4)
                 }
             case .failure(let error): self.note.stringValue = error.message
             }

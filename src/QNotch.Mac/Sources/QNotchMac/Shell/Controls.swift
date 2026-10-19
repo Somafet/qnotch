@@ -143,6 +143,8 @@ final class HoverButton: NSButton {
     var tint: NSColor? { didSet { refresh(animated: false) } }
     var text: String { didSet { refresh(animated: false); invalidateIntrinsicContentSize() } }
     var padding = NSSize(width: 12, height: 6) { didSet { invalidateIntrinsicContentSize() } }
+    /// Scale while pressed (the welcome tour uses 0.97); 1 keeps the button still.
+    var pressScale: CGFloat = 1
     private var hovering = false
     private var pressing = false
     private var tracking: NSTrackingArea?
@@ -214,7 +216,9 @@ final class HoverButton: NSButton {
     override func mouseDown(with event: NSEvent) {
         pressing = true
         refresh(animated: false)
+        if pressScale != 1 { Motion.press(self, down: true, scale: pressScale) }
         super.mouseDown(with: event)
+        if pressScale != 1 { Motion.press(self, down: false, scale: pressScale) }
         pressing = false
         if let window { hovering = bounds.contains(convert(window.mouseLocationOutsideOfEventStream, from: nil)) }
         refresh(animated: true)
@@ -249,7 +253,7 @@ final class HoverButton: NSButton {
             if style == .icon, tint == nil { foreground = hovering ? Palette.textPrimary : Palette.textSecondary }
         }
         let color = fill?.cgColor
-        if animated, let layer { Motion.animate(0.14) { layer.backgroundColor = color } } else { layer?.backgroundColor = color }
+        if animated, let layer { Motion.animate(0.12) { layer.backgroundColor = color } } else { layer?.backgroundColor = color }
         contentTintColor = foreground
         let paragraph = NSMutableParagraphStyle()
         paragraph.alignment = style == .row ? .left : .center

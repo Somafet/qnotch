@@ -298,6 +298,9 @@ enum NativeSmokeTest {
             guard shell.onboarding == nil, !tour.window.isVisible, shell.general.onboardingDone == true else {
                 return done(Failure("Open QNotch did not end the tour and record it as done"))
             }
+            guard tour.runningLoops == 0, tour.window.contentView?.layer?.animationKeys()?.isEmpty ?? true else {
+                return done(Failure("An animation of the welcome tour outlived it"))
+            }
             guard opened, shell.state.acceptsKeyboard, shell.activeTab == "home" else {
                 return done(Failure("Open QNotch did not open Home with the keyboard (at once: \(atOnce); later: \(panelState()))"))
             }
