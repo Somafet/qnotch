@@ -7,9 +7,10 @@ A short, skippable welcome that shows what QNotch does, lets a new user pick fea
 - **Automatically, once, on a fresh install**: the app starts and finds no general settings file (`general.json` on Windows, the Mac's equivalent). It runs before any module is constructed, so the feature choices apply with no restart.
 - **Existing users never see it automatically.** If the general settings exist but have no `OnboardingDone` value, the app sets `OnboardingDone = true` silently.
 - **On demand**: Settings has a **Show welcome tour** button (General on Windows, About on the Mac). A tour opened this way runs while the app is running. Its Features step is read-only: a feature list with a **Change in Settings** link instead of switches.
+  - Platform difference: the Mac turns features on and off without a restart, so its on-demand Features step keeps the switches and applies them at once, exactly as Settings, Features does.
 - Never in diagnostic runs: Windows `--snapshot` renders the steps (see Verification) instead, and Mac `--smoke-test`/`--measure` skip the tour.
 
-`OnboardingDone` (bool) lives in the general settings and is set when the tour finishes, is skipped or its window is closed. It is a local preference, so it is never shared in setup codes.
+`OnboardingDone` (bool) lives in the general settings and is set when the tour finishes, is skipped or its window is closed. It is a local preference, so it is never shared in setup codes. The Mac stores it as `onboardingDone` in `general.json`, its usual key style; it writes `false` when a first-run tour starts, so a tour that never ended (the app quit midway) shows again at the next launch.
 
 ## Window
 
