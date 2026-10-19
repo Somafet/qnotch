@@ -35,7 +35,11 @@ internal static class WeatherSetup
         AutomationProperties.SetName(box, "Find a place");
         var hint = new TextBlock { Text = "Find a place", IsHitTestVisible = false, Margin = new Thickness(11, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center, FontSize = 12 };
         hint.SetResourceReference(TextBlock.ForegroundProperty, "TextTertiaryBrush");
-        box.TextChanged += (_, _) => hint.Visibility = box.Text.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
+        // The hint steps aside while the box has the caret, so it never sits under it.
+        void ShowHint() => hint.Visibility = box.Text.Length == 0 && !box.IsKeyboardFocused ? Visibility.Visible : Visibility.Collapsed;
+        box.TextChanged += (_, _) => ShowHint();
+        box.GotKeyboardFocus += (_, _) => ShowHint();
+        box.LostKeyboardFocus += (_, _) => ShowHint();
         var field = new Grid();
         field.Children.Add(box);
         field.Children.Add(hint);
