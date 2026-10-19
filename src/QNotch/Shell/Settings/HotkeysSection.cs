@@ -61,21 +61,14 @@ public static class HotkeysSection
         box.PreviewKeyDown += (_, e) =>
         {
             e.Handled = true;
-            var key = e.Key == Key.System ? e.SystemKey : e.Key;
-            if (key is Key.None or Key.LeftCtrl or Key.RightCtrl or Key.LeftAlt or Key.RightAlt or Key.LeftShift or Key.RightShift or Key.LWin or Key.RWin
-                or Key.DeadCharProcessed or Key.ImeProcessed) return;
-            var mods = Keyboard.Modifiers;
-            if (mods == ModifierKeys.None && key is Key.Escape or Key.Back or Key.Delete)
+            switch (Read(e, out var gesture))
             {
-                if (key != Key.Escape) Set("");
-                Keyboard.ClearFocus();
-                return;
+                case Chord.Incomplete: return;
+                case Chord.Clear: Set(""); break;
+                case Chord.NeedsModifier: box.Text = "Add Ctrl or Alt"; return;
+                case Chord.Unsupported: box.Text = "Not supported"; return;
+                case Chord.Gesture: if (gesture != s.Gesture) Set(gesture); break;
             }
-            if ((mods & (ModifierKeys.Control | ModifierKeys.Alt)) == 0) { box.Text = "Add Ctrl or Alt"; return; }
-            string gesture;
-            try { gesture = new KeyGestureConverter().ConvertToInvariantString(new KeyGesture(key, mods)) ?? ""; }
-            catch { box.Text = "Not supported"; return; }
-            if (gesture.Length > 0 && gesture != s.Gesture) Set(gesture);
             Keyboard.ClearFocus();
         };
 
@@ -85,5 +78,25 @@ public static class HotkeysSection
         p.Children.Add(reset);
         Update();
         return (p, Update);
+    }
+
+    /// <summary>What a key press means to a shortcut recorder. Shared with the welcome tour, so both follow the same rules.</summary>
+    public enum Chord { Incomplete, Cancel, Clear, NeedsModifier, Unsupported, Gesture }
+
+    /// <summary>Reads one key press: a modifier alone is incomplete, Esc cancels, Backspace or Delete turns the shortcut off, and a gesture
+    /// needs Ctrl or Alt. <paramref name="gesture"/> is in KeyGestureConverter syntax ("Ctrl+Alt+N").</summary>
+    public static Chord Read(KeyEventArgs e, out string gesture)
+    {
+        gesture = "";
+        var key = e.Key == Key.System ? e.SystemKey : e.Key;
+        if (key is Key.None or Key.LeftCtrl or Key.RightCtrl or Key.LeftAlt or Key.RightAlt or Key.LeftShift or Key.RightShift or Key.LWin or Key.RWin
+            or Key.DeadCharProcessed or Key.ImeProcessed) return Chord.Incomplete;
+        var mods = Keyboard.Modifiers;
+        if (mods == ModifierKeys.None && key is Key.Escape) return Chord.Cancel;
+        if (mods == ModifierKeys.None && key is Key.Back or Key.Delete) return Chord.Clear;
+        if ((mods & (ModifierKeys.Control | ModifierKeys.Alt)) == 0) return Chord.NeedsModifier;
+        try { gesture = new KeyGestureConverter().ConvertToInvariantString(new KeyGesture(key, mods)) ?? ""; }
+        catch { return Chord.Unsupported; }
+        return gesture.Length > 0 ? Chord.Gesture : Chord.Unsupported;
     }
 }

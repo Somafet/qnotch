@@ -14,6 +14,8 @@ public sealed class SearchModule : INotchModule, ICadenceAware
 {
     const string Id = "search", Glyph = "";
     const int PerSource = 5;
+    /// <summary>The default Search shortcut, also for the welcome tour's tip before the module exists.</summary>
+    internal const string DefaultKey = "Ctrl+Alt+F";
 
     ModuleContext _ctx = null!;
     TextBox? _box;
@@ -33,7 +35,7 @@ public sealed class SearchModule : INotchModule, ICadenceAware
             .Where(s => s.Title.Contains(q, StringComparison.OrdinalIgnoreCase))
             .Select(s => new SearchHit(s.Title, "", () => ctx.Shell.OpenSettings(s.Id)))));
         ctx.Shell.TabChanged += id => { if (id == Id) _box?.Focus(); }; // typing works at once when the window has the keyboard
-        _key = ctx.Shortcuts.Add(Id, "Open search", "Opens the Search tab with the cursor in the box.", "Ctrl+Alt+F", Summon, 20);
+        _key = ctx.Shortcuts.Add(Id, "Open search", "Opens the Search tab with the cursor in the box.", DefaultKey, Summon, 20);
         ctx.Shortcuts.Changed += About;
     }
 
