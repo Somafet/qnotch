@@ -289,11 +289,18 @@ enum NativeSmokeTest {
             notes.append("connect_rows=\(tour.connectModuleIds.joined(separator: ","))")
             tour.advance() // Open QNotch
         } catch { return done(error) }
+        func panelState() -> String {
+            "presentation=\(shell.state.presentation) tab=\(shell.activeTab) key=\(shell.panel.isKeyWindow) keyWindow=\(String(describing: NSApp.keyWindow)) active=\(NSApp.isActive) game=\(shell.gameActive)"
+        }
+        let opened = shell.state.acceptsKeyboard && shell.activeTab == "home"
+        let atOnce = panelState()
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
             guard shell.onboarding == nil, !tour.window.isVisible, shell.general.onboardingDone == true else {
                 return done(Failure("Open QNotch did not end the tour and record it as done"))
             }
-            guard shell.state.acceptsKeyboard, shell.activeTab == "home" else { return done(Failure("Open QNotch did not open Home with the keyboard")) }
+            guard opened, shell.state.acceptsKeyboard, shell.activeTab == "home" else {
+                return done(Failure("Open QNotch did not open Home with the keyboard (at once: \(atOnce); later: \(panelState()))"))
+            }
             shell.close(restoreFocus: false)
             let again = shell.showOnboarding()
             again.window.cancelOperation(nil) // Esc
