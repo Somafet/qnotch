@@ -157,15 +157,16 @@ final class OnboardingController: NSObject, NSWindowDelegate {
     private func end(finished: Bool, closeWindow: Bool) {
         guard !ending else { return }
         ending = true
-        apply(finished: finished)
-        shell.shortcuts.suspend(false)
-        window.delegate = nil
-        if closeWindow { window.close() }
-        // Released by the shell in `ended`; never while one of its own methods runs.
-        let ended = self.ended, shell = self.shell
-        DispatchQueue.main.async {
+        // The shell releases this controller in `ended`; keep it alive until the end of this method.
+        withExtendedLifetime(self) {
+            apply(finished: finished)
+            window.delegate = nil
+            shell.shortcuts.suspend(false)
             ended?()
+            // The panel takes the keyboard before the tour closes: closing the key window first
+            // lets AppKit move the keyboard afterwards, which would close the panel again.
             if finished { shell.openHome() }
+            if closeWindow { window.close() }
         }
     }
 
