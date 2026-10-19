@@ -126,6 +126,16 @@ internal sealed class GithubService
         return true;
     }
 
+    /// <summary>The welcome tour saved a token while the module runs (<see cref="GithubSetup.TokenSaved"/>): fetch with it now.</summary>
+    public void TokenSaved()
+    {
+        if (_demo || _ctx.Settings.ReadOnly) return;
+        _s.GithubHasToken = true;
+        _s.GithubMessage = "";
+        if (_s.GithubGraph is null) _s.GithubStatus = GithubStatus.Loading;
+        _ = RefreshAsync();
+    }
+
     /// <summary>Removes the token and the cached activity.</summary>
     public async Task ClearTokenAsync()
     {

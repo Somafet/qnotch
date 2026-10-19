@@ -9,19 +9,37 @@ namespace QNotch.Modules.Github;
 /// <summary>Settings section: enter, test and clear the GitHub token (stored in Windows Credential Manager).</summary>
 internal static class GithubSection
 {
-    public static FrameworkElement Create(GithubState s, GithubService svc)
+    /// <param name="demo">Snapshot run: the sign-in panel shows a made-up code, even without a client id.</param>
+    public static FrameworkElement Create(GithubState s, GithubService svc, bool demo)
     {
         var page = UiKit.Page("GitHub");
 
         var status = new TextBlock { FontSize = 12, TextWrapping = TextWrapping.Wrap, MaxWidth = 280, TextAlignment = TextAlignment.Right };
         page.Children.Add(UiKit.Row("Status", null, status));
 
+        // Sign in with GitHub: only with a client id (or a demo); otherwise the token box is the way in.
+        var signedIn = new TextBlock { FontSize = 12, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, -8, 0, 16), Visibility = Visibility.Collapsed };
+        if (GithubOAuth.ShowSignIn(GithubOAuth.ClientId, demo))
+        {
+            var signIn = new GithubSignIn(async t =>
+            {
+                if (!await svc.SaveTokenAsync(t)) return (false, "Windows refused to store the token.");
+                return await GithubService.TestAsync(t);
+            });
+            signIn.Connected += msg => { signedIn.Text = msg; signedIn.SetResourceReference(TextBlock.ForegroundProperty, "SuccessBrush"); signedIn.Visibility = Visibility.Visible; };
+            signIn.Panel.Margin = new Thickness(0, -6, 0, 16);
+            page.Children.Add(UiKit.Row("Sign in with GitHub", "Opens GitHub in your browser, where you approve QNotch. Asks only to read your public profile and activity (read:user).", signIn.Button));
+            page.Children.Add(signIn.Panel);
+            page.Children.Add(signedIn);
+            if (demo) signIn.ShowDemo();
+        }
+
         var box = new PasswordBox { Width = 200, MaxLength = 255, ToolTip = "Paste a personal access token" };
         var save = new Button { Content = "Save", Style = (Style)Application.Current.FindResource("AccentButton"), Margin = new Thickness(8, 0, 0, 0) };
         var tokenRow = new StackPanel { Orientation = Orientation.Horizontal };
         tokenRow.Children.Add(box);
         tokenRow.Children.Add(save);
-        page.Children.Add(UiKit.Row("Personal access token",
+        page.Children.Add(UiKit.Row(GithubOAuth.ShowSignIn(GithubOAuth.ClientId, demo) ? "Or use a token" : "Personal access token",
             "Stored in Windows Credential Manager, never in a settings file. A classic token with read:user works; add repo to count private activity.", tokenRow));
 
         var test = new Button { Content = "Test" };
