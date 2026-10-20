@@ -46,6 +46,11 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     /// choices apply directly.
     private(set) var modulesDeferred: Bool
     private(set) var onboarding: OnboardingController?
+    /// `--snapshot`: the notch is drawn for the PNGs only. Its window stays transparent and lets the
+    /// pointer through, and outside clicks do not close it.
+    var renderOnly = false {
+        didSet { panel.alphaValue = renderOnly ? 0 : 1; panel.ignoresMouseEvents = renderOnly || gameActive }
+    }
 
     init(store: SettingsStore, deferModules: Bool = false) {
         self.store = store
@@ -162,7 +167,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
 
     /// A pinned panel stays open; it only gives the keyboard back.
     private func clickedOutside() {
-        guard holds == 0 else { return }
+        guard holds == 0, !renderOnly else { return }
         if general.pinned { releaseKeyboard() } else { close(restoreFocus: false) }
     }
 
@@ -560,7 +565,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     private func applyGameMode() {
         let active = gameActive
         if active { close(restoreFocus: false); peekHandle?.end() }
-        panel.ignoresMouseEvents = active
+        panel.ignoresMouseEvents = active || renderOnly
         for stack in [leading, trailing, pill] { stack.alphaValue = active ? CGFloat(gameMode.settings.opacity) / 100 : 1 }
         segmentsChanged()
         statusChanged?()
@@ -943,30 +948,85 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         try Self.snapshot(view: view, to: url)
     }
 
-    func accessibilityReport(to url: URL) throws {
-        var lines: [String] = []
-        func walk(_ view: NSView) throws {
-            guard !view.isHidden else { return }
-            if let control = view as? NSControl {
-                let name = control.accessibilityLabel() ?? (control as? NSButton)?.title ?? (control as? NSTextField)?.stringValue ?? ""
-                if control is NSButton || control.acceptsFirstResponder, name.isEmpty {
-                    throw CocoaError(.validationMissingMandatoryProperty)
-                }
-                lines.append("\(type(of: control)): \(name)")
-            }
-            for child in view.subviews { try walk(child) }
-        }
-        if let view = panel.contentView { try walk(view) }
-        try Data((lines.joined(separator: "\n") + "\n").utf8).write(to: url)
+    /// The running module of this type, nil when it is off.
+    func module<Module: NotchModule>(_ type: Module.Type) -> Module? { modules.lazy.compactMap { $0 as? Module }.first }
+
+    /// Ends the peek on screen (a toast or an agent alert), so a snapshot shows the settled wings.
+    func endPeek() { peekHandle?.end() }
+
+    /// The Settings window's controller, made without showing the window.
+    func makeSettings() -> SettingsController {
+        if settingsController == nil { settingsController = SettingsController(shell: self) }
+        return settingsController!
     }
 
     /// Writes `view` as a PNG at `url` and its outline beside it (same name, `.txt`).
-    static func snapshot(view: NSView, to url: URL) throws {
-        view.layoutSubtreeIfNeeded()
-        guard let bitmap = view.bitmapImageRepForCachingDisplay(in: view.bounds) else { throw CocoaError(.fileWriteUnknown) }
-        view.cacheDisplay(in: view.bounds, to: bitmap)
-        guard let png = bitmap.representation(using: .png, properties: [:]) else { throw CocoaError(.fileWriteUnknown) }
-        try png.write(to: url)
+    static func snapshot(view: NSView, to url: URL, background: NSColor? = nil) throws {
+        try png(of: view, background: background).write(to: url)
         try Outline.write(view: view, png: url)
+    }
+
+    /// `view` as a PNG at 2x, whatever the display's scale, over `background` (resolved in the
+    /// view's appearance) when given: windows whose views draw no background of their own.
+    static func png(of view: NSView, background: NSColor? = nil) throws -> Data { try png(image(of: view, background: background)) }
+
+    /// A 2x image as PNG data, marked 144 dpi so it opens at its size in points. Safe off the main thread.
+    static func png(_ image: CGImage) throws -> Data {
+        let data = NSMutableData()
+        guard let destination = CGImageDestinationCreateWithData(data, "public.png" as CFString, 1, nil) else { throw CocoaError(.fileWriteUnknown) }
+        CGImageDestinationAddImage(destination, image, [kCGImagePropertyDPIWidth: 144, kCGImagePropertyDPIHeight: 144] as CFDictionary)
+        guard CGImageDestinationFinalize(destination) else { throw CocoaError(.fileWriteUnknown) }
+        return data as Data
+    }
+
+    /// `view` drawn at 2x (see `png(of:background:)`), on the main thread.
+    static func image(of view: NSView, background: NSColor? = nil) throws -> CGImage {
+        view.layoutSubtreeIfNeeded()
+        guard var image = render(view, rect: view.bounds) else { throw CocoaError(.fileWriteUnknown) }
+        if let background {
+            var fill = background.cgColor
+            view.effectiveAppearance.performAsCurrentDrawingAppearance { fill = background.cgColor }
+            guard let context = canvas(image.width, image.height) else { throw CocoaError(.fileWriteUnknown) }
+            let all = CGRect(x: 0, y: 0, width: image.width, height: image.height)
+            context.setFillColor(fill)
+            context.fill(all)
+            context.draw(image, in: all)
+            guard let flat = context.makeImage() else { throw CocoaError(.fileWriteUnknown) }
+            image = flat
+        }
+        return image
+    }
+
+    /// `rect` of `view` at 2x. Outside the notch panel (the welcome tour's rounded, masked window),
+    /// caching the view tree leaves scroll views blank: their documents are rendered on their own
+    /// and drawn into their clip views. The panel's own render keeps overflowing details (slider knobs).
+    private static func render(_ view: NSView, rect: NSRect) -> CGImage? {
+        let width = Int((rect.width * 2).rounded(.up)), height = Int((rect.height * 2).rounded(.up))
+        guard width > 0, height > 0, let bitmap = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: width, pixelsHigh: height, bitsPerSample: 8,
+                                                                    samplesPerPixel: 4, hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB,
+                                                                    bytesPerRow: 0, bitsPerPixel: 0) else { return nil }
+        bitmap.size = rect.size
+        func scrollViews(in view: NSView) -> [NSScrollView] {
+            view.subviews.flatMap { child -> [NSScrollView] in (child as? NSScrollView).map { [$0] } ?? scrollViews(in: child) }
+        }
+        let scrolls = scrollViews(in: view).filter { !($0.window is NotchPanel) && !$0.isHiddenOrHasHiddenAncestor && $0.documentView?.isHidden == false }
+        scrolls.forEach { $0.documentView?.isHidden = true }
+        view.cacheDisplay(in: rect, to: bitmap)
+        scrolls.forEach { $0.documentView?.isHidden = false }
+        guard let base = bitmap.cgImage, !scrolls.isEmpty, let context = canvas(width, height) else { return bitmap.cgImage }
+        context.draw(base, in: CGRect(x: 0, y: 0, width: width, height: height))
+        for scroll in scrolls {
+            let clip = scroll.contentView
+            let frame = clip.convert(clip.bounds, to: view)
+            guard let document = scroll.documentView, frame.intersects(rect), let image = render(document, rect: clip.documentVisibleRect) else { continue }
+            let y = view.isFlipped ? rect.maxY - frame.maxY : frame.minY - rect.minY
+            context.draw(image, in: CGRect(x: (frame.minX - rect.minX) * 2, y: y * 2, width: frame.width * 2, height: frame.height * 2))
+        }
+        return context.makeImage()
+    }
+
+    private static func canvas(_ width: Int, _ height: Int) -> CGContext? {
+        CGContext(data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0, space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                  bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
     }
 }

@@ -21,6 +21,15 @@ enum Outline {
         return lines.map { $0 + "\n" }.joined()
     }
 
+    /// The interactive control lines of an outline without a name (accessible-names check).
+    /// Progress is read-only and needs none.
+    static func unnamedControls(in outline: String) -> [String] {
+        outline.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }.filter { line in
+            guard line.hasPrefix("["), let close = line.firstIndex(of: "]"), line[line.index(after: line.startIndex)..<close] != Role.progress.rawValue else { return false }
+            return !line[close...].hasPrefix("] \"")
+        }
+    }
+
     /// Writes the outline of `view` beside the PNG at `url` (same name, `.txt`).
     static func write(view: NSView, png url: URL) throws {
         try Data(text(for: view).utf8).write(to: url.deletingPathExtension().appendingPathExtension("txt"))
@@ -166,7 +175,7 @@ enum Outline {
         (view as? NSTableRowView)?.isSelected == true || view.isAccessibilitySelected()
     }
 
-    private static func focused(_ view: NSView) -> Bool {
+    static func focused(_ view: NSView) -> Bool {
         guard let responder = view.window?.firstResponder else { return false }
         if responder === view { return true }
         // A text field edits through the window's field editor, whose delegate is the field.

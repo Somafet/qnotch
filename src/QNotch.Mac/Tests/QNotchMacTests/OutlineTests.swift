@@ -179,7 +179,7 @@ final class OutlineTests: XCTestCase {
     }
 
     func testDiagnosticOptions() {
-        let options = DiagnosticOptions(arguments: ["QNotch", "--smoke-test", "--only", "tab-*, settings-general,,", "--appearance", "dark"], environment: [:])
+        let options = DiagnosticOptions(arguments: ["QNotch", "--smoke-test", "/tmp/smoke", "--only", "tab-*, settings-general,,", "--appearance", "dark"], environment: [:])
         XCTAssertNil(options.problem)
         XCTAssertEqual(options.only, ["tab-*", "settings-general"])
         XCTAssertEqual(options.appearance, .dark)

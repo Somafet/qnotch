@@ -682,33 +682,28 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
 
     // MARK: Diagnostics
 
-    /// Renders every page into `directory` as settings-<id>.png (and settings.png for General).
-    /// Pages are rendered from their document view: the window's own scroll and sidebar materials
-    /// are composited by the system and are not reproduced by view caching on every macOS release.
-    func snapshotPages(to directory: URL) throws {
+    /// Snapshot names of every page: settings-<section id>, `module.` dropped.
+    var snapshotNames: [String] { pages.map { "settings-" + $0.id.replacingOccurrences(of: "module.", with: "") } }
+
+    /// Hands every page to `write` with its snapshot name, without showing the window. Pages are
+    /// rendered from their document view: the window's own scroll and sidebar materials are
+    /// composited by the system and are not reproduced by view caching on every macOS release.
+    /// `problem` gets a page whose sidebar row cannot scroll into view.
+    func snapshotPages(_ write: (String, NSView?) -> Void, problem: (String, String) -> Void) {
         let original = selected
-        for page in pages {
+        rebuildNavigation()
+        for (page, name) in zip(pages, snapshotNames) {
             select(page.id, animated: false)
             window.contentView?.layoutSubtreeIfNeeded()
             // With every feature on, the page list is taller than the sidebar: each row must scroll into view.
             if let row = rows[page.id] {
                 let frame = row.convert(row.bounds, to: navigationScroll.contentView)
-                guard navigationScroll.contentView.bounds.insetBy(dx: 0, dy: -0.5).contains(frame) else {
-                    throw SettingsSnapshotFailure("The sidebar cannot show \(page.title)")
-                }
+                if !navigationScroll.contentView.bounds.insetBy(dx: 0, dy: -0.5).contains(frame) { problem(name, "the sidebar cannot show \(page.title)") }
             }
-            guard let view = scroll.documentView else { continue }
-            let name = page.id.replacingOccurrences(of: "module.", with: "")
-            try ShellController.snapshot(view: view, to: directory.appendingPathComponent("settings-\(name).png"))
-            if page.id == "general" { try ShellController.snapshot(view: view, to: directory.appendingPathComponent("settings.png")) }
+            write(name, scroll.documentView)
         }
         select(original, animated: false)
     }
-}
-
-struct SettingsSnapshotFailure: Error, CustomStringConvertible {
-    let description: String
-    init(_ description: String) { self.description = description }
 }
 
 func iconTile(_ name: String, tint: NSColor, size side: CGFloat = 22) -> NSView {
