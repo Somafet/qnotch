@@ -15,7 +15,7 @@ Nothing here is user-facing. None of these modes make network requests, read or 
 
 Shared options:
 
-- `--data-dir <absolute path>` replaces the whole data root (settings, logs, the instance lock or mutex). The existing variables keep working: `QNOTCH_DATA_DIR` (Windows) and `QNOTCH_MAC_DATA_DIR` (Mac). `--data-dir` wins when both are given.
+- `--data-dir <absolute path>` replaces the whole data root (settings, logs; on the Mac also the instance lock and the sockets). On Windows the single-instance mutex and the named pipes stay keyed on `QNOTCH_INSTANCE`, so a parallel test instance sets both. The existing variables keep working: `QNOTCH_DATA_DIR` (Windows) and `QNOTCH_MAC_DATA_DIR` (Mac). `--data-dir` wins when both are given.
 - `--only <pattern>` (snapshot and smoke-test): renders only views whose file name without `.png` matches. `*` matches any run of characters; separate several patterns with commas (`--only "tab-*,settings-general"`). The report still ends in `done`.
 - `--appearance light|dark` (snapshot and smoke-test): forces the appearance for the run. Default: the system's. Windows keeps its legacy positional `light` argument as an alias.
 
@@ -82,10 +82,10 @@ text    = '"' chars '"'
 control = '[' Role ']' [' "' name '"'] [' #' id] [' ' value] {' ' state}
 ```
 
-- **Roles**: `Button`, `Toggle` (switches, checkboxes, toggle buttons), `Tab`, `Field` (editable text), `SecureField` (contents never written), `Slider`, `Progress`, `PopUp` (pop-up buttons, combo boxes), `Item` (list, table or collection rows), `Link`. Anything else is not a control line, though its text and children still appear.
+- **Roles**: `Button`, `Toggle` (switches, checkboxes, toggle buttons, and radio-style choices such as preset chips and segmented buttons, `checked` when chosen), `Tab` (the panel's tab strip), `Field` (editable text), `SecureField` (contents never written), `Slider`, `Progress`, `PopUp` (pop-up buttons, combo boxes), `Item` (list, table or collection rows, settings sidebar entries; `selected` when current), `Link`. Anything else is not a control line, though its text and children still appear.
 - **name**: the accessible name (`AutomationProperties.Name`, `accessibilityLabel`), else the visible title, else the tooltip. Omitted when there is none, which the smoke test treats as a failure for interactive controls.
 - **id**: the stable identifier (`AutomationProperties.AutomationId`, `NSUserInterfaceItemIdentifier`). Ids are kebab-case and shared across platforms where the concept is shared (see [Identifiers](#identifiers)).
-- **value**: `<n> of <max>` for sliders and progress (up to two decimals); `value="…"` for fields and pop-ups.
+- **value**: `<n> of <max>` for sliders and progress (up to two decimals, never negative: a range with a negative minimum is shifted so it starts at 0); `value="…"` for fields and pop-ups.
 - **states**, in this order when present: `checked`, `selected`, `focused`, `disabled`.
 - **Escaping**: inside quotes, `\` becomes `\\`, `"` becomes `\"`, a line break becomes `\n` and a tab `\t`.
 - **Left out**: hidden or zero-size elements, elements scrolled fully out of view, scroll bars, empty text, icon-font glyphs and SF Symbol images without a label, and pure layout containers (they add no line; their children keep the parent's depth).
@@ -158,7 +158,7 @@ Platforms add their own keys (private bytes, wakeups, draw counters). The run fa
 
 A local control channel for driving a running instance: read its state, switch tabs, press controls, type, take snapshots and outlines. It exists so agents can check the real app with real windows.
 
-**Off unless asked for.** The channel opens only when the app is started with `--debug-control`. It is never opened by `--snapshot`, `--smoke-test` (which uses it internally only when checking `debug-channel`) or `--measure`, and never because of a setting.
+**Off unless asked for.** The channel opens only when the app is started with `--debug-control`. Such a run is otherwise the normal interactive app (network, credential store and updates as usual) except that the welcome tour does not open by itself; use the `onboarding` command. It is never opened by `--snapshot`, `--smoke-test` (which uses it internally only when checking `debug-channel`) or `--measure`, and never because of a setting.
 
 **Transport.** Local to the user only; no network listener.
 
@@ -168,7 +168,7 @@ A local control channel for driving a running instance: read its state, switch t
 **Protocol.** UTF-8 JSON, one object per line each way. A connection can send several requests; each gets exactly one response, in order. Requests over 64 KB are refused.
 
 ```
-→ {"id":1,"cmd":"select-tab","args":{"id":"timer"}}
+→ {"id":1,"cmd":"select-tab","args":{"id":"clipboard"}}
 ← {"id":1,"ok":true,"result":{}}
 → {"id":2,"cmd":"press","args":{"id":"nope"}}
 ← {"id":2,"ok":false,"error":"no visible control with id nope"}
@@ -185,11 +185,11 @@ A local control channel for driving a running instance: read its state, switch t
 | `select-tab` | `id` | Opens the panel if needed and selects the tab |
 | `settings` | `section?`, `close?` | Opens Settings (on a section) or closes it |
 | `onboarding` | `close?` | Opens the welcome tour as Settings does, or closes it |
-| `outline` | `window?` | `{ "text" }`: the outline of `panel` (default), `pill`, `settings` or `onboarding` |
+| `outline` | `window?` | `{ "text" }`: the outline of `panel` (default), `pill`, `settings` or `onboarding`; an error when that window is not shown |
 | `snapshot` | `path`, `window?` | Writes a PNG and its outline to an absolute `path` ending in `.png`; `{ "path" }` |
-| `press` | `id` | Activates the visible, enabled control with that id: clicks a button, flips a toggle, selects a tab or item |
+| `press` | `id` | Activates the visible, enabled control with that id: clicks a button, flips a toggle, selects a tab or item. Refuses pop-ups, whose menus would block; set them with `key` |
 | `type` | `text`, `id?` | Focuses the field `id` (or keeps the current focus) and inserts the text |
-| `key` | `name`, `modifiers?` | Sends a key to QNotch's key window. `name`: `Escape`, `Return`, `Tab`, `Space`, `Up`, `Down`, `Left`, `Right`, `Delete` or one character; `modifiers`: any of `ctrl`, `alt`, `shift`, `cmd` (`cmd` maps to the Windows key on Windows) |
+| `key` | `name`, `modifiers?` | Sends a key to QNotch's key window. `name`: `Escape`, `Return`, `Tab`, `Space`, `Up`, `Down`, `Left`, `Right`, `Backspace` (erases backwards: the Mac Delete key), `Delete` (erases forwards) or one character; `modifiers`: any of `ctrl`, `alt`, `shift`, `cmd` (`cmd` maps to the Windows key on Windows) |
 | `hotkey` | `action` | Runs a global hotkey's action without the OS hotkey: `toggle`, `search`, `game-mode` |
 | `game-mode` | `mode` | `auto`, `on` or `off` for the session |
 | `quit` | | Responds, then quits |
@@ -209,8 +209,8 @@ A local control channel for driving a running instance: read its state, switch t
 }
 ```
 
-`panel` is `collapsed` or `open`; `frame` is in screen points (DIPs on Windows) with the origin at the top left of the primary display on both platforms.
+`panel` is `collapsed` or `open`; `frame` is in screen points (DIPs on Windows) with the origin at the top left of the primary display on both platforms (on Windows, a window's device-pixel position divided by its own monitor's scale, since DIPs differ across mixed-scale monitors). Platforms may add keys and window entries (`game_bar`, a `gamebar` window on Windows). `windows` lists `pill`, `panel`, `settings` and `onboarding` when they exist; where the pill and panel are one window (the Mac), both entries appear and the one not shown has its settled layout frame. "Settled" means layout is done and no finite animation is running in a visible window, checked over consecutive frames or a short quiet window, capped at a few seconds; endless loops (the tour's glow, edit-mode jiggle) and timers (hover delays) are not waited for.
 
-**Command line.** `QNotch debug <cmd> [--<arg> <value>…]` sends one request and prints the response's `result` (or `error`) as JSON. It finds the instance the same way the app does: `--data-dir`/`QNOTCH_MAC_DATA_DIR` on the Mac, `QNOTCH_INSTANCE` on Windows. Exit codes: 0 ok, 1 the command failed, 3 no instance with the channel open, 4 bad usage.
+**Command line.** `QNotch debug <cmd> [--<arg> <value>…]` sends one request and prints the response's `result` as JSON on stdout (or `{"error": …}` on stderr). Argument values may be sent as strings; the channel accepts `"true"`, `"false"` and numeric strings where it expects booleans and numbers, and a bare `--flag` means `true`. It finds the instance the same way the app does: `--data-dir`/`QNOTCH_MAC_DATA_DIR` on the Mac, `QNOTCH_INSTANCE` on Windows. Exit codes: 0 ok, 1 the command failed, 3 no instance with the channel open, 4 bad usage.
 
 The channel can read whatever QNotch shows (clipboard history, notifications) and press any control. That is no more than the same user can already do, but it is why it stays off by default and never listens beyond the user.
