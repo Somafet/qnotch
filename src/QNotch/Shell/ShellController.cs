@@ -543,7 +543,7 @@ public sealed class ShellController : IShell
             case nameof(GeneralSettings.AccentColor) or nameof(GeneralSettings.Theme): ThemeManager.Apply(_general); break;
             case nameof(GeneralSettings.ReduceMotion): Motion.Refresh(_general.ReduceMotion); break;
             case nameof(GeneralSettings.ProfileName) or nameof(GeneralSettings.ProfileImagePath): LoadProfile(); break;
-            case nameof(GeneralSettings.StartWithWindows): Autostart.Set(_general.StartWithWindows); break;
+            case nameof(GeneralSettings.StartWithWindows): if (!_store.ReadOnly) Autostart.Set(_general.StartWithWindows); break; // never in a snapshot run
             case nameof(GeneralSettings.Pinned):
                 if (_general.Pinned) _leave?.Stop();
                 else if (!_hovering) StartLeave();

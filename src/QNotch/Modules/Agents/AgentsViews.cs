@@ -324,9 +324,10 @@ internal static class AgentsSettings
         intro.Margin = new Thickness(0, -8, 0, 16);
         page.Children.Add(intro);
 
-        // A snapshot shows the Codex row whether or not Codex is installed.
-        foreach (var hooks in ClaudeHooks.Discover().Append<HookFile?>(CodexHooks.Find(always: readOnly)).OfType<HookFile>())
+        // A snapshot shows the default Claude Code row connected and the Codex row not, whatever is installed, without reading either file.
+        foreach (var hooks in (readOnly ? ClaudeHooks.Discover().Take(1) : ClaudeHooks.Discover()).Append<HookFile?>(CodexHooks.Find(always: readOnly)).OfType<HookFile>())
         {
+            if (readOnly) hooks.Demo = hooks is CodexHooks ? HookStatus.NotInstalled : HookStatus.Connected;
             var button = new Button { MinWidth = 96, IsEnabled = !readOnly };
             var row = UiKit.Row(hooks.Title, "", button);
             var hint = (TextBlock)((StackPanel)row.Children[0]).Children[1];
@@ -345,7 +346,7 @@ internal static class AgentsSettings
                     HookStatus.Connected => hooks.ConnectedHint,
                     HookStatus.OtherCopy => $"Connected to another copy of QNotch ({detail}).",
                     HookStatus.Error => $"Could not read {hooks.FileName}: {detail}",
-                    _ => $"Adds hooks to {hooks.FilePath} and keeps a backup next to it.",
+                    _ => $"Adds hooks to {hooks.ShownPath} and keeps a backup next to it.",
                 };
                 hint.SetResourceReference(TextBlock.ForegroundProperty, status switch
                 {

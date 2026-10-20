@@ -26,11 +26,35 @@ internal static class Render
             dc.DrawRectangle(background, null, new Rect(0, 0, crop.Width, crop.Height));
             dc.DrawImage(full, new Rect(-crop.X, -crop.Y, el.ActualWidth, el.ActualHeight));
         }
-        var outBmp = new RenderTargetBitmap(W(crop.Width), W(crop.Height), 192, 192, PixelFormats.Pbgra32);
-        outBmp.Render(dv);
-        var enc = new PngBitmapEncoder();
-        enc.Frames.Add(BitmapFrame.Create(outBmp));
-        using (var fs = File.Create(path)) enc.Save(fs);
+        Write(dv, crop.Size, path);
         File.WriteAllText(Path.ChangeExtension(path, ".txt"), Outline.Of(el, crop));
+    }
+
+    /// <summary>A part of a window (a Home card) on its own over <paramref name="background"/>, wherever it sits or is scrolled to.</summary>
+    public static void SavePart(FrameworkElement el, string path, Brush background)
+    {
+        el.UpdateLayout();
+        var size = new Rect(0, 0, el.ActualWidth, el.ActualHeight);
+        var dv = new DrawingVisual();
+        using (var dc = dv.RenderOpen())
+        {
+            dc.DrawRectangle(background, null, size);
+            // The brush draws the element at its offset in the parent (scrolling aside): the view box starts there.
+            var at = VisualTreeHelper.GetOffset(el);
+            var box = new Rect(at.X, at.Y, size.Width, size.Height);
+            dc.DrawRectangle(new VisualBrush(el) { Viewbox = box, ViewboxUnits = BrushMappingMode.Absolute, Stretch = Stretch.Fill }, null, size);
+        }
+        Write(dv, size.Size, path);
+        File.WriteAllText(Path.ChangeExtension(path, ".txt"), Outline.Of(el));
+    }
+
+    static void Write(Visual v, Size size, string path)
+    {
+        var bmp = new RenderTargetBitmap((int)Math.Ceiling(size.Width * 2), (int)Math.Ceiling(size.Height * 2), 192, 192, PixelFormats.Pbgra32);
+        bmp.Render(v);
+        var enc = new PngBitmapEncoder();
+        enc.Frames.Add(BitmapFrame.Create(bmp));
+        using var fs = File.Create(path);
+        enc.Save(fs);
     }
 }

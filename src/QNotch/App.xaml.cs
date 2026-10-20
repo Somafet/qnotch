@@ -76,19 +76,23 @@ public partial class App : Application
             }
             _mutex = m;
         }
-        try { Boot(snapDir, diag.Appearance); }
+        try { Boot(snapDir, diag); }
         catch (Exception ex)
         {
             Log.Crash("Startup", ex);
             Shutdown(1);
         }
     }
-    void Boot(string? snapDir, string? appearance)
+    void Boot(string? snapDir, DiagnosticOptions diag)
     {
         _store = new SettingsStore { ReadOnly = snapDir is not null };
         var fresh = !_store.Exists("general");
         var gs = _store.Get<GeneralSettings>("general");
-        if (snapDir is not null) { gs.Pinned = false; gs.DisabledModules = new(); if (appearance is not null) gs.Theme = appearance == "light" ? ThemeChoice.Light : ThemeChoice.Dark; } // snapshots load every module
+        if (snapDir is not null) // snapshots load every module, follow the system appearance unless told otherwise and show a demo profile
+        {
+            gs.Pinned = false; gs.DisabledModules = new(); gs.ProfileName = "Alex"; gs.ProfileImagePath = "";
+            gs.Theme = diag.Appearance switch { "light" => ThemeChoice.Light, "dark" => ThemeChoice.Dark, _ => ThemeChoice.System };
+        }
         // Welcome tour: only on a fresh install. Settings from before it existed record it as done, silently.
         var tour = FirstRun.Decide(!fresh, gs.OnboardingDone, snapDir is not null);
         if (tour == TourStart.MarkDone) { gs.OnboardingDone = true; _store.Save("general", gs); }
@@ -99,6 +103,7 @@ public partial class App : Application
         var tabs = new Registry<TabDescriptor>();
         var sections = new Registry<SettingsSectionDescriptor>();
         var segments = new Registry<SegmentDescriptor>();
+        var demos = new Registry<DemoState>();
 
         var window = new NotchWindow { Offscreen = snapDir is not null };
         window.InitHandle();
@@ -139,7 +144,7 @@ public partial class App : Application
         var ctx = new ModuleContext
         {
             Bus = bus, Settings = _store, Hotkeys = _hotkeys, Shell = shell, Dispatcher = Dispatcher,
-            Cards = cards, Tabs = tabs, SettingsSections = sections, Segments = segments, Search = new(), Shortcuts = shortcuts, Sounds = sounds,
+            Cards = cards, Tabs = tabs, SettingsSections = sections, Segments = segments, Search = new(), Shortcuts = shortcuts, Sounds = sounds, Demos = demos,
         };
         List<INotchModule> Init(IEnumerable<ModuleInfo> list)
         {
@@ -177,7 +182,7 @@ public partial class App : Application
 
         if (snapDir is not null)
         {
-            Snapshot.Run(snapDir, window, shell, tabs, sections, save => SnapshotTour(gs, _store, shortcuts, save), () => Shutdown());
+            Snapshot.Run(new SnapshotScene(window, shell, tabs, sections, layout, demos, save => SnapshotTour(gs, _store, shortcuts, save)), diag, Shutdown);
             return;
         }
         _tray = new TrayIcon(window, shell, shortcuts, () => Shutdown(), updates);

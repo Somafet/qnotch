@@ -15,13 +15,32 @@ The updater suite covers release selection, variant selection, checksums, execut
 
 ## Snapshots
 
+`--snapshot` follows [the shared diagnostics contract](../../spec/diagnostics.md). It does not open the interactive app or take the single-instance lock, so it runs next to a normal instance:
+
 ```powershell
-$env:QNOTCH_DATA_DIR = Join-Path $env:TEMP ('qnotch-snapshot-' + [guid]::NewGuid().ToString('N'))
 src\QNotch\bin\Release\net10.0-windows10.0.22621.0\win-x64\QNotch.exe --snapshot snapshots
-Remove-Item Env:QNOTCH_DATA_DIR
+node scripts/check-snapshots.mjs snapshots
 ```
 
-The snapshot command does not open the interactive app. It renders every tab, settings page and welcome tour step (`onboarding-<step>.png`) to PNG and a text outline, then exits. The last line of `snapshots/snapshot.txt` must be `done`. Inspect changed PNGs and attach them to UI pull requests. CI disables native runtime error dialogs, checks the exit code, applies a 120-second timeout, and uploads `snapshots` even on failure.
+Without `--data-dir` (or `QNOTCH_DATA_DIR`) it uses a fresh temporary data folder and deletes it on exit. It loads every module with demo data: no network requests, no Credential Manager reads or writes, no autostart or update changes, a demo profile name.
+
+- `--data-dir <path>`: the data folder to read (settings, logs); nothing is saved to it.
+- `--only <patterns>`: only the views whose file name without `.png` matches, `*` for any run of characters, commas between patterns (`--only "tab-*,settings-general"`).
+- `--appearance light|dark`: forces the theme (the positional `light` still works). Default: the system's.
+
+Every PNG is rendered at 2x and has a text outline with the same name (`.txt`):
+
+| File | View |
+| --- | --- |
+| `pill.png` | The collapsed pill, idle, with the glance strip |
+| `pill-peek.png`, `pill-running.png`, `pill-capture.png`, `pill-waiting.png`, `pill-agent.png` | The pill with a peek, a running timer, the mic and camera in use, an agent that needs you, agents working |
+| `pill-game.png`, `gamebar-corner.png` | The game bar, and the bar clamped into the corner |
+| `tab-<id>.png`, `tab-home-edit.png` | The panel on every tab, and Home in edit mode |
+| `card-<id>.png` | Every registered Home card on its own |
+| `settings-<id>.png`, `settings-<id>-end.png` | Every settings section, and the bottom of a page taller than the window |
+| `onboarding-<step>.png`, `onboarding-features-ondemand.png` | Every welcome tour step, and the read-only Features step opened from Settings |
+
+`snapshot.txt` starts with `version:`, `self-contained:` and, with `--only`, `only:` lines, then lists `<view>: ok` or `FAILED: <view>: <reason>` for each view; a failed view does not stop the others. The last line is `done` only when every view passed; the exit code is then 0, otherwise 1. Other output, such as the hotkey parse checks, goes to `snapshot.log`. `node scripts/check-snapshots.mjs <dir>` checks the report, that every PNG has an outline and every outline a PNG, the file names, the required views and the outline format. Inspect changed PNGs and attach them to UI pull requests. CI disables native runtime error dialogs, checks the exit code, applies a 120-second timeout, runs the checker and uploads `snapshots` even on failure.
 
 If an old local build directory contains self-contained runtime files, a later framework-dependent build can pick up a stale local `hostfxr.dll`. Verify with a fresh output directory before diagnosing an app regression; CI starts from a clean checkout. Do not copy self-contained runtime files into the framework-dependent output.
 

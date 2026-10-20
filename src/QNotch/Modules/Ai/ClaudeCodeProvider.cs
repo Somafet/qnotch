@@ -47,13 +47,15 @@ internal sealed class ClaudeCodeProvider : IUsageProvider
     public string Account { get; }
     public string Dir => _dir;
 
-    /// <summary>One provider per account: the default config folder, plus every signed-in ~/.claude-* folder (accounts kept apart with CLAUDE_CONFIG_DIR).</summary>
-    public static List<ClaudeCodeProvider> Discover()
+    /// <summary>One provider per account: the default config folder, plus every signed-in ~/.claude-* folder (accounts kept apart with CLAUDE_CONFIG_DIR).
+    /// Demo (snapshot run): the default account only, never fetched.</summary>
+    public static List<ClaudeCodeProvider> Discover(bool demo = false)
     {
         var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         var main = Environment.GetEnvironmentVariable("CLAUDE_CONFIG_DIR");
         if (string.IsNullOrWhiteSpace(main)) main = Path.Combine(home, ".claude");
         var list = new List<ClaudeCodeProvider> { new(main, "claude", "Default") };
+        if (demo) return list;
         try
         {
             foreach (var d in Directory.GetDirectories(home, ".claude-*").Order())

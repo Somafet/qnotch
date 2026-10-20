@@ -28,8 +28,15 @@ internal abstract class HookFile(string dir, string fileName)
     /// <summary>Our hook group for <paramref name="evt"/>.</summary>
     protected abstract JsonObject Group(string evt);
 
+    /// <summary>Snapshot run: <see cref="Check"/> reports this instead of reading the file, and <see cref="ShownPath"/> starts at ~.</summary>
+    public HookStatus? Demo { get; set; }
+
+    /// <summary>The file's path for people; a demo hides the profile folder.</summary>
+    public string ShownPath => Demo is null ? FilePath : Path.Join("~", Path.GetRelativePath(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), FilePath));
+
     public (HookStatus Status, string Detail) Check()
     {
+        if (Demo is { } demo) return (demo, "");
         try
         {
             var commands = Hooks(Load())?.Select(e => e.Value).OfType<JsonArray>()
