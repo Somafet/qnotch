@@ -23,7 +23,8 @@ private final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenu
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let args = ProcessInfo.processInfo.arguments
-        let isolated = option("--data-dir", in: args) ?? ProcessInfo.processInfo.environment["QNOTCH_MAC_DATA_DIR"]
+        let options = DiagnosticOptions(arguments: args)
+        let isolated = options.dataDirectory
         dataDirectory = isolated.map { URL(fileURLWithPath: $0, isDirectory: true) } ??
             FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("QNotch.Mac", isDirectory: true)
         if args.contains("--smoke-test") || args.contains("--measure") {
@@ -31,9 +32,14 @@ private final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenu
                 fputs("Diagnostics require --data-dir and --output.\n", stderr)
                 exit(2)
             }
+            if let problem = options.problem {
+                fputs(problem + "\n", stderr)
+                exit(2)
+            }
             // Diagnostic runs never read or write the user's Keychain.
             Keychain.inMemory = [:]
             Runtime.diagnostics = true
+            if let appearance = options.nsAppearance { NSApp.appearance = appearance }
         }
         // Advisory, per-data-root instance lock. Never terminate another user's app.
         do {
@@ -90,7 +96,7 @@ private final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenu
         writeLog("ready startup_seconds=\(String(format: "%.4f", ready))")
         if let output = option("--output", in: args) {
             let directory = URL(fileURLWithPath: output, isDirectory: true)
-            if args.contains("--smoke-test") { NativeSmokeTest.run(shell: shell, output: directory, ready: ready) }
+            if args.contains("--smoke-test") { NativeSmokeTest.run(shell: shell, output: directory, ready: ready, options: options) }
             if args.contains("--measure") { PerformanceMeasurement.run(shell: shell, output: directory, ready: ready) }
         }
     }

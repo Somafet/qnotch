@@ -10,7 +10,8 @@ enum NativeSmokeTest {
             || NSWorkspace.shared.frontmostApplication?.bundleIdentifier == "com.apple.loginwindow"
     }
 
-    static func run(shell: ShellController, output: URL, ready: TimeInterval) {
+    /// `options.only` is parsed but not applied yet: the smoke run writes every view.
+    static func run(shell: ShellController, output: URL, ready: TimeInterval, options: DiagnosticOptions) {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
             do {
                 try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
@@ -486,7 +487,7 @@ enum NativeSmokeTest {
         func walk(_ view: NSView) throws {
             let global = shell.panel.convertToScreen(view.convert(view.bounds, to: nil))
             let id = view.identifier?.rawValue
-            if id == "notch-panel-body", global.maxY > housing.minY + 0.5 { throw Failure("Panel controls overlap the camera band") }
+            if id == "panel", global.maxY > housing.minY + 0.5 { throw Failure("Panel controls overlap the camera band") }
             if (id == "notch-left-wing" || id == "notch-right-wing"), global.width > 0, global.height > 0 {
                 let clearArea = id == "notch-left-wing" ? wings.left : wings.right
                 guard clearArea.insetBy(dx: -0.5, dy: -0.5).contains(global), !global.intersects(housing) else {

@@ -134,7 +134,7 @@ final class CardView: FillView {
 
 /// A borderless button with hover and press feedback. Keyboard focus, accessibility and actions
 /// stay native (NSButton); only the look is custom. The fill is the button's own layer background.
-final class HoverButton: NSButton {
+final class HoverButton: NSButton, OutlineRoleProviding {
     enum Style { case icon, plain, accent, accentCircle, chip, tab, row }
 
     let style: Style
@@ -187,6 +187,9 @@ final class HoverButton: NSButton {
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     @objc private func invoke() { handler() }
+
+    var outlineRole: Outline.Role? { style == .tab ? .tab : style == .row ? .item : .button }
+    override func isAccessibilitySelected() -> Bool { isSelectedLook }
 
     func setSymbol(_ name: String, size: CGFloat = 14, label: String) {
         image = NSImage(systemSymbolName: name, accessibilityDescription: label)?
@@ -281,12 +284,14 @@ final class TabBar: FillView {
     private var drag: (position: Int, start: CGFloat, moved: Bool)?
     private static let item = NSSize(width: 40, height: 28), gap: CGFloat = 2, inset: CGFloat = 3
 
-    init(items: [(symbol: String, title: String)], selected: Int, changed: @escaping (Int) -> Void) {
+    init(items: [(id: String, symbol: String, title: String)], selected: Int, changed: @escaping (Int) -> Void) {
         self.selected = selected
         self.changed = changed
         var made: [HoverButton] = []
         for (index, item) in items.enumerated() {
-            made.append(HoverButton(symbol: item.symbol, style: .tab, symbolSize: 14, label: item.title) { changed(index) })
+            let button = HoverButton(symbol: item.symbol, style: .tab, symbolSize: 14, label: item.title) { changed(index) }
+            button.identifier = NSUserInterfaceItemIdentifier("tab-" + item.id)
+            made.append(button)
         }
         buttons = made
         order = Array(items.indices)

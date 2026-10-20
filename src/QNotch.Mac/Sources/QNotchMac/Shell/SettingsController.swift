@@ -150,6 +150,7 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
         if !pages.contains(where: { $0.id == selected }) { selected = "general" }
         for (index, page) in pages.enumerated() {
             let item = NavRow(title: page.title, symbol: page.symbol, tint: page.tint) { [weak self] in self?.select(page.id, animated: true) }
+            item.identifier = NSUserInterfaceItemIdentifier("settings-nav-" + page.id.replacingOccurrences(of: "module.", with: ""))
             navigation.addArrangedSubview(item)
             item.widthAnchor.constraint(equalTo: navigation.widthAnchor).isActive = true
             rows[page.id] = item
@@ -450,6 +451,7 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
                 self?.rebuildNavigation()
                 self?.rows["features"]?.isSelected = true
             }
+            toggle.identifier = NSUserInterfaceItemIdentifier("feature-" + info.id)
             return featureRow(info.title, detail: info.detail, symbol: info.symbol, tint: info.tint, control: toggle, width: width)
         }
         return page("Features", subtitle: "Turn modules on or off. A module that is off is not loaded and uses no resources. Changes apply right away.", [
@@ -720,7 +722,7 @@ func iconTile(_ name: String, tint: NSColor, size side: CGFloat = 22) -> NSView 
 }
 
 /// Sidebar item: tinted icon tile and title; accent fill when selected.
-private final class NavRow: NSButton {
+private final class NavRow: NSButton, OutlineRoleProviding {
     var isSelected = false { didSet { refresh(animated: oldValue != isSelected) } }
     private let background = FillView(radius: 7)
     private let text: NSTextField
@@ -754,6 +756,8 @@ private final class NavRow: NSButton {
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
     @objc private func invoke() { handler() }
+    var outlineRole: Outline.Role? { .item }
+    override func isAccessibilitySelected() -> Bool { isSelected }
 
     override func updateTrackingAreas() {
         if let tracking { removeTrackingArea(tracking) }
@@ -837,8 +841,10 @@ private final class AccentPicker: NSStackView {
 
 private final class AccentSwatch: NSButton {
     private let handler: () -> Void
+    private let chosen: Bool
     init(color: NSColor, multicolor: Bool, selected: Bool, label: String, action: @escaping () -> Void) {
         handler = action
+        chosen = selected
         super.init(frame: .zero)
         title = ""
         isBordered = false
@@ -867,4 +873,5 @@ private final class AccentSwatch: NSButton {
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
     @objc private func invoke() { handler() }
+    override func isAccessibilitySelected() -> Bool { chosen }
 }

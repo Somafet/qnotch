@@ -79,6 +79,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         surface.setAccessibilityElement(true)
         surface.setAccessibilityRole(.group)
         surface.setAccessibilityLabel("QNotch. Hover or click to open the panel, or use the menu-bar item.")
+        surface.identifier = NSUserInterfaceItemIdentifier("pill")
         panel.clicked = { [weak self] in
             guard let self else { return false }
             let opening = !self.state.expanded
@@ -959,11 +960,13 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         try Data((lines.joined(separator: "\n") + "\n").utf8).write(to: url)
     }
 
+    /// Writes `view` as a PNG at `url` and its outline beside it (same name, `.txt`).
     static func snapshot(view: NSView, to url: URL) throws {
         view.layoutSubtreeIfNeeded()
         guard let bitmap = view.bitmapImageRepForCachingDisplay(in: view.bounds) else { throw CocoaError(.fileWriteUnknown) }
         view.cacheDisplay(in: view.bounds, to: bitmap)
         guard let png = bitmap.representation(using: .png, properties: [:]) else { throw CocoaError(.fileWriteUnknown) }
         try png.write(to: url)
+        try Outline.write(view: view, png: url)
     }
 }
