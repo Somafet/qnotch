@@ -14,6 +14,7 @@ static class Program
     static int Main(string[] args)
     {
         if (args.Length > 0 && ModuleList.Verbs.TryGetValue(args[0], out var verb)) return verb(args[1..]);
+        if (args.Length > 0 && args[0] == "debug") return DebugCli.Run(args[1..]); // the shell's own verb: the debug channel client
         // Set before Paths loads. --data-dir replaces the data root and wins over QNOTCH_DATA_DIR (inherited by --restart); without either,
         // --snapshot, --smoke-test and --measure get a fresh temporary root, deleted when they exit.
         var diag = DiagnosticOptions.Parse(args);

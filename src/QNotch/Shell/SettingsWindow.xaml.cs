@@ -20,6 +20,9 @@ public partial class SettingsWindow : Window
     readonly Registry<SettingsSectionDescriptor> _sections;
     bool _noAnim;
 
+    /// <summary>The open settings window, if any (debug channel).</summary>
+    internal static SettingsWindow? Current => _instance;
+
     SettingsWindow(Registry<SettingsSectionDescriptor> sections)
     {
         _sections = sections;

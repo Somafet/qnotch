@@ -49,6 +49,10 @@ public partial class App : Application
     SettingsStore? _store;
     ShellController? _shell;
     UpdateService? _updates;
+    // --debug-control: the debug channel (Shell/Diagnostics/DebugChannel.cs) opens once the shell and every module are up.
+    bool _debugControl;
+    IDisposable? _debug;
+    readonly HashSet<string> _running = new(StringComparer.OrdinalIgnoreCase);
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -60,6 +64,7 @@ public partial class App : Application
         // Dev tool: QNotch.exe --snapshot <dir> [--appearance light|dark] renders every view to PNG and exits (see Shell/Snapshot.cs).
         var diag = DiagnosticOptions.Parse(e.Args);
         var snapDir = diag.Mode == DiagnosticMode.Snapshot ? diag.Dir : null;
+        _debugControl = diag.Mode == DiagnosticMode.DebugControl;
         if (snapDir is null)
         {
             // QNOTCH_INSTANCE keeps parallel test runs apart. --restart: the previous instance is shutting down, wait for its mutex.
@@ -155,7 +160,7 @@ public partial class App : Application
                 try { m = info.Create(); }
                 catch (Exception ex) { Log.Error($"Module '{info.Id}' failed to create", ex); continue; }
                 done.Add(m);
-                try { m.Initialize(ctx); }
+                try { m.Initialize(ctx); _running.Add(info.Id); }
                 catch (Exception ex) { Log.Error($"Module '{info.Id}' failed to initialize", ex); }
             }
             return done;
@@ -203,6 +208,8 @@ public partial class App : Application
         // Open QNotch: the panel on Home with the keyboard, once the late modules registered their cards (queued after them).
         if (openAfterTour)
             Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ApplicationIdle, () => shell.OpenPanelWithKeyboard("home"));
+        if (_debugControl)
+            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ApplicationIdle, () => StartDebug(window, shell, shortcuts, tabs, sections, bootDisabled, gs));
         Log.Info($"Started in {(DateTime.Now - System.Diagnostics.Process.GetCurrentProcess().StartTime).TotalMilliseconds:0} ms");
     }
 
@@ -224,6 +231,14 @@ public partial class App : Application
     static void SnapshotTour(GeneralSettings gs, SettingsStore store, Shortcuts shortcuts, Action<FrameworkElement, string> save) =>
         Shell.Onboarding.Tour.Snapshot(gs, store, shortcuts, ModuleList.All, save);
 
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+    void StartDebug(NotchWindow window, ShellController shell, Shortcuts shortcuts, Registry<TabDescriptor> tabs, Registry<SettingsSectionDescriptor> sections,
+        HashSet<string> bootDisabled, GeneralSettings gs)
+    {
+        try { _debug = DebugChannel.Start(new DebugHost(window, shell, shortcuts, tabs, sections, bootDisabled, _running, () => ShowTour(gs, _store!, shortcuts, shell), () => Shutdown())); }
+        catch (Exception ex) { Log.Error("Debug channel failed to start", ex); }
+    }
+
     /// <summary>Starts a fresh instance (it waits for our mutex, released last in OnExit) and quits.</summary>
     public static void Restart()
     {
@@ -242,6 +257,7 @@ public partial class App : Application
     {
         try
         {
+            _debug?.Dispose();
             _updates?.Dispose();
             _tray?.Dispose();
             _hotkeys?.UnregisterAll();

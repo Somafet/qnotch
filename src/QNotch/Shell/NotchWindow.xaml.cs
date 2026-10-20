@@ -440,4 +440,6 @@ public partial class NotchWindow : Window
     /// <summary>Snapshot mode: keep the window off every monitor.</summary>
     internal bool Offscreen { get; init; }
     internal FrameworkElement RootElement => Root;
+    /// <summary>The open or close animation is running (the debug channel waits for it).</summary>
+    internal bool IsAnimating => _animating;
 }
