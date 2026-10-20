@@ -342,6 +342,9 @@ public sealed class ShellController : IShell
         if (on) _dwell?.Stop();
     }
 
+    /// <summary>Smoke test: the pointer entered or left the surface, as the window reports it.</summary>
+    internal void Hover(bool over) { if (over) OnHoverEnter(); else OnHoverLeave(); }
+
     void OnHoverLeave()
     {
         _hovering = false;

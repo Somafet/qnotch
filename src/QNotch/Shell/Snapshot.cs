@@ -15,7 +15,7 @@ internal static class Snapshot
 {
     static readonly Brush Desk = Frozen(Color.FromRgb(0x4A, 0x52, 0x60));
 
-    public static async void Run(string dir, NotchWindow w, ShellController shell, Registry<TabDescriptor> tabs,
+    public static async Task Run(string dir, NotchWindow w, ShellController shell, Registry<TabDescriptor> tabs,
         Registry<SettingsSectionDescriptor> sections, Action<Action<FrameworkElement, string>> tour, Action exit)
     {
         var report = new List<string>();

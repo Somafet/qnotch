@@ -42,7 +42,8 @@ internal sealed class GithubService
     {
         try
         {
-            if (_demo) { var demo = GithubData.Demo(); _ctx.Bus.Run(() => { _s.GithubHasToken = true; Show(demo, false, ""); }); return; }
+            // A read-only run (snapshot, smoke, measure) shows the demo graph: no Credential Manager, no network.
+            if (_demo || _ctx.Settings.ReadOnly) { var demo = GithubData.Demo(); _ctx.Bus.Run(() => { _s.GithubHasToken = true; Show(demo, false, ""); }); return; }
             var has = !string.IsNullOrEmpty(CredentialStore.Read());
             var cache = has ? ReadCache() : null;
             _ctx.Bus.Run(() =>
@@ -73,7 +74,7 @@ internal sealed class GithubService
         if (Interlocked.Exchange(ref _busy, 1) == 1) return;
         try
         {
-            if (_demo) return;
+            if (_demo || _ctx.Settings.ReadOnly) return;
             var token = CredentialStore.Read();
             if (string.IsNullOrEmpty(token)) { _ctx.Bus.Run(() => { _s.GithubHasToken = false; _s.GithubStatus = GithubStatus.NoToken; }); return; }
             _ctx.Bus.Run(() => { _s.GithubRefreshing = true; if (_s.GithubGraph is null) _s.GithubStatus = GithubStatus.Loading; });

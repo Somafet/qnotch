@@ -297,6 +297,7 @@ public sealed class AiModule : INotchModule, ICadenceAware
 
     void RefreshUsage()
     {
+        if (_ctx.Settings.ReadOnly) return; // snapshot, smoke and measure runs make no network requests
         var enabled = _providers.Where(p => _s.IsEnabled(Group(p))).ToList();
         if (enabled.Count == 0) { ArmUsageTimer(); return; }
         if (_refreshing) { _refreshAgain = true; return; }

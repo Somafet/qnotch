@@ -35,7 +35,12 @@ public static class UiKit
         left.Children.Add(new TextBlock { Text = label, FontSize = 13 });
         if (hint is not null) left.Children.Add(new TextBlock { Text = hint, Style = Res<Style>("Muted"), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 0) });
         control.VerticalAlignment = VerticalAlignment.Center;
-        if (string.IsNullOrEmpty(AutomationProperties.GetName(control))) AutomationProperties.SetName(control, label); // the row's label names its control
+        // The row's label names its control, and the unnamed inputs of a small group (a slider next to its value, a box next to its button).
+        if (string.IsNullOrEmpty(AutomationProperties.GetName(control))) AutomationProperties.SetName(control, label);
+        if (control is Panel group)
+            foreach (var input in group.Children.OfType<Control>())
+                if (input is System.Windows.Controls.Primitives.RangeBase or System.Windows.Controls.Primitives.TextBoxBase or PasswordBox or ComboBox
+                    && string.IsNullOrEmpty(AutomationProperties.GetName(input))) AutomationProperties.SetName(input, label);
         Grid.SetColumn(control, 1);
         g.Children.Add(left);
         g.Children.Add(control);
