@@ -51,12 +51,13 @@ private final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenu
             }
         } catch { /* The Settings window reports persistence failures; the app remains usable. */ }
         // The welcome tour: on a fresh install it runs before any module is constructed; settings
-        // from before the tour are marked done without showing it. Diagnostic runs never show it.
+        // from before the tour are marked done without showing it. Diagnostic and debug-control runs never show it.
+        let debugControl = args.contains("--debug-control")
         let store = SettingsStore(directory: dataDirectory)
         let generalExists = FileManager.default.fileExists(atPath: dataDirectory.appendingPathComponent("general.json").path)
         var general = store.load("general", default: GeneralSettings())
         let tour = Onboarding.atLaunch(settingsExist: generalExists, readable: store.problem == nil,
-                                       done: general.onboardingDone, diagnostics: Runtime.diagnostics)
+                                       done: general.onboardingDone, diagnostics: Runtime.diagnostics || debugControl)
         if tour == .markDone {
             general.onboardingDone = true
             store.save("general", general)
@@ -92,6 +93,10 @@ private final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenu
         shell.statusChanged = { [weak self] in self?.refreshStatus() }
         refreshStatus()
         if tour == .show { shell.showOnboarding(firstRun: true, isolated: isolated != nil) } else { shell.start() }
+        // The debug channel opens only on request (spec/diagnostics.md, Debug channel).
+        if debugControl {
+            do { try DebugChannel.start(shell: shell, directory: dataDirectory) } catch { fputs("The debug channel did not open: \(error)\n", stderr) }
+        }
         let ready = PerformanceMeasurement.secondsSinceProcessStart() ?? (ProcessInfo.processInfo.systemUptime - launched)
         writeLog("ready startup_seconds=\(String(format: "%.4f", ready))")
         if let output = option("--output", in: args) {
@@ -102,6 +107,7 @@ private final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenu
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        DebugChannel.stop()
         shell?.stop()
         if lockDescriptor >= 0 { Darwin.close(lockDescriptor) }
     }
