@@ -92,8 +92,9 @@ internal static class GithubSection
             test.IsEnabled = false;
             Show("Testing", "TextSecondaryBrush");
             var t = box.Password.Trim();
-            if (t.Length == 0) t = await Task.Run(CredentialStore.Read) ?? "";
-            if (t.Length == 0) Show("No token to test.", "WarningBrush");
+            if (t.Length == 0 && !demo) t = await Task.Run(CredentialStore.Read) ?? "";
+            if (demo) Show("Connected as @octocat.", "SuccessBrush"); // a snapshot run never reads the credential store or goes online
+            else if (t.Length == 0) Show("No token to test.", "WarningBrush");
             else { var (ok, msg) = await GithubService.TestAsync(t); Show(msg, ok ? "SuccessBrush" : "DangerBrush"); }
             test.IsEnabled = true;
         };

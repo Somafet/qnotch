@@ -46,7 +46,7 @@ public sealed class AiModule : INotchModule, ICadenceAware
         St.OpenSettingsCommand = new RelayCommand(() => ctx.Shell.OpenSettings("ai"));
 
         // Every Claude account is fetched, but they share one row: the dropdown picks which reading it shows.
-        var claude = ClaudeCodeProvider.Discover();
+        var claude = ClaudeCodeProvider.Discover(ctx.Settings.ReadOnly);
         _providers = [.. claude, new CodexProvider()];
         List<AiAccount> accounts = [.. claude.Select(p => new AiAccount(p.Id, _s.AccountNames.GetValueOrDefault(p.Id) ?? p.Account, p.Dir))];
         var shown = accounts.FirstOrDefault(a => a.Id == _s.ClaudeAccount) ?? accounts[0];
@@ -81,7 +81,16 @@ public sealed class AiModule : INotchModule, ICadenceAware
 
         // Both start after the shell is up and idle; nothing runs on a steady cadence except the usage timer.
         _startTimer = new Timer(_ => ctx.Bus.Run(Rescan), null, 1500, Timeout.Infinite);
+        if (ctx.Settings.ReadOnly) { DemoUsage(); return; } // snapshot run: sample readings, no credentials, no requests
         _usageTimer = new Timer(_ => ctx.Bus.Run(RefreshUsage), null, 4000, Timeout.Infinite);
+    }
+
+    void DemoUsage()
+    {
+        var now = DateTime.Now;
+        OnProviderResult(new(_claudeId, UsageResult.Ok([new("5-hour", 42, now.AddHours(2.4)), new("Weekly", 18, now.AddDays(3.2))], "Max", now)));
+        OnProviderResult(new("codex", UsageResult.Ok([new("5-hour", 12, now.AddHours(4.1)), new("Weekly", 31, now.AddDays(5.5))], "Plus", now)));
+        OnRefreshDone(new(now));
     }
 
     /// <summary>Panel opened: relative "resets in" texts are recomputed (cheap, set-if-changed).</summary>
@@ -297,6 +306,7 @@ public sealed class AiModule : INotchModule, ICadenceAware
 
     void RefreshUsage()
     {
+        if (_ctx.Settings.ReadOnly) { DemoUsage(); return; }
         var enabled = _providers.Where(p => _s.IsEnabled(Group(p))).ToList();
         if (enabled.Count == 0) { ArmUsageTimer(); return; }
         if (_refreshing) { _refreshAgain = true; return; }

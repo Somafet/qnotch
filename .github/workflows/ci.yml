@@ -23,6 +23,10 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
       - name: Build
         run: dotnet build src/QNotch/QNotch.csproj -c Release -warnaserror
 
@@ -35,7 +39,7 @@ jobs:
       - name: Welcome tour checks
         run: dotnet run --project tests/QNotch.OnboardingTests -c Release
 
-      # Renders every tab and settings page off-screen in a clean data folder. Fails if a page throws or it hangs.
+      # Renders every view (pill states, tabs, cards, settings, welcome tour) off-screen in a clean data folder. Fails if a view throws or it hangs.
       - name: Snapshot smoke test
         shell: pwsh
         env:
@@ -50,6 +54,10 @@ jobs:
           $report = Get-Content snapshots/snapshot.txt
           $report
           if ($report[-1] -ne 'done') { throw "Snapshot failed" }
+
+      # spec/diagnostics.md: report, outlines, file names and required views.
+      - name: Check snapshot files
+        run: node scripts/check-snapshots.mjs snapshots
 
       - uses: actions/upload-artifact@v4
         if: always()
