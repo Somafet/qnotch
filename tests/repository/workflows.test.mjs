@@ -54,11 +54,13 @@ test('Windows release workflow validates tags and both packages before guarded p
   assert.ok(runs.some(run => run.includes('npm test')));
 });
 
-test('Mac validation builds a real native app, runs regressions and UI smoke, without signing secrets or publishing', () => {
+test('Mac validation builds a real native app, runs regressions and UI smoke, checks its snapshots, without signing secrets or publishing', () => {
   const mac = yaml('.github/workflows/ci.yml').jobs.macos;
   assert.equal(mac['runs-on'], 'macos-14');
   const runs = mac.steps.filter(step => step.run).map(step => step.run);
-  assert.deepEqual(runs, ['bash scripts/macos/build.sh', 'bash scripts/macos/test.sh', 'bash scripts/macos/smoke.sh']);
+  assert.deepEqual(runs, ['bash scripts/macos/build.sh', 'bash scripts/macos/test.sh', 'bash scripts/macos/smoke.sh',
+    'node scripts/check-snapshots.mjs dist/macos/smoke']);
+  assert.ok(mac.steps.some(step => step.uses?.startsWith('actions/setup-node@') && step.with['node-version'] === '24'));
   assert.ok(!JSON.stringify(mac).includes('secrets.'));
   assert.ok(!JSON.stringify(mac).includes('publish-release'));
   const artifact = mac.steps.find(step => step.uses?.startsWith('actions/upload-artifact@'));
