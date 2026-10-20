@@ -19,7 +19,6 @@ enum NativeSmokeTest {
             func finish(_ error: Error?) {
                 if let error { run.fail((error as? Failure)?.check ?? "smoke", "\(error)") }
                 checkNames(run)
-                run.skip("debug-channel", "not implemented yet")
                 let extra = [String(format: "startup_seconds: %.4f", ready)] + (screenLocked ? ["note: screen locked; window-server key status not checked"] : [])
                 if run.finish("smoke.txt", extra: extra) { return NSApp.terminate(nil) }
                 for line in run.lines where line.hasPrefix("FAILED") { fputs("Native smoke \(line)\n", stderr) }
@@ -52,11 +51,52 @@ enum NativeSmokeTest {
                                     return finish(Failure("settings-search", "Search does not find the About page"))
                                 }
                                 run.pass("settings-search")
-                                finish(nil)
+                                exerciseDebugChannel(run, done: finish)
                             }
                         }
                     }
                 }
+            }
+        }
+    }
+
+    /// debug-channel: the channel opened as `--debug-control` does answers ping, state, select-tab
+    /// and outline through its real socket; requests are sent from a background queue.
+    private static func exerciseDebugChannel(_ run: SnapshotRun, done: @escaping (Error?) -> Void) {
+        let channel: DebugChannel
+        do { channel = try DebugChannel.start(shell: run.shell, directory: run.shell.store.directory) } catch {
+            return done(Failure("debug-channel", "The channel did not open: \(error)"))
+        }
+        let path = channel.path
+        DispatchQueue.global().async {
+            func ask(_ cmd: String, _ args: [String: Any] = [:]) throws -> [String: Any] {
+                var line = try JSONSerialization.data(withJSONObject: ["id": cmd, "cmd": cmd, "args": args])
+                line.append(0x0A)
+                guard case .success(let reply) = DebugClient.send(line, to: path, timeout: 10),
+                      let object = try? JSONSerialization.jsonObject(with: reply.split(separator: 0x0A).first ?? reply[...]) as? [String: Any],
+                      object["id"] as? String == cmd else { throw Failure("debug-channel", "\(cmd) got no readable reply") }
+                guard object["ok"] as? Bool == true, let result = object["result"] as? [String: Any] else {
+                    throw Failure("debug-channel", "\(cmd) failed: \(object["error"] ?? "no result")")
+                }
+                return result
+            }
+            var failure: Error?
+            do {
+                guard try ask("ping")["platform"] as? String == "macOS" else { throw Failure("debug-channel", "ping does not report macOS") }
+                let before = try ask("state")
+                guard before["panel"] is String else { throw Failure("debug-channel", "state has no panel") }
+                do { _ = try ask("select-tab", ["id": "timer"]) } catch {
+                    throw Failure("debug-channel", "\(error); before: panel=\(before["panel"] ?? "?") tab=\(before["tab"] ?? "?") game_mode=\(before["game_mode"] ?? "?") after: \((try? ask("state")).map { "\($0["panel"] ?? "?") \($0["tab"] ?? "?")" } ?? "?")")
+                }
+                let state = try ask("state")
+                guard state["panel"] as? String == "open", state["tab"] as? String == "timer" else { throw Failure("debug-channel", "select-tab did not open Timer: \(state)") }
+                guard (try ask("outline")["text"] as? String)?.contains("#tab-timer selected") == true else { throw Failure("debug-channel", "the outline does not show Timer selected") }
+                _ = try ask("close")
+            } catch { failure = error }
+            DispatchQueue.main.async {
+                DebugChannel.stop()
+                if failure == nil { run.pass("debug-channel") }
+                done(failure)
             }
         }
     }
