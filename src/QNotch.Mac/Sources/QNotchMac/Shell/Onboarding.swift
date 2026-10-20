@@ -354,6 +354,9 @@ final class OnboardingController: NSObject, NSWindowDelegate {
         primary = HoverButton("Continue", style: .accent) { [weak self] in self?.advance() }
         primary.padding = NSSize(width: 18, height: 7)
         for button in [back, skip, primary] { button?.pressScale = 0.97 }
+        back.identifier = NSUserInterfaceItemIdentifier("onboarding-back")
+        skip.identifier = NSUserInterfaceItemIdentifier("onboarding-skip")
+        primary.identifier = NSUserInterfaceItemIdentifier("onboarding-primary")
         let bar = row([dots, spacer(), skip, back, primary], spacing: 8)
         embed(bar, in: footer, inset: 0, fill: true)
         for view in [backdrop, container, footer] {
@@ -780,6 +783,7 @@ final class OnboardingController: NSObject, NSWindowDelegate {
         }
         toggle.controlSize = .mini
         toggle.setAccessibilityHelp(info.detail)
+        toggle.identifier = NSUserInterfaceItemIdentifier("feature-" + info.id)
         featureSwitches[info.id] = toggle
         let text = column([title, detail], spacing: 2)
         text.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)

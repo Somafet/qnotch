@@ -47,7 +47,8 @@ final class SoundRegistry {
     }
 
     func play(_ id: String) {
-        guard let sound = sounds[id] else { return }
+        // Diagnostic runs post demo notifications and agent alerts; they stay silent.
+        guard let sound = sounds[id], !Runtime.diagnostics else { return }
         let value = choice(for: id)
         let chosen: NSSound? = value.hasPrefix("/") ? NSSound(contentsOf: URL(fileURLWithPath: value), byReference: true) : NSSound(named: value)
         guard let player = chosen ?? NSSound(named: sound.defaultName) else { return }

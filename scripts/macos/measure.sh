@@ -4,7 +4,8 @@ repo_root="$(cd "$(dirname "$0")/../.." && pwd)"
 output="${1:-$repo_root/dist/macos/measure}"
 mkdir -p "$output"
 output="$(cd "$output" && pwd)"
-data_root="$(mktemp -d "${TMPDIR:-/tmp}/qnotch-measure.XXXXXX")"
-trap 'rm -rf "$data_root"' EXIT
-"$repo_root/dist/macos/QNotch.app/Contents/MacOS/QNotch" --measure --data-dir "$data_root" --output "$output"
+# The app uses a fresh temporary data root and deletes it on exit; exit 1 when a limit fails.
+status=0
+"$repo_root/dist/macos/QNotch.app/Contents/MacOS/QNotch" --measure "$output" || status=$?
 cat "$output/performance.json"
+exit "$status"

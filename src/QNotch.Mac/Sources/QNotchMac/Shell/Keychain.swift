@@ -43,6 +43,22 @@ enum Keychain {
 
 /// Process-wide facts modules may consult.
 enum Runtime {
-    /// `--smoke-test` or `--measure`: no network requests, no Keychain, demo data where a module needs some.
+    /// `--snapshot`, `--smoke-test` or `--measure`: no network requests, no Keychain, no sounds, demo
+    /// data where a module needs some.
     static var diagnostics = false
+    /// A diagnostic run's own data root (no `--data-dir` given), deleted when the process exits.
+    static var temporaryRoot: URL?
+
+    /// At exit: deletes `temporaryRoot` once this process is gone, so a module's last background
+    /// write (the notification history) cannot recreate it afterwards.
+    static func removeTemporaryRoot() {
+        guard let root = temporaryRoot else { return }
+        let cleanup = Process()
+        cleanup.executableURL = URL(fileURLWithPath: "/bin/sh")
+        cleanup.arguments = ["-c", #"while kill -0 "$1" 2>/dev/null; do sleep 0.1; done; rm -rf "$2""#, "qnotch-cleanup", String(getpid()), root.path]
+        cleanup.standardInput = FileHandle.nullDevice
+        cleanup.standardOutput = FileHandle.nullDevice
+        cleanup.standardError = FileHandle.nullDevice
+        if (try? cleanup.run()) == nil { try? FileManager.default.removeItem(at: root) }
+    }
 }
