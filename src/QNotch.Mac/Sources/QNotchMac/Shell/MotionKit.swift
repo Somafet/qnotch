@@ -1,7 +1,9 @@
 import AppKit
+import QNotchMacCore
 
 /// Core Animation building blocks for short, purposeful motion (spec/onboarding.md, Motion):
-/// entrances ease out, exits ease in, a spring only for success moments. Only opacity and
+/// entrances ease out, exits ease in; springs for success moments and for anything the pointer
+/// moved, which bounce only when a gesture carried momentum. Only opacity and
 /// transforms animate, always toward a model value that is already final, so a snapshot or a
 /// cancelled animation shows the settled state. Reduced motion keeps 120 ms crossfades and drops
 /// slides, scales, staggers and loops; diagnostic runs cut everything.
@@ -135,6 +137,92 @@ extension Motion {
         animation.timingFunction = easeOut
         animation.fillMode = .backwards
         layer.add(animation, forKey: "change." + keyPath)
+    }
+
+    /// A spring set by Apple's design parameters (`Fluid.spring`): `response` in seconds and
+    /// `dampingRatio` (1 settles without overshoot). `velocity` is in Core Animation's units
+    /// (`Fluid.relativeVelocity`).
+    static func spring(_ keyPath: String, response: CGFloat, dampingRatio: CGFloat, velocity: CGFloat = 0) -> CASpringAnimation {
+        let spring = CASpringAnimation(keyPath: keyPath)
+        let parameters = Fluid.spring(response: response, dampingRatio: dampingRatio)
+        spring.mass = 1
+        spring.stiffness = parameters.stiffness
+        spring.damping = parameters.damping
+        spring.initialVelocity = velocity
+        spring.duration = spring.settlingDuration
+        return spring
+    }
+
+    /// Turns a view around mid-exit: from where it is on screen back to its settled state, instead
+    /// of starting its entrance over from transparent.
+    static func resume(_ view: NSView, duration: CFTimeInterval = 0.2) {
+        guard let layer = view.layer else { return }
+        let shown = layer.presentation()
+        let opacity = shown?.opacity ?? layer.opacity
+        let transform = shown?.transform ?? layer.transform
+        layer.removeAllAnimations()
+        guard fades else { return }
+        var animations: [CABasicAnimation] = []
+        let fade = CABasicAnimation(keyPath: "opacity")
+        fade.fromValue = opacity
+        animations.append(fade)
+        if moves {
+            let move = CABasicAnimation(keyPath: "transform")
+            move.fromValue = NSValue(caTransform3D: transform)
+            animations.append(move)
+        }
+        for animation in animations {
+            animation.duration = moves ? duration : crossfadeDuration
+            animation.timingFunction = easeOut
+            layer.add(animation, forKey: "resume." + (animation.keyPath ?? ""))
+        }
+    }
+
+    private static var settleCount = 0
+
+    /// Picked up for a drag: grows to `scale` about its center and stays there until `settle`.
+    static func lift(_ view: NSView, scale: CGFloat) {
+        guard moves, let layer = view.layer else { return }
+        let lift = spring("transform", response: 0.25, dampingRatio: 1)
+        lift.isAdditive = true
+        lift.fromValue = NSValue(caTransform3D: CATransform3DIdentity)
+        lift.toValue = NSValue(caTransform3D: transform(for: view, scale: scale))
+        lift.fillMode = .forwards
+        lift.isRemovedOnCompletion = false
+        layer.add(lift, forKey: "lift")
+    }
+
+    /// Moves a view whose model frame is already final from `offset` (where it shows now, relative
+    /// to its new place) home on a spring that starts at the pointer's `velocity` (points per
+    /// second), X and Y on their own springs. Each settle adds to any still running, so redirecting
+    /// a moving view keeps its momentum. A lifted view shrinks back at the same time.
+    static func settle(_ view: NSView, from offset: CGPoint, velocity: CGVector = .zero) {
+        guard let layer = view.layer else { return }
+        var lifted: CGFloat = 1
+        if layer.animation(forKey: "lift") != nil {
+            if let shown = layer.presentation()?.transform { lifted = sqrt(shown.m11 * shown.m11 + shown.m12 * shown.m12) }
+            layer.removeAnimation(forKey: "lift")
+        }
+        guard moves else { return }
+        settleCount += 1
+        func add(_ from: CATransform3D, velocity: CGFloat, key: String) {
+            let spring = spring("transform", response: 0.35, dampingRatio: velocity == 0 ? 1 : 0.8, velocity: velocity)
+            spring.isAdditive = true
+            spring.fromValue = NSValue(caTransform3D: from)
+            spring.toValue = NSValue(caTransform3D: CATransform3DIdentity)
+            layer.add(spring, forKey: "settle.\(key).\(settleCount)")
+        }
+        // Layers translate in their superview's own coordinates, flipped or not.
+        if abs(offset.x) >= 0.5 {
+            add(CATransform3DMakeTranslation(offset.x, 0, 0), velocity: Fluid.relativeVelocity(velocity.dx, from: offset.x, to: 0), key: "x")
+        }
+        if abs(offset.y) >= 0.5 {
+            add(CATransform3DMakeTranslation(0, offset.y, 0), velocity: Fluid.relativeVelocity(velocity.dy, from: offset.y, to: 0), key: "y")
+        }
+        if abs(lifted - 1) > 0.001 {
+            // Additive: the lift's own contribution, so the view shrinks from its size on screen.
+            add(transform(for: view, scale: lifted), velocity: 0, key: "scale")
+        }
     }
 
     /// Pressed look: a quick press to `scale`, and back on release.

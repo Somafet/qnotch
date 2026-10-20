@@ -11,7 +11,7 @@ final class NotchPanel: NSPanel {
     /// Sideways drags of a floating pill: whether one may start, then each move and the release.
     var canNudge: (() -> Bool)?
     var nudged: ((CGFloat) -> Void)?
-    var nudgeEnded: ((_ doubleClick: Bool) -> Void)?
+    var nudgeEnded: ((_ doubleClick: Bool, _ velocity: CGFloat) -> Void)?
     var escaped: (() -> Void)?
     /// Printable keys typed while no text field has focus (type-to-search).
     var typed: ((String) -> Void)?
@@ -28,19 +28,24 @@ final class NotchPanel: NSPanel {
     }
     override func cancelOperation(_ sender: Any?) { escaped?() }
 
-    /// A press that moves 5 points sideways drags the pill; a double-click re-centers it.
+    /// A press that moves 5 points sideways drags the pill; a double-click re-centers it. The
+    /// release reports the pointer's sideways speed, so a flick can throw the pill.
     /// Returns false for a plain click, which then opens the panel as usual.
     private func trackNudge(_ down: NSEvent) -> Bool {
-        if down.clickCount == 2 { nudgeEnded?(true); return true }
+        if down.clickCount == 2 { nudgeEnded?(true, 0); return true }
         let start = NSEvent.mouseLocation
         var dragging = false
+        var tracker = VelocityTracker()
+        var released = down.timestamp
         while let event = nextEvent(matching: [.leftMouseDragged, .leftMouseUp], until: .distantFuture, inMode: .eventTracking, dequeue: true) {
-            let dx = NSEvent.mouseLocation.x - start.x
+            let location = NSEvent.mouseLocation
+            let dx = location.x - start.x
             if !dragging, abs(dx) > 5 { dragging = true }
             if dragging { nudged?(dx) }
-            if event.type == .leftMouseUp { break }
+            if event.type == .leftMouseUp { released = event.timestamp; break }
+            tracker.add(location, at: event.timestamp)
         }
-        if dragging { nudgeEnded?(false) }
+        if dragging { nudgeEnded?(false, tracker.velocity(at: released).dx) }
         return dragging
     }
     override func keyDown(with event: NSEvent) {
@@ -230,9 +235,28 @@ final class NotchSurfaceView: NSView {
         return path.boundingBoxOfPath.offsetBy(dx: worldRect.minX, dy: worldRect.minY)
     }
 
-    enum Morph { case none, open, close, nudge }
+    /// Why the surface changes shape, which picks its spring. Only a released drag (with momentum)
+    /// and opening (the Dynamic Island's lively growth) bounce; changes nobody gestured settle.
+    enum Morph {
+        case none, open, close, status, hover, release
 
-    func morph(to rect: CGRect, bottom: CGFloat, top: CGFloat, outlined: Bool, style: Morph, completion: @escaping () -> Void) {
+        /// Response (seconds) and damping ratio; `momentum` when a gesture handed over velocity.
+        func spring(momentum: Bool) -> (response: CGFloat, dampingRatio: CGFloat) {
+            switch self {
+            case .open: return (0.38, 0.8)
+            case .close: return (0.3, 1)
+            case .hover: return (0.2, 1)
+            case .release: return (0.35, momentum ? 0.8 : 1)
+            case .none, .status: return (0.35, 1)
+            }
+        }
+    }
+
+    /// Morphs to `rect` from the shape on screen, so a reversal mid-flight never jumps. `velocity`:
+    /// the gesture's speed in Core Animation's spring units (`Fluid.relativeVelocity`). With reduced
+    /// motion the old and new surfaces crossfade instead.
+    func morph(to rect: CGRect, bottom: CGFloat, top: CGFloat, outlined: Bool, style: Morph, velocity: CGFloat = 0,
+               completion: @escaping () -> Void) {
         generation += 1
         let token = generation
         shapeRect = rect
@@ -242,7 +266,7 @@ final class NotchSurfaceView: NSView {
         let fromShape = backdrop.shape.presentation()?.path ?? backdrop.shape.path
         let fromEdge = outline.shape.presentation()?.path ?? outline.shape.path
         let fromOpacity = outline.shape.presentation()?.opacity ?? outline.shape.opacity
-        let animated = style != .none && Motion.enabled && fromShape != nil
+        let animated = style != .none && Motion.fades && fromShape != nil
         CATransaction.begin()
         CATransaction.setDisableActions(true)
         backdrop.shape.path = shapePath
@@ -251,45 +275,43 @@ final class NotchSurfaceView: NSView {
         outline.shape.opacity = outlined ? 1 : 0
         if animated {
             isMorphing = true
-            world.layer?.mask = clip
             CATransaction.setCompletionBlock { [weak self] in
                 guard let self, self.generation == token else { return }
                 self.isMorphing = false
                 self.world.layer?.mask = nil
                 completion()
             }
-            func animation(_ key: String, from: Any?, to: Any?) -> CAAnimation {
-                let animation: CABasicAnimation
-                switch style {
-                case .open, .nudge:
-                    // Gentle spring: about 3% overshoot on open, a little livelier for a status change.
-                    let spring = CASpringAnimation(keyPath: key)
-                    spring.mass = 1
-                    spring.stiffness = style == .open ? 290 : 340
-                    spring.damping = style == .open ? 24 : 22
-                    spring.duration = spring.settlingDuration
-                    animation = spring
-                default:
-                    animation = CABasicAnimation(keyPath: key)
-                    animation.duration = 0.26
-                    animation.timingFunction = CAMediaTimingFunction(controlPoints: 0.32, 0.72, 0, 1)
-                }
-                animation.fromValue = from
-                animation.toValue = to
-                return animation
+        }
+        if animated, Motion.moves {
+            world.layer?.mask = clip
+            let parameters = style.spring(momentum: velocity != 0)
+            func animation(from: Any?, to: Any) -> CAAnimation {
+                let spring = Motion.spring("path", response: parameters.response, dampingRatio: parameters.dampingRatio, velocity: velocity)
+                spring.fromValue = from
+                spring.toValue = to
+                return spring
             }
-            backdrop.shape.add(animation("path", from: fromShape, to: shapePath), forKey: "morph")
-            clip.add(animation("path", from: fromShape, to: shapePath), forKey: "morph")
-            if let fromEdge { outline.shape.add(animation("path", from: fromEdge, to: edgePath), forKey: "morph") }
+            backdrop.shape.add(animation(from: fromShape, to: shapePath), forKey: "morph")
+            clip.add(animation(from: fromShape, to: shapePath), forKey: "morph")
+            if let fromEdge { outline.shape.add(animation(from: fromEdge, to: edgePath), forKey: "morph") }
             let fade = CABasicAnimation(keyPath: "opacity")
             fade.fromValue = fromOpacity
             fade.toValue = outlined ? 1 : 0
             fade.duration = outlined ? 0.3 : 0.16
             outline.shape.add(fade, forKey: "fade")
         } else {
-            isMorphing = false
             for layer in [backdrop.shape, outline.shape, clip] { layer.removeAllAnimations() }
             world.layer?.mask = nil
+            if animated {
+                // Reduced motion: nothing grows or slides; the whole surface crossfades.
+                let crossfade = CATransition()
+                crossfade.type = .fade
+                crossfade.duration = Motion.crossfadeDuration
+                crossfade.timingFunction = Motion.easeOut
+                world.layer?.add(crossfade, forKey: "crossfade")
+            } else {
+                isMorphing = false
+            }
         }
         CATransaction.commit()
         if !animated { completion() }

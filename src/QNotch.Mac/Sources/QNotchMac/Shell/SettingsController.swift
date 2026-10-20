@@ -181,7 +181,7 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
             document.topAnchor.constraint(equalTo: scroll.contentView.topAnchor)
         ])
         refreshIssue()
-        if animated { document.wantsLayer = true; Motion.reveal(document, duration: 0.2, dy: -6) }
+        if animated { document.wantsLayer = true; Motion.enter(document, duration: 0.2, up: 6) }
     }
 
     // MARK: Pages

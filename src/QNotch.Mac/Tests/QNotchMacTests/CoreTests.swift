@@ -1228,3 +1228,63 @@ final class GithubDeviceFlowTests: XCTestCase {
         XCTAssertEqual(GithubDeviceFlow.deniedMessage, "Sign-in was cancelled on GitHub.")
     }
 }
+
+final class FluidTests: XCTestCase {
+    func testProjectionSpringsAndRelativeVelocity() {
+        XCTAssertEqual(Fluid.project(velocity: 1000), 499, accuracy: 0.01)
+        XCTAssertEqual(Fluid.project(velocity: -1000), -499, accuracy: 0.01)
+        let spring = Fluid.spring(response: 0.5, dampingRatio: 1)
+        XCTAssertEqual(spring.stiffness, 157.91, accuracy: 0.01)
+        XCTAssertEqual(spring.damping, 25.13, accuracy: 0.01)
+        XCTAssertEqual(Fluid.relativeVelocity(100, from: 0, to: 50), 2)
+        XCTAssertEqual(Fluid.relativeVelocity(-100, from: 0, to: 50), -2, "Moving away from the target is negative")
+        XCTAssertEqual(Fluid.relativeVelocity(10_000, from: 0, to: 10), 10, "Capped")
+        XCTAssertEqual(Fluid.relativeVelocity(500, from: 3, to: 3), 0)
+    }
+
+    func testRubberbandResistsMoreTheFurtherItGoes() {
+        XCTAssertEqual(Fluid.rubberband(50, in: 0...100, dimension: 8), 50)
+        let near = Fluid.rubberband(110, in: 0...100, dimension: 8), far = Fluid.rubberband(200, in: 0...100, dimension: 8)
+        XCTAssertGreaterThan(near, 100)
+        XCTAssertGreaterThan(far, near, "Still follows, so reversing moves it at once")
+        XCTAssertLessThan(far, 108)
+        XCTAssertEqual(Fluid.rubberband(-100, in: 0...100, dimension: 8), -Fluid.rubberband(200, in: 0...100, dimension: 8) + 100, accuracy: 0.001)
+    }
+
+    func testSpringExtentCoversOvershoot() {
+        let calm = Fluid.springExtent(from: 0, to: 100, velocity: 0, response: 0.35, dampingRatio: 1)
+        XCTAssertEqual(calm.lowerBound, 0, accuracy: 0.01)
+        XCTAssertEqual(calm.upperBound, 100, accuracy: 0.5, "Critically damped: no overshoot")
+        let thrown = Fluid.springExtent(from: 0, to: 100, velocity: 2000, response: 0.35, dampingRatio: 0.8)
+        XCTAssertGreaterThan(thrown.upperBound, 104, "Thrown hard, it overshoots")
+    }
+
+    func testVelocityTrackerIgnoresAPauseBeforeRelease() {
+        var tracker = VelocityTracker()
+        for step in 0...5 { tracker.add(CGPoint(x: CGFloat(step) * 10, y: 0), at: Double(step) * 0.01) }
+        XCTAssertEqual(tracker.velocity(at: 0.06).dx, 1000, accuracy: 0.1)
+        XCTAssertEqual(tracker.velocity(at: 0.2), .zero, "Came to rest before letting go")
+    }
+
+    func testDraggedPillRubberBandsAndAFlickThrowsIt() {
+        let frame = CGRect(x: 0, y: 0, width: 1920, height: 1080)
+        var layout = DisplayLayout(frame: frame, visibleFrame: CGRect(x: 0, y: 0, width: 1920, height: 1055), safeTop: 0, cameraGap: nil)
+        let width = layout.surface(expanded: false).width
+        let limit = layout.offsetLimit(width: width)
+        XCTAssertEqual(limit, 904)
+        XCTAssertEqual(layout.dragged(offset: 500, width: width), 500)
+        let past = layout.dragged(offset: 1000, width: width)
+        XCTAssertGreaterThan(past, limit)
+        XCTAssertLessThan(past, limit + 8)
+        XCTAssertLessThan(layout.dragged(offset: 950, width: width), past)
+        layout.offset = past
+        XCTAssertEqual(layout.surface(expanded: false).maxX, 1912, "Without stretch the edge margin holds")
+        layout.edgeStretch = 8
+        XCTAssertGreaterThan(layout.surface(expanded: false).maxX, 1912)
+        XCTAssertLessThanOrEqual(layout.surface(expanded: false).maxX, 1920)
+
+        XCTAssertEqual(layout.snapped(offset: 300, width: width), 300)
+        XCTAssertEqual(layout.snapped(offset: 300, width: width, velocity: 1500), limit, "A flick reaches the edge")
+        XCTAssertEqual(layout.snapped(offset: 300, width: width, velocity: -700), 0, "A flick back lands in the center")
+    }
+}

@@ -59,48 +59,6 @@ enum Motion {
             changes()
         }, completionHandler: completion)
     }
-
-    /// Fades (and optionally slides) a layer-backed view in. The model value is already final.
-    static func reveal(_ view: NSView, delay: TimeInterval = 0, duration: TimeInterval = 0.24, dx: CGFloat = 0, dy: CGFloat = 0) {
-        guard enabled, let layer = view.layer else { return }
-        let begin = layer.convertTime(CACurrentMediaTime(), from: nil) + delay
-        let fade = CABasicAnimation(keyPath: "opacity")
-        fade.fromValue = 0
-        fade.toValue = 1
-        var animations: [CAAnimation] = [fade]
-        if dx != 0 || dy != 0 {
-            let slide = CABasicAnimation(keyPath: "transform")
-            slide.fromValue = CATransform3DMakeTranslation(dx, dy, 0)
-            slide.toValue = CATransform3DIdentity
-            animations.append(slide)
-        }
-        for animation in animations {
-            animation.beginTime = begin
-            animation.duration = duration
-            animation.timingFunction = easeOut
-            animation.fillMode = .backwards
-            layer.add(animation, forKey: "reveal." + (animation as! CABasicAnimation).keyPath!)
-        }
-    }
-
-    /// Fades a view out and then runs `done` (immediately when motion is off).
-    static func conceal(_ view: NSView, duration: TimeInterval = 0.12, dx: CGFloat = 0, dy: CGFloat = 0, done: @escaping () -> Void) {
-        guard enabled, let layer = view.layer else { done(); return }
-        CATransaction.begin()
-        CATransaction.setCompletionBlock(done)
-        let fade = CABasicAnimation(keyPath: "opacity")
-        fade.toValue = 0
-        let slide = CABasicAnimation(keyPath: "transform")
-        slide.toValue = CATransform3DMakeTranslation(dx, dy, 0)
-        for animation in [fade, slide] {
-            animation.duration = duration
-            animation.timingFunction = easeIn
-            animation.fillMode = .forwards
-            animation.isRemovedOnCompletion = false
-            layer.add(animation, forKey: "conceal." + animation.keyPath!)
-        }
-        CATransaction.commit()
-    }
 }
 
 extension NSFont {
