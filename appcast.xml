@@ -5,6 +5,25 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
 <title>QNotch for Mac</title>
 <link>https://github.com/Somafet/qnotch</link>
 <item>
+<title>QNotch 0.3.0</title>
+<pubDate>Tue, 20 Oct 2026 13:17:39 GMT</pubDate>
+<sparkle:version>6</sparkle:version>
+<sparkle:shortVersionString>0.3.0</sparkle:shortVersionString>
+<sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+<sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+<sparkle:fullReleaseNotesLink>https://github.com/Somafet/qnotch/releases/tag/macos-v0.3.0</sparkle:fullReleaseNotesLink>
+<description sparkle:format="markdown">## What's Changed
+* Mac diagnostics: outlines, snapshot mode, smoke checks, measure limits, debug channel by @Somafet in https://github.com/Somafet/qnotch/pull/70
+* Shared diagnostics: contract, Mac and Windows implementations by @Somafet in https://github.com/Somafet/qnotch/pull/68
+* Windows diagnostics: outlines, smoke test, measure, debug channel by @Somafet in https://github.com/Somafet/qnotch/pull/69
+* Open the Mac notch from the top row of the display by @Somafet in https://github.com/Somafet/qnotch/pull/72
+* Mac: fluid notch motion (springs by intent, flick, interruptible panel) by @Somafet in https://github.com/Somafet/qnotch/pull/73
+
+
+**Full Changelog**: https://github.com/Somafet/qnotch/compare/macos-v0.2.0...macos-v0.3.0</description>
+<enclosure url="https://github.com/Somafet/qnotch/releases/download/macos-v0.3.0/QNotch-macos-arm64.zip" length="3167738" type="application/octet-stream" sparkle:edSignature="w6lCPZ0ofEXJtdRjb5CJUtkttXrI/sMDALLTk/069Krq6JVlHSGj0Vjmtn39ipEqigXIZgQype/4WCz8li8ICQ=="/>
+</item>
+<item>
 <title>QNotch 0.2.0</title>
 <pubDate>Tue, 20 Oct 2026 07:42:24 GMT</pubDate>
 <sparkle:version>5</sparkle:version>
@@ -55,6 +74,6 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
 </channel>
 </rss>
 <!-- sparkle-signatures:
-edSignature: 78/gVgheAbYe7TI++RCYgyNXBWnp8l9mUQTEOLHI25WwzOcBUhHbBtUzvFC+Ociy8aw886NrcqsrP1CWUIk5AA==
-length: 3733
+edSignature: kAZUW1IdCAZecKl2GMX1hFeD2c5iR8/YgQRd9zGJAFcUw9lXWCCS97IsM0WFa2NCNJhvEY5Eq2gy7qrPmCj1Aw==
+length: 5241
 -->
