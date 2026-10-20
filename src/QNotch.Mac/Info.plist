@@ -15,9 +15,11 @@
     <key>NSAppleEventsUsageDescription</key><string>QNotch controls playback and reads the current position and artwork in Music and Spotify.</string>
     <key>NSSupportsAutomaticGraphicsSwitching</key><true/>
     <!-- Sparkle: the feed URL comes from UpdateChannel. Feed and archives must carry an EdDSA
-         signature from this key, verified before the archive is extracted. Without
-         SUEnableAutomaticChecks, Sparkle asks on the second launch whether to check
-         automatically, as Windows asks on its first start. -->
+         signature from this key, verified before the archive is extracted. There is no
+         SUEnableAutomaticChecks here: the welcome tour's Final touches sets
+         automaticallyChecksForUpdates, which records the choice in the user defaults, so
+         Sparkle does not ask on the second launch. Installs that never recorded a choice
+         still get Sparkle's question. -->
     <key>SUPublicEDKey</key><string>D3Cin3SwrpqCUdqKVxS996g62llRgWF/1kfTEe50wLc=</string>
     <key>SURequireSignedFeed</key><true/>
     <key>SUVerifyUpdateBeforeExtraction</key><true/>

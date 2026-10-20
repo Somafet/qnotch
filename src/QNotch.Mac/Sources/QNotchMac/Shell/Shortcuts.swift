@@ -157,12 +157,26 @@ final class ShortcutRegistry {
     }
 }
 
+extension KeyCombo {
+    /// The gesture of a key press (its key and ⌃⌥⇧⌘), whether or not it is allowed globally.
+    init?(event: NSEvent) {
+        let flags = event.modifierFlags.intersection([.command, .option, .control, .shift])
+        var modifiers: UInt32 = 0
+        if flags.contains(.command) { modifiers |= KeyCombo.command }
+        if flags.contains(.option) { modifiers |= KeyCombo.option }
+        if flags.contains(.control) { modifiers |= KeyCombo.control }
+        if flags.contains(.shift) { modifiers |= KeyCombo.shift }
+        self.init(keyCode: UInt32(event.keyCode), modifiers: modifiers)
+    }
+}
+
 /// Settings control that records a shortcut: click, then press the keys. Esc cancels,
 /// Delete turns the shortcut off. Global shortcuts need ⌃, ⌥ or ⌘.
 final class ShortcutRecorder: NSButton {
     private let registry: ShortcutRegistry
     private let id: String
     private var recording = false { didSet { registry.suspend(recording); refresh() } }
+    var isRecording: Bool { recording }
     var finished: (() -> Void)?
 
     init(registry: ShortcutRegistry, id: String) {
@@ -180,7 +194,8 @@ final class ShortcutRecorder: NSButton {
 
     override var acceptsFirstResponder: Bool { true }
 
-    @objc private func begin() {
+    /// Starts listening (a click, or the welcome tour's Change).
+    @objc func begin() {
         recording = true
         window?.makeFirstResponder(self)
     }
@@ -210,12 +225,7 @@ final class ShortcutRecorder: NSButton {
             registry.set(id, nil)
             finish()
         default:
-            var modifiers: UInt32 = 0
-            if flags.contains(.command) { modifiers |= KeyCombo.command }
-            if flags.contains(.option) { modifiers |= KeyCombo.option }
-            if flags.contains(.control) { modifiers |= KeyCombo.control }
-            if flags.contains(.shift) { modifiers |= KeyCombo.shift }
-            guard let combo = KeyCombo(keyCode: UInt32(event.keyCode), modifiers: modifiers), combo.isAllowedGlobally else {
+            guard let combo = KeyCombo(event: event), combo.isAllowedGlobally else {
                 NSSound.beep()
                 return
             }

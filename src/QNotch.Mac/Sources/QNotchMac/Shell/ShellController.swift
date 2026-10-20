@@ -42,9 +42,14 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     var statusChanged: (() -> Void)?
     /// Sparkle updates; nil in development, diagnostic and isolated runs.
     var updater: Updater?
+    /// A fresh install: no module is constructed until the welcome tour ends, so its feature
+    /// choices apply directly.
+    private(set) var modulesDeferred: Bool
+    private(set) var onboarding: OnboardingController?
 
-    init(store: SettingsStore) {
+    init(store: SettingsStore, deferModules: Bool = false) {
         self.store = store
+        modulesDeferred = deferModules
         general = store.load("general", default: GeneralSettings())
         Motion.userReduced = general.reduceMotion
         Palette.accentOverride = general.accent.flatMap(Palette.hex)
@@ -188,7 +193,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     /// Stops modules that were turned off and constructs those turned on. Modules that stay on
     /// keep running untouched (a running countdown survives turning Note off).
     private func composeModules() {
-        let wanted = ModuleList.all.filter { general.isEnabled($0.id) }
+        let wanted = modulesDeferred ? [] : ModuleList.all.filter { general.isEnabled($0.id) }
         for (id, module) in loaded where !wanted.contains(where: { $0.id == id }) {
             module.stop()
             if fileDropOwner == id {
@@ -234,6 +239,57 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         rebuildSurface()
         updateVisibility()
         statusChanged?()
+    }
+
+    /// Ends the first-run deferral: constructs the chosen modules and shows their status.
+    func startModules() {
+        guard modulesDeferred else { return }
+        modulesDeferred = false
+        composeModules()
+        if let panelView { panelView.removeFromSuperview(); self.panelView = nil }
+        resolveDisplay()
+        rebuildSurface()
+        updateVisibility()
+        statusChanged?()
+        start()
+    }
+
+    /// A running module by id, nil when it is off (or not constructed yet).
+    func module(_ id: String) -> NotchModule? { loaded.first { $0.id == id }?.module }
+
+    // MARK: Welcome tour
+
+    /// Opens the welcome tour, or brings it forward. `firstRun`: the fresh-install tour, before any
+    /// module is constructed; the modules start when it ends.
+    @discardableResult
+    func showOnboarding(firstRun: Bool = false, isolated: Bool = false) -> OnboardingController {
+        if let onboarding {
+            onboarding.show()
+            return onboarding
+        }
+        close(restoreFocus: false)
+        // Recorded as pending, so a tour that never ends shows again at the next launch.
+        if firstRun { updateGeneral { $0.onboardingDone = false } }
+        let controller = OnboardingController(shell: self, firstRun: firstRun, isolated: isolated)
+        controller.ended = { [weak self] in self?.onboardingEnded() }
+        onboarding = controller
+        controller.show()
+        return controller
+    }
+
+    /// Finished, skipped or closed: never shown automatically again.
+    private func onboardingEnded() {
+        onboarding = nil
+        if general.onboardingDone != true { updateGeneral { $0.onboardingDone = true } }
+        startModules()
+    }
+
+    /// The tour's Open QNotch: the panel on Home, ready for typing.
+    func openHome() {
+        if activeTab != "home" { selectTab("home") }
+        open(keyboard: true)
+        // Opening during a notification peek moves to Notifications; Open QNotch means Home.
+        if activeTab != "home" { selectTab("home") }
     }
 
     func closePanel() { close() }
@@ -380,7 +436,8 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     }
 
     func open(keyboard: Bool) {
-        guard screen != nil, !gameActive else { return }
+        // During the first-run tour there is nothing to show yet.
+        guard screen != nil, !gameActive, !modulesDeferred else { return }
         hoverTask?.cancel(); leaveTask?.cancel()
         let wasExpanded = state.expanded
         if keyboard, !state.acceptsKeyboard { previousApp = NSWorkspace.shared.frontmostApplication }
@@ -486,7 +543,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
             guard let self else { return [] }
             let pages = SettingsController.appPages.map { ($0.id, $0.title, $0.keywords) } +
                 self.registries.settingsSections.items.map { ("module." + $0.id, $0.title, "") } +
-                [("about", "About", "version updates check for updates beta")]
+                [("about", "About", "version updates check for updates beta welcome tour onboarding")]
             return pages.filter { "\($0.1) \($0.2)".localizedCaseInsensitiveContains(query) }.map { page in
                 SearchHit(title: page.1, detail: "Settings · opens this page", symbol: "gearshape") { [weak self] in self?.openSettings(page: page.0) }
             }

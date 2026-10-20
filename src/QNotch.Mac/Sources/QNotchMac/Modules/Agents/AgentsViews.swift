@@ -184,8 +184,8 @@ private final class SessionRow: FillView {
 extension AgentsModule {
     func makeSettings() -> NSView {
         let width = SettingsController.contentWidth
-        let rows = connections.map { connection -> NSView in
-            let status = status(connection)
+        let rows = Self.connections.map { connection -> NSView in
+            let status = Self.status(connection)
             let detail: String
             var buttons: [NSView] = []
             switch status {
@@ -223,12 +223,86 @@ extension AgentsModule {
     }
 
     private func toggle(_ connection: Connection, _ on: Bool) {
-        do { try setConnected(connection, on) } catch {
+        Self.change(connection, connect: on)
+        contextShell?.openSettings(section: "agents")
+    }
+
+    /// Settings' Connect and Disconnect, also used by the welcome tour: the same file changes,
+    /// backup and messages.
+    @discardableResult
+    static func change(_ connection: Connection, connect on: Bool) -> Bool {
+        do {
+            try setConnected(connection, on)
+            return true
+        } catch {
             let alert = NSAlert()
             alert.messageText = on ? "QNotch could not connect \(connection.title)." : "QNotch could not disconnect \(connection.title)."
             alert.informativeText = "\(error)"
             alert.runModal()
+            return false
         }
-        contextShell?.openSettings(section: "agents")
+    }
+
+    /// The welcome tour's Connect row: Connect for each installed agent (its folder exists).
+    static func setupRow(_ context: ModuleSetupContext) -> NSView? {
+        let installed = connections.filter { FileManager.default.fileExists(atPath: $0.directory.path) }
+        return installed.isEmpty ? nil : AgentsSetupView(connections: installed)
+    }
+}
+
+/// One line per installed agent: its status and Connect (or Use This Copy).
+final class AgentsSetupView: NSStackView {
+    private let connections: [AgentsModule.Connection]
+
+    init(connections: [AgentsModule.Connection]) {
+        self.connections = connections
+        super.init(frame: .zero)
+        orientation = .vertical
+        alignment = .leading
+        spacing = 6
+        reload()
+    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    /// `connected`: the title just connected; its line turns green and its check pops.
+    private func reload(connected: String? = nil) {
+        arrangedSubviews.forEach { $0.removeFromSuperview() }
+        var pops: [NSView] = []
+        for connection in connections {
+            let text: String
+            var action: HoverButton?
+            switch AgentsModule.status(connection) {
+            case .connected:
+                text = connection.connectedHint
+            case .otherCopy:
+                text = "\(connection.title) is connected to another copy of QNotch."
+                action = HoverButton("Use This Copy", style: .plain) { [weak self] in self?.connect(connection) }
+            case .notInstalled:
+                text = "\(connection.title): not connected."
+                action = HoverButton("Connect \(connection.title)", style: .plain) { [weak self] in self?.connect(connection) }
+            case .error(let message):
+                text = "\(connection.fileName) could not be read: \(message)"
+            }
+            action?.pressScale = 0.97
+            let status = setupStatus(text)
+            var views: [NSView] = [status, spacer()]
+            if connection.title == connected, action == nil {
+                status.textColor = .systemGreen
+                let check = symbol("checkmark.circle.fill", size: 13, weight: .semibold, color: .systemGreen)
+                views.insert(check, at: 0)
+                pops.append(check)
+            }
+            if let action { views.append(action) }
+            addArrangedSubview(row(views, spacing: 10))
+        }
+        for view in arrangedSubviews { view.widthAnchor.constraint(equalTo: widthAnchor).isActive = true }
+        guard !pops.isEmpty else { return }
+        layoutSubtreeIfNeeded()
+        pops.forEach { Motion.pop($0) }
+    }
+
+    private func connect(_ connection: AgentsModule.Connection) {
+        let done = AgentsModule.change(connection, connect: true)
+        reload(connected: done ? connection.title : nil)
     }
 }

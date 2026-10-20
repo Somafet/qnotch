@@ -73,6 +73,20 @@ final class GithubModule: NotchModule {
     }
 
     private func query(_ text: String, token: String, done: @escaping (Result<[String: Any], GithubError>) -> Void) {
+        Self.query(text, token: token, session: session, done: done)
+    }
+
+    /// For checks before the module exists (the welcome tour) and for the sign-in view.
+    static let checkSession = URLSession(configuration: .ephemeral)
+
+    /// Checks a token with the login query: the account's login, or the error to show.
+    static func login(token: String, session: URLSession = GithubModule.checkSession, done: @escaping (Result<String, GithubError>) -> Void) {
+        query(GithubData.loginQuery, token: token, session: session) { result in
+            done(result.map { payload in ((payload["viewer"] as? [String: Any])?["login"] as? String) ?? "" })
+        }
+    }
+
+    static func query(_ text: String, token: String, session: URLSession, done: @escaping (Result<[String: Any], GithubError>) -> Void) {
         var request = URLRequest(url: URL(string: "https://api.github.com/graphql")!)
         request.httpMethod = "POST"
         request.timeoutInterval = 20
@@ -142,11 +156,9 @@ final class GithubModule: NotchModule {
 
     func test(_ candidate: String?, done: @escaping (Bool, String) -> Void) {
         guard let token = candidate.flatMap({ $0.isEmpty ? nil : $0 }) ?? self.token else { return done(false, "Enter a token first.") }
-        query(GithubData.loginQuery, token: token) { result in
+        Self.login(token: token, session: session) { result in
             switch result {
-            case .success(let payload):
-                let login = (payload["viewer"] as? [String: Any])?["login"] as? String ?? ""
-                done(true, "Connected as @\(login).")
+            case .success(let login): done(true, "Connected as @\(login).")
             case .failure(let failure): done(false, failure.text)
             }
         }
@@ -326,12 +338,20 @@ extension GithubModule {
         refresh.isEnabled = hasToken
         let box = NSView()
         embed(note, in: box, inset: NSEdgeInsets(top: 0, left: 14, bottom: 8, right: 14), fill: true)
-        return settingsGroup([
-            settingsRow("Status", detail: status, width: width),
-            settingsRow("Personal access token", detail: "A classic token with read:user; add repo to count private activity.", control: row([field, save], spacing: 6), width: width),
+        var signIn: [NSView] = []
+        if GithubOAuth.available {
+            let view = GithubSignInView(look: .settings) { [weak self] token in self?.save(token) ?? false }
+            let flow = NSView()
+            embed(view, in: flow, inset: NSEdgeInsets(top: 0, left: 14, bottom: 10, right: 14), fill: true)
+            signIn = [settingsRow("Sign in with GitHub", detail: "Approve QNotch on github.com in your browser. Only read:user is requested.", width: width), flow]
+        }
+        return settingsGroup([settingsRow("Status", detail: status, width: width)] + signIn + [
+            settingsRow(GithubOAuth.available ? "Or use a personal access token" : "Personal access token",
+                        detail: "A classic token with read:user; add repo to count private activity.", control: row([field, save], spacing: 6), width: width),
             settingsRow("Connection", detail: "Test checks the token in the box, or the saved one.", control: row([test, remove], spacing: 6), width: width),
             box,
             settingsRow("Activity", detail: "Refreshes every hour.", control: refresh, width: width)
-        ], footer: "The token is stored in your Keychain, never in a file, and sent only to api.github.com.", width: width)
+        ], footer: "The token is stored in your Keychain, never in a file, and sent only to api.github.com." +
+            (GithubOAuth.available ? " Signing in talks to github.com only until you approve or cancel." : ""), width: width)
     }
 }

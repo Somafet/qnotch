@@ -35,6 +35,14 @@ final class Updater: NSObject, SPUUpdaterDelegate, SPUStandardUserDriverDelegate
     }
 
     var canCheck: Bool { updater.canCheckForUpdates }
+
+    /// Sparkle's own setting. Setting it stores SUEnableAutomaticChecks in the app's defaults, which
+    /// also records that the choice was made, so Sparkle does not ask on the second launch.
+    var checksAutomatically: Bool {
+        get { updater.automaticallyChecksForUpdates }
+        set { updater.automaticallyChecksForUpdates = newValue }
+    }
+
     func check() {
         NSApp.activate(ignoringOtherApps: true)
         controller.checkForUpdates(nil)

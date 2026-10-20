@@ -44,7 +44,18 @@ private final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenu
                 exit(1)
             }
         } catch { /* The Settings window reports persistence failures; the app remains usable. */ }
-        shell = ShellController(store: SettingsStore(directory: dataDirectory))
+        // The welcome tour: on a fresh install it runs before any module is constructed; settings
+        // from before the tour are marked done without showing it. Diagnostic runs never show it.
+        let store = SettingsStore(directory: dataDirectory)
+        let generalExists = FileManager.default.fileExists(atPath: dataDirectory.appendingPathComponent("general.json").path)
+        var general = store.load("general", default: GeneralSettings())
+        let tour = Onboarding.atLaunch(settingsExist: generalExists, readable: store.problem == nil,
+                                       done: general.onboardingDone, diagnostics: Runtime.diagnostics)
+        if tour == .markDone {
+            general.onboardingDone = true
+            store.save("general", general)
+        }
+        shell = ShellController(store: store, deferModules: tour == .show)
         shell.updater = Updater.makeIfAvailable(isolated: isolated != nil) { [weak shell] in shell?.general.betaUpdates == true }
         installMainMenu()
         item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
@@ -74,7 +85,7 @@ private final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenu
         item.menu = menu
         shell.statusChanged = { [weak self] in self?.refreshStatus() }
         refreshStatus()
-        shell.start()
+        if tour == .show { shell.showOnboarding(firstRun: true, isolated: isolated != nil) } else { shell.start() }
         let ready = PerformanceMeasurement.secondsSinceProcessStart() ?? (ProcessInfo.processInfo.systemUptime - launched)
         writeLog("ready startup_seconds=\(String(format: "%.4f", ready))")
         if let output = option("--output", in: args) {
@@ -88,7 +99,10 @@ private final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenu
         shell?.stop()
         if lockDescriptor >= 0 { Darwin.close(lockDescriptor) }
     }
-    @objc private func openPanel() { shell.open(keyboard: true) }
+    @objc private func openPanel() {
+        // During the first-run tour there is no panel content yet: bring the tour forward.
+        if shell.modulesDeferred, let tour = shell.onboarding { tour.show() } else { shell.open(keyboard: true) }
+    }
     @objc private func setGameMode(_ sender: NSMenuItem) {
         if let raw = sender.representedObject as? String, let mode = GameOverride(rawValue: raw) { shell.gameMode.override = mode }
     }

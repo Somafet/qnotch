@@ -203,6 +203,8 @@ enum NativeSmokeTest {
                         if let problem { return fail(problem, output: output) }
                         exerciseAgents(shell: shell, output: output) { problem in
                         if let problem { return fail(problem, output: output) }
+                        exerciseOnboarding(shell: shell, output: output) { problem in
+                        if let problem { return fail(problem, output: output) }
                         shell.openSettings()
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                             do {
@@ -211,10 +213,11 @@ enum NativeSmokeTest {
                                 }
                                 try shell.settings?.snapshotPages(to: output)
                                 shell.settings?.window.close()
-                                let report = "Native UI smoke: actual window placement verified; camera center reserved; hover preserves focus; explicit summon grants keyboard; Escape collapses; running timer shows its status wing; toggle and search hotkeys work; timer completes hidden with one wake and opens Home; disabled module not constructed; every Home card and tab rendered; game mode keeps the notch out of the way; edit mode holds the panel and a card drag saves its place; notify command, waiting answer and loopback HTTP work; agent hooks update the board, transcript usage is read and agent processes are tracked and stopped; clipboard skips concealed content; file tray accepts drops and lists files; pin, card hiding and accent applied; mic and camera segment shown; system stats sampled; note saved after its debounce; interactive controls named; every settings page rendered, reachable in the sidebar and About found by Search.\nstartup_seconds=\(ready)\n\(screenLocked ? "note=screen locked; window-server key status not checked\n" : "")done\n"
+                                let report = "Native UI smoke: actual window placement verified; camera center reserved; hover preserves focus; explicit summon grants keyboard; Escape collapses; running timer shows its status wing; toggle and search hotkeys work; timer completes hidden with one wake and opens Home; disabled module not constructed; every Home card and tab rendered; game mode keeps the notch out of the way; edit mode holds the panel and a card drag saves its place; notify command, waiting answer and loopback HTTP work; agent hooks update the board, transcript usage is read and agent processes are tracked and stopped; clipboard skips concealed content; file tray accepts drops and lists files; the welcome tour stays closed at launch, then opens from Settings and steps through every step (the toggle gesture is noticed in the window, a feature switch applies, Open QNotch opens Home with the keyboard, Esc skips); pin, card hiding and accent applied; mic and camera segment shown; system stats sampled; note saved after its debounce; interactive controls named; every settings page rendered, reachable in the sidebar and About found by Search.\nstartup_seconds=\(ready)\n\(screenLocked ? "note=screen locked; window-server key status not checked\n" : "")done\n"
                                 try Data(report.utf8).write(to: output.appendingPathComponent("smoke.txt"))
                                 NSApp.terminate(nil)
                             } catch { fail(error, output: output) }
+                        }
                         }
                         }
                         }
@@ -223,6 +226,109 @@ enum NativeSmokeTest {
             } catch { fail(error, output: output) }
         }
     }
+    /// The welcome tour: never shown automatically in a diagnostic run; opened as Settings, About
+    /// does, stepped through with snapshots of every step, then finished and, reopened, skipped.
+    private static func exerciseOnboarding(shell: ShellController, output: URL, done: @escaping (Error?) -> Void) {
+        guard shell.onboarding == nil, !shell.modulesDeferred, shell.general.onboardingDone == nil else {
+            return done(Failure("The welcome tour was shown or recorded in a diagnostic run"))
+        }
+        let tour = shell.showOnboarding()
+        var notes: [String] = []
+        func snap(_ name: String? = nil) throws {
+            guard let view = tour.window.contentView else { throw Failure("The welcome tour has no content") }
+            view.layoutSubtreeIfNeeded()
+            try ShellController.snapshot(view: view, to: output.appendingPathComponent("onboarding-\(name ?? tour.step.rawValue).png"))
+            try requireNames(view, in: "the welcome tour (\(tour.step.rawValue))")
+        }
+        func expect(_ step: Onboarding.Step) throws {
+            guard tour.step == step else { throw Failure("The welcome tour showed \(tour.step.rawValue), expected \(step.rawValue)") }
+        }
+        do {
+            guard !tour.firstRun, tour.window.isVisible, tour.steps.first == .welcome, tour.steps.last == .finish else {
+                throw Failure("Show Welcome Tour did not open the tour on its first step (\(tour.steps.map(\.rawValue)))")
+            }
+            try snap()
+            tour.advance()
+            try expect(.open)
+            try snap()
+            tour.pressToggleGesture()
+            guard tour.triedGesture, !shell.state.expanded else { throw Failure("The toggle gesture in the tour was not noticed in its window, or opened the panel") }
+            try snap("open-tried")
+            // Return continues, unless the window cannot take the keyboard here (a locked screen).
+            if let event = NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime,
+                                            windowNumber: tour.window.windowNumber, context: nil, characters: "\r", charactersIgnoringModifiers: "\r",
+                                            isARepeat: false, keyCode: 36) {
+                tour.window.sendEvent(event)
+            }
+            if tour.step == .open {
+                guard !tour.window.isKeyWindow else { throw Failure("Return did not continue the welcome tour") }
+                notes.append("return_key=not checked (window not key)")
+                tour.advance()
+            }
+            try expect(.features)
+            try snap()
+            guard tour.flipFeature("note"), !shell.general.isEnabled("note"), !shell.modules.contains(where: { $0 is NoteModule }) else {
+                throw Failure("A feature switch in the tour did not turn the feature off")
+            }
+            guard tour.flipFeature("note"), shell.general.isEnabled("note"), shell.modules.contains(where: { $0 is NoteModule }) else {
+                throw Failure("A feature switch in the tour did not turn the feature back on")
+            }
+            tour.advance()
+            try expect(.connect)
+            guard tour.connectModuleIds.contains("github"), tour.connectModuleIds.contains("weather") else {
+                throw Failure("The Connect step lacks the GitHub or Weather row (\(tour.connectModuleIds))")
+            }
+            try snap()
+            tour.advance()
+            try expect(.finish)
+            try snap()
+            tour.goBack()
+            try expect(.connect)
+            tour.advance()
+            notes.append("steps=\(tour.steps.map(\.rawValue).joined(separator: ","))")
+            notes.append("connect_rows=\(tour.connectModuleIds.joined(separator: ","))")
+            tour.advance() // Open QNotch
+        } catch { return done(error) }
+        func panelState() -> String {
+            "presentation=\(shell.state.presentation) tab=\(shell.activeTab) key=\(shell.panel.isKeyWindow) keyWindow=\(String(describing: NSApp.keyWindow)) active=\(NSApp.isActive) game=\(shell.gameActive)"
+        }
+        let opened = shell.state.acceptsKeyboard && shell.activeTab == "home"
+        let atOnce = panelState()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            guard shell.onboarding == nil, !tour.window.isVisible, shell.general.onboardingDone == true else {
+                return done(Failure("Open QNotch did not end the tour and record it as done"))
+            }
+            guard tour.runningLoops == 0, tour.window.contentView?.layer?.animationKeys()?.isEmpty ?? true else {
+                return done(Failure("An animation of the welcome tour outlived it"))
+            }
+            guard opened, shell.state.acceptsKeyboard, shell.activeTab == "home" else {
+                return done(Failure("Open QNotch did not open Home with the keyboard (at once: \(atOnce); later: \(panelState()))"))
+            }
+            shell.close(restoreFocus: false)
+            let again = shell.showOnboarding()
+            again.window.cancelOperation(nil) // Esc
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                guard shell.onboarding == nil, !again.window.isVisible, !shell.state.expanded else { return done(Failure("Esc did not skip the welcome tour")) }
+                try? Data((notes.joined(separator: "\n") + "\n").utf8).write(to: output.appendingPathComponent("onboarding.txt"))
+                done(nil)
+            }
+        }
+    }
+
+    /// Every button and focusable control in `root` has an accessible name.
+    private static func requireNames(_ root: NSView, in place: String) throws {
+        func walk(_ view: NSView) throws {
+            guard !view.isHidden else { return }
+            // Scrollers are AppKit's own and named by the system.
+            if let control = view as? NSControl, !(control is NSScroller), control is NSButton || control.acceptsFirstResponder {
+                let name = control.accessibilityLabel() ?? (control as? NSButton)?.title ?? ""
+                guard !name.isEmpty else { throw Failure("A \(type(of: control)) in \(place) has no accessible name") }
+            }
+            for child in view.subviews { try walk(child) }
+        }
+        try walk(root)
+    }
+
     /// Hook events through the real `QNotch agent` binary, then sample sessions for the snapshots.
     private static func exerciseAgents(shell: ShellController, output: URL, done: @escaping (Error?) -> Void) {
         guard let module = shell.modules.lazy.compactMap({ $0 as? AgentsModule }).first else { return done(nil) }

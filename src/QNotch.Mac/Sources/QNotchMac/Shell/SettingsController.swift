@@ -606,10 +606,12 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
         let build = shell.updater == nil ? " · Development build" : ""
         let identity = row([tile, column([label("QNotch", size: 20, weight: .bold),
                                           label("Version \(version)\(build)", size: 12, color: .secondaryLabelColor)], spacing: 2)], spacing: 14)
+        let tour = actionButton("Show Welcome Tour") { [weak self] in _ = self?.shell.showOnboarding() }
         let stack = column([
             identity,
             updatesGroup(width: width),
             settingsGroup([
+                settingsRow("Welcome tour", detail: "What QNotch does, your features and accounts, in a few steps.", control: tour, width: width),
                 settingsRow("Hover the notch", detail: "Opens the panel without taking the keyboard.", width: width),
                 settingsRow("Click the notch", detail: "Opens it for typing. Start typing to search, or press ⌘F.", width: width),
                 settingsRow("Escape or click outside", detail: "Closes the panel and returns focus to your app.", width: width),

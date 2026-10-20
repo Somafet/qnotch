@@ -361,11 +361,12 @@ final class AgentsModule: NotchModule {
     }
 
     // MARK: Connections
+    // Static: the welcome tour's Connect row uses them before the module exists.
 
-    var executable: String { Bundle.main.executablePath ?? "QNotch" }
+    static var executable: String { Bundle.main.executablePath ?? "QNotch" }
 
     /// The default Claude Code folder (or CLAUDE_CONFIG_DIR), every ~/.claude-* folder in use, and Codex.
-    var connections: [Connection] {
+    static var connections: [Connection] {
         let home = FileManager.default.homeDirectoryForCurrentUser
         let environment = ProcessInfo.processInfo.environment
         let main = environment["CLAUDE_CONFIG_DIR"].map { URL(fileURLWithPath: $0, isDirectory: true) } ?? home.appendingPathComponent(".claude", isDirectory: true)
@@ -389,12 +390,12 @@ final class AgentsModule: NotchModule {
         return list
     }
 
-    func status(_ connection: Connection) -> AgentHookFile.Status {
+    static func status(_ connection: Connection) -> AgentHookFile.Status {
         connection.file.status(of: try? String(contentsOf: connection.path, encoding: .utf8))
     }
 
     /// Backs up the original file (once, before QNotch first touches it) and writes atomically.
-    func setConnected(_ connection: Connection, _ on: Bool) throws {
+    static func setConnected(_ connection: Connection, _ on: Bool) throws {
         let path = connection.path
         let text = try? String(contentsOf: path, encoding: .utf8)
         let next = on ? try connection.file.connect(text) : try connection.file.disconnect(text)
