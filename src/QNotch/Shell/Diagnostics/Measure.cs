@@ -34,14 +34,25 @@ internal static partial class Measure
             await h.Window.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
             await Task.Delay(TimeSpan.FromSeconds(WarmupSeconds));
 
+            var hz = CyclesPerSecond();
+            // Thread list and calibration stay outside the interval: CPU is read last at the start and first at the end.
             proc.Refresh();
-            var (cpu0, ws0, pb0, state0) = (proc.TotalProcessorTime, proc.WorkingSet64, proc.PrivateMemorySize64, State(h));
+            var threads0 = Threads(proc);
+            var (ws0, pb0, state0) = (proc.WorkingSet64, proc.PrivateMemorySize64, State(h));
+            var (cycles0, cpu0) = (Cycles(), proc.TotalProcessorTime);
             var sw = Stopwatch.StartNew();
             await Task.Delay(TimeSpan.FromSeconds(IntervalSeconds));
-            proc.Refresh();
-            var (cpu1, ws1, pb1, state1) = (proc.TotalProcessorTime, proc.WorkingSet64, proc.PrivateMemorySize64, State(h));
+            var (cycles1, cpu1) = (Cycles(), proc.TotalProcessorTime);
             var seconds = sw.Elapsed.TotalSeconds;
-            var cpuSeconds = (cpu1 - cpu0).TotalSeconds;
+            proc.Refresh();
+            var (ws1, pb1, state1, threads1) = (proc.WorkingSet64, proc.PrivateMemorySize64, State(h), Threads(proc));
+            // Where the CPU went: the busiest threads over the interval (ui = the dispatcher thread), for a failed limit.
+            var ui = GetCurrentThreadId();
+            var busiest = string.Join(", ", threads1.Select(t => (t.Key, Ms: (t.Value - threads0.GetValueOrDefault(t.Key)).TotalMilliseconds))
+                .Where(t => t.Ms >= 1).OrderByDescending(t => t.Ms).Take(5).Select(t => $"{(t.Key == ui ? "ui" : "thread " + t.Key)} {t.Ms:0} ms"));
+            // Exact cycles (QueryProcessCycleTime) when calibrated; the tick-sampled CPU time (15.6 ms resolution) is kept as a second opinion.
+            var tickSeconds = (cpu1 - cpu0).TotalSeconds;
+            var cpuSeconds = hz > 0 ? (cycles1 - cycles0) / hz : tickSeconds;
             var cpu = cpuSeconds / seconds * 100;
 
             var limits = new List<(string Name, double Limit, double Measured, bool Ok)>
@@ -68,8 +79,10 @@ internal static partial class Measure
                 w.WriteString("cpu_model", Reg(@"HARDWARE\DESCRIPTION\System\CentralProcessor\0", "ProcessorNameString") ?? "unknown");
                 w.WriteNumber("logical_processors", Environment.ProcessorCount);
                 w.WriteNumber("physical_memory_bytes", PhysicalMemory());
-                w.WriteString("method", $"In-process: System.Diagnostics.Process TotalProcessorTime (user + kernel CPU of every thread) and WorkingSet64 / PrivateMemorySize64 after Refresh, " +
-                    $"read at both ends of the interval; CPU percent of one core = CPU seconds / wall seconds * 100. Release build, tiered JIT off. " +
+                w.WriteString("method", $"In-process, read at both ends of the interval. CPU: QueryProcessCycleTime (exact cycles of every thread, user and kernel) divided by " +
+                    $"the cycle rate calibrated on a 100 ms spin of one thread ({hz / 1e9:0.###} GHz); CPU percent of one core = CPU seconds / wall seconds * 100. " +
+                    $"cpu_percent_one_core_ticks is the same from Process.TotalProcessorTime, which Windows samples on the 15.6 ms clock tick. " +
+                    $"Memory: Process.WorkingSet64 (resident) and PrivateMemorySize64 after Refresh. Release build, tiered JIT off. " +
                     $"Every module the normal app loads ({modules.Count}, none turned off: fresh temporary settings), early modules before the first frame and the rest at startup idle, " +
                     $"Game mode on Auto, demo data: settings are read-only, so modules that honor it start no providers (media sessions, clipboard listener, mic and camera watchers, " +
                     $"weather, GitHub, AI usage, phone share, notification and agent pipes) while the System stats sampler, timers and the clock run as usual. No tray icon, no global hotkeys, " +
@@ -81,11 +94,13 @@ internal static partial class Measure
                 w.WriteString("state", state0 == state1 ? state0 : $"{state0} then {state1}");
                 w.WriteNumber("cpu_percent_one_core", Math.Round(cpu, 3));
                 w.WriteNumber("cpu_seconds", Math.Round(cpuSeconds, 4));
+                w.WriteNumber("cpu_percent_one_core_ticks", Math.Round(tickSeconds / seconds * 100, 3));
                 w.WriteNumber("resident_bytes_start", ws0);
                 w.WriteNumber("resident_bytes_end", ws1);
                 w.WriteNumber("private_bytes_start", pb0);
                 w.WriteNumber("private_bytes_end", pb1);
                 w.WriteNumber("gc_heap_bytes_end", GC.GetTotalMemory(false));
+                w.WriteString("busiest_threads", busiest);
                 w.WriteString("modules", string.Join(",", modules));
                 w.WriteStartArray("limits");
                 foreach (var (name, limit, measured, ok) in limits)
@@ -143,6 +158,45 @@ internal static partial class Measure
     [LibraryImport("kernel32.dll", EntryPoint = "GlobalMemoryStatusEx")]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static partial bool GlobalMemoryStatusEx(ref MemoryStatus status);
+
+    [LibraryImport("kernel32.dll")]
+    private static partial int GetCurrentThreadId();
+
+    [LibraryImport("kernel32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static partial bool QueryProcessCycleTime(nint process, out ulong cycles);
+
+    [LibraryImport("kernel32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static partial bool QueryThreadCycleTime(nint thread, out ulong cycles);
+
+    [LibraryImport("kernel32.dll")]
+    private static partial nint GetCurrentThread();
+
+    static double Cycles() => QueryProcessCycleTime(-1, out var c) ? c : 0; // -1: this process
+
+    /// <summary>Cycles per second of thread time: the best of three 100 ms spins (a spin that got preempted reads low). 0 when unavailable.</summary>
+    static double CyclesPerSecond()
+    {
+        var best = 0.0;
+        for (var i = 0; i < 3; i++)
+        {
+            if (!QueryThreadCycleTime(GetCurrentThread(), out var c0)) return 0;
+            var sw = Stopwatch.StartNew();
+            while (sw.ElapsedMilliseconds < 100) { }
+            QueryThreadCycleTime(GetCurrentThread(), out var c1);
+            best = Math.Max(best, (c1 - c0) / sw.Elapsed.TotalSeconds);
+        }
+        return best;
+    }
+
+    static Dictionary<int, TimeSpan> Threads(Process p)
+    {
+        var d = new Dictionary<int, TimeSpan>();
+        foreach (ProcessThread t in p.Threads)
+            try { d[t.Id] = t.TotalProcessorTime; } catch { /* exited meanwhile */ }
+        return d;
+    }
 
     static long PhysicalMemory()
     {

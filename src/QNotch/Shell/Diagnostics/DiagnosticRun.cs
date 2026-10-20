@@ -8,12 +8,16 @@ using QNotch.Modules;
 
 namespace QNotch.Shell.Diagnostics;
 
-/// <summary>What App hands a diagnostic run: the live shell, its registries and modules, and the snapshot writer.</summary>
-/// <param name="Snapshot">Writes everything <c>--snapshot</c> writes into a folder and adds its report lines (views, free-form lines, <c>done</c>).</param>
-internal sealed record DiagnosticHost(NotchWindow Window, ShellController Shell, GeneralSettings Settings, SettingsStore Store, Shortcuts Shortcuts,
-    CardLayout Layout, Registry<TabDescriptor> Tabs, Registry<CardDescriptor> Cards, Registry<SettingsSectionDescriptor> Sections,
-    Registry<SegmentDescriptor> Segments, Registry<SearchSource> Search, IReadOnlyList<(string Id, INotchModule Module)> Modules,
-    Func<string, List<string>, Task> Snapshot);
+/// <summary>What App hands a diagnostic run: the live shell (as the snapshot scene), its registries and modules.</summary>
+/// <param name="OpenDebug">Opens the debug channel on the given pipe name (the smoke test's <c>debug-channel</c> check).</param>
+internal sealed record DiagnosticHost(SnapshotScene Scene, GeneralSettings Settings, SettingsStore Store, Shortcuts Shortcuts, CardLayout Layout,
+    Registry<CardDescriptor> Cards, Registry<SettingsSectionDescriptor> Sections, Registry<SegmentDescriptor> Segments, Registry<SearchSource> Search,
+    IReadOnlyList<(string Id, INotchModule Module)> Modules, Func<string, IDisposable> OpenDebug)
+{
+    public NotchWindow Window => Scene.Window;
+    public ShellController Shell => Scene.Shell;
+    public Registry<TabDescriptor> Tabs => Scene.Tabs;
+}
 
 /// <summary>
 /// Starts <c>--smoke-test</c> and <c>--measure</c> once App booted the shell (spec/diagnostics.md), and the smoke test's module probe: a child

@@ -23,6 +23,10 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
       - name: Build
         run: dotnet build src/QNotch/QNotch.csproj -c Release -warnaserror
 
@@ -35,7 +39,7 @@ jobs:
       - name: Welcome tour checks
         run: dotnet run --project tests/QNotch.OnboardingTests -c Release
 
-      # Renders every tab and settings page off-screen in a clean data folder. Fails if a page throws or it hangs.
+      # Renders every view (pill states, tabs, cards, settings, welcome tour) off-screen in a clean data folder. Fails if a view throws or it hangs.
       - name: Snapshot smoke test
         shell: pwsh
         env:
@@ -51,11 +55,37 @@ jobs:
           $report
           if ($report[-1] -ne 'done') { throw "Snapshot failed" }
 
+      # spec/diagnostics.md: report, outlines, file names and required views.
+      - name: Check snapshot files
+        run: node scripts/check-snapshots.mjs snapshots
+
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: snapshots
           path: snapshots
+          if-no-files-found: ignore
+
+      # spec/diagnostics.md, Smoke checks: the same views, then the real shell on screen, driven through its own methods (no real input).
+      # A check that needs the foreground reports a skip when Windows withholds it. Own data folder and instance; smoke.log has the details.
+      - name: Shell smoke test
+        shell: pwsh
+        env:
+          QNOTCH_INSTANCE: ci-smoke
+          DOTNET_DISABLE_GUI_ERRORS: '1'
+        run: |
+          $exe = "src/QNotch/bin/Release/net10.0-windows10.0.22621.0/win-x64/QNotch.exe"
+          $p = Start-Process $exe -ArgumentList '--smoke-test', "$PWD\smoke", '--data-dir', "$env:RUNNER_TEMP\qnotch-smoke" -PassThru
+          if (-not $p.WaitForExit(240000)) { $p.Kill(); throw "Smoke test timed out" }
+          Get-Content smoke/smoke.txt
+          if ($p.ExitCode -ne 0) { throw "Smoke test exited with code $($p.ExitCode)" }
+          node scripts/check-snapshots.mjs smoke
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: smoke
+          path: smoke
           if-no-files-found: ignore
 
   macos:

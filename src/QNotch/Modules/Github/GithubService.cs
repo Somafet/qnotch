@@ -27,13 +27,15 @@ internal sealed class GithubService
     readonly ModuleContext _ctx;
     readonly GithubState _s;
     readonly Timer _timer;
-    readonly bool _demo = Environment.GetEnvironmentVariable("QNOTCH_GITHUB_DEMO") == "1";
+    /// <summary>A sample graph, never the credential store or the network: QNOTCH_GITHUB_DEMO=1 or a snapshot run.</summary>
+    readonly bool _demo;
     int _busy;
 
     public GithubService(ModuleContext ctx, GithubState state)
     {
         _ctx = ctx;
         _s = state;
+        _demo = ctx.Settings.ReadOnly || Environment.GetEnvironmentVariable("QNOTCH_GITHUB_DEMO") == "1";
         _timer = new Timer(_ => _ = RefreshAsync(), null, Timeout.Infinite, Timeout.Infinite);
     }
 
@@ -42,8 +44,7 @@ internal sealed class GithubService
     {
         try
         {
-            // A read-only run (snapshot, smoke, measure) shows the demo graph: no Credential Manager, no network.
-            if (_demo || _ctx.Settings.ReadOnly) { var demo = GithubData.Demo(); _ctx.Bus.Run(() => { _s.GithubHasToken = true; Show(demo, false, ""); }); return; }
+            if (_demo) { var demo = GithubData.Demo(); _ctx.Bus.Run(() => { _s.GithubHasToken = true; Show(demo, false, ""); }); return; }
             var has = !string.IsNullOrEmpty(CredentialStore.Read());
             var cache = has ? ReadCache() : null;
             _ctx.Bus.Run(() =>
@@ -74,7 +75,7 @@ internal sealed class GithubService
         if (Interlocked.Exchange(ref _busy, 1) == 1) return;
         try
         {
-            if (_demo || _ctx.Settings.ReadOnly) return;
+            if (_demo) return;
             var token = CredentialStore.Read();
             if (string.IsNullOrEmpty(token)) { _ctx.Bus.Run(() => { _s.GithubHasToken = false; _s.GithubStatus = GithubStatus.NoToken; }); return; }
             _ctx.Bus.Run(() => { _s.GithubRefreshing = true; if (_s.GithubGraph is null) _s.GithubStatus = GithubStatus.Loading; });
@@ -119,7 +120,7 @@ internal sealed class GithubService
     /// <summary>Stores the token in Credential Manager and fetches right away.</summary>
     public async Task<bool> SaveTokenAsync(string token)
     {
-        if (!await Task.Run(() => CredentialStore.Write(token))) return false;
+        if (!_demo && !await Task.Run(() => CredentialStore.Write(token))) return false;
         _s.GithubHasToken = true;
         _s.GithubMessage = "";
         if (_s.GithubGraph is null) _s.GithubStatus = GithubStatus.Loading;
@@ -130,7 +131,7 @@ internal sealed class GithubService
     /// <summary>The welcome tour saved a token while the module runs (<see cref="GithubSetup.TokenSaved"/>): fetch with it now.</summary>
     public void TokenSaved()
     {
-        if (_demo || _ctx.Settings.ReadOnly) return;
+        if (_demo) return;
         _s.GithubHasToken = true;
         _s.GithubMessage = "";
         if (_s.GithubGraph is null) _s.GithubStatus = GithubStatus.Loading;
@@ -141,7 +142,7 @@ internal sealed class GithubService
     public async Task ClearTokenAsync()
     {
         _timer.Change(Timeout.Infinite, Timeout.Infinite);
-        await Task.Run(() => { CredentialStore.Delete(); try { File.Delete(CacheFile); } catch { } });
+        if (!_demo) await Task.Run(() => { CredentialStore.Delete(); try { File.Delete(CacheFile); } catch { } });
         _s.GithubHasToken = false;
         _s.GithubGraph = null;
         _s.GithubStale = false;

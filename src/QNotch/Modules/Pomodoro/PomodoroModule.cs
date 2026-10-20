@@ -55,7 +55,22 @@ public sealed class PomodoroModule : INotchModule, ICadenceAware
         ctx.Segments.Register(new SegmentDescriptor("timer.game", SegmentSlot.GameBar, 65, () => Segment(gap: false), "Timer", "Time left, only while a timer runs."));
 
         SetMinutes(Math.Clamp(_s.Minutes, 1, 180), save: false);
-        if (ctx.Settings.ReadOnly) { _left = new TimeSpan(0, 18, 42); _st.IsActive = true; _st.Status = "Paused"; Refresh(); } // snapshot run: frozen demo
+        if (!ctx.Settings.ReadOnly) return;
+        _left = new TimeSpan(0, 18, 42); _st.IsActive = true; _st.Status = "Paused"; Refresh(); // snapshot run: frozen demo
+        ctx.Demos.Register(new DemoState("timer.idle", "idle", 10, () => Demo(running: false)));
+        ctx.Demos.Register(new DemoState("timer.running", "running", 10, () => Demo(running: true)));
+    }
+
+    /// <summary>Snapshot: the demo timer running from where it is paused, or no timer at all. Returns the undo.</summary>
+    Action Demo(bool running)
+    {
+        var (left, active, status) = (_left, _st.IsActive, _st.Status);
+        _tick.Stop();
+        _end = DateTime.UtcNow + left;
+        _st.IsRunning = _st.IsActive = running;
+        _st.Status = "";
+        Refresh();
+        return () => { _tick.Stop(); _st.IsRunning = false; (_left, _st.IsActive, _st.Status) = (left, active, status); Refresh(); };
     }
 
     public void SetCadence(Cadence cadence)

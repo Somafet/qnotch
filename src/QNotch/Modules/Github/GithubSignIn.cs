@@ -100,6 +100,7 @@ internal sealed class GithubSignIn
 
     async void Start()
     {
+        if (_demo) return; // snapshot run: no requests
         Stop(collapse: false);
         var run = _run = new CancellationTokenSource();
         Show("", "Asking GitHub for a code…", "TextSecondaryBrush", open: false, retry: false);

@@ -20,6 +20,9 @@ public partial class SettingsWindow : Window
     readonly Registry<SettingsSectionDescriptor> _sections;
     bool _noAnim;
 
+    /// <summary>The open settings window, if any (debug channel).</summary>
+    internal static SettingsWindow? Current => _instance;
+
     SettingsWindow(Registry<SettingsSectionDescriptor> sections)
     {
         _sections = sections;
@@ -96,22 +99,28 @@ public partial class SettingsWindow : Window
         }
     }
 
-    /// <summary>Snapshot tool: renders every section off-screen through <paramref name="save"/>.</summary>
-    internal static void Snapshot(Registry<SettingsSectionDescriptor> sections, Action<FrameworkElement, string> save)
+    /// <summary>Snapshot tool: renders off-screen, through <paramref name="save"/>, every section <paramref name="wants"/> by id (and
+    /// <c>&lt;id&gt;-end</c>, the bottom of a page taller than the window).</summary>
+    internal static void Snapshot(Registry<SettingsSectionDescriptor> sections, Func<string, bool> wants, Action<FrameworkElement, string> save)
     {
+        if (!sections.Items.Any(s => wants(s.Id) || wants(s.Id + "-end"))) return;
         var w = new SettingsWindow(sections) { WindowStartupLocation = WindowStartupLocation.Manual, Left = -20000, Top = 0, ShowActivated = false, _noAnim = true };
         w.Show();
-        foreach (var s in sections.Items)
+        try
         {
-            w._buttons[s.Id].IsChecked = true;
-            w.UpdateLayout();
-            save((FrameworkElement)w.Content, s.Id);
-            if (w.Scroll.ScrollableHeight <= 0) continue;
-            w.Scroll.ScrollToEnd(); // tall pages (Game mode segments): a second shot of the bottom
-            w.UpdateLayout();
-            save((FrameworkElement)w.Content, s.Id + "-end");
-            w.Scroll.ScrollToHome();
+            foreach (var s in sections.Items)
+            {
+                if (!wants(s.Id) && !wants(s.Id + "-end")) continue;
+                w._buttons[s.Id].IsChecked = true;
+                w.UpdateLayout();
+                if (wants(s.Id)) save((FrameworkElement)w.Content, s.Id);
+                if (w.Scroll.ScrollableHeight <= 0 || !wants(s.Id + "-end")) continue;
+                w.Scroll.ScrollToEnd(); // tall pages (Game mode segments): a second shot of the bottom
+                w.UpdateLayout();
+                save((FrameworkElement)w.Content, s.Id + "-end");
+                w.Scroll.ScrollToHome();
+            }
         }
-        w.Close();
+        finally { w.Close(); }
     }
 }

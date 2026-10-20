@@ -35,6 +35,8 @@ internal sealed partial class SmokeTest
     readonly string _dir;
     readonly StringBuilder _log = new();
     nint _foreground;
+    /// <summary>Game mode detection saw a fullscreen app in front: the keyboard checks leave its foreground alone.</summary>
+    bool _gameInFront;
 
     SmokeTest(DiagnosticOptions o, DiagnosticHost h) { _o = o; _h = h; _dir = o.Dir!; }
 
@@ -44,15 +46,11 @@ internal sealed partial class SmokeTest
     public static async void Run(DiagnosticOptions o, DiagnosticHost h, Action<int> exit)
     {
         var t = new SmokeTest(o, h);
-        var report = new List<string> { $"version: {typeof(SmokeTest).Assembly.GetName().Version?.ToString(3)}" };
-        if (o.Only.Count > 0) report.Add("only: " + string.Join(",", o.Only));
+        var report = Snapshot.Begin(o);
+        var ok = false;
         try
         {
-            Directory.CreateDirectory(t._dir);
-            var views = new List<string>();
-            await h.Snapshot(t._dir, views);
-            report.AddRange(views.Where(l => l != "done" && !l.StartsWith("version:", StringComparison.Ordinal) && !l.StartsWith("only:", StringComparison.Ordinal)));
-            if (!views.Contains("done") && !views.Any(l => l.StartsWith("FAILED", StringComparison.Ordinal))) report.Add("FAILED: snapshot: the views did not finish");
+            ok = await Snapshot.Write(h.Scene, t._dir, o, report);
             await t.Checks(report);
         }
         catch (Exception ex)
@@ -63,38 +61,15 @@ internal sealed partial class SmokeTest
         }
         finally
         {
-            var ok = !report.Any(l => l.StartsWith("FAILED", StringComparison.Ordinal));
-            if (ok) report.Add("done");
             try
             {
-                File.WriteAllText(Path.Combine(t._dir, "smoke.txt"), string.Join("\n", report) + "\n");
                 File.WriteAllText(Path.Combine(t._dir, "smoke.log"), t._log.ToString().ReplaceLineEndings("\n"));
                 var appLog = Path.Combine(Paths.LogDir, "qnotch.log");
                 if (File.Exists(appLog)) File.Copy(appLog, Path.Combine(t._dir, "qnotch.log"), true);
             }
-            catch (Exception ex) { Core.Log.Error("Writing the smoke report failed", ex); ok = false; }
-            exit(ok ? 0 : 1);
+            catch (Exception ex) { Core.Log.Warn("Writing the smoke log failed", ex); }
+            exit(Snapshot.Finish(Path.Combine(t._dir, "smoke.txt"), report, ok) ? 0 : 1);
         }
-    }
-
-    /// <summary>
-    /// Adapter for App until the snapshot runner takes a report list: awaits <paramref name="run"/> (the snapshot runner writing into
-    /// <paramref name="dir"/>), moves its <c>snapshot.txt</c> lines into <paramref name="report"/> and drops the views <c>--only</c> leaves out.
-    /// </summary>
-    public static async Task FromSnapshotTxt(DiagnosticOptions o, string dir, List<string> report, Task run)
-    {
-        await run;
-        var txt = Path.Combine(dir, "snapshot.txt");
-        var lines = File.Exists(txt) ? File.ReadAllLines(txt) : ["FAILED: snapshot: no snapshot.txt"];
-        File.Delete(txt); // one report per folder: smoke.txt
-        foreach (var png in Directory.GetFiles(dir, "*.png"))
-        {
-            var name = Path.GetFileNameWithoutExtension(png);
-            if (o.Includes(name)) continue;
-            File.Delete(png);
-            File.Delete(Path.ChangeExtension(png, ".txt"));
-        }
-        report.AddRange(lines.Where(l => !(l.EndsWith(": ok", StringComparison.Ordinal) && !o.Includes(l[..^4]))));
     }
 
     void Log(string line) => _log.Append(line).Append('\n');
@@ -104,10 +79,11 @@ internal sealed partial class SmokeTest
         // On screen for the checks, the same way a normal start places it. Game mode is held off so a fullscreen app in front does not interfere.
         W.Offscreen = false;
         W.Reposition();
+        _gameInFront = S.GameMode.IsActive;
         S.GameMode.Override = GameModeOverride.ForceOff;
         await Task.Delay(500);
         _foreground = Native.GetForegroundWindow();
-        Log($"foreground at start: {Describe(_foreground)}");
+        Log($"foreground at start: {Describe(_foreground)}; fullscreen app in front: {_gameInFront}");
         var probe = StartProbe();
         try
         {
@@ -131,13 +107,15 @@ internal sealed partial class SmokeTest
                 report.Add(r is null ? $"check {name}: ok" : r.StartsWith("skip: ", StringComparison.Ordinal) ? $"check {name}: {r}" : $"FAILED: check {name}: {r}");
                 await Reset();
             }
+            Task<string?> Foreground(Func<Task<string?>> run) =>
+                _gameInFront ? Task.FromResult<string?>("skip: a fullscreen app is in front (game mode detection), so the smoke test leaves its foreground alone") : run();
             Task<string?> Module(string name) => modules.Remove(name, out var c) ? c.Run() : Task.FromResult<string?>("no module provides this check");
 
             await Check("placement", () => Task.FromResult(Placement()));
             await Check("hover-keeps-focus", HoverKeepsFocus);
-            await Check("hotkey-toggle", HotkeyToggle);
-            await Check("hotkey-search", HotkeySearch);
-            await Check("escape-collapses", EscapeCollapses);
+            await Check("hotkey-toggle", () => Foreground(HotkeyToggle));
+            await Check("hotkey-search", () => Foreground(HotkeySearch));
+            await Check("escape-collapses", () => Foreground(EscapeCollapses));
             await Check("module-disabled", () => ModuleDisabled(probe));
             await Check("module-toggle", () => Task.FromResult<string?>("skip: modules apply on restart on Windows (Settings, Features asks for one)"));
             await Check("edit-mode", EditMode);
@@ -148,7 +126,7 @@ internal sealed partial class SmokeTest
             await Check("game-mode", GameModeCheck);
             await Check("accessible-names", () => Task.FromResult(AccessibleNames()));
             await Check("onboarding", Onboarding);
-            await Check("debug-channel", () => Task.FromResult<string?>("skip: the debug channel is not merged yet"));
+            await Check("debug-channel", () => Foreground(DebugChannelCheck));
             foreach (var (name, c) in modules.ToList()) await Check(name, c.Run);
         }
         finally
@@ -441,6 +419,42 @@ internal sealed partial class SmokeTest
         Log($"Esc on {second}: closed {skipped}, open the panel {skip.OpenPanel}");
         if (!skipped) { skip.Discard(); return "Esc did not skip the tour"; }
         return skip.OpenPanel ? "Esc finished the tour instead of skipping it" : null;
+    }
+
+    /// <summary>The channel stays shut in a smoke run; opened in process on a pipe of its own, ping, state, select-tab and outline answer as documented.</summary>
+    async Task<string?> DebugChannelCheck()
+    {
+        static bool PipeExists(string name) => File.Exists(@"\\.\pipe\" + name);
+        if (PipeExists(DebugCli.PipeName)) return $"the debug channel {DebugCli.PipeName} is open in a smoke run";
+        var pipe = $"QNotch.Debug.smoke-{Guid.NewGuid():N}";
+        string[] requests =
+        [
+            """{"id":1,"cmd":"ping"}""", """{"id":2,"cmd":"state"}""", """{"id":3,"cmd":"select-tab","args":{"id":"search"}}""",
+            """{"id":4,"cmd":"state"}""", """{"id":5,"cmd":"outline"}""", """{"cmd":"nope"}""", """{"id":7,"cmd":"close"}""",
+        ];
+        List<string> replies;
+        using (_h.OpenDebug(pipe)) replies = await DebugCli.ExchangeAsync(pipe, requests);
+        foreach (var r in replies) Log("<- " + (r.Length > 240 ? r[..240] + "..." : r));
+        if (replies.Count != requests.Length) return $"{replies.Count} of {requests.Length} responses";
+        var doc = replies.Select(r => JsonDocument.Parse(r).RootElement).ToList();
+        for (var i = 0; i < doc.Count; i++)
+        {
+            var bad = i == 5; // the unknown command
+            if (doc[i].GetProperty("ok").GetBoolean() == bad) return $"request {i + 1} answered {replies[i]}";
+            if (!bad && (!doc[i].TryGetProperty("id", out var id) || id.GetInt32() != i + 1)) return $"request {i + 1}: its id was not echoed";
+        }
+        var ping = doc[0].GetProperty("result");
+        if (ping.GetProperty("platform").GetString() != "Windows" || ping.GetProperty("pid").GetInt32() != Environment.ProcessId || ping.GetProperty("data_dir").GetString() != Paths.DataDir)
+            return "ping does not describe this process";
+        var before = doc[1].GetProperty("result");
+        if (before.GetProperty("panel").GetString() != "collapsed" || before.GetProperty("modules").GetArrayLength() != ModuleList.All.Count) return "state before select-tab is wrong";
+        var after = doc[3].GetProperty("result");
+        if (after.GetProperty("panel").GetString() != "open" || after.GetProperty("tab").GetString() != "search")
+            return $"after select-tab the panel is {after.GetProperty("panel")} on {after.GetProperty("tab")}";
+        if (doc[4].GetProperty("result").GetProperty("text").GetString() is not { } text || !text.Contains("#tab-search selected", StringComparison.Ordinal))
+            return "the outline does not show the Search tab selected";
+        if (!await Until(() => S.Mode == ShellMode.Collapsed, 1500)) return "close left the panel open";
+        return await Until(() => !PipeExists(pipe), 1000) ? null : "the pipe stayed open after the channel was disposed";
     }
 
     // ---------- helpers ----------

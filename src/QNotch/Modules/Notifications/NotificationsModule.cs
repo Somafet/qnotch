@@ -422,7 +422,7 @@ public sealed partial class NotificationsModule : INotchModule, ICadenceAware
     }
 
     /// <summary>A new token: everything that posts over HTTP needs it from now on.</summary>
-    internal void RenewToken() => _token = NotifyToken.Get(renew: true);
+    internal void RenewToken() { if (!_ctx.Settings.ReadOnly) _token = NotifyToken.Get(renew: true); } // snapshot run: never the credential store
 
     internal void SendTest() => Post(new Note { Id = "qnotch-test", App = "QNotch", Title = "Test notification", Body = "This is what a notification looks like.", Glyph = NotifyIcons.Bell }, null);
 

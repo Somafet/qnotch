@@ -11,7 +11,7 @@
 
         <Grid>
             <TextBox x:Name="Box" Text="{Binding NoteText, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" TextWrapping="Wrap"
-                     MaxLength="100000" FontSize="12" Padding="8,5" SpellCheck.IsEnabled="False"/>
+                     MaxLength="100000" FontSize="12" Padding="8,5" SpellCheck.IsEnabled="False" AutomationProperties.Name="Note"/>
             <TextBlock x:Name="Hint" Text="Jot something down" Style="{StaticResource Muted}" Margin="9,6,9,0" IsHitTestVisible="False"
                        VerticalAlignment="Top" FontSize="12"/>
         </Grid>

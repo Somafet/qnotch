@@ -49,7 +49,10 @@ public partial class App : Application
     SettingsStore? _store;
     ShellController? _shell;
     UpdateService? _updates;
-    DiagnosticOptions _diag = null!;
+    // --debug-control: the debug channel (Shell/Diagnostics/DebugChannel.cs) opens once the shell and every module are up.
+    bool _debugControl;
+    IDisposable? _debug;
+    readonly HashSet<string> _running = new(StringComparer.OrdinalIgnoreCase);
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -59,9 +62,10 @@ public partial class App : Application
         // for this UI (same frame rate measured) and saves about 20 MB of commit (no D3D device).
         System.Windows.Media.RenderOptions.ProcessRenderMode = System.Windows.Interop.RenderMode.SoftwareOnly;
         // Dev tool: QNotch.exe --snapshot <dir> [--appearance light|dark] renders every view to PNG and exits (see Shell/Snapshot.cs).
-        // --smoke-test and --measure boot the same way (read-only, no mutex) and hand over to Shell/Diagnostics/DiagnosticRun.cs.
-        var diag = _diag = DiagnosticOptions.Parse(e.Args);
+        var diag = DiagnosticOptions.Parse(e.Args);
+        // --smoke-test and --measure boot the same way (read-only, no mutex, demo data) and hand over to Shell/Diagnostics/DiagnosticRun.cs.
         var snapDir = diag.RunsOnce ? diag.Dir : null;
+        _debugControl = diag.Mode == DiagnosticMode.DebugControl;
         if (snapDir is null)
         {
             // QNOTCH_INSTANCE keeps parallel test runs apart. --restart: the previous instance is shutting down, wait for its mutex.
@@ -78,21 +82,25 @@ public partial class App : Application
             }
             _mutex = m;
         }
-        try { Boot(snapDir, diag.Appearance); }
+        try { Boot(snapDir, diag); }
         catch (Exception ex)
         {
             Log.Crash("Startup", ex);
             Shutdown(1);
         }
     }
-    void Boot(string? snapDir, string? appearance)
+    void Boot(string? snapDir, DiagnosticOptions diag)
     {
         _store = new SettingsStore { ReadOnly = snapDir is not null };
         var fresh = !_store.Exists("general");
         var gs = _store.Get<GeneralSettings>("general");
         // --measure loads like a normal start (early modules first, the rest and Game mode at idle); snapshot and smoke load everything at once.
-        var measure = _diag.Mode == DiagnosticMode.Measure;
-        if (snapDir is not null) { gs.Pinned = false; gs.DisabledModules = DiagnosticRun.BootDisabled(_diag); if (appearance is not null) gs.Theme = appearance == "light" ? ThemeChoice.Light : ThemeChoice.Dark; } // snapshots load every module
+        var measure = diag.Mode == DiagnosticMode.Measure;
+        if (snapDir is not null) // snapshots load every module, follow the system appearance unless told otherwise and show a demo profile
+        {
+            gs.Pinned = false; gs.DisabledModules = DiagnosticRun.BootDisabled(diag); gs.ProfileName = "Alex"; gs.ProfileImagePath = "";
+            gs.Theme = diag.Appearance switch { "light" => ThemeChoice.Light, "dark" => ThemeChoice.Dark, _ => ThemeChoice.System };
+        }
         // Welcome tour: only on a fresh install. Settings from before it existed record it as done, silently.
         var tour = FirstRun.Decide(!fresh, gs.OnboardingDone, snapDir is not null);
         if (tour == TourStart.MarkDone) { gs.OnboardingDone = true; _store.Save("general", gs); }
@@ -103,6 +111,7 @@ public partial class App : Application
         var tabs = new Registry<TabDescriptor>();
         var sections = new Registry<SettingsSectionDescriptor>();
         var segments = new Registry<SegmentDescriptor>();
+        var demos = new Registry<DemoState>();
 
         var window = new NotchWindow { Offscreen = snapDir is not null };
         window.InitHandle();
@@ -143,7 +152,7 @@ public partial class App : Application
         var ctx = new ModuleContext
         {
             Bus = bus, Settings = _store, Hotkeys = _hotkeys, Shell = shell, Dispatcher = Dispatcher,
-            Cards = cards, Tabs = tabs, SettingsSections = sections, Segments = segments, Search = new(), Shortcuts = shortcuts, Sounds = sounds,
+            Cards = cards, Tabs = tabs, SettingsSections = sections, Segments = segments, Search = new(), Shortcuts = shortcuts, Sounds = sounds, Demos = demos,
         };
         var built = new List<(string Id, INotchModule Module)>();
         List<INotchModule> Init(IEnumerable<ModuleInfo> list)
@@ -156,7 +165,7 @@ public partial class App : Application
                 catch (Exception ex) { Log.Error($"Module '{info.Id}' failed to create", ex); continue; }
                 done.Add(m);
                 built.Add((info.Id, m));
-                try { m.Initialize(ctx); }
+                try { m.Initialize(ctx); _running.Add(info.Id); }
                 catch (Exception ex) { Log.Error($"Module '{info.Id}' failed to initialize", ex); }
             }
             return done;
@@ -183,12 +192,10 @@ public partial class App : Application
 
         if (snapDir is not null)
         {
-            var store = _store;
-            Task Views(string dir, Action exit) => Snapshot.Run(dir, window, shell, tabs, sections, save => SnapshotTour(gs, store, shortcuts, save), exit);
-            if (_diag.Mode == DiagnosticMode.Snapshot) { _ = Views(snapDir, () => Shutdown()); return; }
-            // The smoke test's "everything --snapshot writes": the one adapter call to retarget when the snapshot runner takes a report list.
-            DiagnosticRun.Start(_diag, new DiagnosticHost(window, shell, gs, store, shortcuts, layout, tabs, cards, sections, segments, ctx.Search, built,
-                (dir, report) => SmokeTest.FromSnapshotTxt(_diag, dir, report, Views(dir, () => { }))), code => Shutdown(code));
+            var scene = new SnapshotScene(window, shell, tabs, sections, layout, demos, save => SnapshotTour(gs, _store, shortcuts, save));
+            if (diag.Mode == DiagnosticMode.Snapshot) Snapshot.Run(scene, diag, Shutdown);
+            else DiagnosticRun.Start(diag, new DiagnosticHost(scene, gs, _store, shortcuts, layout, cards, sections, segments, ctx.Search, built,
+                pipe => DebugChannel.Start(new DebugHost(window, shell, shortcuts, tabs, sections, bootDisabled, _running, () => ShowTour(gs, _store!, shortcuts, shell), () => { }), pipe)), Shutdown);
             return;
         }
         _tray = new TrayIcon(window, shell, shortcuts, () => Shutdown(), updates);
@@ -209,6 +216,8 @@ public partial class App : Application
         // Open QNotch: the panel on Home with the keyboard, once the late modules registered their cards (queued after them).
         if (openAfterTour)
             Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ApplicationIdle, () => shell.OpenPanelWithKeyboard("home"));
+        if (_debugControl)
+            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ApplicationIdle, () => StartDebug(window, shell, shortcuts, tabs, sections, bootDisabled, gs));
         Log.Info($"Started in {(DateTime.Now - System.Diagnostics.Process.GetCurrentProcess().StartTime).TotalMilliseconds:0} ms");
     }
 
@@ -230,6 +239,14 @@ public partial class App : Application
     static void SnapshotTour(GeneralSettings gs, SettingsStore store, Shortcuts shortcuts, Action<FrameworkElement, string> save) =>
         Shell.Onboarding.Tour.Snapshot(gs, store, shortcuts, ModuleList.All, save);
 
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+    void StartDebug(NotchWindow window, ShellController shell, Shortcuts shortcuts, Registry<TabDescriptor> tabs, Registry<SettingsSectionDescriptor> sections,
+        HashSet<string> bootDisabled, GeneralSettings gs)
+    {
+        try { _debug = DebugChannel.Start(new DebugHost(window, shell, shortcuts, tabs, sections, bootDisabled, _running, () => ShowTour(gs, _store!, shortcuts, shell), () => Shutdown())); }
+        catch (Exception ex) { Log.Error("Debug channel failed to start", ex); }
+    }
+
     /// <summary>Starts a fresh instance (it waits for our mutex, released last in OnExit) and quits.</summary>
     public static void Restart()
     {
@@ -248,6 +265,7 @@ public partial class App : Application
     {
         try
         {
+            _debug?.Dispose();
             _updates?.Dispose();
             _tray?.Dispose();
             _hotkeys?.UnregisterAll();

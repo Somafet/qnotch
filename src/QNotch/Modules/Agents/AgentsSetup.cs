@@ -17,6 +17,7 @@ internal static class AgentsSetup
         var hooks = (ctx.Demo ? ClaudeHooks.Discover().Take(1) : ClaudeHooks.Discover().Where(h => Directory.Exists(h.Dir)))
             .Append<HookFile?>(CodexHooks.Find(always: ctx.Demo)).OfType<HookFile>().ToList();
         if (hooks.Count == 0) return null;
+        if (ctx.Demo) foreach (var h in hooks) h.Demo = h is CodexHooks ? HookStatus.NotInstalled : HookStatus.Connected; // never reads the files
 
         var status = new TextBlock();
         void Status(string text, string brush)

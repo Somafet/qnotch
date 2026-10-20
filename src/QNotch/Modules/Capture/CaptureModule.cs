@@ -34,9 +34,22 @@ public sealed class CaptureModule : INotchModule
         ctx.Segments.Register(new SegmentDescriptor("capture.game", SegmentSlot.GameBar, 12, Segment,
             "Mic and camera", "Only while an app uses the microphone or camera."));
 
-        if (ctx.Settings.ReadOnly) { Apply(["Teams"], ["Teams"]); return; } // snapshot run: demo data, no watchers
+        if (ctx.Settings.ReadOnly) // snapshot run: demo data, no watchers
+        {
+            Apply(["Teams"], ["Teams"]);
+            ctx.Demos.Register(new DemoState("capture.idle", "idle", 20, () => Demo([], [])));
+            ctx.Demos.Register(new DemoState("capture.capture", "capture", 20, () => Demo(["Teams"], ["Teams"])));
+            return;
+        }
         _micWatch = new CaptureWatch(CaptureWatch.Microphone, apps => ctx.Bus.Run(() => Apply(apps, _cam)));
         _camWatch = new CaptureWatch(CaptureWatch.Camera, apps => ctx.Bus.Run(() => Apply(_mic, apps)));
+    }
+
+    Action Demo(IReadOnlyList<string> mic, IReadOnlyList<string> cam)
+    {
+        var (m, c) = (_mic, _cam);
+        Apply(mic, cam);
+        return () => Apply(m, c);
     }
 
     void Apply(IReadOnlyList<string> mic, IReadOnlyList<string> cam)
