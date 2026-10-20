@@ -64,6 +64,7 @@ public sealed class SearchModule : INotchModule, ICadenceAware
     {
         var box = _box = new TextBox { FontSize = 13, Padding = new Thickness(17, 4, 5, 4), MaxLength = 200 }; // the content host adds the padding once more
         System.Windows.Automation.AutomationProperties.SetName(box, "Search");
+        System.Windows.Automation.AutomationProperties.SetAutomationId(box, "search-field");
         var icon = UiKit.Glyph(Glyph, 14, "TextTertiaryBrush");
         icon.Margin = new Thickness(12, 0, 0, 0);
         var prompt = new TextBlock { Text = "Search", FontSize = 13, Margin = new Thickness(37, 0, 0, 0) };

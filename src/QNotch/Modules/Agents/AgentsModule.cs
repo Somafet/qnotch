@@ -146,6 +146,8 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
     Dictionary<string, string> _appTitles = [];
     /// <summary>Walk every second until then: a shell tool is running and may start something that outlives the shell.</summary>
     DateTime _burstUntil;
+    /// <summary>Snapshot run: the demo sessions' statuses as seeded.</summary>
+    Dictionary<AgentSession, AgentStatus> _seeded = [];
 
     public void Initialize(ModuleContext ctx)
     {
@@ -161,7 +163,14 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
             .Where(s => s.Title.Contains(q, StringComparison.OrdinalIgnoreCase) || s.Cwd.Contains(q, StringComparison.OrdinalIgnoreCase))
             .Select(s => new SearchHit(s.Title.Length > 0 ? s.Title : s.Name, AgentsViews.Meta(s), () => ctx.Shell.SelectTab(TabId)))));
 
-        if (ctx.Settings.ReadOnly) { Seed(); return; }
+        if (ctx.Settings.ReadOnly)
+        {
+            Seed();
+            ctx.Demos.Register(new DemoState("agents.idle", "idle", 30, () => Demo(_ => AgentStatus.Done)));
+            ctx.Demos.Register(new DemoState("agents.waiting", "waiting", 30, () => Demo(s => s == AgentStatus.NeedsYou ? s : AgentStatus.Done)));
+            ctx.Demos.Register(new DemoState("agents.agent", "agent", 30, () => Demo(s => s == AgentStatus.Working ? s : AgentStatus.Done)));
+            return;
+        }
         _st.Changed += EndStalePeek;
         ApplySounds();
         ctx.Shell.TabChanged += _ => { if (Watching) Walk(); };
@@ -539,5 +548,15 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
             new(14, "2", "web", "node vitest.mjs --watch", [(14, 0)], 96L << 20, 1.2, [], false),
             new(15, "9", "docs", "node astro.mjs dev", [(15, 0), (16, 0)], 210L << 20, 0.1, [4321], true),
         ]);
+        _seeded = _st.Sessions.ToDictionary(s => s, s => s.Status);
+    }
+
+    /// <summary>Snapshot: every demo session's status mapped from its seeded one (the pill shows only some). Returns the undo.</summary>
+    Action Demo(Func<AgentStatus, AgentStatus> map)
+    {
+        var before = _st.Sessions.ToDictionary(s => s, s => s.Status);
+        foreach (var s in _st.Sessions) s.Status = map(_seeded.GetValueOrDefault(s, s.Status));
+        _st.Raise();
+        return () => { foreach (var (s, status) in before) s.Status = status; _st.Raise(); };
     }
 }

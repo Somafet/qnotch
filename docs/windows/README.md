@@ -108,7 +108,7 @@ dotnet publish src/QNotch/QNotch.csproj -p:PublishProfile=win-x64               
 dotnet publish src/QNotch/QNotch.csproj -p:PublishProfile=win-x64-self-contained   # into dist\self-contained\
 ```
 
-`QNotch.exe --snapshot <dir>` renders every tab, settings page and welcome tour step to PNG, which is how the screenshots above were made.
+`QNotch.exe --snapshot <dir>` renders the pill in each state, every tab, Home card, settings page and welcome tour step to PNG with demo data, which is how the screenshots above were made. See [Windows development](development.md#snapshots) for the options and file names.
 
 Run the welcome tour checks (when it shows, feature choices, the GitHub device flow against canned responses) and the updater checks (release selection, package validation, cancellation, replacement and recovery) on Windows:
 

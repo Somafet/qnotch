@@ -80,6 +80,7 @@ internal static class WeatherSection
         {
             var q = box.Text.Trim();
             if (q.Length < 2) { Show("Type at least two letters.", "WarningBrush"); return; }
+            if (ctx.Settings.ReadOnly) return; // snapshot run: no requests
             search.IsEnabled = false;
             list.Visibility = Visibility.Collapsed;
             Show("Searching", "TextSecondaryBrush");

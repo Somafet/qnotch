@@ -18,6 +18,8 @@ Always start the interactive app through Explorer, never directly:
 explorer.exe dist\QNotch.exe
 ```
 
+One exception: a test instance for the debug channel (`--debug-control`) may be launched directly when it has its own `--data-dir` and a unique `QNOTCH_INSTANCE`, because its data never mixes with the user's. Such a run never opens the welcome tour by itself; pre-seed that folder with `general.json` (`"UpdateChecksChoiceMade": true, "CheckForUpdates": false`) so no Updates prompt or update check follows, end it with `QNotch.exe debug quit` (or stop it by PID), and never drive the user's own instance. See [Debug channel](../../docs/windows/development.md#debug-channel).
+
 Packaged agent hosts can give directly launched children a private `%APPDATA%` under `%LOCALAPPDATA%\Packages\...\LocalCache\Roaming\QNotch`. Settings saved there are invisible to the app the user launches, and the reverse also applies. Reading `%APPDATA%\QNotch` from an agent shell may likewise inspect the private copy. Use an explicit test data directory when inspecting or verifying settings.
 
 Snapshot and CLI tests are noninteractive exceptions: run `--snapshot` with isolated data, inspect the generated PNGs for UI changes, and check `snapshot.txt` ends in `done`.

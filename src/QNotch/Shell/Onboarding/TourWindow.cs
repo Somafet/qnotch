@@ -150,6 +150,9 @@ internal sealed class TourWindow : Window
         if (_styled) _back.Style = (Style)FindResource("TourButton");
         _primaryText = new TextBlock();
         _primary = new Button { Style = ButtonStyle("AccentButton"), Padding = new Thickness(20, 7, 20, 7), MinWidth = 116, FocusVisualStyle = _ring, Content = _primaryText };
+        AutomationProperties.SetAutomationId(_skip, "onboarding-skip");
+        AutomationProperties.SetAutomationId(_back, "onboarding-back");
+        AutomationProperties.SetAutomationId(_primary, "onboarding-primary");
         _skip.Click += (_, _) => End(TourEnd.Skipped);
         _back.Click += (_, _) => Go(_index - 1, false);
         _primary.Click += (_, _) => Primary();

@@ -23,6 +23,7 @@ public sealed class CardHost : ContentControl
     {
         Descriptor = descriptor;
         Title = descriptor.Title;
+        System.Windows.Automation.AutomationProperties.SetAutomationId(this, "card-" + descriptor.Id);
     }
 
     public CardDescriptor Descriptor { get; }

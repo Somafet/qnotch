@@ -6,6 +6,7 @@ using QNotch.Core;
 using QNotch.Core.Updates;
 using QNotch.Modules;
 using QNotch.Shell;
+using QNotch.Shell.Diagnostics;
 using QNotch.Shell.GameMode;
 using QNotch.Shell.Settings;
 using QNotch.Theme;
@@ -48,6 +49,10 @@ public partial class App : Application
     SettingsStore? _store;
     ShellController? _shell;
     UpdateService? _updates;
+    // --debug-control: the debug channel (Shell/Diagnostics/DebugChannel.cs) opens once the shell and every module are up.
+    bool _debugControl;
+    IDisposable? _debug;
+    readonly HashSet<string> _running = new(StringComparer.OrdinalIgnoreCase);
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -56,9 +61,11 @@ public partial class App : Application
         // Layered (per-pixel alpha) windows read the whole surface back from the GPU every frame; software rendering is as fast
         // for this UI (same frame rate measured) and saves about 20 MB of commit (no D3D device).
         System.Windows.Media.RenderOptions.ProcessRenderMode = System.Windows.Interop.RenderMode.SoftwareOnly;
-        // Dev tool: QNotch.exe --snapshot <dir> [light]  renders every view to PNG and exits (see Shell/Snapshot.cs).
-        var snap = Array.IndexOf(e.Args, "--snapshot");
-        string? snapDir = snap >= 0 && snap + 1 < e.Args.Length ? Path.GetFullPath(e.Args[snap + 1]) : null;
+        // Dev tool: QNotch.exe --snapshot <dir> [--appearance light|dark] renders every view to PNG and exits (see Shell/Snapshot.cs).
+        var diag = DiagnosticOptions.Parse(e.Args);
+        // --smoke-test and --measure boot the same way (read-only, no mutex, demo data) and hand over to Shell/Diagnostics/DiagnosticRun.cs.
+        var snapDir = diag.RunsOnce ? diag.Dir : null;
+        _debugControl = diag.Mode == DiagnosticMode.DebugControl;
         if (snapDir is null)
         {
             // QNOTCH_INSTANCE keeps parallel test runs apart. --restart: the previous instance is shutting down, wait for its mutex.
@@ -75,19 +82,25 @@ public partial class App : Application
             }
             _mutex = m;
         }
-        try { Boot(snapDir, e.Args.Contains("light")); }
+        try { Boot(snapDir, diag); }
         catch (Exception ex)
         {
             Log.Crash("Startup", ex);
             Shutdown(1);
         }
     }
-    void Boot(string? snapDir, bool light)
+    void Boot(string? snapDir, DiagnosticOptions diag)
     {
         _store = new SettingsStore { ReadOnly = snapDir is not null };
         var fresh = !_store.Exists("general");
         var gs = _store.Get<GeneralSettings>("general");
-        if (snapDir is not null) { gs.Pinned = false; gs.DisabledModules = new(); if (light) gs.Theme = ThemeChoice.Light; } // snapshots load every module
+        // --measure loads like a normal start (early modules first, the rest and Game mode at idle); snapshot and smoke load everything at once.
+        var measure = diag.Mode == DiagnosticMode.Measure;
+        if (snapDir is not null) // snapshots load every module, follow the system appearance unless told otherwise and show a demo profile
+        {
+            gs.Pinned = false; gs.DisabledModules = DiagnosticRun.BootDisabled(diag); gs.ProfileName = "Alex"; gs.ProfileImagePath = "";
+            gs.Theme = diag.Appearance switch { "light" => ThemeChoice.Light, "dark" => ThemeChoice.Dark, _ => ThemeChoice.System };
+        }
         // Welcome tour: only on a fresh install. Settings from before it existed record it as done, silently.
         var tour = FirstRun.Decide(!fresh, gs.OnboardingDone, snapDir is not null);
         if (tour == TourStart.MarkDone) { gs.OnboardingDone = true; _store.Save("general", gs); }
@@ -98,6 +111,7 @@ public partial class App : Application
         var tabs = new Registry<TabDescriptor>();
         var sections = new Registry<SettingsSectionDescriptor>();
         var segments = new Registry<SegmentDescriptor>();
+        var demos = new Registry<DemoState>();
 
         var window = new NotchWindow { Offscreen = snapDir is not null };
         window.InitHandle();
@@ -111,7 +125,8 @@ public partial class App : Application
         var shell = _shell;
         shell.AddShortcuts();
         // Before any module and the update service: the feature choices apply now, and a completed or skipped tour has made the update choice.
-        var openAfterTour = tour == TourStart.Show && RunTour(gs, _store, shortcuts);
+        // A --debug-control run never opens the tour by itself (spec/diagnostics.md); the onboarding command does.
+        var openAfterTour = tour == TourStart.Show && !_debugControl && RunTour(gs, _store, shortcuts);
         _updates = new UpdateService(gs, Dispatcher, _store, () => Shutdown());
         var updates = _updates;
         segments.Register(new SegmentDescriptor("updates.pill", SegmentSlot.PillRight, 2,
@@ -138,8 +153,9 @@ public partial class App : Application
         var ctx = new ModuleContext
         {
             Bus = bus, Settings = _store, Hotkeys = _hotkeys, Shell = shell, Dispatcher = Dispatcher,
-            Cards = cards, Tabs = tabs, SettingsSections = sections, Segments = segments, Search = new(), Shortcuts = shortcuts, Sounds = sounds,
+            Cards = cards, Tabs = tabs, SettingsSections = sections, Segments = segments, Search = new(), Shortcuts = shortcuts, Sounds = sounds, Demos = demos,
         };
+        var built = new List<(string Id, INotchModule Module)>();
         List<INotchModule> Init(IEnumerable<ModuleInfo> list)
         {
             var done = new List<INotchModule>();
@@ -149,22 +165,23 @@ public partial class App : Application
                 try { m = info.Create(); }
                 catch (Exception ex) { Log.Error($"Module '{info.Id}' failed to create", ex); continue; }
                 done.Add(m);
-                try { m.Initialize(ctx); }
+                built.Add((info.Id, m));
+                try { m.Initialize(ctx); _running.Add(info.Id); }
                 catch (Exception ex) { Log.Error($"Module '{info.Id}' failed to initialize", ex); }
             }
             return done;
         }
         // Cold start: the pill needs only the Early modules (they register pill and glance segments). The rest, and Game mode, start right
         // after the first frame. Queued before shell.Start so late modules register their tabs and cards before the panel is first built.
-        var early = Init(enabled.Where(i => i.Early || snapDir is not null));
-        if (snapDir is null)
+        var early = Init(enabled.Where(i => i.Early || (snapDir is not null && !measure)));
+        if (snapDir is null || measure)
             Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ApplicationIdle, () =>
             {
                 shell.GameMode.Start();
                 shell.SetCadenceAware(early.Concat(Init(enabled.Where(i => !i.Early))).OfType<ICadenceAware>());
             });
         shell.Start();
-        if (snapDir is not null) shell.GameMode.Start();
+        if (snapDir is not null && !measure) shell.GameMode.Start();
         shell.SetCadenceAware(early.OfType<ICadenceAware>());
         window.Show();
         window.Reposition();
@@ -176,7 +193,10 @@ public partial class App : Application
 
         if (snapDir is not null)
         {
-            Snapshot.Run(snapDir, window, shell, tabs, sections, save => SnapshotTour(gs, _store, shortcuts, save), () => Shutdown());
+            var scene = new SnapshotScene(window, shell, tabs, sections, layout, demos, save => SnapshotTour(gs, _store, shortcuts, save));
+            if (diag.Mode == DiagnosticMode.Snapshot) Snapshot.Run(scene, diag, Shutdown);
+            else DiagnosticRun.Start(diag, new DiagnosticHost(scene, gs, _store, shortcuts, layout, cards, sections, segments, ctx.Search, built,
+                pipe => DebugChannel.Start(new DebugHost(window, shell, shortcuts, tabs, sections, bootDisabled, _running, () => ShowTour(gs, _store!, shortcuts, shell), () => { }), pipe)), Shutdown);
             return;
         }
         _tray = new TrayIcon(window, shell, shortcuts, () => Shutdown(), updates);
@@ -197,6 +217,8 @@ public partial class App : Application
         // Open QNotch: the panel on Home with the keyboard, once the late modules registered their cards (queued after them).
         if (openAfterTour)
             Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ApplicationIdle, () => shell.OpenPanelWithKeyboard("home"));
+        if (_debugControl)
+            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ApplicationIdle, () => StartDebug(window, shell, shortcuts, tabs, sections, bootDisabled, gs));
         Log.Info($"Started in {(DateTime.Now - System.Diagnostics.Process.GetCurrentProcess().StartTime).TotalMilliseconds:0} ms");
     }
 
@@ -218,6 +240,14 @@ public partial class App : Application
     static void SnapshotTour(GeneralSettings gs, SettingsStore store, Shortcuts shortcuts, Action<FrameworkElement, string> save) =>
         Shell.Onboarding.Tour.Snapshot(gs, store, shortcuts, ModuleList.All, save);
 
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+    void StartDebug(NotchWindow window, ShellController shell, Shortcuts shortcuts, Registry<TabDescriptor> tabs, Registry<SettingsSectionDescriptor> sections,
+        HashSet<string> bootDisabled, GeneralSettings gs)
+    {
+        try { _debug = DebugChannel.Start(new DebugHost(window, shell, shortcuts, tabs, sections, bootDisabled, _running, () => ShowTour(gs, _store!, shortcuts, shell), () => Shutdown())); }
+        catch (Exception ex) { Log.Error("Debug channel failed to start", ex); }
+    }
+
     /// <summary>Starts a fresh instance (it waits for our mutex, released last in OnExit) and quits.</summary>
     public static void Restart()
     {
@@ -236,6 +266,7 @@ public partial class App : Application
     {
         try
         {
+            _debug?.Dispose();
             _updates?.Dispose();
             _tray?.Dispose();
             _hotkeys?.UnregisterAll();

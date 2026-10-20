@@ -13,7 +13,7 @@ namespace QNotch.Modules.Notifications;
 /// for the retention period. A request can wait for the user's answer. The servers run on the thread pool and are idle until a
 /// sender connects; the module itself has no timer except the one-shot that ends a toast.
 /// </summary>
-public sealed class NotificationsModule : INotchModule, ICadenceAware
+public sealed partial class NotificationsModule : INotchModule, ICadenceAware
 {
     internal const string TabId = "notifications";
     const string SettingsFile = "notifications", HistoryFile = "notifications.history";
@@ -422,7 +422,7 @@ public sealed class NotificationsModule : INotchModule, ICadenceAware
     }
 
     /// <summary>A new token: everything that posts over HTTP needs it from now on.</summary>
-    internal void RenewToken() => _token = NotifyToken.Get(renew: true);
+    internal void RenewToken() { if (!_ctx.Settings.ReadOnly) _token = NotifyToken.Get(renew: true); } // snapshot run: never the credential store
 
     internal void SendTest() => Post(new Note { Id = "qnotch-test", App = "QNotch", Title = "Test notification", Body = "This is what a notification looks like.", Glyph = NotifyIcons.Bell }, null);
 

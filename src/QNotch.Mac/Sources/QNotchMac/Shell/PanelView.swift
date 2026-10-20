@@ -17,12 +17,12 @@ final class PanelView: NSView {
          select: @escaping (String) -> Void, togglePin: @escaping () -> Void, openSettings: @escaping () -> Void,
          toggleEdit: @escaping () -> Void, reorderTabs: @escaping ([String]) -> Void) {
         self.tabs = tabs
-        tabBar = TabBar(items: tabs.map { ($0.symbol, $0.title) }, selected: tabs.firstIndex { $0.id == selected } ?? 0) { index in
+        tabBar = TabBar(items: tabs.map { ($0.id, $0.symbol, $0.title) }, selected: tabs.firstIndex { $0.id == selected } ?? 0) { index in
             select(tabs[index].id)
         }
         super.init(frame: .zero)
         wantsLayer = true
-        identifier = NSUserInterfaceItemIdentifier("notch-panel-body")
+        identifier = NSUserInterfaceItemIdentifier("panel")
 
         let name = profile.name
         let avatar = FillView(fill: Palette.accentSoft, stroke: Palette.stroke, radius: 15)
@@ -49,10 +49,11 @@ final class PanelView: NSView {
         profile.setAccessibilityElement(false)
 
         let settings = HoverButton(symbol: "gearshape", style: .icon, symbolSize: 14, label: "Settings", action: openSettings)
+        settings.identifier = NSUserInterfaceItemIdentifier("open-settings")
         pin = HoverButton(symbol: "pin", style: .icon, symbolSize: 13, label: "Keep panel open", action: togglePin)
-        pin.setAccessibilityIdentifier("panel-pin")
+        pin.identifier = NSUserInterfaceItemIdentifier("panel-pin")
         edit = HoverButton(symbol: "pencil", style: .icon, symbolSize: 13, label: "Edit layout", action: toggleEdit)
-        edit.setAccessibilityIdentifier("panel-edit")
+        edit.identifier = NSUserInterfaceItemIdentifier("panel-edit")
         let actions = row([edit, pin, settings], spacing: 2)
         for view in [profile, tabBar, actions, host] as [NSView] {
             view.translatesAutoresizingMaskIntoConstraints = false
@@ -148,6 +149,7 @@ final class SearchView: NSView, NSTextFieldDelegate {
         field.cell?.wraps = false
         field.delegate = self
         field.setAccessibilityLabel("Search QNotch")
+        field.identifier = NSUserInterfaceItemIdentifier("search-field")
         let inner = row([glass, field], spacing: 8)
         inner.translatesAutoresizingMaskIntoConstraints = false
         box.addSubview(inner)

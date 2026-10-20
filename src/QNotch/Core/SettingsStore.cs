@@ -64,7 +64,11 @@ public sealed class SettingsStore
             _pending[moduleId] = json;
             _timer.Change(500, Timeout.Infinite);
         }
+        Saved?.Invoke(moduleId, json);
     }
+
+    /// <summary>A file was saved (id, JSON), also in a read-only run: what <c>--smoke-test</c> observes instead of the disk.</summary>
+    internal event Action<string, string>? Saved;
 
     /// <summary>Writes everything pending now. Called on exit.</summary>
     public void Flush()

@@ -150,9 +150,17 @@ public partial class NotchWindow : Window
     /// <summary>The open panel gets less room than the pill, so it stays on screen wherever the pill was.</summary>
     void ClampShift()
     {
-        static double Fit(double shift, double width) { var room = Math.Max(0, (WinW - width) / 2); return Math.Clamp(shift, -room, room); }
         SurfaceShift.X = Fit(_shift, Surface.ActualWidth * SurfaceSquash.ScaleX);
         GlanceShift.X = _gameBar ? 0 : Fit(_shift, Glance.ActualWidth);
+    }
+
+    static double Fit(double shift, double width) { var room = Math.Max(0, (WinW - width) / 2); return Math.Clamp(shift, -room, room); }
+
+    /// <summary>The surface's settled rectangle in window DIPs, as the pill or as the open panel, whichever is shown now.</summary>
+    internal Rect SettledFrame(bool open)
+    {
+        double w = open ? PanelW : _pillW, h = open ? PanelH : PillH;
+        return new Rect((Root.ActualWidth - w) / 2 + Fit(_shift, w), 0, w, h);
     }
 
     public void SetMonitor(int index) { _monitorIndex = index; Reposition(); }
@@ -437,7 +445,9 @@ public partial class NotchWindow : Window
 
     // ---------- snapshot support (dev tool, see Snapshot.cs) ----------
 
-    /// <summary>Snapshot mode: keep the window off every monitor.</summary>
-    internal bool Offscreen { get; init; }
+    /// <summary>Snapshot mode: keep the window off every monitor (a smoke run brings it back for its checks, then calls <see cref="Reposition"/>).</summary>
+    internal bool Offscreen { get; set; }
     internal FrameworkElement RootElement => Root;
+    /// <summary>The open or close animation is running (the debug channel waits for it).</summary>
+    internal bool IsAnimating => _animating;
 }

@@ -9,7 +9,7 @@
         TextOptions.TextFormattingMode="Ideal" Typography.NumeralAlignment="Tabular">
     <Grid x:Name="Root">
         <!-- Background shape: the ONLY thing animated per frame (size and corner radius). Hover and file-drag events come from here. -->
-        <Border x:Name="Surface" VerticalAlignment="Top" HorizontalAlignment="Center" Width="420" Height="38" AllowDrop="True"
+        <Border x:Name="Surface" AutomationProperties.AutomationId="pill" VerticalAlignment="Top" HorizontalAlignment="Center" Width="420" Height="38" AllowDrop="True"
                 Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource StrokeBrush}"
                 BorderThickness="1,0,1,1" CornerRadius="0,0,16,16" ClipToBounds="True" RenderTransformOrigin="0.5,0">
             <!-- Squash stretches the pill while it is flung sideways (NotchNudge); Shift moves it inside the window. -->
@@ -31,7 +31,7 @@
                 </Grid>
 
                 <!-- Expanded panel content: fixed size, pre-laid-out at startup, only opacity/transform animate -->
-                <Grid x:Name="PanelLayer" Width="720" Height="380" HorizontalAlignment="Center" VerticalAlignment="Top" Visibility="Collapsed">
+                <Grid x:Name="PanelLayer" AutomationProperties.AutomationId="panel" Width="720" Height="380" HorizontalAlignment="Center" VerticalAlignment="Top" Visibility="Collapsed">
                     <Grid.RenderTransform><TranslateTransform x:Name="PanelShift"/></Grid.RenderTransform>
                     <Grid.RowDefinitions><RowDefinition Height="58"/><RowDefinition Height="*"/></Grid.RowDefinitions>
                     <Grid Margin="23,10,17,0">
@@ -61,10 +61,10 @@
                         </Border>
                         <!-- Actions -->
                         <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right">
-                            <ToggleButton Style="{StaticResource IconToggle}" Content="&#xE70F;" ToolTip="Edit layout" IsChecked="{Binding IsEditMode}"
+                            <ToggleButton Style="{StaticResource IconToggle}" Content="&#xE70F;" ToolTip="Edit layout" AutomationProperties.AutomationId="panel-edit" IsChecked="{Binding IsEditMode}"
                                           IsEnabled="{Binding MotionEnabled}" Visibility="{Binding IsHomeSelected, Converter={StaticResource BoolToVis}}"/>
-                            <ToggleButton Style="{StaticResource IconToggle}" Content="&#xE718;" ToolTip="Keep panel open" IsChecked="{Binding Settings.Pinned}" Margin="4,0,0,0"/>
-                            <Button Style="{StaticResource IconButton}" Content="&#xE713;" ToolTip="Settings" Command="{Binding OpenSettingsCommand}" Margin="4,0,0,0"/>
+                            <ToggleButton Style="{StaticResource IconToggle}" Content="&#xE718;" ToolTip="Keep panel open" AutomationProperties.AutomationId="panel-pin" IsChecked="{Binding Settings.Pinned}" Margin="4,0,0,0"/>
+                            <Button Style="{StaticResource IconButton}" Content="&#xE713;" ToolTip="Settings" AutomationProperties.AutomationId="open-settings" Command="{Binding OpenSettingsCommand}" Margin="4,0,0,0"/>
                         </StackPanel>
                     </Grid>
                     <Grid x:Name="TabHost" Grid.Row="1" Margin="4,0,4,0"/>
