@@ -158,7 +158,7 @@ Platforms add their own keys (private bytes, wakeups, draw counters). The run fa
 
 A local control channel for driving a running instance: read its state, switch tabs, press controls, type, take snapshots and outlines. It exists so agents can check the real app with real windows.
 
-**Off unless asked for.** The channel opens only when the app is started with `--debug-control`. It is never opened by `--snapshot`, `--smoke-test` (which uses it internally only when checking `debug-channel`) or `--measure`, and never because of a setting.
+**Off unless asked for.** The channel opens only when the app is started with `--debug-control`. Such a run is otherwise the normal interactive app (network, credential store and updates as usual) except that the welcome tour does not open by itself; use the `onboarding` command. It is never opened by `--snapshot`, `--smoke-test` (which uses it internally only when checking `debug-channel`) or `--measure`, and never because of a setting.
 
 **Transport.** Local to the user only; no network listener.
 
@@ -187,9 +187,9 @@ A local control channel for driving a running instance: read its state, switch t
 | `onboarding` | `close?` | Opens the welcome tour as Settings does, or closes it |
 | `outline` | `window?` | `{ "text" }`: the outline of `panel` (default), `pill`, `settings` or `onboarding` |
 | `snapshot` | `path`, `window?` | Writes a PNG and its outline to an absolute `path` ending in `.png`; `{ "path" }` |
-| `press` | `id` | Activates the visible, enabled control with that id: clicks a button, flips a toggle, selects a tab or item |
+| `press` | `id` | Activates the visible, enabled control with that id: clicks a button, flips a toggle, selects a tab or item. Refuses pop-ups, whose menus would block; set them with `key` |
 | `type` | `text`, `id?` | Focuses the field `id` (or keeps the current focus) and inserts the text |
-| `key` | `name`, `modifiers?` | Sends a key to QNotch's key window. `name`: `Escape`, `Return`, `Tab`, `Space`, `Up`, `Down`, `Left`, `Right`, `Delete` or one character; `modifiers`: any of `ctrl`, `alt`, `shift`, `cmd` (`cmd` maps to the Windows key on Windows) |
+| `key` | `name`, `modifiers?` | Sends a key to QNotch's key window. `name`: `Escape`, `Return`, `Tab`, `Space`, `Up`, `Down`, `Left`, `Right`, `Backspace` (erases backwards: the Mac Delete key), `Delete` (erases forwards) or one character; `modifiers`: any of `ctrl`, `alt`, `shift`, `cmd` (`cmd` maps to the Windows key on Windows) |
 | `hotkey` | `action` | Runs a global hotkey's action without the OS hotkey: `toggle`, `search`, `game-mode` |
 | `game-mode` | `mode` | `auto`, `on` or `off` for the session |
 | `quit` | | Responds, then quits |
@@ -209,8 +209,8 @@ A local control channel for driving a running instance: read its state, switch t
 }
 ```
 
-`panel` is `collapsed` or `open`; `frame` is in screen points (DIPs on Windows) with the origin at the top left of the primary display on both platforms.
+`panel` is `collapsed` or `open`; `frame` is in screen points (DIPs on Windows) with the origin at the top left of the primary display on both platforms. `windows` lists `pill`, `panel`, `settings` and `onboarding` when they exist; where the pill and panel are one window (the Mac), both entries appear and the one not shown has its settled layout frame. "Settled" means layout is done and no finite animation is running in a visible window, checked on consecutive frames, with a 3-second cap; timers (hover delays) are not waited for.
 
-**Command line.** `QNotch debug <cmd> [--<arg> <value>…]` sends one request and prints the response's `result` (or `error`) as JSON. It finds the instance the same way the app does: `--data-dir`/`QNOTCH_MAC_DATA_DIR` on the Mac, `QNOTCH_INSTANCE` on Windows. Exit codes: 0 ok, 1 the command failed, 3 no instance with the channel open, 4 bad usage.
+**Command line.** `QNotch debug <cmd> [--<arg> <value>…]` sends one request and prints the response's `result` as JSON on stdout (or `{"error": …}` on stderr). It finds the instance the same way the app does: `--data-dir`/`QNOTCH_MAC_DATA_DIR` on the Mac, `QNOTCH_INSTANCE` on Windows. Exit codes: 0 ok, 1 the command failed, 3 no instance with the channel open, 4 bad usage.
 
 The channel can read whatever QNotch shows (clipboard history, notifications) and press any control. That is no more than the same user can already do, but it is why it stays off by default and never listens beyond the user.
