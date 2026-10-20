@@ -27,6 +27,46 @@ If an old local build directory contains self-contained runtime files, a later f
 
 For other parallel test runs, also set a unique `QNOTCH_INSTANCE` value. Only stop test processes you started, by PID.
 
+## Debug channel
+
+`--debug-control` starts the normal interactive app (single-instance mutex and all) plus the [debug channel](../../spec/diagnostics.md#debug-channel): the named pipe `\\.\pipe\QNotch.Debug.<QNOTCH_INSTANCE>` (`QNotch.Debug` without the variable), created for the current user only. It opens once the shell and every module are up. Without the flag there is no pipe and no thread; `--snapshot`, `--smoke-test`, `--measure` and settings never open it.
+
+Start a test instance with its own data folder and instance name. This is the one interactive instance an agent may launch directly (see [Windows agent instructions](../../src/QNotch/AGENTS.md)). Pre-seed `general.json` so it boots straight to the pill, with no welcome tour and no Updates prompt:
+
+```powershell
+$env:QNOTCH_INSTANCE = 'test-' + [guid]::NewGuid().ToString('N').Substring(0, 8)
+$data = Join-Path $env:TEMP "qnotch-$env:QNOTCH_INSTANCE"
+New-Item -ItemType Directory -Force $data | Out-Null
+'{ "OnboardingDone": true, "UpdateChecksChoiceMade": true, "CheckForUpdates": false }' | Set-Content (Join-Path $data general.json)
+$exe = 'src\QNotch\bin\Release\net10.0-windows10.0.22621.0\win-x64\QNotch.exe'
+$app = Start-Process $exe -ArgumentList '--debug-control', '--data-dir', "`"$data`"" -PassThru
+```
+
+Then drive it with the `debug` verb from a shell with the same `QNOTCH_INSTANCE`. It sends one request and prints the result (stdout) or the error (stderr) as one line of JSON. Capture the output in PowerShell (`| Out-String`) so it waits for the GUI executable:
+
+```powershell
+& $exe debug ping | Out-String
+& $exe debug state | Out-String
+& $exe debug select-tab --id search | Out-String
+& $exe debug type --id search-field --text wea | Out-String
+& $exe debug outline | Out-String
+& $exe debug key --name Escape | Out-String
+& $exe debug snapshot --path "$env:TEMP\qnotch-shot\search.png" | Out-String
+& $exe debug quit | Out-String
+```
+
+Every command of the contract table is there: `ping`, `state`, `open [--tab]`, `close`, `select-tab --id`, `settings [--section] [--close]`, `onboarding [--close]`, `outline [--window panel|pill|settings|onboarding]`, `snapshot --path <absolute .png> [--window]`, `press --id`, `type --text [--id]`, `key --name [--modifiers ctrl,alt,shift,cmd]`, `hotkey --action toggle|search|game-mode` and `game-mode --mode auto|on|off`. Windows has no `timer` tab (the timer is a Home card); `select-tab` lists the valid ids when it gets an unknown one.
+
+- Arguments are `--name value`; the verb sends every value as a JSON string and the channel reads `true`, `false` and numbers from strings, so `--close true` and a bare `--close` both work.
+- Exit codes: 0 ok, 1 the command failed (the error is printed), 3 no instance has the channel open, 4 bad usage.
+- Each answer waits until the UI has settled: the dispatcher is idle, the panel's open or close animation has ended and, with motion on, 300 ms have passed since the last tab or mode change (700 ms while the welcome tour shows), at most 2 s. A following `outline` or `snapshot` sees the result.
+- `press` uses the WPF automation peer's Invoke, Toggle or SelectionItem pattern of the first visible, enabled control with that AutomationId in the tour, the notch window, then Settings. `type` focuses the field (a panel field also takes the keyboard, as a click would) and inserts at the caret. `key` raises the key events on QNotch's own focused element (modifiers are held for the UI thread only with `SetKeyboardState`); nothing is sent to other apps, and the real cursor never moves.
+- `state` frames are DIPs from the primary display's top left: the window's device-pixel position divided by the DPI scale of the monitor the window is on, plus the element's offset in the window. They are exact on the primary display and whenever every display uses the same scale; on a display with another scale the position is that display's pixels over its own scale (sizes stay exact).
+
+The raw protocol is one JSON object per line each way; several requests can share a connection and each gets one answer, in order (`{"id":1,"cmd":"select-tab","args":{"id":"search"}}`). Requests over 64 KB get an error and the connection closes.
+
+Security: the channel can read whatever QNotch shows (clipboard history, notifications) and press any control. It listens only to the same Windows user, never on the network, and only in a process started with `--debug-control`. Never start the user's own instance with it.
+
 ## Publish and launch
 
 ```powershell
