@@ -834,7 +834,8 @@ private final class AccentPicker: NSStackView {
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 }
 
-private final class AccentSwatch: NSButton {
+/// A radio-style choice: outlines read it as a checked `Toggle` when chosen.
+private final class AccentSwatch: NSButton, OutlineRoleProviding {
     private let handler: () -> Void
     private let chosen: Bool
     init(color: NSColor, multicolor: Bool, selected: Bool, label: String, action: @escaping () -> Void) {
@@ -864,9 +865,11 @@ private final class AccentSwatch: NSButton {
         self.action = #selector(invoke)
         toolTip = label
         setAccessibilityLabel(label)
-        setAccessibilityValue(selected ? "selected" : nil)
+        setAccessibilityRole(.radioButton)
+        setAccessibilityValue(NSNumber(value: selected ? 1 : 0))
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
     @objc private func invoke() { handler() }
-    override func isAccessibilitySelected() -> Bool { chosen }
+    var outlineRole: Outline.Role? { .toggle }
+    var outlineChecked: Bool? { chosen }
 }

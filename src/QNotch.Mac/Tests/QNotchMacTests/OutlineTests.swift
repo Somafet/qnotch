@@ -121,6 +121,33 @@ final class OutlineTests: XCTestCase {
         assertParses(outline)
     }
 
+    func testRadioStyleChoicesAreCheckedToggles() {
+        let root = NSView(frame: NSRect(x: 0, y: 0, width: 400, height: 200))
+        let chips = ChipPicker(values: [5, 25], format: { "\($0) min" }, label: { "\($0) minutes" }) { _ in }
+        place(chips, in: root, y: 150, width: 200, height: 26)
+        chips.select(25)
+        // A plain chip-styled button stays a button.
+        place(HoverButton("Skip", style: .chip) {}, in: root, y: 100, width: 80, height: 26)
+        let row = HoverButton("", style: .row, label: "Weather") {}
+        row.isSelectedLook = true
+        place(row, in: root, y: 50, width: 200, height: 30)
+        chips.layoutSubtreeIfNeeded()
+
+        let outline = Outline.text(for: root)
+        XCTAssertEqual(outline, """
+        [Toggle] "5 minutes"
+        [Toggle] "25 minutes" checked
+        [Button] "Skip"
+        [Item] "Weather" selected
+
+        """)
+        assertParses(outline)
+        let chosen = chips.arrangedSubviews[1]
+        XCTAssertEqual(chosen.accessibilityRole(), .radioButton)
+        XCTAssertEqual(chosen.accessibilityValue() as? NSNumber, 1)
+        XCTAssertFalse(chosen.isAccessibilitySelected())
+    }
+
     func testEscapingAndScrolledOutContent() {
         let root = NSView(frame: NSRect(x: 0, y: 0, width: 300, height: 200))
         let scroll = NSScrollView(frame: NSRect(x: 0, y: 0, width: 300, height: 100))

@@ -157,6 +157,29 @@ final class DebugChannelTests: XCTestCase {
         XCTAssertThrowsError(try args.bool("bad"))
     }
 
+    /// Windows' command line sends every value as a string.
+    func testStringArgumentValues() throws {
+        let args = Arguments(values: ["t": "true", "f": "false", "T": "True", "one": "1", "zero": "0", "two": 2, "yes": "yes",
+                                      "n": "42", "d": "-1.5", "i": 7, "flag": true, "nan": "NaN", "word": "many"])
+        XCTAssertTrue(try args.bool("t"))
+        XCTAssertFalse(try args.bool("f"))
+        XCTAssertTrue(try args.bool("T"))
+        XCTAssertTrue(try args.bool("one"))
+        XCTAssertFalse(try args.bool("zero"))
+        XCTAssertThrowsError(try args.bool("two"))
+        XCTAssertThrowsError(try args.bool("yes")) { XCTAssertEqual(($0 as? DebugCommands.Failure)?.message, "yes must be true or false") }
+        XCTAssertEqual(try args.number("n"), 42)
+        XCTAssertEqual(try args.number("d"), -1.5)
+        XCTAssertEqual(try args.number("i"), 7)
+        XCTAssertNil(try args.number("missing"))
+        XCTAssertThrowsError(try args.number("flag"))
+        XCTAssertThrowsError(try args.number("nan"))
+        XCTAssertThrowsError(try args.number("word")) { XCTAssertEqual(($0 as? DebugCommands.Failure)?.message, "word must be a number") }
+        // A request as Windows' CLI sends it.
+        let request = try DebugProtocol.parse(Data(#"{"id":"1","cmd":"settings","args":{"close":"true"}}"#.utf8)).get()
+        XCTAssertTrue(try Arguments(values: request.args).bool("close"))
+    }
+
     func testAnimationLengths() {
         let fade = CABasicAnimation(keyPath: "opacity")
         fade.duration = 0.25

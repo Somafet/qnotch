@@ -180,10 +180,13 @@ final class DebugCommands {
         guard ids.contains(id) else { throw Failure("no tab \(id); tabs: " + ids.joined(separator: ", ")) }
     }
 
-    /// The view an outline or snapshot covers.
+    /// The view an outline or snapshot covers; an error when that window is not shown. The pill and
+    /// the panel are one window: `panel` needs it open, `pill` reads whatever the notch shows.
     private func root(_ window: String?) throws -> NSView {
-        switch window ?? "panel" {
+        let window = window ?? "panel"
+        switch window {
         case "panel", "pill":
+            if window == "panel", !shell.state.expanded { throw Failure("the panel is not open") }
             guard let view = shell.panel.contentView else { throw Failure("the notch has no view") }
             return view
         case "settings":
@@ -348,7 +351,9 @@ final class DebugCommands {
     }
 }
 
-/// The `args` object, with string and boolean readers that say what was wrong.
+/// The `args` object, with string, boolean and number readers that say what was wrong. Values may
+/// arrive as strings (Windows' command line sends every value as one): `"true"`, `"false"`, `"1"`
+/// and `"0"` read as booleans and numeric strings as numbers.
 struct Arguments {
     let values: [String: Any]
 
@@ -367,9 +372,25 @@ struct Arguments {
     func bool(_ key: String) throws -> Bool {
         switch values[key] {
         case nil, is NSNull: return false
-        case let number as NSNumber where CFGetTypeID(number) == CFBooleanGetTypeID() || [0, 1].contains(number.intValue): return number.boolValue
-        case let text as String where text == "true" || text == "false": return text == "true"
+        case let number as NSNumber where CFGetTypeID(number) == CFBooleanGetTypeID() || [0, 1].contains(number.doubleValue): return number.boolValue
+        case let text as String:
+            switch text.trimmingCharacters(in: .whitespaces).lowercased() {
+            case "true", "1": return true
+            case "false", "0": return false
+            default: throw DebugCommands.Failure("\(key) must be true or false")
+            }
         default: throw DebugCommands.Failure("\(key) must be true or false")
+        }
+    }
+
+    func number(_ key: String) throws -> Double? {
+        switch values[key] {
+        case nil, is NSNull: return nil
+        case let number as NSNumber where CFGetTypeID(number) != CFBooleanGetTypeID(): return number.doubleValue
+        case let text as String:
+            if let number = Double(text.trimmingCharacters(in: .whitespaces)), number.isFinite { return number }
+            throw DebugCommands.Failure("\(key) must be a number")
+        default: throw DebugCommands.Failure("\(key) must be a number")
         }
     }
 }

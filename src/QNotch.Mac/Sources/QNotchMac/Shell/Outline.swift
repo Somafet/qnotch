@@ -1,9 +1,15 @@
 import AppKit
 
-/// A custom control that tells outlines its role (a selectable row, a tab) where AppKit's class and
-/// accessibility role do not.
+/// A custom control that tells outlines its role (a selectable row, a tab, a radio-style choice) where
+/// AppKit's class and accessibility role do not.
 protocol OutlineRoleProviding: NSView {
     var outlineRole: Outline.Role? { get }
+    /// Whether a `Toggle` is on, where the button's own state does not say (radio-style choices).
+    var outlineChecked: Bool? { get }
+}
+
+extension OutlineRoleProviding {
+    var outlineChecked: Bool? { nil }
 }
 
 /// The text outline of a view (spec/diagnostics.md, Outline format): the visible text and controls,
@@ -166,6 +172,7 @@ enum Outline {
     }
 
     private static func checked(_ view: NSView) -> Bool {
+        if let provider = view as? OutlineRoleProviding, let checked = provider.outlineChecked { return checked }
         if let button = view as? NSButton { return button.state == .on }
         if let toggle = view as? NSSwitch { return toggle.state == .on }
         return (view.accessibilityValue() as? NSNumber)?.intValue == 1
