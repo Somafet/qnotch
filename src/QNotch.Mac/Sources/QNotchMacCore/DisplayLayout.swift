@@ -100,3 +100,11 @@ extension DisplayLayout {
         return clamped
     }
 }
+
+extension CGRect {
+    /// Whether the pointer is over this rectangle. A pointer pushed against the top of the display
+    /// rests on the top edge of a surface that reaches the bezel, a row `contains` leaves out.
+    public func containsPointer(_ point: CGPoint) -> Bool {
+        point.x >= minX && point.x < maxX && point.y >= minY && point.y <= maxY
+    }
+}

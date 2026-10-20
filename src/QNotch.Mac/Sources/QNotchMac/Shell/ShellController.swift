@@ -124,7 +124,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         resolveDisplay()
         rebuildSurface()
         globalClick = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
-            guard let self, !self.panel.frame.contains(NSEvent.mouseLocation) else { return }
+            guard let self, !self.panel.frame.containsPointer(NSEvent.mouseLocation) else { return }
             self.clickedOutside()
         }
         localClick = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] event in
@@ -181,7 +181,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     func togglePin() {
         updateGeneral { $0.pinned.toggle() }
         panelView?.setPinned(general.pinned)
-        if !general.pinned, state.presentation == .hover, !panel.frame.contains(NSEvent.mouseLocation) { pointerLeft() }
+        if !general.pinned, state.presentation == .hover, !panel.frame.containsPointer(NSEvent.mouseLocation) { pointerLeft() }
     }
 
     func stop() {
@@ -314,7 +314,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
             let release = {
                 shell.holds -= 1
                 // Released while the pointer is elsewhere: close after the usual leave delay.
-                if shell.holds == 0 { DispatchQueue.main.async { if !shell.panel.frame.contains(NSEvent.mouseLocation) { shell.pointerLeft() } } }
+                if shell.holds == 0 { DispatchQueue.main.async { if !shell.panel.frame.containsPointer(NSEvent.mouseLocation) { shell.pointerLeft() } } }
             }
             if Thread.isMainThread { release() } else { DispatchQueue.main.async(execute: release) }
         }
@@ -347,7 +347,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         lingerTask?.cancel()
         let task = DispatchWorkItem { [weak self] in
             guard let self, self.state.presentation == .hover, !self.general.pinned,
-                  !self.panel.frame.contains(NSEvent.mouseLocation) else { return }
+                  !self.panel.frame.containsPointer(NSEvent.mouseLocation) else { return }
             self.close(restoreFocus: false)
         }
         lingerTask = task
@@ -432,7 +432,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         guard !gameActive else { return }
         guard !state.expanded else { return }
         if hoverSuppressed {
-            guard !(expectedFrame?.contains(NSEvent.mouseLocation) ?? false) else { return }
+            guard !(expectedFrame?.containsPointer(NSEvent.mouseLocation) ?? false) else { return }
             hoverSuppressed = false
         }
         setHovering(true)
@@ -440,7 +440,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         // The settled shape, not the window: while a close morph runs, the window still covers
         // the panel's old area, and a pointer there must not reopen it.
         let task = DispatchWorkItem { [weak self] in
-            guard let self, !self.hoverSuppressed, self.expectedFrame?.contains(NSEvent.mouseLocation) == true else { return }
+            guard let self, !self.hoverSuppressed, self.expectedFrame?.containsPointer(NSEvent.mouseLocation) == true else { return }
             self.open(keyboard: false)
         }
         hoverTask = task
@@ -451,10 +451,10 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         hoverTask?.cancel()
         leaveTask?.cancel()
         hoverSuppressed = false
-        if !panel.frame.contains(NSEvent.mouseLocation) { setHovering(false) }
+        if !panel.frame.containsPointer(NSEvent.mouseLocation) { setHovering(false) }
         guard state.presentation == .hover, !general.pinned, holds == 0 else { return }
         let task = DispatchWorkItem { [weak self] in
-            guard let self, !self.general.pinned, self.holds == 0, !self.panel.frame.contains(NSEvent.mouseLocation) else { return }
+            guard let self, !self.general.pinned, self.holds == 0, !self.panel.frame.containsPointer(NSEvent.mouseLocation) else { return }
             self.state.pointerLeft()
             self.present(.close)
             self.updateVisibility()
@@ -485,7 +485,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         hoverTask?.cancel(); leaveTask?.cancel()
         guard state.expanded else { return }
         let restore = restoreFocus && panel.isKeyWindow
-        hoverSuppressed = panel.frame.contains(NSEvent.mouseLocation)
+        hoverSuppressed = panel.frame.containsPointer(NSEvent.mouseLocation)
         hovering = false
         setEditing(false)
         state.close()
@@ -993,8 +993,8 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         guard let frame = expectedFrame else { return }
         setFrame(frame)
         // The pointer may have been left outside the shrunken window without an exit event.
-        if hoverSuppressed, !frame.contains(NSEvent.mouseLocation) { hoverSuppressed = false }
-        if hovering, !frame.contains(NSEvent.mouseLocation) { setHovering(false) }
+        if hoverSuppressed, !frame.containsPointer(NSEvent.mouseLocation) { hoverSuppressed = false }
+        if hovering, !frame.containsPointer(NSEvent.mouseLocation) { setHovering(false) }
         if !state.expanded, let closingPanel {
             closingPanel.removeFromSuperview()
             closingPanel.layer?.removeAllAnimations()
