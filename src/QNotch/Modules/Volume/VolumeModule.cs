@@ -82,6 +82,7 @@ public sealed class VolumeModule : INotchModule, ICadenceAware
         top.Children.Add(text);
 
         var slider = new Slider { Minimum = 0, Maximum = 100, SmallChange = 2, LargeChange = 10, IsMoveToPointEnabled = true, Margin = new Thickness(0, 12, 0, 0) };
+        System.Windows.Automation.AutomationProperties.SetName(slider, "Volume");
         slider.ValueChanged += (_, e) => SetLevel(e.NewValue);
 
         var live = new StackPanel { VerticalAlignment = VerticalAlignment.Center };

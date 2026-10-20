@@ -22,6 +22,9 @@ static class Program
         if (diag.DataDir is { } dataDir) Environment.SetEnvironmentVariable("QNOTCH_DATA_DIR", dataDir);
         else if (diag.RunsOnce && string.IsNullOrEmpty(Environment.GetEnvironmentVariable("QNOTCH_DATA_DIR")))
             Environment.SetEnvironmentVariable("QNOTCH_DATA_DIR", temp = Path.Combine(Path.GetTempPath(), $"qnotch-{diag.Mode.ToString().ToLowerInvariant()}-{Guid.NewGuid():N}"));
+        // A smoke run starts its own pipes and child processes: without QNOTCH_INSTANCE they would share a normal instance's names.
+        if (diag.Mode == DiagnosticMode.SmokeTest && string.IsNullOrEmpty(Environment.GetEnvironmentVariable("QNOTCH_INSTANCE")))
+            Environment.SetEnvironmentVariable("QNOTCH_INSTANCE", $"smoke-{Environment.ProcessId}");
         try { return RunApp(); }
         finally { if (temp is not null) DeleteTemp(temp); }
     }

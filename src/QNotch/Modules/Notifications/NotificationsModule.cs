@@ -13,7 +13,7 @@ namespace QNotch.Modules.Notifications;
 /// for the retention period. A request can wait for the user's answer. The servers run on the thread pool and are idle until a
 /// sender connects; the module itself has no timer except the one-shot that ends a toast.
 /// </summary>
-public sealed class NotificationsModule : INotchModule, ICadenceAware
+public sealed partial class NotificationsModule : INotchModule, ICadenceAware
 {
     internal const string TabId = "notifications";
     const string SettingsFile = "notifications", HistoryFile = "notifications.history";

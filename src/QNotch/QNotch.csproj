@@ -51,5 +51,22 @@
       <AssemblyMetadata Include="QNotchSelfContained" Value="$(SelfContained)" />
     </ItemGroup>
   </Target>
+  <!-- What was built, for performance.json (the measure mode): the commit and whether tracked files had changes. Left out without git. -->
+  <Target Name="SourceRevisionMetadata" BeforeTargets="GetAssemblyAttributes">
+    <Exec Command="git rev-parse HEAD" WorkingDirectory="$(MSBuildProjectDirectory)" ConsoleToMSBuild="true" IgnoreExitCode="true" EchoOff="true"
+          StandardOutputImportance="low" StandardErrorImportance="low" IgnoreStandardErrorWarningFormat="true">
+      <Output TaskParameter="ConsoleOutput" PropertyName="QNotchRevision" />
+      <Output TaskParameter="ExitCode" PropertyName="QNotchRevisionExit" />
+    </Exec>
+    <Exec Command="git status --porcelain --untracked-files=no" Condition="'$(QNotchRevisionExit)' == '0'" WorkingDirectory="$(MSBuildProjectDirectory)" ConsoleToMSBuild="true"
+          IgnoreExitCode="true" EchoOff="true" StandardOutputImportance="low" StandardErrorImportance="low" IgnoreStandardErrorWarningFormat="true">
+      <Output TaskParameter="ConsoleOutput" PropertyName="QNotchStatus" />
+    </Exec>
+    <ItemGroup Condition="'$(QNotchRevisionExit)' == '0'">
+      <AssemblyMetadata Include="QNotchSourceRevision" Value="$(QNotchRevision)" />
+      <AssemblyMetadata Include="QNotchSourceDirty" Value="true" Condition="'$(QNotchStatus)' != ''" />
+      <AssemblyMetadata Include="QNotchSourceDirty" Value="false" Condition="'$(QNotchStatus)' == ''" />
+    </ItemGroup>
+  </Target>
 
 </Project>

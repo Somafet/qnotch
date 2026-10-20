@@ -63,7 +63,8 @@ public partial class App : Application
         System.Windows.Media.RenderOptions.ProcessRenderMode = System.Windows.Interop.RenderMode.SoftwareOnly;
         // Dev tool: QNotch.exe --snapshot <dir> [--appearance light|dark] renders every view to PNG and exits (see Shell/Snapshot.cs).
         var diag = DiagnosticOptions.Parse(e.Args);
-        var snapDir = diag.Mode == DiagnosticMode.Snapshot ? diag.Dir : null;
+        // --smoke-test and --measure boot the same way (read-only, no mutex, demo data) and hand over to Shell/Diagnostics/DiagnosticRun.cs.
+        var snapDir = diag.RunsOnce ? diag.Dir : null;
         _debugControl = diag.Mode == DiagnosticMode.DebugControl;
         if (snapDir is null)
         {
@@ -93,9 +94,11 @@ public partial class App : Application
         _store = new SettingsStore { ReadOnly = snapDir is not null };
         var fresh = !_store.Exists("general");
         var gs = _store.Get<GeneralSettings>("general");
+        // --measure loads like a normal start (early modules first, the rest and Game mode at idle); snapshot and smoke load everything at once.
+        var measure = diag.Mode == DiagnosticMode.Measure;
         if (snapDir is not null) // snapshots load every module, follow the system appearance unless told otherwise and show a demo profile
         {
-            gs.Pinned = false; gs.DisabledModules = new(); gs.ProfileName = "Alex"; gs.ProfileImagePath = "";
+            gs.Pinned = false; gs.DisabledModules = DiagnosticRun.BootDisabled(diag); gs.ProfileName = "Alex"; gs.ProfileImagePath = "";
             gs.Theme = diag.Appearance switch { "light" => ThemeChoice.Light, "dark" => ThemeChoice.Dark, _ => ThemeChoice.System };
         }
         // Welcome tour: only on a fresh install. Settings from before it existed record it as done, silently.
@@ -151,6 +154,7 @@ public partial class App : Application
             Bus = bus, Settings = _store, Hotkeys = _hotkeys, Shell = shell, Dispatcher = Dispatcher,
             Cards = cards, Tabs = tabs, SettingsSections = sections, Segments = segments, Search = new(), Shortcuts = shortcuts, Sounds = sounds, Demos = demos,
         };
+        var built = new List<(string Id, INotchModule Module)>();
         List<INotchModule> Init(IEnumerable<ModuleInfo> list)
         {
             var done = new List<INotchModule>();
@@ -160,6 +164,7 @@ public partial class App : Application
                 try { m = info.Create(); }
                 catch (Exception ex) { Log.Error($"Module '{info.Id}' failed to create", ex); continue; }
                 done.Add(m);
+                built.Add((info.Id, m));
                 try { m.Initialize(ctx); _running.Add(info.Id); }
                 catch (Exception ex) { Log.Error($"Module '{info.Id}' failed to initialize", ex); }
             }
@@ -167,15 +172,15 @@ public partial class App : Application
         }
         // Cold start: the pill needs only the Early modules (they register pill and glance segments). The rest, and Game mode, start right
         // after the first frame. Queued before shell.Start so late modules register their tabs and cards before the panel is first built.
-        var early = Init(enabled.Where(i => i.Early || snapDir is not null));
-        if (snapDir is null)
+        var early = Init(enabled.Where(i => i.Early || (snapDir is not null && !measure)));
+        if (snapDir is null || measure)
             Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ApplicationIdle, () =>
             {
                 shell.GameMode.Start();
                 shell.SetCadenceAware(early.Concat(Init(enabled.Where(i => !i.Early))).OfType<ICadenceAware>());
             });
         shell.Start();
-        if (snapDir is not null) shell.GameMode.Start();
+        if (snapDir is not null && !measure) shell.GameMode.Start();
         shell.SetCadenceAware(early.OfType<ICadenceAware>());
         window.Show();
         window.Reposition();
@@ -187,7 +192,10 @@ public partial class App : Application
 
         if (snapDir is not null)
         {
-            Snapshot.Run(new SnapshotScene(window, shell, tabs, sections, layout, demos, save => SnapshotTour(gs, _store, shortcuts, save)), diag, Shutdown);
+            var scene = new SnapshotScene(window, shell, tabs, sections, layout, demos, save => SnapshotTour(gs, _store, shortcuts, save));
+            if (diag.Mode == DiagnosticMode.Snapshot) Snapshot.Run(scene, diag, Shutdown);
+            else DiagnosticRun.Start(diag, new DiagnosticHost(scene, gs, _store, shortcuts, layout, cards, sections, segments, ctx.Search, built,
+                pipe => DebugChannel.Start(new DebugHost(window, shell, shortcuts, tabs, sections, bootDisabled, _running, () => ShowTour(gs, _store!, shortcuts, shell), () => { }), pipe)), Shutdown);
             return;
         }
         _tray = new TrayIcon(window, shell, shortcuts, () => Shutdown(), updates);

@@ -46,9 +46,51 @@ If an old local build directory contains self-contained runtime files, a later f
 
 For other parallel test runs, also set a unique `QNOTCH_INSTANCE` value. Only stop test processes you started, by PID.
 
+## Smoke test
+
+`--smoke-test <dir>` writes everything `--snapshot` writes (`--only`, `--appearance` and `--data-dir` work the same), then brings the real shell on screen at the top of its monitor for about 15 seconds and runs the contract's [smoke checks](../../spec/diagnostics.md#smoke-checks). It takes no single-instance lock, uses demo data and a temporary data folder like `--snapshot`, and without `QNOTCH_INSTANCE` names its own instance (`smoke-<pid>`), so its pipes and child processes never reach your normal QNotch:
+
+```powershell
+$env:QNOTCH_INSTANCE = 'smoke-' + [guid]::NewGuid().ToString('N').Substring(0, 8)
+$p = Start-Process src\QNotch\bin\Release\net10.0-windows10.0.22621.0\win-x64\QNotch.exe -ArgumentList '--smoke-test', "$PWD\smoke" -PassThru
+$p.WaitForExit(); $p.ExitCode
+node scripts/check-snapshots.mjs smoke
+```
+
+The report is `smoke.txt`: the snapshot lines, then `check <name>: ok`, `check <name>: skip: <reason>` or `FAILED: check <name>: <reason>`, and `done` last only when every view and check passed (exit 0, otherwise 1). Details per check go to `smoke.log`, the app log is copied as `qnotch.log`. The checks drive the shell through its own methods and key handling (the hover dwell, the `toggle` and `search` shortcut actions, Escape and Return routed to QNotch's own windows, `CardLayout.Move`, the `panel-pin` toggle) and never move the pointer or send keystrokes to the desktop; they assert on what Windows reports: the window rectangle against the monitor, the foreground window, keyboard focus.
+
+| Check | On Windows |
+| --- | --- |
+| `placement` | Window and pill top center of the chosen monitor (DIPs), 760 x 430 window, 38 DIP pill |
+| `hover-keeps-focus` | The hover path opens the panel; the foreground window stays the other app's |
+| `hotkey-toggle`, `hotkey-search` | The shortcut actions open the panel with the keyboard (Search with focus in `search-field`) and toggle closes it again, handing the foreground back. Windows lets a process take the foreground only in some cases (the real hotkey qualifies); when it refuses, the check reports a skip saying so |
+| `escape-collapses` | Escape through the window's key handling closes the panel and releases the keyboard |
+| `module-disabled` | A child process (`--smoke-test <dir> --smoke-probe notifications`) boots with Notifications off and lists the modules it created, every registry id and every AutomationId it built: nothing of the module may appear |
+| `module-toggle` | Skip: modules apply on restart on Windows |
+| `edit-mode`, `pin` | The pointer leaving does not close the panel; a card move is saved (`general.json` as the read-only store would write it) |
+| `notify-cli`, `notify-transport` | The real `QNotch.exe notify --action ... --wait` answered through the module; a raw pipe request and dismiss. Only the pipe starts, never the HTTP endpoint or its token |
+| `agents-hook` | The real `QNotch.exe agent` hook sends a prompt event; the board shows the session working |
+| `game-mode` | Forced on: the bar shows, `TryOpenPanel`, `OpenPanelWithKeyboard`, the toggle and hover do nothing; back to Auto |
+| `accessible-names` | Every interactive control line in every outline written has a name |
+| `onboarding` | No tour opened by itself; one opened on demand (off screen, settings copied) steps through every step with Return and finishes; another skips with Esc |
+| `debug-channel` | No debug pipe in the run; a private one opened in process answers `ping`, `state`, `select-tab`, `outline`, an unknown command and `close` as documented |
+
+When game mode detection sees a fullscreen app in front at the start, the checks that take the foreground (`hotkey-toggle`, `hotkey-search`, `escape-collapses`, `debug-channel`) skip rather than interrupt it. CI runs the smoke test after the snapshot (240-second timeout, the checker, `smoke` uploaded even on failure).
+
+## Measure
+
+`--measure <dir>` writes `performance.json` ([contract keys](../../spec/diagnostics.md#measure) plus `cpu_model`, `logical_processors`, `cpu_seconds`, `cpu_percent_one_core_ticks`, `private_bytes_start`/`_end`, `gc_heap_bytes_end`, `busiest_threads`, `warmup_seconds` and `modules`) and exits 1 when a limit fails. It boots like a normal start (early modules before the first frame, the rest and Game mode at startup idle, the post-startup `MemoryTrim`) with every module on, demo data, read-only settings, no tray icon, hotkeys or network, the window off screen and the panel collapsed. It waits 15 s after startup idle, then measures 30 s:
+
+```powershell
+$p = Start-Process src\QNotch\bin\Release\net10.0-windows10.0.22621.0\win-x64\QNotch.exe -ArgumentList '--measure', "$PWD\perf" -PassThru
+$p.WaitForExit(); Get-Content perf\performance.json
+```
+
+CPU comes from `QueryProcessCycleTime` (exact cycles) over a calibrated cycle rate; `Process.TotalProcessorTime` is kept as `cpu_percent_one_core_ticks` (sampled on the 15.6 ms clock tick, so noisy at idle). `limits` holds the [hard rules](../../ARCHITECTURE.md#performance-rules-hard) it can measure: `idle_cpu_percent_one_core` at or under 0.1 while collapsed and `resident_bytes` (working set at both ends) under 80 MiB. Demo data means modules that honor read-only settings start no providers, so the number covers the shell, the stats sampler and the clock rather than live media or clipboard work. Close other busy apps first; foreground changes and display events wake the shell. Measure is local only: a shared runner's numbers say nothing about the app.
+
 ## Debug channel
 
-`--debug-control` starts the normal interactive app (single-instance mutex and all) plus the [debug channel](../../spec/diagnostics.md#debug-channel): the named pipe `\\.\pipe\QNotch.Debug.<QNOTCH_INSTANCE>` (`QNotch.Debug` without the variable), created for the current user only. It opens once the shell and every module are up. Without the flag there is no pipe and no thread; `--snapshot`, `--smoke-test`, `--measure` and settings never open it.
+`--debug-control` starts the normal interactive app (single-instance mutex and all) plus the [debug channel](../../spec/diagnostics.md#debug-channel): the named pipe `\\.\pipe\QNotch.Debug.<QNOTCH_INSTANCE>` (`QNotch.Debug` without the variable), created for the current user only. It opens once the shell and every module are up. Without the flag there is no pipe and no thread; `--snapshot`, `--measure` and settings never open it, and `--smoke-test` opens only a private one in process for its `debug-channel` check.
 
 Start a test instance with its own data folder and instance name. This is the one interactive instance an agent may launch directly (see [Windows agent instructions](../../src/QNotch/AGENTS.md)). Pre-seed `general.json` so it boots straight to the pill, with no welcome tour and no Updates prompt:
 

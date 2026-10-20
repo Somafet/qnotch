@@ -66,6 +66,28 @@ jobs:
           path: snapshots
           if-no-files-found: ignore
 
+      # spec/diagnostics.md, Smoke checks: the same views, then the real shell on screen, driven through its own methods (no real input).
+      # A check that needs the foreground reports a skip when Windows withholds it. Own data folder and instance; smoke.log has the details.
+      - name: Shell smoke test
+        shell: pwsh
+        env:
+          QNOTCH_INSTANCE: ci-smoke
+          DOTNET_DISABLE_GUI_ERRORS: '1'
+        run: |
+          $exe = "src/QNotch/bin/Release/net10.0-windows10.0.22621.0/win-x64/QNotch.exe"
+          $p = Start-Process $exe -ArgumentList '--smoke-test', "$PWD\smoke", '--data-dir', "$env:RUNNER_TEMP\qnotch-smoke" -PassThru
+          if (-not $p.WaitForExit(240000)) { $p.Kill(); throw "Smoke test timed out" }
+          Get-Content smoke/smoke.txt
+          if ($p.ExitCode -ne 0) { throw "Smoke test exited with code $($p.ExitCode)" }
+          node scripts/check-snapshots.mjs smoke
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: smoke
+          path: smoke
+          if-no-files-found: ignore
+
   macos:
     runs-on: macos-14
     timeout-minutes: 10
