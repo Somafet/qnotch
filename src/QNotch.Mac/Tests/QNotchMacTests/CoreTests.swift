@@ -101,6 +101,23 @@ final class CoreTests: XCTestCase {
         XCTAssertEqual(layout.surface(expanded: true).height, DisplayLayout.panelSize.height + 37)
     }
 
+    func testPointerAgainstTheTopOfTheDisplayIsOverTheNotch() {
+        let layout = DisplayLayout(frame: CGRect(x: 0, y: 0, width: 1470, height: 956),
+                                   visibleFrame: CGRect(x: 0, y: 0, width: 1470, height: 924),
+                                   safeTop: 32, cameraGap: CGRect(x: 646, y: 924, width: 179, height: 32))
+        for (expanded, wing) in [(false, 0), (false, 150), (true, 0)] as [(Bool, CGFloat)] {
+            let surface = layout.surface(expanded: expanded, wing: wing)
+            let top = CGPoint(x: layout.cameraHousing!.midX, y: layout.frame.maxY)
+            XCTAssertFalse(surface.contains(top), "CGRect.contains leaves out the top row")
+            XCTAssertTrue(surface.containsPointer(top), "A pointer flicked up to the camera housing is over the notch")
+            XCTAssertTrue(surface.containsPointer(CGPoint(x: surface.minX, y: surface.maxY)))
+            XCTAssertTrue(surface.containsPointer(CGPoint(x: surface.midX, y: surface.minY)))
+            XCTAssertFalse(surface.containsPointer(CGPoint(x: surface.maxX, y: surface.maxY)))
+            XCTAssertFalse(surface.containsPointer(CGPoint(x: surface.minX - 1, y: surface.maxY)))
+            XCTAssertFalse(surface.containsPointer(CGPoint(x: surface.midX, y: surface.minY - 1)))
+        }
+    }
+
     func testUnknownCameraGeometryFallsBackWithoutCoveringControls() {
         let frame = CGRect(x: 0, y: 0, width: 1512, height: 982)
         for gap in [nil, CGRect(x: -100, y: 945, width: 200, height: 37)] as [CGRect?] {
