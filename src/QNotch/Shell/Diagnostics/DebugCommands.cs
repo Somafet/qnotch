@@ -139,8 +139,9 @@ internal sealed class DebugCommands : IDisposable
             modules.Add(new JsonObject { ["id"] = m.Id, ["enabled"] = !_h.BootDisabled.Contains(m.Id), ["running"] = _h.Running.Contains(m.Id) });
         var windows = new JsonArray
         {
-            Entry("pill", w.IsVisible && s.Mode == ShellMode.Collapsed, ElementFrame(w.Surface)),
-            Entry("panel", s.Mode == ShellMode.Expanded && w.PanelLayer.IsVisible, ElementFrame(w.PanelLayer)),
+            // One window shows either: the entry not shown has its settled layout frame.
+            Entry("pill", w.IsVisible && s.Mode == ShellMode.Collapsed, InWindow(w, w.SettledFrame(open: false))),
+            Entry("panel", s.Mode == ShellMode.Expanded && w.PanelLayer.IsVisible, InWindow(w, w.SettledFrame(open: true))),
         };
         if (s.Mode == ShellMode.GameBar) windows.Add(Entry("gamebar", w.IsVisible, ElementFrame(w.Surface)));
         if (SettingsWindow.Current is { } sw) windows.Add(Entry("settings", sw.IsVisible && sw.WindowState != WindowState.Minimized, WindowFrame(sw)));
@@ -179,6 +180,14 @@ internal sealed class DebugCommands : IDisposable
         Rect b;
         try { b = el.TransformToAncestor(win).TransformBounds(new Rect(el.RenderSize)); }
         catch (InvalidOperationException) { return Rect.Empty; }
+        return new Rect(r.Left / scale + b.X, r.Top / scale + b.Y, b.Width, b.Height);
+    }
+
+    /// <summary>A rectangle in <paramref name="win"/>'s DIPs on screen.</summary>
+    static Rect InWindow(Window win, Rect b)
+    {
+        if (!GetWindowRect(new WindowInteropHelper(win).Handle, out var r)) return Rect.Empty;
+        var scale = VisualTreeHelper.GetDpi(win).DpiScaleX;
         return new Rect(r.Left / scale + b.X, r.Top / scale + b.Y, b.Width, b.Height);
     }
 
@@ -296,6 +305,7 @@ internal sealed class DebugCommands : IDisposable
     void Press(string id)
     {
         var el = Find(id);
+        if (el is ComboBox) throw new DebugException($"control {id} is a pop-up: its menu would block, set it with key (Up, Down, Return)");
         var peer = UIElementAutomationPeer.CreatePeerForElement(el);
         switch (peer)
         {
@@ -365,9 +375,9 @@ internal sealed class DebugCommands : IDisposable
         {
             "Escape" => System.Windows.Input.Key.Escape, "Return" or "Enter" => System.Windows.Input.Key.Return, "Tab" => System.Windows.Input.Key.Tab,
             "Space" => System.Windows.Input.Key.Space, "Up" => System.Windows.Input.Key.Up, "Down" => System.Windows.Input.Key.Down,
-            "Left" => System.Windows.Input.Key.Left, "Right" => System.Windows.Input.Key.Right, "Delete" => System.Windows.Input.Key.Delete,
+            "Left" => System.Windows.Input.Key.Left, "Right" => System.Windows.Input.Key.Right, "Backspace" => System.Windows.Input.Key.Back, "Delete" => System.Windows.Input.Key.Delete,
             _ when ch is { } c => VkKeyScanW(c) is var vk && vk != -1 ? KeyInterop.KeyFromVirtualKey(vk & 0xFF) : System.Windows.Input.Key.None,
-            _ => throw new DebugException($"unknown key {name}: use Escape, Return, Tab, Space, Up, Down, Left, Right, Delete or one character"),
+            _ => throw new DebugException($"unknown key {name}: use Escape, Return, Tab, Space, Up, Down, Left, Right, Backspace, Delete or one character"),
         };
         if (ch is { } upper && char.IsUpper(upper)) mods |= ModifierKeys.Shift;
         var (w, target) = KeyTarget();

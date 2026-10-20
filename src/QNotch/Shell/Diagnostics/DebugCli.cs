@@ -7,7 +7,7 @@ namespace QNotch.Shell.Diagnostics;
 
 /// <summary>
 /// <c>QNotch.exe debug &lt;cmd&gt; [--&lt;arg&gt; &lt;value&gt;...]</c>: one request to the debug channel of the instance named by <c>QNOTCH_INSTANCE</c>.
-/// Runs from Program.Main before WPF starts, so it touches no WPF or shell type. Prints the result (stdout) or the error (stderr) as JSON.
+/// Runs from Program.Main before WPF starts, so it touches no WPF or shell type. Prints the result as JSON on stdout, or <c>{"error": …}</c> on stderr.
 /// Exit codes: 0 ok, 1 the command failed, 3 no instance with the channel open, 4 bad usage.
 /// </summary>
 internal static class DebugCli
@@ -35,11 +35,11 @@ internal static class DebugCli
         if (args.Length == 0 || args[0] is "--help" or "-h" or "help") { Console.Out.WriteLine(Help); return args.Length == 0 ? 4 : 0; }
         byte[] line;
         try { line = Request(args); }
-        catch (ArgumentException ex) { Console.Error.WriteLine(ex.Message); return 4; }
+        catch (ArgumentException ex) { return Fail(ex.Message, 4); }
         string reply;
         try { reply = Exchange(PipeName, line, 2000); }
-        catch (TimeoutException) { Console.Error.WriteLine($@"No QNotch instance has the debug channel open (\\.\pipe\{PipeName}). Start one with --debug-control."); return 3; }
-        catch (IOException) { Console.Error.WriteLine("QNotch closed the connection before answering."); return 3; }
+        catch (TimeoutException) { return Fail($@"No QNotch instance has the debug channel open (\\.\pipe\{PipeName}). Start one with --debug-control.", 3); }
+        catch (IOException) { return Fail("QNotch closed the connection before answering.", 3); }
         try
         {
             using var doc = JsonDocument.Parse(reply);
@@ -49,10 +49,18 @@ internal static class DebugCli
                 Print(Console.OpenStandardOutput(), root.TryGetProperty("result", out var r) ? r.GetRawText() : "{}");
                 return 0;
             }
-            Print(Console.OpenStandardError(), root.TryGetProperty("error", out var e) ? e.GetRawText() : "\"QNotch rejected the request.\"");
-            return 1;
+            return Fail(root.TryGetProperty("error", out var e) && e.ValueKind == JsonValueKind.String ? e.GetString()! : "QNotch rejected the request.", 1);
         }
-        catch (JsonException) { Console.Error.WriteLine("QNotch sent an unreadable answer."); return 1; }
+        catch (JsonException) { return Fail("QNotch sent an unreadable answer.", 1); }
+    }
+
+    static readonly JsonSerializerOptions Relaxed = new() { Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
+
+    /// <summary>Prints <c>{"error": message}</c> on stderr and returns <paramref name="code"/>.</summary>
+    static int Fail(string message, int code)
+    {
+        Print(Console.OpenStandardError(), JsonSerializer.Serialize(new Dictionary<string, string> { ["error"] = message }, Relaxed));
+        return code;
     }
 
     /// <summary>UTF-8 whatever the console code page: the JSON keeps its text as is.</summary>

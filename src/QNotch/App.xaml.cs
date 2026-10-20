@@ -125,7 +125,8 @@ public partial class App : Application
         var shell = _shell;
         shell.AddShortcuts();
         // Before any module and the update service: the feature choices apply now, and a completed or skipped tour has made the update choice.
-        var openAfterTour = tour == TourStart.Show && RunTour(gs, _store, shortcuts);
+        // A --debug-control run never opens the tour by itself (spec/diagnostics.md); the onboarding command does.
+        var openAfterTour = tour == TourStart.Show && !_debugControl && RunTour(gs, _store, shortcuts);
         _updates = new UpdateService(gs, Dispatcher, _store, () => Shutdown());
         var updates = _updates;
         segments.Register(new SegmentDescriptor("updates.pill", SegmentSlot.PillRight, 2,
