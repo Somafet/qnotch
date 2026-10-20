@@ -6,6 +6,7 @@ using QNotch.Core;
 using QNotch.Core.Updates;
 using QNotch.Modules;
 using QNotch.Shell;
+using QNotch.Shell.Diagnostics;
 using QNotch.Shell.GameMode;
 using QNotch.Shell.Settings;
 using QNotch.Theme;
@@ -56,9 +57,9 @@ public partial class App : Application
         // Layered (per-pixel alpha) windows read the whole surface back from the GPU every frame; software rendering is as fast
         // for this UI (same frame rate measured) and saves about 20 MB of commit (no D3D device).
         System.Windows.Media.RenderOptions.ProcessRenderMode = System.Windows.Interop.RenderMode.SoftwareOnly;
-        // Dev tool: QNotch.exe --snapshot <dir> [light]  renders every view to PNG and exits (see Shell/Snapshot.cs).
-        var snap = Array.IndexOf(e.Args, "--snapshot");
-        string? snapDir = snap >= 0 && snap + 1 < e.Args.Length ? Path.GetFullPath(e.Args[snap + 1]) : null;
+        // Dev tool: QNotch.exe --snapshot <dir> [--appearance light|dark] renders every view to PNG and exits (see Shell/Snapshot.cs).
+        var diag = DiagnosticOptions.Parse(e.Args);
+        var snapDir = diag.Mode == DiagnosticMode.Snapshot ? diag.Dir : null;
         if (snapDir is null)
         {
             // QNOTCH_INSTANCE keeps parallel test runs apart. --restart: the previous instance is shutting down, wait for its mutex.
@@ -75,19 +76,19 @@ public partial class App : Application
             }
             _mutex = m;
         }
-        try { Boot(snapDir, e.Args.Contains("light")); }
+        try { Boot(snapDir, diag.Appearance); }
         catch (Exception ex)
         {
             Log.Crash("Startup", ex);
             Shutdown(1);
         }
     }
-    void Boot(string? snapDir, bool light)
+    void Boot(string? snapDir, string? appearance)
     {
         _store = new SettingsStore { ReadOnly = snapDir is not null };
         var fresh = !_store.Exists("general");
         var gs = _store.Get<GeneralSettings>("general");
-        if (snapDir is not null) { gs.Pinned = false; gs.DisabledModules = new(); if (light) gs.Theme = ThemeChoice.Light; } // snapshots load every module
+        if (snapDir is not null) { gs.Pinned = false; gs.DisabledModules = new(); if (appearance is not null) gs.Theme = appearance == "light" ? ThemeChoice.Light : ThemeChoice.Dark; } // snapshots load every module
         // Welcome tour: only on a fresh install. Settings from before it existed record it as done, silently.
         var tour = FirstRun.Decide(!fresh, gs.OnboardingDone, snapDir is not null);
         if (tour == TourStart.MarkDone) { gs.OnboardingDone = true; _store.Save("general", gs); }

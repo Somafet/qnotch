@@ -1,12 +1,8 @@
-using System.Text;
 using System.Windows;
-using System.Windows.Automation;
-using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using QNotch.Core;
 using QNotch.Modules;
+using QNotch.Shell.Diagnostics;
 using QNotch.Shell.GameMode;
 
 namespace QNotch.Shell;
@@ -27,11 +23,11 @@ internal static class Snapshot
         {
             Directory.CreateDirectory(dir);
             await Task.Delay(1800); // first stats sample and idle prebuild
-            Save(w.RootElement, new Rect(0, 0, NotchWindow.WinW, 84), Path.Combine(dir, "pill.png"), Desk);
+            Render.Save(w.RootElement, new Rect(0, 0, NotchWindow.WinW, 84), Path.Combine(dir, "pill.png"), Desk);
             using (shell.Peek("\uE756", "api: Needs you", "WarningBrush"))
             {
                 await Task.Delay(400);
-                Save(w.RootElement, new Rect(0, 0, NotchWindow.WinW, 84), Path.Combine(dir, "pill-peek.png"), Desk);
+                Render.Save(w.RootElement, new Rect(0, 0, NotchWindow.WinW, 84), Path.Combine(dir, "pill-peek.png"), Desk);
             }
             await Task.Delay(400);
 
@@ -41,12 +37,12 @@ internal static class Snapshot
             {
                 shell.SelectTab(t.Id);
                 await Task.Delay(350);
-                Save(w.RootElement, new Rect(0, 0, NotchWindow.WinW, NotchWindow.PanelH + 8), Path.Combine(dir, $"tab-{t.Id}.png"), Desk);
+                Render.Save(w.RootElement, new Rect(0, 0, NotchWindow.WinW, NotchWindow.PanelH + 8), Path.Combine(dir, $"tab-{t.Id}.png"), Desk);
             }
             shell.SelectTab("home");
             shell.IsEditMode = true;
             await Task.Delay(400);
-            Save(w.RootElement, new Rect(0, 0, NotchWindow.WinW, NotchWindow.PanelH + 8), Path.Combine(dir, "tab-home-edit.png"), Desk);
+            Render.Save(w.RootElement, new Rect(0, 0, NotchWindow.WinW, NotchWindow.PanelH + 8), Path.Combine(dir, "tab-home-edit.png"), Desk);
             shell.IsEditMode = false;
             shell.ClosePanel();
             await Task.Delay(400);
@@ -54,22 +50,22 @@ internal static class Snapshot
             // Game bar: the real controller builds it from the registered segments. Forced on, then the corner layout, then back to Auto.
             shell.GameMode.Override = GameModeOverride.ForceOn;
             await Task.Delay(500);
-            Save(w.RootElement, new Rect(0, 0, NotchWindow.WinW, 60), Path.Combine(dir, "gamebar.png"), Desk);
+            Render.Save(w.RootElement, new Rect(0, 0, NotchWindow.WinW, 60), Path.Combine(dir, "gamebar.png"), Desk);
             shell.SetGameBarLayout(22, 0.7, 100000, 8); // far right, off the top edge: must clamp into the corner
             await Task.Delay(300);
-            Save(w.RootElement, new Rect(0, 0, NotchWindow.WinW, 60), Path.Combine(dir, "gamebar-corner.png"), Desk);
+            Render.Save(w.RootElement, new Rect(0, 0, NotchWindow.WinW, 60), Path.Combine(dir, "gamebar-corner.png"), Desk);
             shell.GameMode.Override = GameModeOverride.ForceOff;
             shell.GameMode.SettingsChanged(); // back to the configured layout
             shell.GameMode.Override = GameModeOverride.Auto;
             await Task.Delay(300);
 
             SettingsWindow.Snapshot(sections, (el, id) =>
-                Save(el, new Rect(0, 0, el.ActualWidth, el.ActualHeight), Path.Combine(dir, $"settings-{id}.png"), (Brush)el.FindResource("WindowBrush")));
+                Render.Save(el, Path.Combine(dir, $"settings-{id}.png")));
 
             // Welcome tour: every step with demo rows (a connected GitHub account, a chosen place), as onboarding-<step>.png.
             tour((el, name) =>
             {
-                Save(el, new Rect(0, 0, el.ActualWidth, el.ActualHeight), Path.Combine(dir, name + ".png"), (Brush)el.FindResource("WindowBrush"));
+                Render.Save(el, Path.Combine(dir, name + ".png"));
                 report.Add($"{name}: ok");
             });
 
@@ -85,69 +81,6 @@ internal static class Snapshot
         {
             try { File.WriteAllLines(Path.Combine(dir, "snapshot.txt"), report); } catch { }
             exit();
-        }
-    }
-
-    /// <summary>Renders <paramref name="crop"/> of <paramref name="el"/> (DIPs) over a flat background at 2x.</summary>
-    static void Save(FrameworkElement el, Rect crop, string path, Brush background)
-    {
-        el.UpdateLayout();
-        // Off-screen the window has no monitor, so on a scaled display it is laid out wider than WinW: the notch stays centered.
-        if (el.ActualWidth > crop.Width) crop.X += (el.ActualWidth - crop.Width) / 2;
-        int W(double v) => (int)Math.Ceiling(v * 2);
-        var full = new RenderTargetBitmap(W(el.ActualWidth), W(el.ActualHeight), 192, 192, PixelFormats.Pbgra32);
-        full.Render(el);
-        var dv = new DrawingVisual();
-        using (var dc = dv.RenderOpen())
-        {
-            dc.DrawRectangle(background, null, new Rect(0, 0, crop.Width, crop.Height));
-            dc.DrawImage(full, new Rect(-crop.X, -crop.Y, el.ActualWidth, el.ActualHeight));
-        }
-        var outBmp = new RenderTargetBitmap(W(crop.Width), W(crop.Height), 192, 192, PixelFormats.Pbgra32);
-        outBmp.Render(dv);
-        var enc = new PngBitmapEncoder();
-        enc.Frames.Add(BitmapFrame.Create(outBmp));
-        using var fs = File.Create(path);
-        enc.Save(fs);
-        File.WriteAllText(Path.ChangeExtension(path, ".txt"), Tree(el));
-    }
-
-    /// <summary>Text outline of what is visible in <paramref name="root"/>: controls with name, id and state, nested with their text.</summary>
-    static string Tree(DependencyObject root)
-    {
-        var sb = new StringBuilder();
-        Walk(root, 0);
-        return sb.ToString();
-
-        void Walk(DependencyObject o, int depth)
-        {
-            if (o is UIElement { Visibility: not Visibility.Visible } or ScrollBar) return;
-            var line = o switch
-            {
-                TextBlock t => t.Text.All(c => c is >= '' and <= '') ? null : $"\"{t.Text}\"", // skips empty and icon glyphs
-                PasswordBox => "[PasswordBox]",
-                TextBox t => $"[TextBox] \"{t.Text}\"",
-                RangeBase r => $"[{o.GetType().Name}] {r.Value:0.##} of {r.Maximum:0.##}",
-                ButtonBase or ListBoxItem or ComboBox => $"[{o.GetType().Name}]",
-                _ => null,
-            };
-            if (line is not null)
-            {
-                sb.Append(' ', depth * 2).Append(line);
-                if (o is Control c)
-                {
-                    var name = AutomationProperties.GetName(c) is { Length: > 0 } n ? n : c.ToolTip as string;
-                    if (name is not null) sb.Append($" \"{name}\"");
-                    if (AutomationProperties.GetAutomationId(c) is { Length: > 0 } id) sb.Append($" #{id}");
-                    if (o is ToggleButton { IsChecked: true }) sb.Append(" checked");
-                    if (o is ListBoxItem { IsSelected: true }) sb.Append(" selected");
-                    if (!c.IsEnabled) sb.Append(" disabled");
-                }
-                sb.AppendLine();
-                if (o is RangeBase or TextBox) return;
-                depth++;
-            }
-            for (int i = 0, n = VisualTreeHelper.GetChildrenCount(o); i < n; i++) Walk(VisualTreeHelper.GetChild(o, i), depth);
         }
     }
 

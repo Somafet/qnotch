@@ -24,13 +24,15 @@ public static class FeaturesSection
         {
             var id = info.Id;
             var on = !gs.DisabledModules.Contains(id, StringComparer.OrdinalIgnoreCase);
-            page.Children.Add(UiKit.Row(info.Title, info.Description, UiKit.Toggle(on, v =>
+            var toggle = UiKit.Toggle(on, v =>
             {
                 gs.DisabledModules.RemoveAll(x => string.Equals(x, id, StringComparison.OrdinalIgnoreCase));
                 if (!v) gs.DisabledModules.Add(id);
                 store.Save("general", gs);
                 Sync();
-            })));
+            });
+            System.Windows.Automation.AutomationProperties.SetAutomationId(toggle, "feature-" + id);
+            page.Children.Add(UiKit.Row(info.Title, info.Description, toggle));
         }
         page.Children.Add(bar);
         Sync();

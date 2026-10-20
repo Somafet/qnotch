@@ -13,6 +13,8 @@ static class Program
     static int Main(string[] args)
     {
         if (args.Length > 0 && ModuleList.Verbs.TryGetValue(args[0], out var verb)) return verb(args[1..]);
+        // --data-dir replaces the data root and wins over QNOTCH_DATA_DIR; set before Paths loads, and inherited by --restart.
+        if (Shell.Diagnostics.DiagnosticOptions.Parse(args).DataDir is { } dataDir) Environment.SetEnvironmentVariable("QNOTCH_DATA_DIR", dataDir);
         return RunApp();
     }
 

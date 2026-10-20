@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Media;
@@ -34,6 +35,7 @@ public static class UiKit
         left.Children.Add(new TextBlock { Text = label, FontSize = 13 });
         if (hint is not null) left.Children.Add(new TextBlock { Text = hint, Style = Res<Style>("Muted"), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 0) });
         control.VerticalAlignment = VerticalAlignment.Center;
+        if (string.IsNullOrEmpty(AutomationProperties.GetName(control))) AutomationProperties.SetName(control, label); // the row's label names its control
         Grid.SetColumn(control, 1);
         g.Children.Add(left);
         g.Children.Add(control);
