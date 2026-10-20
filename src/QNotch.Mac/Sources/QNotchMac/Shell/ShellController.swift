@@ -97,7 +97,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
             return !layout.integratesCameraHousing && !self.state.expanded && !self.gameActive
         }
         panel.nudged = { [weak self] dx in self?.nudge(by: dx) }
-        panel.nudgeEnded = { [weak self] doubleClick in self?.endNudge(center: doubleClick) }
+        panel.nudgeEnded = { [weak self] doubleClick, velocity in self?.endNudge(center: doubleClick, velocity: velocity) }
         panel.typed = { [weak self] text in self?.typeToSearch(text) }
         registerShellSearch()
         shortcuts.add("toggle", title: "Toggle panel", hint: "Opens or closes the panel, ready for typing.", gesture: "ctrl+opt+n", order: 0) { [weak self] in
@@ -239,7 +239,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         }
         if disabled != general.disabledModules {
             composeModules()
-            if let panelView { panelView.removeFromSuperview(); self.panelView = nil }
+            discardPanel()
         }
         resolveDisplay()
         rebuildSurface()
@@ -252,7 +252,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         guard modulesDeferred else { return }
         modulesDeferred = false
         composeModules()
-        if let panelView { panelView.removeFromSuperview(); self.panelView = nil }
+        discardPanel()
         resolveDisplay()
         rebuildSurface()
         updateVisibility()
@@ -394,18 +394,38 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
                          width: max(0, right.minX - left.maxX), height: screen.safeAreaInsets.top)
         } else { gap = nil }
         var layout = DisplayLayout(frame: screen.frame, visibleFrame: screen.visibleFrame, safeTop: screen.safeAreaInsets.top, cameraGap: gap)
-        layout.offset = nudgeStart.map { $0 + nudgeDelta } ?? CGFloat(general.pillOffsets[String(Self.displayID(screen))] ?? 0)
+        layout.offset = nudgeOffset ?? CGFloat(general.pillOffsets[String(Self.displayID(screen))] ?? 0)
+        if nudgeOffset != nil { layout.edgeStretch = 8 }
         return layout
     }
 
     /// The settled window frame for the current presentation.
-    var expectedFrame: CGRect? { layout?.surface(expanded: state.expanded, wing: wing) }
+    var expectedFrame: CGRect? { layout.map(surfaceRect) }
+
+    /// The settled surface: the layout's, swollen a little while the pointer rests on the collapsed
+    /// notch, so hovering answers at once, before the hover delay opens the panel.
+    private func surfaceRect(_ layout: DisplayLayout) -> CGRect {
+        let rect = layout.surface(expanded: state.expanded, wing: wing)
+        guard hovering, !state.expanded, Motion.moves else { return rect }
+        // Attached to the bezel it grows sideways and down; a floating pill grows all round.
+        let swell: CGFloat = 2
+        return layout.integratesCameraHousing ? CGRect(x: rect.minX - swell, y: rect.minY - swell, width: rect.width + swell * 2, height: rect.height + swell)
+                                              : rect.insetBy(dx: -swell, dy: -swell / 2)
+    }
 
     // MARK: Hover, open and close
 
     /// After an explicit close (Escape, Settings, Show, a pick) with the pointer still on the
     /// notch, hover stays off until the pointer leaves, so the panel does not spring back open.
     private var hoverSuppressed = false
+    /// The pointer rests on the collapsed notch (see `surfaceRect`).
+    private var hovering = false
+
+    private func setHovering(_ value: Bool) {
+        guard hovering != value else { return }
+        hovering = value
+        if !state.expanded, Motion.moves { present(.hover) }
+    }
 
     func pointerEntered() {
         leaveTask?.cancel()
@@ -415,6 +435,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
             guard !(expectedFrame?.containsPointer(NSEvent.mouseLocation) ?? false) else { return }
             hoverSuppressed = false
         }
+        setHovering(true)
         hoverTask?.cancel()
         // The settled shape, not the window: while a close morph runs, the window still covers
         // the panel's old area, and a pointer there must not reopen it.
@@ -430,6 +451,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         hoverTask?.cancel()
         leaveTask?.cancel()
         hoverSuppressed = false
+        if !panel.frame.containsPointer(NSEvent.mouseLocation) { setHovering(false) }
         guard state.presentation == .hover, !general.pinned, holds == 0 else { return }
         let task = DispatchWorkItem { [weak self] in
             guard let self, !self.general.pinned, self.holds == 0, !self.panel.frame.containsPointer(NSEvent.mouseLocation) else { return }
@@ -446,6 +468,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         guard screen != nil, !gameActive, !modulesDeferred else { return }
         hoverTask?.cancel(); leaveTask?.cancel()
         let wasExpanded = state.expanded
+        hovering = false
         if keyboard, !state.acceptsKeyboard { previousApp = NSWorkspace.shared.frontmostApplication }
         state.open(keyboard: keyboard)
         peekHandle?.end()
@@ -463,6 +486,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         guard state.expanded else { return }
         let restore = restoreFocus && panel.isKeyWindow
         hoverSuppressed = panel.frame.containsPointer(NSEvent.mouseLocation)
+        hovering = false
         setEditing(false)
         state.close()
         panel.keyboardAllowed = false
@@ -678,8 +702,15 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         let handle = PeekHandle { [weak self] handle in
             guard let self, self.peekHandle === handle else { return }
             self.peekHandle = nil
-            self.peekLeft.removeFromSuperview(); self.peekRight.removeFromSuperview()
-            self.segmentsChanged()
+            // The line fades out the way it came, then the wings take their status back.
+            let views = [self.peekLeft, self.peekRight]
+            Motion.leave(views[1], duration: 0.12) { views[1].removeFromSuperview() }
+            Motion.leave(views[0], duration: 0.12) { [weak self] in
+                views[0].removeFromSuperview()
+                guard let self, self.peekHandle == nil else { return }
+                self.segmentsChanged()
+                for view in [self.leading, self.trailing] where !view.isHidden { Motion.enter(view, duration: 0.2) }
+            }
         }
         peekHandle = handle
         peekLeft.removeFromSuperview(); peekRight.removeFromSuperview()
@@ -698,7 +729,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         peekLeft.setAccessibilityRole(.staticText)
         peekLeft.setAccessibilityLabel("\(leading): \(trailing)")
         segmentsChanged()
-        for view in [peekLeft, peekRight] { Motion.reveal(view, delay: 0.05, duration: 0.18) }
+        for view in [peekLeft, peekRight] { Motion.enter(view, delay: 0.05, duration: 0.18) }
         if let seconds {
             DispatchQueue.main.asyncAfter(deadline: .now() + min(10, max(1, seconds))) { [weak handle] in handle?.end() }
         }
@@ -755,9 +786,9 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         guard next != wing else { layoutStatus(); return }
         let appearing = wing == 0
         wing = next
-        if state.expanded { layoutStatus() } else { present(.nudge) }
+        if state.expanded { layoutStatus() } else { present(.status) }
         if appearing, !state.expanded {
-            for view in [leading, trailing, pill] { Motion.reveal(view, delay: 0.08, duration: 0.28) }
+            for view in [leading, trailing, pill] { Motion.enter(view, delay: 0.08, duration: 0.28) }
         }
     }
 
@@ -793,23 +824,27 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     // MARK: Nudge (floating pill only)
 
     private var nudgeStart: CGFloat?
-    private var nudgeDelta: CGFloat = 0
+    /// Where the dragged pill shows, rubber-banded at the edges; nil when not dragging.
+    private var nudgeOffset: CGFloat?
 
     private func nudge(by dx: CGFloat) {
-        if nudgeStart == nil, let screen { nudgeStart = CGFloat(general.pillOffsets[String(Self.displayID(screen))] ?? 0) }
-        nudgeDelta = dx
+        guard let screen, let layout else { return }
+        if nudgeStart == nil { nudgeStart = CGFloat(general.pillOffsets[String(Self.displayID(screen))] ?? 0) }
+        nudgeOffset = layout.dragged(offset: (nudgeStart ?? 0) + dx, width: layout.surface(expanded: false, wing: wing).width)
         present(.none)
     }
 
-    /// Settles the pill at the center or an edge when close to one, and remembers the spot per display.
-    private func endNudge(center: Bool) {
+    /// Settles the pill at the center or an edge when it would coast close to one, and remembers
+    /// the spot per display. A flick throws it and the spring carries on at the pointer's `velocity`.
+    private func endNudge(center: Bool, velocity: CGFloat) {
         guard let screen, let layout else { return }
         let width = layout.surface(expanded: false, wing: wing).width
-        let target = center ? 0 : layout.snapped(offset: layout.offset, width: width)
+        let current = layout.offset
+        let target = center ? 0 : layout.snapped(offset: current, width: width, velocity: velocity)
         nudgeStart = nil
-        nudgeDelta = 0
+        nudgeOffset = nil
         updateGeneral { $0.pillOffsets[String(Self.displayID(screen))] = target == 0 ? nil : Double(target) }
-        present(.nudge)
+        present(.release, velocity: center ? 0 : Fluid.relativeVelocity(velocity, from: current, to: target))
     }
 
     // MARK: Profile
@@ -856,15 +891,25 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         contentCache.removeAll()
         searchView = nil
         buildStatus()
-        if let panelView { panelView.removeFromSuperview(); self.panelView = nil }
+        discardPanel()
         rebuildSurface()
+    }
+
+    /// Drops the panel (open or closing), so the next open builds it with current settings.
+    private func discardPanel() {
+        for view in [panelView, closingPanel] { view?.removeFromSuperview() }
+        panelView = nil
+        closingPanel = nil
     }
 
     /// Full rebuild for a display, module, or accent change. No animation.
     private func rebuildSurface() {
         guard let layout else { return }
-        surface.configure(world: layout.surface(expanded: true).union(layout.surface(expanded: false, wing: 120)).insetBy(dx: -40, dy: -40),
-                          integrated: layout.integratesCameraHousing, band: layout.topBandHeight)
+        var world = layout.surface(expanded: true).union(layout.surface(expanded: false, wing: 120)).insetBy(dx: -40, dy: -40)
+        // A floating pill moves sideways: spanning the display, the world stays put when it is
+        // dropped somewhere new, so the release spring starts exactly where the pill shows.
+        if !layout.integratesCameraHousing { world = CGRect(x: layout.frame.minX - 40, y: world.minY, width: layout.frame.width + 80, height: world.height) }
+        surface.configure(world: world, integrated: layout.integratesCameraHousing, band: layout.topBandHeight)
         panel.level = layout.integratesCameraHousing ? .statusBar : .floating
         wing = measureWing()
         if let panelView { surface.place(panelView, at: layout.panelBody) }
@@ -873,44 +918,73 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
 
     /// Morphs the surface to the current presentation. While animating, the window temporarily
     /// covers both shapes plus overshoot room; it returns to the exact surface when settled.
-    private func present(_ style: NotchSurfaceView.Morph) {
+    /// `velocity`: a released drag's speed in spring units (`Fluid.relativeVelocity`).
+    private func present(_ style: NotchSurfaceView.Morph, velocity: CGFloat = 0) {
         guard let layout else { return }
         surfaceRevision += 1
         let expanded = state.expanded
-        let target = layout.surface(expanded: expanded, wing: wing)
-        let animated = style != .none && Motion.enabled && panel.isVisible
+        let target = surfaceRect(layout)
+        // With reduced motion the surface crossfades as a whole, panel content included.
+        let animated = style != .none && Motion.fades && panel.isVisible
+        let moving = animated && Motion.moves
         if expanded, panelView == nil {
-            closingPanel?.removeFromSuperview()
-            closingPanel = nil
-            let view = PanelView(tabs: tabs, selected: activeTab, profile: profile, pinned: general.pinned,
-                                 select: { [weak self] in self?.selectTab($0) },
-                                 togglePin: { [weak self] in self?.togglePin() },
-                                 openSettings: { [weak self] in self?.openSettings() },
-                                 toggleEdit: { [weak self] in self?.toggleEditing() },
-                                 reorderTabs: { [weak self] ids in self?.updateGeneral { $0.tabOrder = LayoutOrder.reorder(ids, saved: $0.tabOrder) } })
-            panelView = view
-            surface.place(view, at: layout.panelBody)
-            view.layoutSubtreeIfNeeded()
-            showBody()
-            if animated { Motion.reveal(view, delay: 0.07, duration: 0.3, dy: 10) }
+            if let view = closingPanel {
+                // Reopened while closing: the same panel turns around from where it is on screen.
+                closingPanel = nil
+                panelView = view
+                view.isHidden = false
+                view.select(activeTab, animated: false)
+                view.setPinned(general.pinned)
+                view.setEditing(editing, onHome: activeTab == "home")
+                showBody()
+                if moving { Motion.resume(view, duration: 0.24) } else { view.layer?.removeAllAnimations() }
+            } else {
+                let view = PanelView(tabs: tabs, selected: activeTab, profile: profile, pinned: general.pinned,
+                                     select: { [weak self] in self?.selectTab($0) },
+                                     togglePin: { [weak self] in self?.togglePin() },
+                                     openSettings: { [weak self] in self?.openSettings() },
+                                     toggleEdit: { [weak self] in self?.toggleEditing() },
+                                     reorderTabs: { [weak self] ids in self?.updateGeneral { $0.tabOrder = LayoutOrder.reorder(ids, saved: $0.tabOrder) } })
+                panelView = view
+                surface.place(view, at: layout.panelBody)
+                view.layoutSubtreeIfNeeded()
+                showBody()
+                if moving { Motion.enter(view, delay: 0.07, duration: 0.3, up: 10) }
+            }
         } else if !expanded, let view = panelView {
             panelView = nil
             closingPanel = view
-            if animated {
-                Motion.conceal(view, duration: 0.12, dy: 8) { [weak self, weak view] in
+            if moving {
+                Motion.leave(view, duration: 0.12, up: 8) { [weak self, weak view] in
                     guard let self, let view, self.closingPanel === view else { return }
                     view.isHidden = true
                 }
+            } else if animated {
+                view.isHidden = true
             } else { view.removeFromSuperview(); closingPanel = nil }
         }
         let integrated = layout.integratesCameraHousing
         let bottom: CGFloat = expanded ? 22 : integrated ? 11 : 16
-        let window = animated ? surface.visibleShapeBounds.union(target).insetBy(dx: -28, dy: -28).intersection(layout.frame) : target
+        var window = target
+        if animated {
+            let visible = surface.visibleShapeBounds
+            window = visible.union(target)
+            if moving, velocity != 0 {
+                // A thrown pill can overshoot its spot; keep the whole flight inside the window.
+                let spring = style.spring(momentum: true)
+                let reach = Fluid.springExtent(from: visible.midX, to: target.midX, velocity: velocity * (target.midX - visible.midX),
+                                               response: spring.response, dampingRatio: spring.dampingRatio)
+                window = window.union(target.offsetBy(dx: reach.lowerBound - target.midX, dy: 0))
+                    .union(target.offsetBy(dx: reach.upperBound - target.midX, dy: 0))
+            }
+            window = window.insetBy(dx: -28, dy: -28).intersection(layout.frame)
+        }
         setFrame(window)
         let wasHidden = pill.isHidden
         layoutStatus()
-        if animated, !integrated, wasHidden, !pill.isHidden { Motion.reveal(pill, delay: 0.1, duration: 0.24) }
-        surface.morph(to: target, bottom: bottom, top: expanded ? 20 : 16, outlined: expanded, style: animated ? style : .none) { [weak self] in
+        if moving, !integrated, wasHidden, !pill.isHidden { Motion.enter(pill, delay: 0.1, duration: 0.24) }
+        surface.morph(to: target, bottom: bottom, top: expanded ? 20 : 16, outlined: expanded, style: animated ? style : .none,
+                      velocity: velocity) { [weak self] in
             self?.settle()
         }
     }
@@ -920,6 +994,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         setFrame(frame)
         // The pointer may have been left outside the shrunken window without an exit event.
         if hoverSuppressed, !frame.containsPointer(NSEvent.mouseLocation) { hoverSuppressed = false }
+        if hovering, !frame.containsPointer(NSEvent.mouseLocation) { setHovering(false) }
         if !state.expanded, let closingPanel {
             closingPanel.removeFromSuperview()
             closingPanel.layer?.removeAllAnimations()

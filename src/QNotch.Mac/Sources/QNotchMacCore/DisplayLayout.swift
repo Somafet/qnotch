@@ -15,6 +15,8 @@ public struct DisplayLayout {
     /// Sideways offset of a floating pill from the display's center (Windows NotchNudge). A notch
     /// that wraps the camera housing never moves.
     public var offset: CGFloat = 0
+    /// How far a dragged pill may enter the 8-point edge margin while it rubber-bands.
+    public var edgeStretch: CGFloat = 0
 
     public init(frame: CGRect, visibleFrame: CGRect, safeTop: CGFloat, cameraGap: CGRect?) {
         self.frame = frame
@@ -52,7 +54,8 @@ public struct DisplayLayout {
         let wantedHeight = expanded ? Self.panelSize.height + topBandHeight : collapsed.height
         let height = min(wantedHeight, max(32, top - available.minY))
         let center = cameraHousing?.midX ?? frame.midX + offset
-        let x = min(max(center - width / 2, available.minX), available.maxX - width)
+        let bounds = expanded ? available : available.insetBy(dx: -min(8, max(0, edgeStretch)), dy: 0)
+        let x = min(max(center - width / 2, bounds.minX), bounds.maxX - width)
         return CGRect(x: x, y: max(available.minY, top - height), width: width, height: height)
     }
 
@@ -76,10 +79,22 @@ public struct DisplayLayout {
 }
 
 extension DisplayLayout {
-    /// Where a released pill settles: the center or flush against an edge when within 56 points.
-    public func snapped(offset: CGFloat, width: CGFloat) -> CGFloat {
-        let limit = max(0, (frame.width - 16 - width) / 2)
-        let clamped = min(limit, max(-limit, offset))
+    /// The farthest a pill of `width` sits from the center, flush with an edge margin.
+    public func offsetLimit(width: CGFloat) -> CGFloat { max(0, (frame.width - 16 - width) / 2) }
+
+    /// Where a dragged pill shows for the pointer's `offset`: 1:1 between the edge margins, then
+    /// resisting more and more into the margin instead of stopping dead, so reversing moves it at once.
+    public func dragged(offset: CGFloat, width: CGFloat) -> CGFloat {
+        let limit = offsetLimit(width: width)
+        return Fluid.rubberband(offset, in: -limit...limit, dimension: 8)
+    }
+
+    /// Where a released pill settles: the center or flush against an edge when within 56 points of
+    /// where it would coast to at `velocity` (points per second), so a flick throws it.
+    public func snapped(offset: CGFloat, width: CGFloat, velocity: CGFloat = 0) -> CGFloat {
+        let limit = offsetLimit(width: width)
+        let resting = offset + Fluid.project(velocity: velocity)
+        let clamped = min(limit, max(-limit, resting))
         if abs(clamped) < 56 { return 0 }
         if limit - abs(clamped) < 56 { return clamped < 0 ? -limit : limit }
         return clamped

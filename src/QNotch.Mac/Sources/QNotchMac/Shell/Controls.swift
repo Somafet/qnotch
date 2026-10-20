@@ -1,4 +1,5 @@
 import AppKit
+import QNotchMacCore
 
 // MARK: - Layout helpers
 
@@ -287,7 +288,9 @@ final class TabBar: FillView {
     var fixed = 2
     var editing = false { didSet { if oldValue != editing { applyEditing() } } }
     private var order: [Int]
-    private var drag: (position: Int, start: CGFloat, moved: Bool)?
+    /// The dragged tab's place, where the press began, and where on the tab it was grabbed.
+    private var drag: (position: Int, start: CGFloat, grab: CGFloat, moved: Bool)?
+    private var tracker = VelocityTracker()
     private static let item = NSSize(width: 40, height: 28), gap: CGFloat = 2, inset: CGFloat = 3
 
     init(items: [(id: String, symbol: String, title: String)], selected: Int, changed: @escaping (Int) -> Void) {
@@ -331,14 +334,11 @@ final class TabBar: FillView {
         selected = index
         for (offset, button) in buttons.enumerated() { button.isSelectedLook = offset == index }
         let target = frame(at: position(of: index))
-        if animated, Motion.enabled {
-            NSAnimationContext.runAnimationGroup { context in
-                context.duration = 0.32
-                context.timingFunction = CAMediaTimingFunction(controlPoints: 0.3, 1.3, 0.5, 1)
-                context.allowsImplicitAnimation = true
-                indicator.frame = target
-            }
-        } else { indicator.frame = target }
+        let from = indicator.frame
+        indicator.frame = target
+        // A click carries no momentum, so the indicator glides over without overshooting; rapid
+        // clicks add up rather than restart.
+        if animated { Motion.settle(indicator, from: CGPoint(x: from.minX - target.minX, y: 0)) }
     }
 
     private func applyEditing() {
@@ -353,6 +353,8 @@ final class TabBar: FillView {
             }
             let jiggle = CAKeyframeAnimation(keyPath: "transform")
             jiggle.values = [tilt(-2.5), tilt(2.5), tilt(-2.5)]
+            // Additive, so a tab still settling from a drop keeps moving while it jiggles.
+            jiggle.isAdditive = true
             jiggle.duration = 0.26
             jiggle.repeatCount = .infinity
             jiggle.timeOffset = Double(position) * 0.05
@@ -367,18 +369,25 @@ final class TabBar: FillView {
 
     override func mouseDown(with event: NSEvent) {
         guard editing else { return super.mouseDown(with: event) }
-        let x = convert(event.locationInWindow, from: nil).x
-        let position = max(0, min(order.count - 1, Int((x - Self.inset) / (Self.item.width + Self.gap))))
-        drag = (position, x, false)
+        let point = convert(event.locationInWindow, from: nil)
+        let position = max(0, min(order.count - 1, Int((point.x - Self.inset) / (Self.item.width + Self.gap))))
+        drag = (position, point.x, point.x - frame(at: position).minX, false)
+        tracker = VelocityTracker()
+        tracker.add(point, at: event.timestamp)
     }
 
     override func mouseDragged(with event: NSEvent) {
         guard var current = drag, current.position >= fixed else { return }
-        let x = convert(event.locationInWindow, from: nil).x
+        let point = convert(event.locationInWindow, from: nil)
+        tracker.add(point, at: event.timestamp)
+        let x = point.x
         guard current.moved || abs(x - current.start) > 4 else { return }
-        current.moved = true
         let button = buttons[order[current.position]]
-        button.frame.origin.x = max(frame(at: fixed).minX, min(frame(at: order.count - 1).minX, x - Self.item.width / 2))
+        if !current.moved { Motion.lift(button, scale: 1.08) }
+        current.moved = true
+        // Held where it was grabbed; past the movable tabs it resists instead of stopping dead.
+        let bounds = frame(at: fixed).minX...frame(at: order.count - 1).minX
+        button.frame.origin.x = Fluid.rubberband(x - current.grab, in: bounds, dimension: Self.item.width / 2)
         let target = max(fixed, min(order.count - 1, Int((button.frame.midX - Self.inset) / (Self.item.width + Self.gap))))
         if target != current.position {
             order.insert(order.remove(at: current.position), at: target)
@@ -393,7 +402,13 @@ final class TabBar: FillView {
         guard let current = drag else { return }
         drag = nil
         if current.moved {
-            Motion.animate(0.18) { self.needsLayout = true; self.layoutSubtreeIfNeeded() }
+            // Dropped into its place, carrying on at the pointer's speed.
+            let button = buttons[order[current.position]]
+            let place = frame(at: current.position)
+            let release = button.frame.minX - place.minX
+            button.frame = place
+            Motion.settle(button, from: CGPoint(x: release, y: 0), velocity: CGVector(dx: tracker.velocity(at: event.timestamp).dx, dy: 0))
+            needsLayout = true
             applyEditing()
             reordered?(order)
         } else {
@@ -652,11 +667,14 @@ final class LevelSlider: NSControl {
 
     override func mouseDown(with event: NSEvent) {
         guard isEnabled else { return }
+        // The knob swells while held, so the grip reads before anything moves.
+        Motion.press(knob, down: true, scale: 1.15)
         track(event)
         while let next = window?.nextEvent(matching: [.leftMouseDragged, .leftMouseUp]) {
             track(next)
             if next.type == .leftMouseUp { break }
         }
+        Motion.press(knob, down: false, scale: 1.15)
     }
 
     private func track(_ event: NSEvent) {

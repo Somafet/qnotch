@@ -50,7 +50,10 @@ private final class GridDocument: NSView {
     var reordered: (([String]) -> Void)?
     var editing = false { didSet { if oldValue != editing { applyEditing() } } }
     private var dragging: (index: Int, offset: NSPoint, before: [String])?
-    private var lastSwap = Date.distantPast
+    private var tracker = VelocityTracker()
+    /// The card that just made way for the dragged one. It cannot trade back until the dragged
+    /// card's center leaves it, so cards of different widths never flip back and forth.
+    private var displaced: String?
     override var isFlipped: Bool { true }
 
     private func frames() -> [NSRect] {
@@ -96,6 +99,8 @@ private final class GridDocument: NSView {
             }
             let jiggle = CAKeyframeAnimation(keyPath: "transform")
             jiggle.values = [tilt(-0.7), tilt(0.7), tilt(-0.7)].map { NSValue(caTransform3D: $0) }
+            // Additive, so a card still settling from a drop keeps moving while it jiggles.
+            jiggle.isAdditive = true
             jiggle.duration = 0.26
             jiggle.repeatCount = .infinity
             jiggle.timeOffset = Double(index) * 0.07
@@ -115,24 +120,32 @@ private final class GridDocument: NSView {
         guard let index = cards.firstIndex(where: { $0.view.frame.contains(point) }) else { return }
         let card = cards[index].view
         dragging = (index, NSPoint(x: point.x - card.frame.minX, y: point.y - card.frame.minY), cards.map(\.id))
+        displaced = nil
+        tracker = VelocityTracker()
+        tracker.add(point, at: event.timestamp)
         card.layer?.removeAnimation(forKey: "jiggle")
         addSubview(card, positioned: .above, relativeTo: nil)
         (card as? FillView)?.stroke = Palette.accent
-        Motion.animate(0.14) { card.animator().alphaValue = 0.92 }
+        // Picked up: it rises a little toward the pointer.
+        Motion.lift(card, scale: 1.03)
     }
 
     override func mouseDragged(with event: NSEvent) {
         guard let drag = dragging else { return }
         let point = convert(event.locationInWindow, from: nil)
+        tracker.add(point, at: event.timestamp)
         let card = cards[drag.index].view
         card.setFrameOrigin(NSPoint(x: point.x - drag.offset.x, y: point.y - drag.offset.y))
         autoscroll(with: event)
-        // Reorder once the dragged card's center enters another card's place (140 ms apart).
+        // Reorder once the dragged card's center enters another card's place.
         let center = NSPoint(x: card.frame.midX, y: card.frame.midY)
         let frames = frames()
-        guard Date().timeIntervalSince(lastSwap) > 0.14,
-              let target = frames.indices.first(where: { $0 != drag.index && frames[$0].contains(center) }) else { return }
-        lastSwap = Date()
+        if let id = displaced, let index = cards.firstIndex(where: { $0.id == id }) {
+            guard !frames[index].contains(center) else { return }
+            displaced = nil
+        }
+        guard let target = frames.indices.first(where: { $0 != drag.index && frames[$0].contains(center) }) else { return }
+        displaced = cards[target].id
         let item = cards.remove(at: drag.index)
         cards.insert(item, at: target)
         dragging?.index = target
@@ -142,8 +155,13 @@ private final class GridDocument: NSView {
     override func mouseUp(with event: NSEvent) {
         guard let drag = dragging else { return }
         dragging = nil
-        let card = cards[drag.index]
-        Motion.animate(0.14) { card.view.animator().alphaValue = 1 }
+        displaced = nil
+        // Dropped into its place, carrying on at the pointer's speed and shrinking back down.
+        let card = cards[drag.index].view
+        let place = frames()[drag.index]
+        let release = CGPoint(x: card.frame.minX - place.minX, y: card.frame.minY - place.minY)
+        card.frame = place
+        Motion.settle(card, from: release, velocity: tracker.velocity(at: event.timestamp))
         layoutCards(animated: true)
         applyEditing()
         if cards.map(\.id) != drag.before { reordered?(cards.map(\.id)) }

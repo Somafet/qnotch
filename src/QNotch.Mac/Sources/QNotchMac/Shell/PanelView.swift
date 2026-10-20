@@ -98,21 +98,27 @@ final class PanelView: NSView {
         tabBar.select(tabs.firstIndex { $0.id == id } ?? 0, animated: animated)
     }
 
-    /// Shows `content` in the body, sliding in from the side of the newly selected tab.
+    /// Shows `content` in the body, sliding in from the side of the newly selected tab. Content
+    /// still on its way out turns around from where it is.
     func show(_ content: NSView, direction: Int, animated: Bool) {
         guard content !== current else { return }
         let previous = current
         current = content
-        content.layer?.removeAllAnimations()
-        if content.superview !== host {
-            content.removeFromSuperview()
-            embed(content, in: host, inset: 0, fill: true)
+        let leaving = content.superview === host
+        if leaving, animated {
+            Motion.resume(content, duration: 0.2)
+        } else {
+            content.layer?.removeAllAnimations()
+            if !leaving {
+                content.removeFromSuperview()
+                embed(content, in: host, inset: 0, fill: true)
+            }
         }
         guard let previous else { return }
-        if animated, Motion.enabled {
+        if animated, Motion.fades {
             let offset = CGFloat(direction) * 14
-            Motion.reveal(content, delay: 0.05, duration: 0.26, dx: offset)
-            Motion.conceal(previous, duration: 0.12, dx: -offset) { [weak self, weak previous] in
+            if !leaving { Motion.enter(content, delay: 0.05, duration: 0.26, dx: offset) }
+            Motion.leave(previous, duration: 0.12, dx: -offset) { [weak self, weak previous] in
                 guard let previous, previous !== self?.current else { return }
                 previous.removeFromSuperview()
                 previous.layer?.removeAllAnimations()
