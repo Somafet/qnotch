@@ -1,9 +1,14 @@
 import AppKit
 
-/// The shared diagnostic options (spec/diagnostics.md): `--data-dir`, `--only` and `--appearance`.
+/// The shared diagnostic modes and options (spec/diagnostics.md): `--snapshot`, `--smoke-test` or
+/// `--measure <dir>`, `--data-dir`, `--only` and `--appearance`.
 struct DiagnosticOptions {
     enum Appearance: String { case light, dark }
+    enum Mode: String, CaseIterable { case snapshot = "--snapshot", smoke = "--smoke-test", measure = "--measure" }
 
+    var mode: Mode?
+    /// The mode's output directory: its value, else `--output` (the older spelling).
+    var output: String?
     /// `--data-dir`, else `QNOTCH_MAC_DATA_DIR`.
     var dataDirectory: String?
     /// `--only` patterns; empty renders every view.
@@ -17,6 +22,11 @@ struct DiagnosticOptions {
             guard let index = arguments.firstIndex(of: name) else { return nil }
             guard index + 1 < arguments.count, !arguments[index + 1].hasPrefix("--") else { problem = "\(name) needs a value"; return nil }
             return arguments[index + 1]
+        }
+        mode = Mode.allCases.first { arguments.contains($0.rawValue) }
+        if let mode, let index = arguments.firstIndex(of: mode.rawValue) {
+            output = index + 1 < arguments.count && !arguments[index + 1].hasPrefix("--") ? arguments[index + 1] : value("--output")
+            if output == nil, problem == nil { problem = "\(mode.rawValue) needs an output directory" }
         }
         dataDirectory = value("--data-dir") ?? environment["QNOTCH_MAC_DATA_DIR"]
         only = value("--only").map { $0.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty } } ?? []

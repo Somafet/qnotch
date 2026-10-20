@@ -24,14 +24,8 @@ private final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenu
     func applicationDidFinishLaunching(_ notification: Notification) {
         let args = ProcessInfo.processInfo.arguments
         let options = DiagnosticOptions(arguments: args)
-        let isolated = options.dataDirectory
-        dataDirectory = isolated.map { URL(fileURLWithPath: $0, isDirectory: true) } ??
-            FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("QNotch.Mac", isDirectory: true)
-        if args.contains("--smoke-test") || args.contains("--measure") {
-            guard isolated != nil, option("--output", in: args) != nil else {
-                fputs("Diagnostics require --data-dir and --output.\n", stderr)
-                exit(2)
-            }
+        var isolated = options.dataDirectory
+        if options.mode != nil {
             if let problem = options.problem {
                 fputs(problem + "\n", stderr)
                 exit(2)
@@ -40,14 +34,27 @@ private final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenu
             Keychain.inMemory = [:]
             Runtime.diagnostics = true
             if let appearance = options.nsAppearance { NSApp.appearance = appearance }
+            // Without --data-dir: a fresh root of their own, deleted on exit (also exit(1)).
+            // Short, so the sockets inside stay within the 104-byte socket path limit.
+            var template = Array((NSTemporaryDirectory() + "qnotch.XXXXXX").utf8CString)
+            if isolated == nil, let path = mkdtemp(&template).map({ String(cString: $0) }) {
+                Runtime.temporaryRoot = URL(fileURLWithPath: path, isDirectory: true)
+                isolated = path
+                atexit { Runtime.removeTemporaryRoot() }
+            }
         }
-        // Advisory, per-data-root instance lock. Never terminate another user's app.
+        dataDirectory = isolated.map { URL(fileURLWithPath: $0, isDirectory: true) } ??
+            FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("QNotch.Mac", isDirectory: true)
+        // Advisory, per-data-root instance lock. Never terminate another user's app. Diagnostic
+        // runs never take it, so they run beside a normal instance.
         do {
             try FileManager.default.createDirectory(at: dataDirectory, withIntermediateDirectories: true)
-            lockDescriptor = Darwin.open(dataDirectory.appendingPathComponent("instance.lock").path, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR)
-            if lockDescriptor >= 0, flock(lockDescriptor, LOCK_EX | LOCK_NB) != 0 {
-                fputs("QNotch is already running with this data directory.\n", stderr)
-                exit(1)
+            if options.mode == nil {
+                lockDescriptor = Darwin.open(dataDirectory.appendingPathComponent("instance.lock").path, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR)
+                if lockDescriptor >= 0, flock(lockDescriptor, LOCK_EX | LOCK_NB) != 0 {
+                    fputs("QNotch is already running with this data directory.\n", stderr)
+                    exit(1)
+                }
             }
         } catch { /* The Settings window reports persistence failures; the app remains usable. */ }
         // The welcome tour: on a fresh install it runs before any module is constructed; settings
@@ -64,6 +71,24 @@ private final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenu
         shell = ShellController(store: store, deferModules: tour == .show)
         shell.updater = Updater.makeIfAvailable(isolated: isolated != nil) { [weak shell] in shell?.general.betaUpdates == true }
         installMainMenu()
+        // A snapshot run shows nothing: no menu-bar item, and the notch is rendered at alpha 0.
+        if options.mode == .snapshot { shell.renderOnly = true } else { installStatusItem() }
+        shell.statusChanged = { [weak self] in self?.refreshStatus() }
+        refreshStatus()
+        if tour == .show { shell.showOnboarding(firstRun: true, isolated: isolated != nil) } else { shell.start() }
+        let ready = PerformanceMeasurement.secondsSinceProcessStart() ?? (ProcessInfo.processInfo.systemUptime - launched)
+        writeLog("ready startup_seconds=\(String(format: "%.4f", ready))")
+        if let output = options.output.map({ URL(fileURLWithPath: $0, isDirectory: true) }) {
+            switch options.mode {
+            case .snapshot?: NativeSnapshot.run(shell: shell, output: output, options: options)
+            case .smoke?: NativeSmokeTest.run(shell: shell, output: output, ready: ready, options: options)
+            case .measure?: PerformanceMeasurement.run(shell: shell, output: output, ready: ready)
+            case nil: break
+            }
+        }
+    }
+
+    private func installStatusItem() {
         item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         item.button?.image = NSImage(systemSymbolName: "circle.lefthalf.filled", accessibilityDescription: "QNotch")
         item.button?.setAccessibilityLabel("QNotch menu")
@@ -89,16 +114,6 @@ private final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenu
         menu.addItem(.separator())
         menu.addItem(withTitle: "Quit QNotch", action: #selector(quit), keyEquivalent: "q").target = self
         item.menu = menu
-        shell.statusChanged = { [weak self] in self?.refreshStatus() }
-        refreshStatus()
-        if tour == .show { shell.showOnboarding(firstRun: true, isolated: isolated != nil) } else { shell.start() }
-        let ready = PerformanceMeasurement.secondsSinceProcessStart() ?? (ProcessInfo.processInfo.systemUptime - launched)
-        writeLog("ready startup_seconds=\(String(format: "%.4f", ready))")
-        if let output = option("--output", in: args) {
-            let directory = URL(fileURLWithPath: output, isDirectory: true)
-            if args.contains("--smoke-test") { NativeSmokeTest.run(shell: shell, output: directory, ready: ready, options: options) }
-            if args.contains("--measure") { PerformanceMeasurement.run(shell: shell, output: directory, ready: ready) }
-        }
     }
 
     func applicationWillTerminate(_ notification: Notification) {
@@ -150,10 +165,6 @@ private final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenu
         editItem.submenu = edit
         main.addItem(editItem)
         NSApp.mainMenu = main
-    }
-    private func option(_ name: String, in arguments: [String]) -> String? {
-        guard let index = arguments.firstIndex(of: name), index + 1 < arguments.count else { return nil }
-        return arguments[index + 1]
     }
     private func writeLog(_ message: String) {
         // Bounded startup diagnostics contain no paths, display names, accounts, or credentials.
