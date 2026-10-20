@@ -50,7 +50,9 @@ Measured 2026-10-16 on Mac14,2 (Apple silicon, 8 GiB RAM), macOS 26.3 build 25D1
 
 ## Targets and limits
 
-The development targets are CPU at or below 0.1% of one core while collapsed with a stopped timer, no repeating idle work, zero settled app draw callbacks, resident memory below 80 MiB, and process-start-to-panel-ordering below 500 ms. The sample meets these targets under the measured conditions. Earlier uncontrolled launches during rebuild/validation exceeded one second, so a consistent cold-launch target has **not** been established. This is one machine and one quiet interval, not a distribution or a guarantee across displays, OS versions, or workloads.
+The development targets are CPU at or below 0.1% of one core while collapsed with a stopped timer, no repeating idle work, zero settled app draw callbacks, resident memory below 80 MiB, and process-start-to-panel-ordering below 500 ms. The sample meets these targets under the measured conditions.
+
+`--measure` treats three of them as hard limits, checked for both collapsed intervals and listed in `performance.json` under `limits` (spec/diagnostics.md, Measure): `cpu_percent_one_core` at most 0.1, `app_draw_callbacks_delta` at most 0, and `resident_bytes_end` at most 80 MiB. Exceeding one fails the run (exit 1). Launch time is recorded as `startup_seconds` but is not a limit, for the reason below; "no repeating idle work" is a design rule the interrupt wakeups only hint at, not a measured value. Earlier uncontrolled launches during rebuild/validation exceeded one second, so a consistent cold-launch target has **not** been established. This is one machine and one quiet interval, not a distribution or a guarantee across displays, OS versions, or workloads.
 
 The native smoke test separately verifies that a hidden running timer finishes with one scheduled completion wake and that disabling it cancels scheduled work. An expanded running timer intentionally refreshes at most once per second. Those checks are behavior tests, not active-timer CPU benchmarks.
 

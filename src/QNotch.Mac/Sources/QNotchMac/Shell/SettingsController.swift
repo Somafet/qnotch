@@ -150,6 +150,7 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
         if !pages.contains(where: { $0.id == selected }) { selected = "general" }
         for (index, page) in pages.enumerated() {
             let item = NavRow(title: page.title, symbol: page.symbol, tint: page.tint) { [weak self] in self?.select(page.id, animated: true) }
+            item.identifier = NSUserInterfaceItemIdentifier("settings-nav-" + page.id.replacingOccurrences(of: "module.", with: ""))
             navigation.addArrangedSubview(item)
             item.widthAnchor.constraint(equalTo: navigation.widthAnchor).isActive = true
             rows[page.id] = item
@@ -450,6 +451,7 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
                 self?.rebuildNavigation()
                 self?.rows["features"]?.isSelected = true
             }
+            toggle.identifier = NSUserInterfaceItemIdentifier("feature-" + info.id)
             return featureRow(info.title, detail: info.detail, symbol: info.symbol, tint: info.tint, control: toggle, width: width)
         }
         return page("Features", subtitle: "Turn modules on or off. A module that is off is not loaded and uses no resources. Changes apply right away.", [
@@ -680,33 +682,28 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
 
     // MARK: Diagnostics
 
-    /// Renders every page into `directory` as settings-<id>.png (and settings.png for General).
-    /// Pages are rendered from their document view: the window's own scroll and sidebar materials
-    /// are composited by the system and are not reproduced by view caching on every macOS release.
-    func snapshotPages(to directory: URL) throws {
+    /// Snapshot names of every page: settings-<section id>, `module.` dropped.
+    var snapshotNames: [String] { pages.map { "settings-" + $0.id.replacingOccurrences(of: "module.", with: "") } }
+
+    /// Hands every page to `write` with its snapshot name, without showing the window. Pages are
+    /// rendered from their document view: the window's own scroll and sidebar materials are
+    /// composited by the system and are not reproduced by view caching on every macOS release.
+    /// `problem` gets a page whose sidebar row cannot scroll into view.
+    func snapshotPages(_ write: (String, NSView?) -> Void, problem: (String, String) -> Void) {
         let original = selected
-        for page in pages {
+        rebuildNavigation()
+        for (page, name) in zip(pages, snapshotNames) {
             select(page.id, animated: false)
             window.contentView?.layoutSubtreeIfNeeded()
             // With every feature on, the page list is taller than the sidebar: each row must scroll into view.
             if let row = rows[page.id] {
                 let frame = row.convert(row.bounds, to: navigationScroll.contentView)
-                guard navigationScroll.contentView.bounds.insetBy(dx: 0, dy: -0.5).contains(frame) else {
-                    throw SettingsSnapshotFailure("The sidebar cannot show \(page.title)")
-                }
+                if !navigationScroll.contentView.bounds.insetBy(dx: 0, dy: -0.5).contains(frame) { problem(name, "the sidebar cannot show \(page.title)") }
             }
-            guard let view = scroll.documentView else { continue }
-            let name = page.id.replacingOccurrences(of: "module.", with: "")
-            try ShellController.snapshot(view: view, to: directory.appendingPathComponent("settings-\(name).png"))
-            if page.id == "general" { try ShellController.snapshot(view: view, to: directory.appendingPathComponent("settings.png")) }
+            write(name, scroll.documentView)
         }
         select(original, animated: false)
     }
-}
-
-struct SettingsSnapshotFailure: Error, CustomStringConvertible {
-    let description: String
-    init(_ description: String) { self.description = description }
 }
 
 func iconTile(_ name: String, tint: NSColor, size side: CGFloat = 22) -> NSView {
@@ -720,7 +717,7 @@ func iconTile(_ name: String, tint: NSColor, size side: CGFloat = 22) -> NSView 
 }
 
 /// Sidebar item: tinted icon tile and title; accent fill when selected.
-private final class NavRow: NSButton {
+private final class NavRow: NSButton, OutlineRoleProviding {
     var isSelected = false { didSet { refresh(animated: oldValue != isSelected) } }
     private let background = FillView(radius: 7)
     private let text: NSTextField
@@ -754,6 +751,8 @@ private final class NavRow: NSButton {
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
     @objc private func invoke() { handler() }
+    var outlineRole: Outline.Role? { .item }
+    override func isAccessibilitySelected() -> Bool { isSelected }
 
     override func updateTrackingAreas() {
         if let tracking { removeTrackingArea(tracking) }
@@ -835,10 +834,13 @@ private final class AccentPicker: NSStackView {
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 }
 
-private final class AccentSwatch: NSButton {
+/// A radio-style choice: outlines read it as a checked `Toggle` when chosen.
+private final class AccentSwatch: NSButton, OutlineRoleProviding {
     private let handler: () -> Void
+    private let chosen: Bool
     init(color: NSColor, multicolor: Bool, selected: Bool, label: String, action: @escaping () -> Void) {
         handler = action
+        chosen = selected
         super.init(frame: .zero)
         title = ""
         isBordered = false
@@ -863,8 +865,11 @@ private final class AccentSwatch: NSButton {
         self.action = #selector(invoke)
         toolTip = label
         setAccessibilityLabel(label)
-        setAccessibilityValue(selected ? "selected" : nil)
+        setAccessibilityRole(.radioButton)
+        setAccessibilityValue(NSNumber(value: selected ? 1 : 0))
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
     @objc private func invoke() { handler() }
+    var outlineRole: Outline.Role? { .toggle }
+    var outlineChecked: Bool? { chosen }
 }

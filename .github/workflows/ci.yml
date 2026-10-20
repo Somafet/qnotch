@@ -99,6 +99,11 @@ jobs:
         run: bash scripts/macos/test.sh
       - name: Native Mac UI smoke test
         run: bash scripts/macos/smoke.sh
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Check snapshots against the diagnostics contract
+        run: node scripts/check-snapshots.mjs dist/macos/smoke
       - uses: actions/upload-artifact@v4
         if: always()
         with:
