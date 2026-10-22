@@ -17,6 +17,7 @@ final class NotificationMuteTests: XCTestCase {
         func actionsChanged() { actionChanges += 1 }
         func segmentsChanged() {}
         func selectTab(_ id: String) {}
+        func summonSearch() {}
         func openSettings() {}
         func openSettings(section: String) {}
         func holdOpen() -> AnyObject { NSObject() }
