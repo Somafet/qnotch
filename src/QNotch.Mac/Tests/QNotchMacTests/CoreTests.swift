@@ -129,14 +129,60 @@ final class CoreTests: XCTestCase {
         }
     }
 
-    func testNonNotchedExternalDisplayWithNegativeOriginAvoidsMenuBar() {
+    func testNonNotchedExternalDisplayWithNegativeOriginJoinsMenuBar() throws {
         let layout = DisplayLayout(frame: CGRect(x: -1920, y: -100, width: 1920, height: 1080),
                                    visibleFrame: CGRect(x: -1920, y: -100, width: 1920, height: 1055), safeTop: 0, cameraGap: nil)
         XCTAssertEqual(layout.surface(expanded: false).midX, -960)
-        XCTAssertEqual(layout.surface(expanded: false, wing: 120).width, 148, "A floating pill fits its content")
+        XCTAssertFalse(layout.hasCameraHousing)
+        XCTAssertNil(layout.cameraHousing)
+        XCTAssertTrue(layout.integratesTopBand)
+        XCTAssertEqual(layout.topBandHeight, 25)
+        XCTAssertEqual(layout.surface(expanded: false, wing: 120).width, 252, "Symmetric wings flank a zero-width virtual housing")
         XCTAssertEqual(layout.surface(expanded: false).width, 96)
-        XCTAssertEqual(layout.surface(expanded: true).maxY, 949)
-        XCTAssertTrue(layout.visibleFrame.contains(layout.surface(expanded: true)))
+        for expanded in [false, true] {
+            let surface = layout.surface(expanded: expanded, wing: 120)
+            let wings = try XCTUnwrap(layout.wings(expanded: expanded, wing: 120))
+            XCTAssertEqual(surface.maxY, 980)
+            XCTAssertEqual(wings.left.maxX, surface.midX)
+            XCTAssertEqual(wings.right.minX, surface.midX)
+            XCTAssertEqual(wings.left.height, 25)
+            XCTAssertEqual(wings.right.maxY, surface.maxY)
+            XCTAssertTrue(surface.contains(wings.left))
+            XCTAssertTrue(surface.contains(wings.right))
+        }
+        XCTAssertEqual(layout.panelBody.maxY, layout.visibleFrame.maxY)
+        XCTAssertEqual(layout.panelBody.height, DisplayLayout.panelSize.height)
+        XCTAssertTrue(layout.visibleFrame.contains(layout.panelBody))
+    }
+
+    func testVirtualHousingUsesFallbackBandWithoutMenuBar() {
+        let frame = CGRect(x: -1920, y: -1180, width: 1920, height: 1080)
+        for visible in [frame, frame.offsetBy(dx: 0, dy: 10)] {
+            let layout = DisplayLayout(frame: frame, visibleFrame: visible, safeTop: 0, cameraGap: nil)
+            XCTAssertEqual(layout.topBandHeight, 24)
+            XCTAssertEqual(layout.surface(expanded: false).height, 24)
+            XCTAssertEqual(layout.surface(expanded: false).maxY, -100)
+            XCTAssertEqual(layout.panelBody.maxY, -124)
+        }
+    }
+
+    func testVirtualWingsFollowOffsetsAndClamps() throws {
+        let frame = CGRect(x: -1920, y: -100, width: 1920, height: 1080)
+        var layout = DisplayLayout(frame: frame, visibleFrame: frame, safeTop: 0, cameraGap: nil)
+        for offset in [CGFloat(-5000), -400, 0, 400, 5000] {
+            layout.offset = offset
+            for expanded in [false, true] {
+                let surface = layout.surface(expanded: expanded, wing: 120)
+                let wings = try XCTUnwrap(layout.wings(expanded: expanded, wing: 120))
+                XCTAssertEqual(wings.left.maxX, surface.midX)
+                XCTAssertEqual(wings.right.minX, surface.midX)
+                XCTAssertEqual(wings.left.width, wings.right.width)
+                XCTAssertTrue(frame.contains(surface))
+                XCTAssertEqual(surface.maxY, frame.maxY)
+            }
+        }
+        layout.offset = 400
+        XCTAssertEqual(layout.surface(expanded: false, wing: 120).midX, -560)
     }
 
     func testSmallDisplayClampsBothSurfaceSizes() {

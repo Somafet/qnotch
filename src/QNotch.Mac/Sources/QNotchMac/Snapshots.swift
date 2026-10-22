@@ -160,6 +160,13 @@ enum SnapshotViews {
         }
         shell.selectTab("home")
         shell.close(restoreFocus: false)
+        // A non-notched external display, even when the developer only has a notched laptop.
+        shell.withDiagnosticLayout(virtualDisplay) {
+            run.notch("placement-virtual")
+            shell.open(keyboard: false)
+            run.notch("placement-virtual-open")
+            shell.close(restoreFocus: false)
+        }
         if let agents = shell.module(AgentsModule.self) {
             for session in agents.board.sessions where session.id.hasPrefix("seed-") { agents.dismiss(session) }
         }
@@ -178,6 +185,11 @@ enum SnapshotViews {
             }
             tour.window.close()
         }
+    }
+
+    static var virtualDisplay: DisplayLayout {
+        DisplayLayout(frame: CGRect(x: -1920, y: -100, width: 1920, height: 1080),
+                      visibleFrame: CGRect(x: -1920, y: -100, width: 1920, height: 1055), safeTop: 0, cameraGap: nil)
     }
 
     /// Home's card views by card id (cards past the first rows are scrolled out of tab-home).
