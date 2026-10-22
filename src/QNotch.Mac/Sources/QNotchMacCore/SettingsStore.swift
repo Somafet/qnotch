@@ -36,6 +36,8 @@ public struct GeneralSettings: Codable, Equatable {
     public var hiddenNotchModules: [String] = []
     /// Edit mode: the user's order of Home cards and of module tabs (see LayoutOrder).
     public var cardOrder: [String] = []
+    /// Home size by card id, retained while hidden or disabled. Unknown sizes use the card default.
+    public var cardSizes: [String: Int] = [:]
     public var tabOrder: [String] = []
     /// Floating-pill offsets by display id (points from the display's center).
     public var pillOffsets: [String: Double] = [:]
@@ -81,7 +83,7 @@ public struct GeneralSettings: Codable, Equatable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case displayID, reduceMotion, disabledModules, enabledOptionalModules, timerEnabled, hoverDelayMs, closeDelayMs, pinned, accent, profileName, hiddenCards, hiddenTabs, hiddenNotchModules, cardOrder, tabOrder, pillOffsets, betaUpdates, onboardingDone
+        case displayID, reduceMotion, disabledModules, enabledOptionalModules, timerEnabled, hoverDelayMs, closeDelayMs, pinned, accent, profileName, hiddenCards, hiddenTabs, hiddenNotchModules, cardOrder, cardSizes, tabOrder, pillOffsets, betaUpdates, onboardingDone
     }
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -100,6 +102,7 @@ public struct GeneralSettings: Codable, Equatable {
         hiddenTabs = c.value(.hiddenTabs, [])
         hiddenNotchModules = c.value(.hiddenNotchModules, [])
         cardOrder = c.value(.cardOrder, [])
+        cardSizes = c.value(.cardSizes, [:])
         tabOrder = c.value(.tabOrder, [])
         pillOffsets = c.value(.pillOffsets, [:])
         betaUpdates = c.value(.betaUpdates, false)
@@ -120,6 +123,7 @@ public struct GeneralSettings: Codable, Equatable {
         try c.encode(hiddenTabs, forKey: .hiddenTabs)
         try c.encode(hiddenNotchModules, forKey: .hiddenNotchModules)
         try c.encode(cardOrder, forKey: .cardOrder)
+        try c.encode(cardSizes, forKey: .cardSizes)
         try c.encode(tabOrder, forKey: .tabOrder)
         try c.encode(pillOffsets, forKey: .pillOffsets)
         try c.encode(betaUpdates, forKey: .betaUpdates)

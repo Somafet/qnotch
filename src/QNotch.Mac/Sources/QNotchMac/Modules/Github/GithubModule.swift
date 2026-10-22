@@ -189,18 +189,20 @@ final class GithubModule: NotchModule {
 
 // MARK: - Views
 
-final class GithubCardView: NSView {
+final class GithubCardView: NSView, HomeCardSizing {
     private weak var module: GithubModule?
     private let header = line("", size: 12, weight: .semibold, color: Palette.textPrimary)
     private let footer = line("", size: 11, color: Palette.textTertiary)
     private let graph = ContributionGraph()
+    private var compact = false
+    private let legend: NSStackView
     private let content: NSView
     private let empty = NSStackView()
 
     init(module: GithubModule) {
         self.module = module
         let refresh = HoverButton(symbol: "arrow.clockwise", style: .icon, symbolSize: 11, label: "Refresh") { [weak module] in module?.refresh() }
-        let legend = row([line("Less", size: 10, color: Palette.textTertiary)] + (0...4).map { level -> NSView in
+        legend = row([line("Less", size: 10, color: Palette.textTertiary)] + (0...4).map { level -> NSView in
             let cell = FillView(fill: ContributionGraph.color(level), radius: 2)
             size(cell, width: 8, height: 8)
             return cell
@@ -216,16 +218,27 @@ final class GithubCardView: NSView {
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
+    func setHomeCardSize(_ size: HomeCardSize) {
+        compact = size == .small
+        legend.isHidden = compact
+        graph.weekLimit = compact ? 20 : 53
+        for field in [header, footer] { field.setContentCompressionResistancePriority(.defaultLow, for: .horizontal) }
+        reload()
+    }
+
     func reload() {
         guard let module else { return }
         let data = module.data
         content.isHidden = data == nil
         empty.isHidden = data != nil
         empty.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        defer {
+            for child in empty.arrangedSubviews { child.widthAnchor.constraint(lessThanOrEqualTo: empty.widthAnchor).isActive = true }
+        }
         guard let data else {
             switch module.status {
             case .noToken:
-                empty.addArrangedSubview(line("Connect GitHub to see your contributions.", size: 13, color: Palette.textSecondary))
+                empty.addArrangedSubview(label("Connect GitHub to see your contributions.", size: 13, color: Palette.textSecondary))
                 empty.addArrangedSubview(HoverButton("Add Token", style: .plain) { [weak module] in module?.contextShell?.openSettings(section: "github") })
             case .loading:
                 empty.addArrangedSubview(line("Loading your contributions…", size: 13, color: Palette.textSecondary))
@@ -235,15 +248,18 @@ final class GithubCardView: NSView {
             }
             return
         }
-        header.stringValue = "\(data.total.formatted()) contributions · \(data.streak) day streak"
-        footer.stringValue = module.message.isEmpty ? "@\(data.login) · \(module.updatedText)" : module.message
+        header.stringValue = compact ? "\(data.total.formatted()) contributions" : "\(data.total.formatted()) contributions · \(data.streak) day streak"
+        footer.stringValue = module.message.isEmpty
+            ? (compact ? "\(data.streak) day streak · @\(data.login)" : "@\(data.login) · \(module.updatedText)") : module.message
+        footer.toolTip = "@\(data.login) · \(module.updatedText)"
         footer.textColor = module.stale ? .systemOrange : Palette.textTertiary
         graph.set(data)
     }
 }
 
-/// 53 weeks × 7 days, drawn in one pass and only when the data changes.
+/// Up to 53 weeks × 7 days (20 recent weeks in Small), drawn only on data or size changes.
 final class ContributionGraph: NSView, NSViewToolTipOwner {
+    var weekLimit = 53 { didSet { if weekLimit != oldValue { needsDisplay = true } } }
     private var data: GithubData?
     private var tip: NSView.ToolTipTag?
 
@@ -275,7 +291,7 @@ final class ContributionGraph: NSView, NSViewToolTipOwner {
         let first = parser.date(from: days[0].date).map { parser.calendar.component(.weekday, from: $0) - 1 } ?? 0
         var cells: [GithubData.Day?] = Array(repeating: nil, count: first) + days.map { $0 }
         while cells.count % 7 != 0 { cells.append(nil) }
-        return stride(from: 0, to: cells.count, by: 7).map { Array(cells[$0..<$0 + 7]) }.suffix(53)
+        return stride(from: 0, to: cells.count, by: 7).map { Array(cells[$0..<$0 + 7]) }.suffix(weekLimit)
     }
 
     private var geometry: (cell: CGFloat, gap: CGFloat, originX: CGFloat) {
