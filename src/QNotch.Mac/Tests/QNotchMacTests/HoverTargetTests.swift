@@ -115,8 +115,11 @@ final class HoverTargetTests: XCTestCase {
 
     @MainActor
     func testRevealsCardPastFirstRowsWithoutReordering() async throws {
+        let previousMotion = Motion.userReduced
+        Motion.userReduced = true
+        defer { Motion.userReduced = previousMotion }
         let home = HomeView(cards: (0..<15).map { index in
-            (ViewContribution(id: "card\(index)", title: "Card \(index)", order: index, makeView: { NSView() }), NSView())
+            (ViewContribution(id: "card\(index)", title: "Card \(index)", order: index, span: index == 14 ? 2 : 1, makeView: { NSView() }), NSView())
         })
         home.frame = NSRect(x: 0, y: 0, width: 700, height: 250)
         home.layoutSubtreeIfNeeded()
@@ -127,6 +130,12 @@ final class HoverTargetTests: XCTestCase {
         home.revealCard("card14")
         XCTAssertTrue(document.visibleRect.contains(target.frame))
         XCTAssertTrue(document.subviews.map(\.identifier) == order)
+        home.editing = true
+        defer { home.editing = false }
+        home.layoutSubtreeIfNeeded()
+        let handle = try XCTUnwrap(target.subviews.compactMap { $0 as? HomeResizeHandle }.first)
+        let point = handle.convert(NSPoint(x: handle.bounds.midX, y: handle.bounds.midY), to: document.superview)
+        XCTAssertTrue(document.hitTest(point) === handle, "Revealed cards retain usable resize edges")
     }
 
     @MainActor

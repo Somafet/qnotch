@@ -13,6 +13,7 @@ extension NativeSmokeTest {
         shell.open(keyboard: true)
         shell.selectTab("home")
         shell.setEditing(true)
+        shell.panel.contentView?.layoutSubtreeIfNeeded()
         let home = shell.currentBody as? HomeView
         func require(_ value: Bool, _ message: String) throws {
             if !value { throw Failure("home-card-sizes", message) }
@@ -37,9 +38,14 @@ extension NativeSmokeTest {
             }
             try require(handles.count == 2, "Missing edge anchors for \(card.id)")
             for (round, size) in [HomeCardSize.small, .medium, .small].enumerated() {
+                // Earlier navigation may leave Home scrolled. Exercise a laid-out, visible
+                // edge, as a user would, rather than sending a drag outside the viewport.
+                home?.revealCard(card.id)
+                shell.panel.contentView?.layoutSubtreeIfNeeded()
                 let handle = handles[round % 2]
                 let point = handle.convert(NSPoint(x: handle.bounds.midX, y: handle.bounds.midY), to: home?.documentView?.superview)
-                try require(home?.documentView?.hitTest(point) === handle, "Edit mode intercepts edge drags")
+                try require(home?.documentView?.hitTest(point) === handle,
+                            "Edit mode intercepts \(card.id) edge drag \(round): handle=\(handle.frame) hidden=\(handle.isHidden) point=\(point) document=\(String(describing: home?.documentView?.frame))")
                 let before = shell.general.cardSizes
                 let start = handle.convert(NSPoint(x: handle.bounds.midX, y: handle.bounds.midY), to: nil)
                 let startUnit = SnapshotViews.cardViews(shell)["system"]?.frame.width ?? 0
