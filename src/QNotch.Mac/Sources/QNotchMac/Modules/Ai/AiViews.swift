@@ -265,7 +265,8 @@ private final class AppTile: FillView {
 }
 
 /// The AI tab (Windows AiTab): a card per provider with every usage window, then the apps.
-final class AiTabView: NSView, AiDisplay {
+final class AiTabView: NSView, AiDisplay, TabHeaderProviding {
+    private(set) var tabHeaderActions: NSView = NSView()
     private weak var module: AiModule?
     private let usage = NSStackView()
     private let status = line("", size: 11, color: Palette.textTertiary)
@@ -289,8 +290,8 @@ final class AiTabView: NSView, AiDisplay {
         usage.alignment = .leading
         usage.spacing = 10
         let settings = HoverButton(symbol: "gearshape", style: .icon, symbolSize: 12, label: "AI settings") { [weak module] in module?.contextShell?.openSettings(section: "ai") }
-        let header = row([line("Usage", size: 14, weight: .semibold, color: Palette.textPrimary), spacer(), status, refreshButton, settings], spacing: 4)
-        header.setCustomSpacing(8, after: status)
+        tabHeaderActions = row([refreshButton, settings], spacing: 4)
+        let header = row([line("Usage", size: 14, weight: .semibold, color: Palette.textPrimary), spacer(), status], spacing: 8)
         let appsHeader = row([line("Apps", size: 14, weight: .semibold, color: Palette.textPrimary), spacer(),
                               line("Numbered apps open with ⌃⌥1 to ⌃⌥6 (Settings, Hotkeys)", size: 11, color: Palette.textTertiary),
                               HoverButton(symbol: "arrow.clockwise", style: .icon, symbolSize: 11, label: "Scan for AI apps") { [weak module] in module?.scan() }], spacing: 8)

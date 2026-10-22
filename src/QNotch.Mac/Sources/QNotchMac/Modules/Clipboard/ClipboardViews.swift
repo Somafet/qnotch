@@ -38,7 +38,8 @@ final class ClipboardCardView: NSView, ClipboardDisplay {
 
 // MARK: - Clipboard tab
 
-final class ClipboardTabView: NSView, ClipboardDisplay {
+final class ClipboardTabView: NSView, ClipboardDisplay, TabHeaderProviding {
+    var tabHeaderActions: NSView { clear }
     private weak var module: ClipboardModule?
     private let chips: ChipPicker
     private let count = line("", size: 11, color: Palette.textTertiary)
@@ -57,7 +58,7 @@ final class ClipboardTabView: NSView, ClipboardDisplay {
         clear = HoverButton("Clear all", symbol: "trash", style: .plain, symbolSize: 11) { [weak module] in module?.clear() }
         super.init(frame: .zero)
         clear.toolTip = "Pinned entries stay"
-        let header = row([chips, count, spacer(), clear], spacing: 10)
+        let header = row([chips, count, spacer()], spacing: 10)
         list.orientation = .vertical
         list.alignment = .leading
         list.spacing = 4

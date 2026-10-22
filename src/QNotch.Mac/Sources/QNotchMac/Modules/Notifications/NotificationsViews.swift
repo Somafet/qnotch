@@ -69,7 +69,8 @@ final class NotificationsCardView: NSView, NotificationsDisplay {
 
 // MARK: - Notifications tab
 
-final class NotificationsTabView: NSView, NotificationsDisplay {
+final class NotificationsTabView: NSView, NotificationsDisplay, TabHeaderProviding {
+    private(set) var tabHeaderActions: NSView = NSView()
     private weak var module: NotificationsModule?
     private let scroll = NSScrollView()
     private let list = FlippedList()
@@ -84,8 +85,8 @@ final class NotificationsTabView: NSView, NotificationsDisplay {
         clear = HoverButton("Clear", symbol: "trash", style: .plain, symbolSize: 11) { [weak module] in module?.clear() }
         emptyView = placeholder(symbol: "bell.slash", title: "No notifications", detail: "Apps and scripts can post here with QNotch notify.")
         super.init(frame: .zero)
-        let title = line("Notifications", size: 13, weight: .semibold, color: Palette.textPrimary)
-        let header = row([title, count, spacer(), module.makeMuteButton(), clear], spacing: 8)
+        tabHeaderActions = row([module.makeMuteButton(), clear], spacing: 8)
+        let header = row([count, quiet, spacer()], spacing: 8)
         list.orientation = .vertical
         list.alignment = .leading
         list.spacing = 6
@@ -95,7 +96,7 @@ final class NotificationsTabView: NSView, NotificationsDisplay {
         scroll.hasVerticalScroller = true
         scroll.autohidesScrollers = true
         scroll.scrollerStyle = .overlay
-        let stack = column([header, quiet, scroll], spacing: 10)
+        let stack = column([header, scroll], spacing: 10)
         embed(stack, in: self, inset: 0, fill: true)
         header.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
         scroll.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
@@ -104,7 +105,7 @@ final class NotificationsTabView: NSView, NotificationsDisplay {
             list.trailingAnchor.constraint(equalTo: scroll.contentView.trailingAnchor),
             list.topAnchor.constraint(equalTo: scroll.contentView.topAnchor)
         ])
-        embed(emptyView, in: self, inset: NSEdgeInsets(top: 40, left: 0, bottom: 0, right: 0), fill: true)
+        embed(emptyView, in: self, inset: NSEdgeInsets(top: 24, left: 0, bottom: 0, right: 0), fill: true)
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
