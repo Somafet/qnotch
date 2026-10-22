@@ -8,6 +8,38 @@ using QNotch.Shell.Settings;
 
 var tests = new List<(string Name, Action Run)>
 {
+    ("Small and Medium bodies fit live, empty, loading and error states", CardRenderingChecks.Run),
+    ("Home sizes preserve defaults, reject unsupported choices and survive reload", () =>
+    {
+        var cards = new Registry<CardDescriptor>();
+        cards.Register(new("small", "Small only", 1, () => null!));
+        cards.Register(new("wide", "Resizable", 2, () => null!, DefaultSize: CardSize.Medium));
+        var gs = new GeneralSettings { CardSizes = new() { ["disabled"] = "Small", ["future"] = "Large" } };
+        var layout = new CardLayout(cards, gs);
+        var changes = 0;
+        layout.Changed += () => changes++;
+        Require(layout.SizeOf("wide") == CardSize.Medium && layout.SizeOf("small") == CardSize.Small);
+        layout.SetSize("small", CardSize.Medium);
+        layout.SetSize("wide", (CardSize)99);
+        layout.SetSize("missing", CardSize.Small);
+        Require(changes == 0);
+        layout.SetSize("wide", CardSize.Small);
+        layout.SetVisible("wide", false);
+        var loaded = JsonSerializer.Deserialize<GeneralSettings>(JsonSerializer.Serialize(gs, SettingsStore.Json), SettingsStore.Json)!;
+        var restored = new CardLayout(cards, loaded);
+        Require(restored.SizeOf("wide") == CardSize.Small && !restored.IsVisible("wide"));
+        Require(loaded.CardSizes["disabled"] == "Small" && loaded.CardSizes["future"] == "Large");
+        cards.Register(new("disabled", "Enabled again", 3, () => null!, DefaultSize: CardSize.Medium));
+        Require(restored.SizeOf("disabled") == CardSize.Small);
+        restored.SetVisible("wide", true);
+        restored.SetSize("wide", CardSize.Medium);
+        Require(restored.SizeOf("wide") == CardSize.Medium);
+        loaded.CardSizes["wide"] = "Large";
+        loaded.CardSizes["small"] = "Medium";
+        Require(restored.SizeOf("wide") == CardSize.Medium && restored.SizeOf("small") == CardSize.Small);
+        Require(cards.Items.All(c => c.SupportedSizes.Contains(CardSize.Small)));
+        Require(SetupCode.ShellSections.Single(s => s.Id == "general").Shared.Fields.Contains("CardSizes"));
+    }),
     ("notification manual mute persists locally outside setup codes", () =>
     {
         Require(!new NotificationLocalSettings().Muted);

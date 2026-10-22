@@ -28,7 +28,7 @@ public sealed class MediaModule : INotchModule, ICadenceAware
         _ticker.Tick += (_, _) => RefreshProgress();
 
         ctx.Tabs.Register(new TabDescriptor("media", "Media", Glyphs.Music, 10, () => new MediaTab(_m, ctx.Shell), () => !_m.HasSession));
-        ctx.Cards.Register(new CardDescriptor("media", "Now playing", 20, () => new MediaCard(_m, ctx.Shell), ColumnSpan: 2));
+        ctx.Cards.Register(new CardDescriptor("media", "Now playing", 20, () => new MediaCard(_m, ctx.Shell), DefaultSize: CardSize.Medium));
         ctx.Segments.Register(new SegmentDescriptor("media.pill", SegmentSlot.PillLeft, 10, () => MediaSegments.Pill(_m)));
         ctx.Segments.Register(new SegmentDescriptor("media.glance", SegmentSlot.Glance, 10, () => MediaSegments.Glance(_m)));
         ctx.Segments.Register(new SegmentDescriptor("media.game", SegmentSlot.GameBar, 10, () => MediaSegments.Game(_m),

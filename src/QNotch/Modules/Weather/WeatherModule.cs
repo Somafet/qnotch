@@ -13,7 +13,7 @@ public sealed class WeatherModule : INotchModule, ICadenceAware
         var set = ctx.Settings.Get<WeatherSettings>("weather");
         var svc = _svc = new WeatherService(ctx, s, set);
 
-        ctx.Cards.Register(new CardDescriptor("weather", "Weather", 15, () => new WeatherCard(s, svc, ctx.Shell), ColumnSpan: 2));
+        ctx.Cards.Register(new CardDescriptor("weather", "Weather", 15, () => new WeatherCard(s, svc, ctx.Shell), DefaultSize: CardSize.Medium));
         ctx.SettingsSections.Register(new SettingsSectionDescriptor("weather", "Weather", Sun, 55, () => WeatherSection.Create(ctx, s, svc)));
         ctx.Segments.Register(new SegmentDescriptor("weather.pill", SegmentSlot.PillRight, 9, () => WeatherSegments.Pill(s),
             Presented: () => set.ShowInPill, SetPresented: v => { set.ShowInPill = v; ctx.Settings.Save("weather", set); svc.Reformat(); }));

@@ -45,4 +45,7 @@ public sealed partial class GeneralSettings : ObservableObject
 
     /// <summary>Explicit visibility overrides by card id; missing means the descriptor default.</summary>
     public Dictionary<string, bool> CardVisible { get; set; } = new();
+
+    /// <summary>Home card size names by id. Unknown or unsupported sizes fall back to the descriptor default.</summary>
+    public Dictionary<string, string> CardSizes { get; set; } = new();
 }

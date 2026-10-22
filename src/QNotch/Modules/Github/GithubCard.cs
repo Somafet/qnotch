@@ -8,15 +8,15 @@ using QNotch.Theme;
 
 namespace QNotch.Modules.Github;
 
-/// <summary>GitHub card body (spans two columns): totals, contribution grid, and explicit no-token, loading and error states.</summary>
+/// <summary>Small shows totals and streak; Medium also shows the contribution graph. Both include connection and error states.</summary>
 internal sealed class GithubCard : Grid
 {
     readonly GithubState _s;
     readonly GithubService _svc;
     readonly FrameworkElement _ready, _noToken, _loading, _error;
     readonly ContributionGraph _graph = new();
-    readonly TextBlock _total = new() { FontSize = 13, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center };
-    readonly TextBlock _streak = new() { FontSize = 12, VerticalAlignment = VerticalAlignment.Center };
+    readonly TextBlock _total = new() { FontSize = 13, FontWeight = FontWeights.SemiBold, TextTrimming = TextTrimming.CharacterEllipsis, VerticalAlignment = VerticalAlignment.Center };
+    readonly TextBlock _streak = new() { FontSize = 12, TextTrimming = TextTrimming.CharacterEllipsis, VerticalAlignment = VerticalAlignment.Center };
     readonly TextBlock _status = new() { FontSize = 11, TextTrimming = TextTrimming.CharacterEllipsis, VerticalAlignment = VerticalAlignment.Center };
     readonly TextBlock _errorText = UiKit.Text("", "Muted");
     readonly Button _refresh = new() { Style = (Style)Application.Current.FindResource("IconButton"), Content = Glyphs.Refresh, Width = 24, Height = 24, ToolTip = "Refresh now" };
@@ -60,6 +60,7 @@ internal sealed class GithubCard : Grid
 
         _graph.Data = _s.GithubGraph;
         _total.Text = _s.GithubTotalText;
+        _total.ToolTip = _total.Text;
         _streak.Text = _s.GithubStreakText;
         var warn = _s.GithubMessage.Length > 0;
         _status.Text = warn ? $"{_s.GithubMessage} {_s.GithubUpdatedText}." : $"@{_s.GithubLogin} · {_s.GithubUpdatedText}";
@@ -108,6 +109,16 @@ internal sealed class GithubCard : Grid
         foot.Children.Add(_status);
         Grid.SetRow(foot, 2);
         g.Children.Add(foot);
+        SizeChanged += (_, _) =>
+        {
+            var small = ActualWidth < 300;
+            line.Orientation = small ? Orientation.Vertical : Orientation.Horizontal;
+            head.Height = small ? 44 : 20;
+            dot.Visibility = small ? Visibility.Collapsed : Visibility.Visible;
+            _graph.Visibility = legend.Visibility = small ? Visibility.Collapsed : Visibility.Visible;
+            g.VerticalAlignment = small ? VerticalAlignment.Center : VerticalAlignment.Stretch;
+            g.RowDefinitions[1].Height = small ? GridLength.Auto : new GridLength(1, GridUnitType.Star);
+        };
         return g;
     }
 
@@ -121,20 +132,43 @@ internal sealed class GithubCard : Grid
     /// <summary>Icon, title and message on the left, optional action button on the right.</summary>
     static FrameworkElement Centered(string glyph, string title, string message, Button? action, TextBlock? messageBlock = null)
     {
-        var row = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+        var row = new Grid { VerticalAlignment = VerticalAlignment.Center };
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        row.ColumnDefinitions.Add(new ColumnDefinition());
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        row.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        row.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         var icon = UiKit.Glyph(glyph, 22, "TextTertiaryBrush");
         icon.VerticalAlignment = VerticalAlignment.Center;
         icon.Margin = new Thickness(0, 0, 12, 0);
         row.Children.Add(icon);
         var text = new StackPanel { VerticalAlignment = VerticalAlignment.Center, MaxWidth = 230 };
-        text.Children.Add(new TextBlock { Text = title, Style = (Style)Application.Current.FindResource("Title"), FontSize = 13 });
+        text.Children.Add(new TextBlock { Text = title, FontWeight = FontWeights.SemiBold, FontSize = 13, TextTrimming = TextTrimming.CharacterEllipsis, ToolTip = title });
         var m = messageBlock ?? UiKit.Text(message, "Muted");
         m.Margin = new Thickness(0, 2, 0, 0);
         m.MaxHeight = 42;
         m.TextTrimming = TextTrimming.CharacterEllipsis;
         text.Children.Add(m);
+        Grid.SetColumn(text, 1);
         row.Children.Add(text);
-        if (action is not null) row.Children.Add(action);
+        if (action is not null) { Grid.SetColumn(action, 2); row.Children.Add(action); }
+        row.SizeChanged += (_, _) =>
+        {
+            var small = row.ActualWidth < 300;
+            icon.Visibility = small ? Visibility.Collapsed : Visibility.Visible;
+            m.Visibility = small && action is not null ? Visibility.Collapsed : Visibility.Visible;
+            text.ToolTip = m.Text;
+            Grid.SetColumn(text, small ? 0 : 1);
+            Grid.SetColumnSpan(text, small ? 3 : 1);
+            if (action is not null)
+            {
+                Grid.SetRow(action, small ? 1 : 0);
+                Grid.SetColumn(action, small ? 0 : 2);
+                Grid.SetColumnSpan(action, small ? 3 : 1);
+                action.HorizontalAlignment = small ? HorizontalAlignment.Left : HorizontalAlignment.Center;
+                action.Margin = small ? new Thickness(0, 8, 0, 0) : new Thickness(16, 0, 0, 0);
+            }
+        };
         return row;
     }
 }

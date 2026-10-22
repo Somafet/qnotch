@@ -19,11 +19,31 @@ public sealed class CardHost : ContentControl
 
     static CardHost() => DefaultStyleKeyProperty.OverrideMetadata(typeof(CardHost), new FrameworkPropertyMetadata(typeof(CardHost)));
 
-    public CardHost(CardDescriptor descriptor)
+    readonly CardLayout _layout;
+
+    public CardHost(CardDescriptor descriptor, CardLayout layout)
     {
+        _layout = layout;
         Descriptor = descriptor;
         Title = descriptor.Title;
         System.Windows.Automation.AutomationProperties.SetAutomationId(this, "card-" + descriptor.Id);
+    }
+
+    public override void OnApplyTemplate()
+    {
+        base.OnApplyTemplate();
+        SyncSize();
+    }
+
+    internal void SyncSize()
+    {
+        if (Descriptor.SupportedSizes.Count < 2) return;
+        foreach (var (part, direction) in new[] { ("ResizeLeft", -1), ("ResizeRight", 1) })
+            if (GetTemplateChild(part) is ContentControl slot)
+            {
+                slot.Content ??= new CardResizeHandle(this, _layout, direction);
+                if (slot.Content is CardResizeHandle handle) handle.SyncSize();
+            }
     }
 
     public CardDescriptor Descriptor { get; }

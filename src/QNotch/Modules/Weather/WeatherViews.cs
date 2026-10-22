@@ -55,7 +55,7 @@ internal static class WeatherIcons
     }
 }
 
-/// <summary>Weather card body (spans two columns): now on the left, the next days on the right, and explicit no-place, loading and error states.</summary>
+/// <summary>Current conditions at Small; current conditions and the next days at Medium, with explicit unavailable states.</summary>
 internal sealed class WeatherCard : Grid
 {
     readonly WeatherState _s;
@@ -106,25 +106,27 @@ internal sealed class WeatherCard : Grid
 
     FrameworkElement BuildReady(WeatherService svc, IShell shell)
     {
-        var root = new DockPanel { LastChildFill = true };
+        var root = new Grid();
+        root.ColumnDefinitions.Add(new ColumnDefinition());
+        root.ColumnDefinitions.Add(new ColumnDefinition());
+        root.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
         var open = new Button { Style = (Style)Application.Current.FindResource("IconButton"), Content = Glyphs.Link, Width = 24, Height = 24, ToolTip = "Open on yr.no",
             VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(4, -2, -4, 0) };
         open.Click += (_, _) => { svc.OpenYr(); shell.ClosePanel(); };
-        DockPanel.SetDock(open, Dock.Right);
+        Grid.SetColumn(open, 2);
         root.Children.Add(open);
 
         // Now: icon, temperature and condition, then the place line.
-        var now = new StackPanel { Width = 176, VerticalAlignment = VerticalAlignment.Center };
-        DockPanel.SetDock(now, Dock.Left);
-        var top = new StackPanel { Orientation = Orientation.Horizontal };
+        var now = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+        var top = new DockPanel();
         var icon = WeatherIcons.Bound(44, _s, nameof(WeatherState.Symbol));
         icon.Margin = new Thickness(-2, 0, 8, 0);
         top.Children.Add(icon);
         var texts = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
         var temp = new TextBlock { FontSize = 26, FontWeight = FontWeights.SemiBold, LineHeight = 30, LineStackingStrategy = LineStackingStrategy.BlockLineHeight };
         UiKit.Bind(temp, TextBlock.TextProperty, _s, nameof(WeatherState.TempText));
-        var cond = new TextBlock { FontSize = 12, TextTrimming = TextTrimming.CharacterEllipsis, MaxWidth = 120 };
+        var cond = new TextBlock { FontSize = 12, TextTrimming = TextTrimming.CharacterEllipsis };
         cond.SetResourceReference(TextBlock.ForegroundProperty, "TextSecondaryBrush");
         UiKit.Bind(cond, TextBlock.TextProperty, _s, nameof(WeatherState.ConditionText));
         UiKit.Bind(cond, ToolTipProperty, _s, nameof(WeatherState.ConditionText));
@@ -135,7 +137,15 @@ internal sealed class WeatherCard : Grid
         now.Children.Add(_place);
         root.Children.Add(now);
 
+        Grid.SetColumn(_days, 1);
         root.Children.Add(_days);
+        SizeChanged += (_, _) =>
+        {
+            var small = ActualWidth < 300;
+            _days.Visibility = small ? Visibility.Collapsed : Visibility.Visible;
+            root.ColumnDefinitions[0].Width = small ? new GridLength(1, GridUnitType.Star) : new GridLength(176);
+            root.ColumnDefinitions[1].Width = small ? new GridLength(0) : new GridLength(1, GridUnitType.Star);
+        };
         return root;
     }
 
@@ -168,20 +178,44 @@ internal sealed class WeatherCard : Grid
     /// <summary>Sun icon, title and message on the left, optional action button on the right.</summary>
     static FrameworkElement Centered(string title, string message, Button? action, TextBlock? messageBlock = null)
     {
-        var row = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+        var row = new Grid { VerticalAlignment = VerticalAlignment.Center };
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        row.ColumnDefinitions.Add(new ColumnDefinition());
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        row.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        row.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         var icon = UiKit.Glyph(WeatherModule.Sun, 22, "TextTertiaryBrush");
         icon.VerticalAlignment = VerticalAlignment.Center;
         icon.Margin = new Thickness(0, 0, 12, 0);
         row.Children.Add(icon);
         var text = new StackPanel { VerticalAlignment = VerticalAlignment.Center, MaxWidth = 230 };
-        text.Children.Add(new TextBlock { Text = title, Style = (Style)Application.Current.FindResource("Title"), FontSize = 13 });
+        text.Children.Add(new TextBlock { Text = title, FontWeight = FontWeights.SemiBold, FontSize = 13, TextTrimming = TextTrimming.CharacterEllipsis, ToolTip = title });
         var m = messageBlock ?? UiKit.Text(message, "Muted");
         m.Margin = new Thickness(0, 2, 0, 0);
         m.MaxHeight = 42;
         m.TextTrimming = TextTrimming.CharacterEllipsis;
         text.Children.Add(m);
+        Grid.SetColumn(text, 1);
         row.Children.Add(text);
-        if (action is not null) row.Children.Add(action);
+        if (action is not null) { Grid.SetColumn(action, 2); row.Children.Add(action); }
+        row.SizeChanged += (_, _) =>
+        {
+            var small = row.ActualWidth < 300;
+            icon.Visibility = small ? Visibility.Collapsed : Visibility.Visible;
+            m.Visibility = small && action is not null ? Visibility.Collapsed : Visibility.Visible;
+            m.ToolTip = m.Text;
+            text.ToolTip = m.Text;
+            Grid.SetColumn(text, small ? 0 : 1);
+            Grid.SetColumnSpan(text, small ? 3 : 1);
+            if (action is not null)
+            {
+                Grid.SetRow(action, small ? 1 : 0);
+                Grid.SetColumn(action, small ? 0 : 2);
+                Grid.SetColumnSpan(action, small ? 3 : 1);
+                action.HorizontalAlignment = small ? HorizontalAlignment.Left : HorizontalAlignment.Center;
+                action.Margin = small ? new Thickness(0, 8, 0, 0) : new Thickness(16, 0, 0, 0);
+            }
+        };
         return row;
     }
 }
