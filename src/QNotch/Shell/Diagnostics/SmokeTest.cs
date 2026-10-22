@@ -112,6 +112,7 @@ internal sealed partial class SmokeTest
             Task<string?> Module(string name) => modules.Remove(name, out var c) ? c.Run() : Task.FromResult<string?>("no module provides this check");
 
             await Check("placement", () => Task.FromResult(Placement()));
+            await Check("presentation", PresentationCheck);
             await Check("hover-keeps-focus", HoverKeepsFocus);
             await Check("hotkey-toggle", () => Foreground(HotkeyToggle));
             await Check("hotkey-search", () => Foreground(HotkeySearch));

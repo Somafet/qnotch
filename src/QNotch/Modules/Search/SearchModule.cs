@@ -29,13 +29,21 @@ public sealed class SearchModule : INotchModule, ICadenceAware
         _ctx = ctx;
         ctx.Tabs.Register(new TabDescriptor(Id, "Search", Glyph, 5, View));
         ctx.Search.Register(new SearchSource("tabs", "Tabs","", 80, q => ctx.Tabs.Items
-            .Where(t => t.Id != Id && t.Title.Contains(q, StringComparison.OrdinalIgnoreCase))
+            .Where(t => t.Id != Id && ctx.Shell.IsTabVisible(t.Id) && t.Title.Contains(q, StringComparison.OrdinalIgnoreCase))
             .Select(t => new SearchHit(t.Title, "", () => ctx.Shell.SelectTab(t.Id)))));
         ctx.Search.Register(new SearchSource("settings", "Settings", Glyphs.Settings, 90, q => ctx.SettingsSections.Items
             .Where(s => s.Title.Contains(q, StringComparison.OrdinalIgnoreCase))
             .Select(s => new SearchHit(s.Title, "", () => ctx.Shell.OpenSettings(s.Id)))));
         ctx.Shell.TabChanged += id => { if (id == Id) _box?.Focus(); }; // typing works at once when the window has the keyboard
         _key = ctx.Shortcuts.Add(Id, "Open search", "Opens the Search tab with the cursor in the box.", DefaultKey, Summon, 20);
+        var presentation = ctx.Settings.Get<WindowsPresentationSettings>("windows-presentation");
+        void SyncPresentation()
+        {
+            ctx.Shortcuts.Enable(_key, ctx.Shell.IsTabVisible(Id));
+            if (_box is not null) Find(_box.Text.Trim());
+        }
+        presentation.Changed += SyncPresentation;
+        SyncPresentation();
         ctx.Shortcuts.Changed += About;
     }
 

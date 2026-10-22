@@ -154,6 +154,8 @@ Everything else (mode, keyboard focus, foreground watcher, monitor, general sett
 
 ### Enable switch
 
+Windows presentation is independent of enablement. Settings, Features lists the Home cards, tabs and notch segments actually registered by each running module. Home visibility and ordering continue to use `GeneralSettings.CardVisible` and `CardOrder`; game-bar segments retain their existing choices. `windows-presentation.json` stores tab and pill/glance visibility locally, outside setup codes. Weather retains its existing `ShowInPill` preference. Hiding a surface applies live without reconstructing the module. Hidden tabs retain `TabOrder`, cannot be navigated to, and fall back to Home if selected or last selected. Search releases its shortcut while its tab is hidden and restores the saved gesture when shown. Features stays reachable even when Home has no cards. A feature disabled at boot must be enabled and restarted before its presentation controls are available.
+
 Settings, Features has one switch per `ModuleList.All` entry. A switch edits `GeneralSettings.DisabledModules` (general.json) and shows "Restart QNotch to apply your changes." with a "Restart now" button (`QNotch.exe --restart`). At boot `App` skips every disabled module: `Create` is never called, so it has no timers, hooks, hotkeys, cards, tabs, sections or segments and costs nothing. Ids of cards of a disabled module stay in `CardOrder`, so turning the module back on restores its slot. `--snapshot` ignores the list and loads everything.
 
 ### Add a new extension

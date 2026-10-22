@@ -9,6 +9,7 @@ dotnet build src/QNotch/QNotch.csproj -c Release -warnaserror
 dotnet run --project tests/QNotch.UpdateTests -c Release
 dotnet run --project tests/QNotch.PhoneShareTests -c Release
 dotnet run --project tests/QNotch.OnboardingTests -c Release
+dotnet run --project tests/QNotch.WindowsTests -c Release
 ```
 
 The updater suite covers release selection, variant selection, checksums, executable validation, cancellation, replacement/recovery, and update settings. It consumes the shared release-tag fixtures to confirm Mac tags are ignored. The phone-sharing suite covers the existing transfer protocol. The onboarding suite covers when the welcome tour shows, what its choices write to `general.json`, and the GitHub device flow against canned responses, with no network.
