@@ -23,4 +23,3 @@
 "Now playing"
 "Track, artwork and controls for anything that plays media."
 [Toggle] "Enable Now playing" #feature-media
-

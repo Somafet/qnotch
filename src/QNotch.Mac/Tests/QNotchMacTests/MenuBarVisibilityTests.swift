@@ -24,6 +24,8 @@ final class MenuBarVisibilityTests: XCTestCase {
         var settings = GeneralSettings()
         settings.pinned = true
         settings.disabledModules = ["search", "timer"]
+        settings.hoverOpensSegment = true
+        settings.cardSizes = ["media": 1, "weather": 2]
         settings.showMenuBarIcon = false
         XCTAssertTrue(store.save("general", settings))
         XCTAssertEqual(SettingsStore(directory: root).load("general", default: GeneralSettings()), settings)
