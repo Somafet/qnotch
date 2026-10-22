@@ -19,7 +19,18 @@ function Call($cmd, $arguments=@{}) {
     } finally { $pipe.Dispose() }
 }
 function Must($response) { if (!$response.ok) { throw $response.error }; return $response.result }
-function Boot { Start-Process $exe -ArgumentList '--debug-control','--data-dir',$data -PassThru -WindowStyle Hidden }
+function Boot {
+    $start = [Diagnostics.ProcessStartInfo]::new($exe)
+    $start.UseShellExecute = $false
+    $start.CreateNoWindow = $true
+    $start.ArgumentList.Add('--debug-control'); $start.ArgumentList.Add('--data-dir'); $start.ArgumentList.Add($data)
+    foreach ($name in @('APPDATA','LOCALAPPDATA')) {
+        $folder = Join-Path $data $name
+        New-Item -ItemType Directory -Force $folder | Out-Null
+        $start.Environment[$name] = $folder
+    }
+    return [Diagnostics.Process]::Start($start)
+}
 function Quit($app) { Call 'quit' | Out-Null; if (!$app.WaitForExit(10000)) { throw 'Owned app failed to quit' } }
 function WaitText($marker) {
     $clock = [Diagnostics.Stopwatch]::StartNew()

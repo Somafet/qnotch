@@ -34,14 +34,14 @@ internal sealed class ConPtySession : IAsyncDisposable
     }
 
     internal static ConPtySession Start(string executable, string arguments, string directory, int columns, int rows,
-        Action<string, Action<string>> output, Action exited)
+        Action<string, Action<string>> output, Action exited, IReadOnlyDictionary<string, string>? environment = null)
     {
         var session = new ConPtySession(output, exited);
-        try { session.Create(executable, arguments, directory, columns, rows); return session; }
+        try { session.Create(executable, arguments, directory, columns, rows, environment); return session; }
         catch { session.DisposeAsync().AsTask().GetAwaiter().GetResult(); throw; }
     }
 
-    void Create(string executable, string arguments, string directory, int columns, int rows)
+    void Create(string executable, string arguments, string directory, int columns, int rows, IReadOnlyDictionary<string, string>? environment)
     {
         if (!Path.IsPathFullyQualified(executable) || !File.Exists(executable)) throw new FileNotFoundException("Windows shell is unavailable.", executable);
         Check(CreatePipe(out var inputRead, out var inputWrite, 0, 0));
@@ -72,8 +72,23 @@ internal sealed class ConPtySession : IAsyncDisposable
                     // Null standard handles with STARTF_USESTDHANDLES let ConPTY supply console handles even when
                     // the host itself has redirected stdio (tests, packaged launchers). Never inherit the host's pipes.
                     var startup = new StartupInfoEx { StartupInfo = new StartupInfo { Size = Marshal.SizeOf<StartupInfoEx>(), Flags = 0x100 }, Attributes = attrs };
-                    Check(CreateProcess(executable, new StringBuilder('"' + executable + "\" " + arguments), 0, 0, false,
-                        0x80000 | 0x4 | 0x400, 0, directory, ref startup, out var info));
+                    // Tests can isolate the shell's own history/cache folders as well as QNotch's data directory.
+                    nint environmentBlock = 0;
+                    ProcessInfo info;
+                    try
+                    {
+                        if (environment is not null)
+                        {
+                            var values = Environment.GetEnvironmentVariables().Cast<System.Collections.DictionaryEntry>()
+                                .ToDictionary(e => (string)e.Key, e => (string)e.Value!, StringComparer.OrdinalIgnoreCase);
+                            foreach (var (name, value) in environment) values[name] = value;
+                            var block = string.Join('\0', values.OrderBy(e => e.Key, StringComparer.OrdinalIgnoreCase).Select(e => e.Key + "=" + e.Value)) + "\0\0";
+                            environmentBlock = Marshal.StringToHGlobalUni(block);
+                        }
+                        Check(CreateProcess(executable, new StringBuilder('"' + executable + "\" " + arguments), 0, 0, false,
+                            0x80000 | 0x4 | 0x400, environmentBlock, directory, ref startup, out info));
+                    }
+                    finally { if (environmentBlock != 0) Marshal.FreeHGlobal(environmentBlock); }
                     try
                     {
                         // Suspended until ownership is guaranteed. Descendants cannot escape the job via a startup race.

@@ -74,12 +74,21 @@ internal static class TerminalChecks
             Require(Raw().Contains(marker, StringComparison.Ordinal), "ConPTY output missing " + marker + ": " + Raw()[Math.Max(0, Raw().Length - 1000)..]);
         }
         var shell = TerminalModule.Shell();
+        var environment = new Dictionary<string, string>
+        {
+            ["APPDATA"] = Path.Combine(directory, "roaming"),
+            ["LOCALAPPDATA"] = Path.Combine(directory, "local"),
+            ["PSModulePath"] = Path.Combine(Path.GetDirectoryName(shell.Executable)!, "Modules") + Path.PathSeparator
+                + Path.Combine(Environment.SystemDirectory, "WindowsPowerShell", "v1.0", "Modules"),
+        };
+        Directory.CreateDirectory(environment["APPDATA"]);
+        Directory.CreateDirectory(environment["LOCALAPPDATA"]);
         var sentinelPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "WindowsPowerShell", "v1.0", "powershell.exe");
         using var unrelated = Process.Start(new ProcessStartInfo(sentinelPath, "-NoLogo -NoProfile -Command Start-Sleep -Seconds 120") { UseShellExecute = false, CreateNoWindow = true })!;
         ConPtySession? session = null;
         try
         {
-            session = ConPtySession.Start(shell.Executable, shell.Arguments, directory, 80, 20, Output, () => { });
+            session = ConPtySession.Start(shell.Executable, shell.Arguments, directory, 80, 20, Output, () => { }, environment);
             session.Send("$m='QNOTCH'\r");
             session.Send("Write-Output ($m+'_READY')\r");
             await Wait("QNOTCH_READY");
