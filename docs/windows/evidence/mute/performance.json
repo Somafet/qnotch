@@ -1,0 +1,16 @@
+{
+  "pid": 49156,
+  "cpu_percent_one_core": 0.3802683815101511,
+  "method": "QueryProcessCycleTime, calibrated with three 100ms QueryThreadCycleTime spins; 15s warmup; no debug calls during interval; WPF ETW provider enabled before boot",
+  "cycle_hz": 3691009260.7314386,
+  "os": "Microsoft Windows NT 10.0.26200.0",
+  "resident_bytes_start": 1105920,
+  "state": "collapsed, Notifications enabled, manual mute on; live pipe; HTTP and mic watcher off; all other modules disabled",
+  "source_revision": "92690e8bd4ea9a1e9dd53b31ed8cf93eb6653b34",
+  "interval_seconds": 30.004216,
+  "end_local": "2026-10-22T11:54:46",
+  "resident_bytes_end": 10145792,
+  "start_local": "2026-10-22T11:54:16",
+  "source_dirty": true,
+  "cpu": "AMD Ryzen 9 5900X, 24 logical processors"
+}

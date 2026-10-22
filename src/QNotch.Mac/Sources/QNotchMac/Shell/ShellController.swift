@@ -39,6 +39,8 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     private var pill = NSStackView()
     private var pillIdle = NSView()
     private var screen: NSScreen?
+    /// Native diagnostics can exercise an external display without requiring that hardware.
+    private var diagnosticLayout: DisplayLayout?
     var statusChanged: (() -> Void)?
     /// Sparkle updates; nil in development, diagnostic and isolated runs.
     var updater: Updater?
@@ -102,9 +104,6 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         registerShellSearch()
         shortcuts.add("toggle", title: "Toggle panel", hint: "Opens or closes the panel, ready for typing.", gesture: "ctrl+opt+n", order: 0) { [weak self] in
             self?.toggleFromKeyboard()
-        }
-        shortcuts.add("search", title: "Open search", hint: "Opens the Search tab with the cursor in the box.", gesture: "ctrl+opt+f", order: 20) { [weak self] in
-            self?.summonSearch()
         }
         shortcuts.add("gamemode", title: "Cycle game mode", hint: "Automatic, then forced on, then forced off.", gesture: "ctrl+opt+g", order: 10) { [weak self] in
             self?.gameMode.cycle()
@@ -184,6 +183,8 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         if !general.pinned, state.presentation == .hover, !panel.frame.containsPointer(NSEvent.mouseLocation) { pointerLeft() }
     }
 
+    func actionsChanged() { statusChanged?() }
+
     func stop() {
         hoverTask?.cancel(); leaveTask?.cancel()
         modules.forEach { $0.stop() }
@@ -222,8 +223,12 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         // Card and tab views of removed modules go; kept modules keep their (cached) views.
         let live = Set(registries.cards.items.map { "card." + $0.id } + registries.tabs.items.map { "tab." + $0.id })
         contentCache = contentCache.filter { live.contains($0.key) }
+        contentCache["tab.search"] = nil
         searchView = nil
-        if !tabs.contains(where: { $0.id == activeTab }) { activeTab = "home" }
+        if !tabs.contains(where: { $0.id == activeTab }) {
+            activeTab = "home"
+            if state.acceptsKeyboard { panel.makeFirstResponder(nil) }
+        }
         buildStatus()
     }
 
@@ -231,14 +236,33 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         let previous = general
         let disabled = general.disabledModules
         change(&general)
+        // Materialize the full order before anything disappears, including never-dragged defaults.
+        // Later drags replace only shown slots, so hidden/off contributions keep their place.
+        if previous.hiddenCards != general.hiddenCards || previous.disabledModules != general.disabledModules {
+            general.cardOrder = LayoutOrder.remember(saved: general.cardOrder, defaults: registries.cards.items.map(\.id))
+        }
+        if previous.hiddenTabs != general.hiddenTabs || previous.disabledModules != general.disabledModules {
+            general.tabOrder = LayoutOrder.remember(saved: general.tabOrder, defaults: registries.tabs.items.filter { $0.id != "search" }.map(\.id))
+        }
         store.save("general", general)
         Motion.userReduced = general.reduceMotion
         Palette.accentOverride = general.accent.flatMap(Palette.hex)
-        if previous.accent != general.accent || previous.profileName != general.profileName || previous.hiddenCards != general.hiddenCards {
+        if previous.accent != general.accent || previous.profileName != general.profileName {
             accentChanged()
         }
-        if disabled != general.disabledModules {
+        if disabled != general.disabledModules || previous.enabledOptionalModules != general.enabledOptionalModules {
             composeModules()
+            contentCache["home"] = nil
+            discardPanel()
+        } else if previous.hiddenCards != general.hiddenCards || previous.hiddenTabs != general.hiddenTabs {
+            if previous.hiddenCards != general.hiddenCards {
+                contentCache["home"] = nil
+                if activeTab == "home", state.acceptsKeyboard { panel.makeFirstResponder(nil) }
+            }
+            if !general.isTabVisible(activeTab), previous.isTabVisible(activeTab) {
+                activeTab = "home"
+                if state.acceptsKeyboard { panel.makeFirstResponder(nil) }
+            }
             discardPanel()
         }
         resolveDisplay()
@@ -342,7 +366,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     func tryOpenPanel(tab: String, linger: TimeInterval) -> Bool {
         guard screen != nil, !gameActive else { return false }
         guard !state.expanded else { return true }
-        if tabs.contains(where: { $0.id == tab }) { activeTab = tab }
+        selectTab(tab)
         open(keyboard: false)
         lingerTask?.cancel()
         let task = DispatchWorkItem { [weak self] in
@@ -393,10 +417,26 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
             gap = CGRect(x: left.maxX, y: screen.frame.maxY - screen.safeAreaInsets.top,
                          width: max(0, right.minX - left.maxX), height: screen.safeAreaInsets.top)
         } else { gap = nil }
-        var layout = DisplayLayout(frame: screen.frame, visibleFrame: screen.visibleFrame, safeTop: screen.safeAreaInsets.top, cameraGap: gap)
+        var layout = diagnosticLayout ?? DisplayLayout(frame: screen.frame, visibleFrame: screen.visibleFrame, safeTop: screen.safeAreaInsets.top, cameraGap: gap)
         layout.offset = nudgeOffset ?? CGFloat(general.pillOffsets[String(Self.displayID(screen))] ?? 0)
         if nudgeOffset != nil { layout.edgeStretch = 8 }
         return layout
+    }
+
+    /// Render synthetic display geometry through the real shell, invisibly and with isolated
+    /// diagnostic data. The selected physical display and its saved offsets are not changed.
+    func withDiagnosticLayout(_ layout: DisplayLayout, perform: () throws -> Void) rethrows {
+        let previous = diagnosticLayout
+        let wasRenderOnly = renderOnly
+        diagnosticLayout = layout
+        renderOnly = true
+        rebuildSurface()
+        defer {
+            diagnosticLayout = previous
+            rebuildSurface()
+            renderOnly = wasRenderOnly
+        }
+        try perform()
     }
 
     /// The settled window frame for the current presentation.
@@ -409,7 +449,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         guard hovering, !state.expanded, Motion.moves else { return rect }
         // Attached to the bezel it grows sideways and down; a floating pill grows all round.
         let swell: CGFloat = 2
-        return layout.integratesCameraHousing ? CGRect(x: rect.minX - swell, y: rect.minY - swell, width: rect.width + swell * 2, height: rect.height + swell)
+        return layout.integratesTopBand ? CGRect(x: rect.minX - swell, y: rect.minY - swell, width: rect.width + swell * 2, height: rect.height + swell)
                                               : rect.insetBy(dx: -swell, dy: -swell / 2)
     }
 
@@ -477,7 +517,9 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         updateVisibility()
         if keyboard {
             panel.makeKeyAndOrderFront(nil)
-            if activeTab == "search" { searchView?.focus(appending: "") } else { panel.makeFirstResponder(nil) }
+            if activeTab == "search" { searchView?.focus(appending: "") }
+            else if let input = contentCache["tab." + activeTab] as? PanelKeyboardContent { input.focusKeyboard() }
+            else { panel.makeFirstResponder(nil) }
         } else { panel.orderFrontRegardless() }
     }
 
@@ -509,10 +551,12 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     // MARK: Tabs and search
 
     private var tabs: [PanelView.Tab] {
-        let items = registries.tabs.items
+        let visible = registries.tabs.items.filter { general.isTabVisible($0.id) || $0.id == activeTab }
+        let search = visible.filter { $0.id == "search" }
+        let items = visible.filter { $0.id != "search" }
         let order = LayoutOrder.apply(saved: general.tabOrder, defaults: items.map(\.id))
-        return [PanelView.Tab(id: "home", symbol: "house", title: "Home"),
-                PanelView.Tab(id: "search", symbol: "magnifyingglass", title: "Search")] +
+        return [PanelView.Tab(id: "home", symbol: "house", title: "Home")] +
+            search.map { PanelView.Tab(id: $0.id, symbol: $0.symbol, title: $0.title) } +
             order.compactMap { id in items.first { $0.id == id } }.map { PanelView.Tab(id: $0.id, symbol: $0.symbol, title: $0.title) }
     }
 
@@ -534,32 +578,42 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     }
 
     func selectTab(_ id: String) {
-        let ids = tabs.map(\.id)
+        // Hidden tabs remain action/shortcut destinations. Show a temporary selected tab while
+        // active, then remove it on leaving; Home and enabled Search retain their fixed positions.
+        let ids = ["home"] + registries.tabs.items.filter { $0.id == "search" }.map(\.id) +
+            LayoutOrder.apply(saved: general.tabOrder, defaults: registries.tabs.items.filter { $0.id != "search" }.map(\.id))
         guard let next = ids.firstIndex(of: id) else { return }
         let previous = ids.firstIndex(of: activeTab) ?? 0
+        let stripChanges = !general.isTabVisible(activeTab) || !general.isTabVisible(id)
         guard id != activeTab else {
             if id == "search", state.acceptsKeyboard { searchView?.focus(appending: "") }
+            else if state.acceptsKeyboard { (contentCache["tab." + id] as? PanelKeyboardContent)?.focusKeyboard() }
             return
         }
         if editing, id != "home" { setEditing(false) }
         activeTab = id
+        if stripChanges {
+            discardPanel()
+            present(.none)
+        }
         panelView?.select(id, animated: true)
         panelView?.setEditing(editing, onHome: id == "home")
         showBody(direction: next > previous ? 1 : -1, animated: true)
         updateVisibility()
         if id == "search", state.acceptsKeyboard { searchView?.focus(appending: "") }
-        else if state.acceptsKeyboard, panel.firstResponder is NSTextView { panel.makeFirstResponder(nil) }
+        else if state.acceptsKeyboard {
+            if let input = contentCache["tab." + id] as? PanelKeyboardContent { input.focusKeyboard() }
+            else { panel.makeFirstResponder(nil) }
+        }
     }
 
     private func typeToSearch(_ text: String) {
-        guard state.acceptsKeyboard else { return }
+        guard searchAvailable, state.acceptsKeyboard else { return }
         selectTab("search")
         searchView?.focus(appending: text)
     }
 
-    private func search(_ query: String) -> [SearchHit] {
-        registries.searchSources.items.flatMap { Array($0.find(query).prefix(5)) }
-    }
+    private var searchAvailable: Bool { !modulesDeferred && general.isEnabled("search") }
 
     /// Tabs (order 80) and Settings pages (order 90), as on Windows.
     private func registerShellSearch() {
@@ -580,7 +634,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         })
     }
 
-    static let shellShortcuts: Set<String> = ["toggle", "search", "gamemode"]
+    static let shellShortcuts: Set<String> = ["toggle", "gamemode"]
 
     // MARK: Game mode
 
@@ -603,6 +657,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
 
     /// ⌃⌥F: opens Search with the cursor in the box; pressed again there, it closes the panel.
     func summonSearch() {
+        guard searchAvailable else { return }
         if state.acceptsKeyboard, activeTab == "search" { close(); return }
         open(keyboard: true)
         selectTab("search")
@@ -610,22 +665,24 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     }
 
     private func updateVisibility() {
-        modules.forEach { $0.setVisibility(panel: state.expanded, activeTab: activeTab) }
+        for (id, module) in loaded {
+            let visible = activeTab == "home"
+                ? registries.cards.ids(owner: id).contains(where: general.isCardVisible)
+                : registries.tabs.owner(of: activeTab) == id
+            module.setVisibility(panel: state.expanded && visible, activeTab: activeTab)
+        }
     }
 
     private func showBody(direction: Int = 0, animated: Bool = false) {
         guard let panelView else { return }
         let content: NSView
         switch activeTab {
-        case "search":
-            let view = searchView ?? SearchView { [weak self] in self?.search($0) ?? [] }
-            searchView = view
-            content = view
         case "home":
             content = cached("home") { [unowned self] in self.makeHome() }
         default:
             if let tab = registries.tabs.items.first(where: { $0.id == activeTab }) {
                 content = cached("tab." + tab.id, tab.makeView)
+                if tab.id == "search" { searchView = content as? SearchView }
             } else {
                 content = placeholder(symbol: "exclamationmark.triangle", title: "Unavailable", detail: "This module is not available.")
             }
@@ -666,6 +723,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
             let slots = segments.filter { $0.slot == slot }.map { item -> SegmentSlotView in
                 let container = SegmentSlotView()
                 container.owner = registries.segments.owner(of: item.id)
+                container.identifier = NSUserInterfaceItemIdentifier("segment-slot-" + item.id)
                 embed(item.makeView(), in: container, inset: 0, fill: true)
                 return container
             }
@@ -744,7 +802,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
 
     /// Shows each wing's visible segments while they fit, spilling over to the other wing (WingFit).
     private func fitWings(maxWidth: CGFloat) {
-        let hidden = gameActive ? Set(gameMode.settings.hiddenModules) : []
+        let hidden = Set(general.hiddenNotchModules).union(gameActive ? Set(gameMode.settings.hiddenModules) : [])
         func widths(_ slots: [SegmentSlotView]) -> [(ObjectIdentifier, Double?)] {
             slots.map { slot in
                 guard let segment = slot.subviews.first, !segment.isHidden, !hidden.contains(slot.owner ?? "") else { return (ObjectIdentifier(slot), nil) }
@@ -768,13 +826,17 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     }
 
     private func measureWing() -> CGFloat {
-        let integrated = layout?.integratesCameraHousing == true
+        let integrated = layout?.integratesTopBand == true
         // The wing grows to at most 170 points (content plus 24 of margin); a pill to 300.
-        fitWings(maxWidth: integrated ? 146 : 150)
+        var capacity: CGFloat = integrated ? 146 : 150
+        if integrated, let wings = layout?.wings(expanded: false, wing: 170) {
+            capacity = min(capacity, max(0, min(wings.left.width, wings.right.width) - StatusGutters.inset * 2))
+        }
+        fitWings(maxWidth: capacity)
         let left = peekShown ? peekLeft.fittingSize.width : visibleWidth(leading)
         let right = peekShown ? peekRight.fittingSize.width : visibleWidth(trailing)
         guard left > 0 || right > 0 else { return 0 }
-        if layout?.integratesCameraHousing == true {
+        if layout?.integratesTopBand == true {
             // Symmetric wings; rounded so a one-character change does not resize the notch.
             return min(peekShown ? 180 : 170, ceil((max(left, right) + 24) / 8) * 8)
         }
@@ -792,7 +854,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         }
     }
 
-    /// Places status content. With a camera housing it sits in the side wings (also while expanded,
+    /// Places status content. With a physical or virtual housing it sits in the side wings (also while expanded,
     /// so nothing jumps); a floating pill shows it centered and hides it under the open panel.
     private func layoutStatus() {
         guard let layout else { return }
@@ -801,11 +863,15 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         if let wings = layout.wings(expanded: false, wing: wing) {
             pill.isHidden = true
             peekLeft.isHidden = !peeking; peekRight.isHidden = !peeking
-            for (stack, area) in [(leading, wings.left), (trailing, wings.right), (peekLeft, wings.left), (peekRight, wings.right)] {
+            for (stack, area, side) in [(leading, wings.left, StatusGutters.Side.left), (trailing, wings.right, .right),
+                                        (peekLeft, wings.left, .left), (peekRight, wings.right, .right)] {
                 if stack === leading || stack === trailing { stack.isHidden = !active || peeking }
                 guard !stack.isHidden else { continue }
-                let size = stack.fittingSize
-                surface.place(stack, at: CGRect(x: area.midX - size.width / 2, y: area.midY - size.height / 2, width: size.width, height: size.height))
+                guard let frame = StatusGutters.frame(size: stack.fittingSize, in: area, side: side) else {
+                    stack.isHidden = true
+                    continue
+                }
+                surface.place(stack, at: frame)
             }
         } else {
             if pill.arrangedSubviews.isEmpty { [pillIdle, leading, trailing].forEach(pill.addArrangedSubview) }
@@ -821,7 +887,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         }
     }
 
-    // MARK: Nudge (floating pill only)
+    // MARK: Nudge (no physical camera housing)
 
     private var nudgeStart: CGFloat?
     /// Where the dragged pill shows, rubber-banded at the edges; nil when not dragging.
@@ -909,8 +975,8 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         // A floating pill moves sideways: spanning the display, the world stays put when it is
         // dropped somewhere new, so the release spring starts exactly where the pill shows.
         if !layout.integratesCameraHousing { world = CGRect(x: layout.frame.minX - 40, y: world.minY, width: layout.frame.width + 80, height: world.height) }
-        surface.configure(world: world, integrated: layout.integratesCameraHousing, band: layout.topBandHeight)
-        panel.level = layout.integratesCameraHousing ? .statusBar : .floating
+        surface.configure(world: world, integrated: layout.integratesTopBand, band: layout.topBandHeight)
+        panel.level = layout.integratesTopBand ? .statusBar : .floating
         wing = measureWing()
         if let panelView { surface.place(panelView, at: layout.panelBody) }
         present(.none)
@@ -963,7 +1029,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
                 view.isHidden = true
             } else { view.removeFromSuperview(); closingPanel = nil }
         }
-        let integrated = layout.integratesCameraHousing
+        let integrated = layout.integratesTopBand
         let bottom: CGFloat = expanded ? 22 : integrated ? 11 : 16
         var window = target
         if animated {
@@ -1017,6 +1083,9 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     }
 
     // MARK: Diagnostics
+
+    func cachedCard(_ id: String) -> NSView? { contentCache["card." + id] }
+    var currentBody: NSView? { contentCache[activeTab == "home" ? "home" : "tab." + activeTab] }
 
     func snapshot(to url: URL) throws {
         guard let view = panel.contentView else { throw CocoaError(.fileWriteUnknown) }

@@ -242,6 +242,8 @@ internal sealed class DebugCommands : IDisposable
 
     string TabId(string id)
     {
+        var bare = id.StartsWith("tab-", StringComparison.Ordinal) ? id[4..] : id;
+        if (!_h.Shell.IsTabVisible(bare)) throw new DebugException($"tab {bare} is unavailable; use Settings, Features");
         if (_h.Tabs.Find(id) is not null) return id;
         if (id.StartsWith("tab-", StringComparison.Ordinal) && _h.Tabs.Find(id[4..]) is not null) return id[4..];
         throw new DebugException($"no tab with id {id} (tabs: {string.Join(", ", _h.Tabs.Items.Select(t => t.Id))})");

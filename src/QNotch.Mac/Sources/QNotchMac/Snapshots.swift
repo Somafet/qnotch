@@ -90,7 +90,7 @@ final class SnapshotRun {
 enum SnapshotViews {
     static func render(_ run: SnapshotRun) {
         let shell = run.shell
-        shell.updateGeneral { $0.reduceMotion = true }
+        shell.updateGeneral { $0.reduceMotion = true; $0.setEnabled("terminal", true) }
         shell.module(ColorPickerModule.self)?.seedRecent(["#3CC8D9", "#4CD98C", "#FFB54D", "#FF7A6B", "#B07CFF", "#5B9DFF"])
         shell.module(StatsModule.self)?.sampleNow()
         shell.close(restoreFocus: false)
@@ -118,6 +118,16 @@ enum SnapshotViews {
             run.notch("pill-peek")
             post(#"{"id":"demo-question","title":"Run the migration?","body":"3 pending migrations in api","app":"Claude Code","icon":"chat","wait":true,"actions":[{"id":"yes","label":"Approve"},{"id":"no","label":"Deny"}]}"#)
             run.notch("pill-waiting")
+            notifications.toggleMute()
+            run.notch("notifications-muted")
+            shell.open(keyboard: false)
+            shell.selectTab("notifications")
+            run.notch("tab-notifications-muted")
+            shell.selectTab("home")
+            run.notch("tab-home-muted")
+            run.write("notifications-muted-card", cardViews(shell)["notifications"], missing: "Notifications card unavailable")
+            shell.close(restoreFocus: false)
+            notifications.toggleMute()
             // The waiting one replaced the first toast; answered, no toast is left. The last shows none.
             if let note = notifications.items.first(where: { $0.pending }), let approve = note.actions.first { notifications.invoke(approve, on: note) }
             post(#"{"id":"demo-backup","title":"Backup failed","body":"The disk Archive is full.","app":"Time Machine","level":"warning","ttl":0,"actions":[{"label":"Open log","url":"https://example.com"}]}"#)
@@ -147,7 +157,7 @@ enum SnapshotViews {
             tray.dropActive = false
             addSampleFiles(shell, to: tray)
         }
-        for id in ["search"] + shell.registries.tabs.items.map(\.id) {
+        for id in shell.registries.tabs.items.map(\.id) {
             shell.selectTab(id)
             run.notch("tab-" + id)
         }
@@ -160,6 +170,13 @@ enum SnapshotViews {
         }
         shell.selectTab("home")
         shell.close(restoreFocus: false)
+        // A non-notched external display, even when the developer only has a notched laptop.
+        shell.withDiagnosticLayout(virtualDisplay) {
+            run.notch("placement-virtual")
+            shell.open(keyboard: false)
+            run.notch("placement-virtual-open")
+            shell.close(restoreFocus: false)
+        }
         if let agents = shell.module(AgentsModule.self) {
             for session in agents.board.sessions where session.id.hasPrefix("seed-") { agents.dismiss(session) }
         }
@@ -178,6 +195,11 @@ enum SnapshotViews {
             }
             tour.window.close()
         }
+    }
+
+    static var virtualDisplay: DisplayLayout {
+        DisplayLayout(frame: CGRect(x: -1920, y: -100, width: 1920, height: 1080),
+                      visibleFrame: CGRect(x: -1920, y: -100, width: 1920, height: 1055), safeTop: 0, cameraGap: nil)
     }
 
     /// Home's card views by card id (cards past the first rows are scrolled out of tab-home).

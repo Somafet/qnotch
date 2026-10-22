@@ -13,6 +13,8 @@ public interface IShell
     /// <summary>Id of the selected tab ("home", "media", ...), and its change event.</summary>
     string ActiveTab { get; }
     event Action<string>? TabChanged;
+    /// <summary>Whether a registered tab is currently available for navigation.</summary>
+    bool IsTabVisible(string tabId);
     /// <summary>Switch the panel to a tab id (opens nothing by itself).</summary>
     void SelectTab(string tabId);
     /// <summary>Opens the panel without taking the keyboard, optionally on a tab. Returns false in game mode (nothing opens).

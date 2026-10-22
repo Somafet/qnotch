@@ -112,6 +112,7 @@ public partial class App : Application
         var sections = new Registry<SettingsSectionDescriptor>();
         var segments = new Registry<SegmentDescriptor>();
         var demos = new Registry<DemoState>();
+        var quickActions = new Registry<QuickActionDescriptor>();
 
         var window = new NotchWindow { Offscreen = snapDir is not null };
         window.InitHandle();
@@ -121,7 +122,7 @@ public partial class App : Application
         var layout = new CardLayout(cards, gs);
         var shortcuts = new Shortcuts(_hotkeys, _store);
         var sounds = new Sounds(_store);
-        _shell = new ShellController(window, gs, _store, shortcuts, _foreground, layout, tabs, sections, segments);
+        _shell = new ShellController(window, gs, _store, shortcuts, _foreground, layout, tabs, sections, segments, quickActions);
         var shell = _shell;
         shell.AddShortcuts();
         // Before any module and the update service: the feature choices apply now, and a completed or skipped tour has made the update choice.
@@ -141,7 +142,7 @@ public partial class App : Application
 
         // Built-in tab and settings sections (modules add theirs in Initialize).
         tabs.Register(new TabDescriptor("home", "Home", Glyphs.Home, 0, () => new HomeView(layout, shell)));
-        sections.Register(new SettingsSectionDescriptor("features", "Features", Glyphs.Apps, 5, () => FeaturesSection.Create(gs, _store!, ModuleList.All, bootDisabled, Restart)));
+        sections.Register(new SettingsSectionDescriptor("features", "Features", Glyphs.Apps, 5, () => FeaturesSection.Create(gs, _store!, ModuleList.All, bootDisabled, Restart, layout, tabs, segments)));
         sections.Register(new SettingsSectionDescriptor("general", "General", Glyphs.Settings, 0, () => GeneralSection.Create(gs, _store!, SetupCode.All(ModuleList.All), Restart, shell.Nudge.ResetAll,
             () => ShowTour(gs, _store!, shortcuts, shell))));
         sections.Register(new SettingsSectionDescriptor("updates", "Updates", UpdatesSection.UpdateGlyph, 6, () => UpdatesSection.Create(gs, updates)));
@@ -153,7 +154,7 @@ public partial class App : Application
         var ctx = new ModuleContext
         {
             Bus = bus, Settings = _store, Hotkeys = _hotkeys, Shell = shell, Dispatcher = Dispatcher,
-            Cards = cards, Tabs = tabs, SettingsSections = sections, Segments = segments, Search = new(), Shortcuts = shortcuts, Sounds = sounds, Demos = demos,
+            Cards = cards, Tabs = tabs, SettingsSections = sections, Segments = segments, Search = new(), Shortcuts = shortcuts, Sounds = sounds, Demos = demos, QuickActions = quickActions,
         };
         var built = new List<(string Id, INotchModule Module)>();
         List<INotchModule> Init(IEnumerable<ModuleInfo> list)
@@ -166,8 +167,10 @@ public partial class App : Application
                 catch (Exception ex) { Log.Error($"Module '{info.Id}' failed to create", ex); continue; }
                 done.Add(m);
                 built.Add((info.Id, m));
+                cards.RegistrationOwner = tabs.RegistrationOwner = segments.RegistrationOwner = info.Id;
                 try { m.Initialize(ctx); _running.Add(info.Id); }
                 catch (Exception ex) { Log.Error($"Module '{info.Id}' failed to initialize", ex); }
+                finally { cards.RegistrationOwner = tabs.RegistrationOwner = segments.RegistrationOwner = ""; }
             }
             return done;
         }

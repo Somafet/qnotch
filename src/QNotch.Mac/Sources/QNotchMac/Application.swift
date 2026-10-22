@@ -18,6 +18,7 @@ private final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenu
     private var status: NSMenuItem!
     private let launched = ProcessInfo.processInfo.systemUptime
     private var dataDirectory: URL!
+    private var moduleActionItems: [NSMenuItem] = []
     private var gameItems: [NSMenuItem] = []
     private var lockDescriptor: Int32 = -1
 
@@ -133,6 +134,11 @@ private final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenu
     @objc private func setGameMode(_ sender: NSMenuItem) {
         if let raw = sender.representedObject as? String, let mode = GameOverride(rawValue: raw) { shell.gameMode.override = mode }
     }
+    @objc private func runModuleAction(_ sender: NSMenuItem) {
+        guard let id = sender.representedObject as? String,
+              let action = shell.registries.menuActions.items.first(where: { $0.id == id }) else { return }
+        action.run()
+    }
     @objc private func openSettings() { shell.openSettings() }
     @objc private func quit() { NSApp.terminate(nil) }
     @objc private func checkForUpdates() { shell.updater?.check() }
@@ -145,6 +151,17 @@ private final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenu
     }
     private func refreshStatus() {
         guard status != nil else { return }
+        if let menu = item?.menu {
+            moduleActionItems.forEach { menu.removeItem($0) }
+            moduleActionItems = shell.registries.menuActions.items.map { action in
+                let entry = NSMenuItem(title: action.title(), action: #selector(runModuleAction(_:)), keyEquivalent: "")
+                entry.target = self
+                entry.representedObject = action.id
+                entry.state = action.isOn() ? .on : .off
+                return entry
+            }
+            for entry in moduleActionItems { menu.insertItem(entry, at: menu.index(of: status)) }
+        }
         let problem = [shell.displayMessage, shell.store.problem ?? ""].filter { !$0.isEmpty }.joined(separator: " ")
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "development"
         let message = !problem.isEmpty ? problem : shell.updater == nil ? "Development build · Updates unavailable" : "QNotch \(version)"

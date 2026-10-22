@@ -42,7 +42,7 @@ public enum SegmentSlot { PillLeft, PillRight, Glance, GameBar }
 /// are persisted keys. Title and Hint: game bar only (Settings, Game mode, Segments).
 /// </summary>
 public sealed record SegmentDescriptor(string Id, SegmentSlot Slot, int Order, Func<FrameworkElement> Factory,
-    string Title = "", string? Hint = null) : IRegistryItem;
+    string Title = "", string? Hint = null, Func<bool>? Presented = null, Action<bool>? SetPresented = null) : IRegistryItem;
 
 /// <summary>One entry of <see cref="ModuleList.All"/>. Create is called only when the module is enabled. Early: registers pill or glance segments, so it initializes before the first frame.
 /// Shared: the fields of the module's settings file (named Id) that a setup code carries, or null for none.
@@ -93,6 +93,9 @@ public sealed record TabDescriptor(string Id, string Title, string Glyph, int Or
 /// <summary>A section in the Settings window left nav. Factory is called once, lazily.</summary>
 public sealed record SettingsSectionDescriptor(string Id, string Title, string Glyph, int Order, Func<FrameworkElement> Factory) : IRegistryItem;
 
+/// <summary>Module-owned quick control in the panel header, optionally repeated in the tray menu. Factories run on the UI thread.</summary>
+public sealed record QuickActionDescriptor(string Id, int Order, Func<FrameworkElement> Factory, Func<MenuItem>? TrayFactory = null) : IRegistryItem;
+
 /// <summary>
 /// A collapsed pill state a module shows with demo data in a snapshot run (spec/diagnostics.md, <c>pill-&lt;State&gt;.png</c>). State <c>idle</c>
 /// hides what the module adds to the resting pill; any other (<c>running</c>, <c>capture</c>, <c>waiting</c>, <c>agent</c>) shows it. Show
@@ -123,6 +126,9 @@ public sealed record SearchSource(string Id, string Title, string Glyph, int Ord
 public sealed class Registry<T> where T : class, IRegistryItem
 {
     readonly List<T> _items = new();
+    readonly Dictionary<string, string> _owners = new();
+    internal string RegistrationOwner { get; set; } = "";
+    public string OwnerOf(string id) => _owners.GetValueOrDefault(id, "");
     IReadOnlyList<T>? _sorted;
 
     /// <summary>Raised (UI thread) after any registration.</summary>
@@ -133,6 +139,7 @@ public sealed class Registry<T> where T : class, IRegistryItem
     {
         _items.RemoveAll(i => i.Id == item.Id);
         _items.Add(item);
+        _owners[item.Id] = RegistrationOwner;
         _sorted = null;
         Changed?.Invoke();
     }
@@ -163,4 +170,5 @@ public sealed class ModuleContext
     public required Registry<SearchSource> Search { get; init; }
     /// <summary>Snapshot run only: pill states the snapshot shows one at a time, see <see cref="DemoState"/>.</summary>
     public Registry<DemoState> Demos { get; init; } = new();
+    public Registry<QuickActionDescriptor> QuickActions { get; init; } = new();
 }

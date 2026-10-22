@@ -25,7 +25,20 @@ internal static class NotificationSegments
         var p = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
         p.Children.Add(bell);
         p.Children.Add(count);
-        return UiKit.BindVisible(p, st, nameof(NotificationsState.HasUnread));
+        var muted = UiKit.Glyph(NotificationMuteViews.MutedGlyph, 12, "WarningBrush");
+        muted.ToolTip = "Notifications muted";
+        System.Windows.Automation.AutomationProperties.SetName(muted, "Notifications muted");
+        p.Children.Add(muted);
+        void Sync()
+        {
+            muted.Visibility = st.Muted ? Visibility.Visible : Visibility.Collapsed;
+            bell.Visibility = count.Visibility = st.HasUnread ? Visibility.Visible : Visibility.Collapsed;
+            muted.Margin = new Thickness(st.HasUnread ? 6 : 0, 0, 0, 0);
+            p.Visibility = st.HasUnread || st.Muted ? Visibility.Visible : Visibility.Collapsed;
+        }
+        st.PropertyChanged += (_, e) => { if (e.PropertyName is nameof(NotificationsState.HasUnread) or nameof(NotificationsState.Muted)) Sync(); };
+        Sync();
+        return p;
     }
 
     /// <summary>Glance strip: icon and "App: Title" of the current toast. Resting the pointer on it opens the panel on the Notifications tab.</summary>

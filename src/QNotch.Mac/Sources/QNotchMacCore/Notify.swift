@@ -370,13 +370,15 @@ public struct NotificationSettings: Codable, Equatable {
     public var retentionDays = 7
     public var openOnError = true
     public var sound = false
+    /// Manual presentation mute; history, unread counts and action replies remain active.
+    public var manuallyMuted = false
     public var quietDuringCalls = true
     public var httpEnabled = true
     public var httpPort = 47821
     public var mutedApps: [String] = []
     public init() {}
 
-    private enum CodingKeys: String, CodingKey { case toastSeconds, retentionDays, openOnError, sound, quietDuringCalls, httpEnabled, httpPort, mutedApps }
+    private enum CodingKeys: String, CodingKey { case toastSeconds, retentionDays, openOnError, sound, manuallyMuted, quietDuringCalls, httpEnabled, httpPort, mutedApps }
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         let d = NotificationSettings()
@@ -384,6 +386,7 @@ public struct NotificationSettings: Codable, Equatable {
         retentionDays = min(30, max(1, c.value(.retentionDays, d.retentionDays)))
         openOnError = c.value(.openOnError, d.openOnError)
         sound = c.value(.sound, d.sound)
+        manuallyMuted = c.value(.manuallyMuted, d.manuallyMuted)
         quietDuringCalls = c.value(.quietDuringCalls, d.quietDuringCalls)
         httpEnabled = c.value(.httpEnabled, d.httpEnabled)
         let port = c.value(.httpPort, d.httpPort)

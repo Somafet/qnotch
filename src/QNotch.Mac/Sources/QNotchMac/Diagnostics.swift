@@ -28,11 +28,14 @@ enum NativeSmokeTest {
             do {
                 try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
                 guard let layout = shell.layout else { throw Failure("placement", "No display available for native UI validation") }
-                run.log("placement", ["camera_housing=\(layout.hasCameraHousing)", "integrated=\(layout.integratesCameraHousing)", "safe_top_points=\(layout.safeTop)",
+                run.log("placement", ["camera_housing=\(layout.hasCameraHousing)", "integrated=\(layout.integratesTopBand)", "safe_top_points=\(layout.safeTop)", "top_band_points=\(layout.topBandHeight)",
                                       "display_frame=\(layout.frame)", "collapsed_idle_frame=\(layout.surface(expanded: false))",
                                       "collapsed_status_frame=\(layout.surface(expanded: false, wing: 56))", "expanded_frame=\(layout.surface(expanded: true))",
                                       "panel_body=\(layout.panelBody)"])
                 SnapshotViews.render(run)
+                try checkSearchEnablement(run)
+                try checkFeatureVisibility(run)
+                try TerminalSmoke.check(run)
                 (timer, note) = try checkShell(run, layout: layout)
             } catch { return finish(error) }
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) {
@@ -114,6 +117,20 @@ enum NativeSmokeTest {
     private static func checkShell(_ run: SnapshotRun, layout: DisplayLayout) throws -> (TimerModule, NoteModule?) {
         let shell = run.shell
         try checkPlacement(shell: shell, layout: layout)
+        try StatusGutterSmoke.check(run, phase: "collapsed")
+        try StatusGutterSmoke.exercise(run)
+        try checkNudge(run)
+        try shell.withDiagnosticLayout(SnapshotViews.virtualDisplay) {
+            guard let virtual = shell.layout else { throw Failure("virtual-housing", "No diagnostic layout") }
+            try checkPlacement(shell: shell, layout: virtual)
+            try StatusGutterSmoke.check(run, phase: "virtual-collapsed")
+            try checkNudge(run, prefix: "placement-virtual-nudge")
+            shell.open(keyboard: false)
+            if let expanded = shell.layout { try checkPlacement(shell: shell, layout: expanded) }
+            try StatusGutterSmoke.check(run, phase: "virtual-expanded")
+            shell.close(restoreFocus: false)
+        }
+        run.pass("virtual-housing")
         shell.gameMode.override = .on
         shell.open(keyboard: false)
         guard shell.gameActive, !shell.state.expanded, shell.panel.ignoresMouseEvents,
@@ -127,12 +144,14 @@ enum NativeSmokeTest {
             capture.apply(CaptureState(microphone: true, microphoneApps: ["FaceTime"], camera: true))
             guard shell.wing > 0 else { throw Failure("capture-segment", "Mic and camera use did not show a status segment") }
             try checkPlacement(shell: shell, layout: layout)
+            try StatusGutterSmoke.check(run, phase: "capture")
             capture.apply(real)
             run.log("capture", ["capture_input_devices=\(shell.capture.inputDevices.count)", "capture_cameras=\(shell.capture.cameras.count)", "capture_active_now=\(real.active)"])
             run.pass("capture-segment")
         }
         shell.open(keyboard: false)
         try checkPlacement(shell: shell, layout: layout)
+        try StatusGutterSmoke.check(run, phase: "expanded")
         guard shell.state.presentation == .hover, !shell.panel.isKeyWindow, !shell.panel.canBecomeKey else {
             throw Failure("hover-keeps-focus", "Hover took keyboard focus")
         }
@@ -182,6 +201,8 @@ enum NativeSmokeTest {
         timer.startShortTimer(seconds: 1)
         shell.close(restoreFocus: false)
         try checkPlacement(shell: shell, layout: layout)
+        try StatusGutterSmoke.check(run, phase: "timer")
+        run.pass("status-gutters")
         run.pass("placement")
         guard shell.wing > 0 else { throw Failure("timer-segment", "A running timer did not show its status segment") }
         run.pass("timer-segment")
@@ -218,6 +239,7 @@ enum NativeSmokeTest {
         guard let field = find("search-field", in: shell.panel.contentView), Outline.focused(field) else {
             throw Failure("hotkey-search", "Search shortcut did not put the cursor in search-field")
         }
+        try NativeSearchSmoke.check(run)
         shell.summonSearch()
         guard !shell.state.expanded else { throw Failure("hotkey-search", "Search shortcut did not close an open Search") }
         run.pass("hotkey-search")
@@ -309,6 +331,8 @@ enum NativeSmokeTest {
                 tour.advance()
             }
             try expect(.features)
+            try checkSearchOnboarding(tour, run: run)
+            run.pass("search-onboarding")
             guard tour.flipFeature("note"), !shell.general.isEnabled("note"), shell.module(NoteModule.self) == nil else {
                 throw Failure("onboarding", "A feature switch in the tour did not turn the feature off")
             }
@@ -426,7 +450,10 @@ enum NativeSmokeTest {
         }
         let directory = shell.store.directory.path
         // The user's own QNotch may own the default port; this isolated instance uses its own.
-        module.set { $0.httpPort = 49152 + Int(getpid() % 10000) }
+        module.set {
+            $0.httpPort = 49152 + Int(getpid() % 10000)
+            $0.manuallyMuted = true
+        }
         func notify(_ arguments: [String], finished: @escaping (Int32, String) -> Void) {
             let process = Process()
             process.executableURL = URL(fileURLWithPath: Bundle.main.executablePath!)
@@ -464,6 +491,9 @@ enum NativeSmokeTest {
                                     return done(Failure("notify-transport", "Loopback HTTP: ok=\(ok ?? 0) wrong token=\(rejected ?? 0) origin=\(origin ?? 0)"))
                                 }
                                 run.pass("notify-transport")
+                                guard module.settings.manuallyMuted else { return done(Failure("notifications-mute", "Manual mute changed during transport requests")) }
+                                module.toggleMute()
+                                run.pass("notifications-mute")
                                 done(nil)
                             }
                         }.resume()
@@ -489,15 +519,21 @@ enum NativeSmokeTest {
         guard abs(shell.panel.frame.width - expected.width) <= 0.5, abs(shell.panel.frame.height - expected.height) <= 0.5 else {
             throw Failure("placement", "Settled window differs from the surface: actual=\(shell.panel.frame), expected=\(expected)")
         }
-        guard let housing = layout.cameraHousing, let wings = layout.wings(expanded: shell.state.expanded, wing: shell.wing) else { return }
+        guard let wings = layout.wings(expanded: false, wing: shell.wing) else { return }
+        guard abs(shell.panel.frame.maxY - layout.frame.maxY) <= 0.5 else { throw Failure("placement", "Integrated surface is detached from the bezel") }
+        if !shell.state.expanded, abs(shell.panel.frame.height - layout.topBandHeight) > 0.5 {
+            throw Failure("placement", "Collapsed virtual or physical notch does not fill its top band")
+        }
         guard shell.panel.level == .statusBar else { throw Failure("placement", "Integrated surface is below the menu bar level") }
+        guard shell.surface.integrated, shell.surface.band == layout.topBandHeight else { throw Failure("placement", "Surface does not use the integrated flare and band") }
         func walk(_ view: NSView) throws {
+            guard !view.isHidden else { return }
             let global = shell.panel.convertToScreen(view.convert(view.bounds, to: nil))
             let id = view.identifier?.rawValue
-            if id == "panel", global.maxY > housing.minY + 0.5 { throw Failure("placement", "Panel controls overlap the camera band") }
+            if id == "panel", global.maxY > layout.frame.maxY - layout.topBandHeight + 0.5 { throw Failure("placement", "Panel controls overlap the top band") }
             if (id == "notch-left-wing" || id == "notch-right-wing"), global.width > 0, global.height > 0 {
                 let clearArea = id == "notch-left-wing" ? wings.left : wings.right
-                guard clearArea.insetBy(dx: -0.5, dy: -0.5).contains(global), !global.intersects(housing) else {
+                guard clearArea.insetBy(dx: -0.5, dy: -0.5).contains(global), layout.cameraHousing.map({ !global.intersects($0) }) ?? true else {
                     throw Failure("placement", "Status content overlaps the camera or bezel: \(id ?? "") \(global) area=\(clearArea) wing=\(shell.wing) expanded=\(shell.state.expanded) fitting=\(view.fittingSize)")
                 }
             }
@@ -506,8 +542,42 @@ enum NativeSmokeTest {
         if let view = shell.panel.contentView { try walk(view) }
     }
 
+    /// Exercise the real drag callbacks and persistence without moving the system pointer.
+    private static func checkNudge(_ run: SnapshotRun, prefix: String = "placement-nudge") throws {
+        let shell = run.shell
+        guard let original = shell.layout else { return }
+        if original.integratesCameraHousing {
+            guard shell.panel.canNudge?() == false else { throw Failure("notch-nudge", "Physical housing is movable") }
+            run.pass(prefix == "placement-nudge" ? "notch-nudge" : "virtual-notch-nudge")
+            return
+        }
+        let saved = shell.general.pillOffsets
+        defer { shell.updateGeneral { $0.pillOffsets = saved } }
+        shell.updateGeneral { $0.pillOffsets = [:] }
+        guard shell.panel.canNudge?() == true, let centered = shell.layout else { throw Failure("notch-nudge", "Virtual housing cannot be nudged") }
+        let width = centered.surface(expanded: false, wing: shell.wing).width
+        for direction in [CGFloat(-1), 1] {
+            shell.panel.nudged?(direction * 100)
+            guard let moved = shell.layout, abs(moved.offset - direction * 100) < 0.5 else { throw Failure("notch-nudge", "Drag did not follow the pointer") }
+            try checkPlacement(shell: shell, layout: moved)
+            shell.panel.nudgeEnded?(false, direction * 100_000)
+            guard let settled = shell.layout, abs(settled.offset - direction * centered.offsetLimit(width: width)) < 0.5,
+                  shell.general.pillOffsets.values.contains(Double(settled.offset)) else { throw Failure("notch-nudge", "Flick did not snap and save a per-display offset") }
+            try checkPlacement(shell: shell, layout: settled)
+            run.notch(prefix + (direction < 0 ? "-left" : "-right"))
+            shell.open(keyboard: false)
+            guard shell.panel.canNudge?() == false else { throw Failure("notch-nudge", "Open panel can be dragged") }
+            if let layout = shell.layout { try checkPlacement(shell: shell, layout: layout) }
+            run.notch(prefix + (direction < 0 ? "-left-open" : "-right-open"))
+            shell.close(restoreFocus: false)
+            shell.panel.nudgeEnded?(true, 0)
+            guard shell.layout?.offset == 0, shell.general.pillOffsets.isEmpty else { throw Failure("notch-nudge", "Double click did not recenter") }
+        }
+        run.pass(prefix == "placement-nudge" ? "notch-nudge" : "virtual-notch-nudge")
+    }
+
     /// A failed check: its name and what went wrong.
-    private struct Failure: Error, CustomStringConvertible {
+    struct Failure: Error, CustomStringConvertible {
         let check: String
         let description: String
         init(_ check: String, _ description: String) { self.check = check; self.description = description }

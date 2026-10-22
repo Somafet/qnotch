@@ -10,6 +10,11 @@ public enum LayoutOrder {
         return placed + defaults.filter { !placed.contains($0) }
     }
 
+    /// Records default slots before hiding/disabling, without dropping already-absent ids.
+    public static func remember(saved: [String], defaults: [String]) -> [String] {
+        saved + defaults.filter { !saved.contains($0) }
+    }
+
     /// Writes the new order of the shown items into the saved list; ids not shown keep their slots.
     public static func reorder(_ shown: [String], saved: [String]) -> [String] {
         var queue = shown[...]

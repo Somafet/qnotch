@@ -101,6 +101,9 @@ public sealed class NotificationHistory
     public List<SavedNote> Items { get; set; } = new();
 }
 
+/// <summary>Local transient-alert preference. Excluded from portable setup codes.</summary>
+public sealed class NotificationLocalSettings { public bool Muted { get; set; } }
+
 public sealed class SavedNote
 {
     public string Id { get; set; } = "";
@@ -174,6 +177,7 @@ public sealed partial class Note : ObservableObject
     internal void RefreshMeta() => OnPropertyChanged(nameof(Meta));
 
     internal TaskCompletionSource<WaitResult>? Waiter;
+    internal bool AlertSuppressed;
 }
 
 /// <summary>Notification history and what the pill, glance strip and game bar show. Only touched on the UI thread; the module mutates it.</summary>
@@ -187,6 +191,7 @@ public sealed partial class NotificationsState : ObservableObject
     [ObservableProperty] bool _isEmpty = true;
     [ObservableProperty] bool _canClear;
     [ObservableProperty] string _countText = "";
+    [ObservableProperty] bool _muted;
     /// <summary>The notification in the glance strip right now, or null.</summary>
     [ObservableProperty] Note? _toast;
     [ObservableProperty] string _pipeStatus = "Starting";

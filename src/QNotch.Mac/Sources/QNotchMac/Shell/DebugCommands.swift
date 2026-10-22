@@ -130,7 +130,8 @@ final class DebugCommands {
         case "hotkey":
             let action = try args.required("action", for: command)
             let ids = ["toggle": "toggle", "search": "search", "game-mode": "gamemode"]
-            guard let id = ids[action], let shortcut = shell.shortcuts.shortcut(id) else { throw Failure("action must be toggle, search or game-mode") }
+            guard let id = ids[action] else { throw Failure("action must be toggle, search or game-mode") }
+            guard let shortcut = shell.shortcuts.shortcut(id) else { throw Failure("no \(action) hotkey (is its feature turned on?)") }
             shortcut.action()
             return Step()
         case "game-mode":
@@ -176,7 +177,7 @@ final class DebugCommands {
     }
 
     private func checkTab(_ id: String) throws {
-        let ids = ["home", "search"] + shell.registries.tabs.items.map(\.id)
+        let ids = ["home"] + shell.registries.tabs.items.map(\.id)
         guard ids.contains(id) else { throw Failure("no tab \(id); tabs: " + ids.joined(separator: ", ")) }
     }
 

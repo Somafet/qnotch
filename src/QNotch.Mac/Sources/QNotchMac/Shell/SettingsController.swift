@@ -445,18 +445,48 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
 
     private func featuresPage() -> NSView {
         let width = Self.contentWidth
-        let rows = ModuleList.all.map { info -> NSView in
-            let toggle = ActionSwitch(info.title, value: shell.general.isEnabled(info.id)) { [weak self] value in
-                self?.shell.updateGeneral { $0.setEnabled(info.id, value) }
-                self?.rebuildNavigation()
-                self?.rows["features"]?.isSelected = true
+        let groups = ModuleList.all.map { info -> NSView in
+            let toggle = ActionSwitch("Enable " + info.title, value: shell.general.isEnabled(info.id)) { [weak self] value in
+                guard let self else { return }
+                self.shell.updateGeneral { $0.setEnabled(info.id, value) }
+                self.rebuildNavigation()
+                let origin = self.scroll.contentView.bounds.origin
+                self.select("features", animated: false)
+                self.scroll.contentView.scroll(to: origin)
+                self.scroll.reflectScrolledClipView(self.scroll.contentView)
             }
             toggle.identifier = NSUserInterfaceItemIdentifier("feature-" + info.id)
-            return featureRow(info.title, detail: info.detail, symbol: info.symbol, tint: info.tint, control: toggle, width: width)
+            var rows = [featureRow(info.title, detail: info.detail, symbol: info.symbol, tint: info.tint, control: toggle, width: width)]
+            // Use the actual owner registries: no duplicate list of module capabilities or assumptions
+            // that a contribution's id equals its owner (System/stats and Files/filetray do not).
+            let cards = shell.registries.cards.items.filter { shell.registries.cards.owner(of: $0.id) == info.id }
+            for card in cards {
+                let title = cards.count == 1 ? "Show on Home" : "Show \(card.title) on Home"
+                let show = ActionSwitch(info.title + ": " + title, value: shell.general.isCardVisible(card.id)) { [weak self] value in
+                    self?.shell.updateGeneral { $0.setCardVisible(card.id, value) }
+                }
+                show.identifier = NSUserInterfaceItemIdentifier("feature-home-" + card.id)
+                rows.append(settingsRow(title, control: show, width: width))
+            }
+            let tabs = shell.registries.tabs.items.filter { shell.registries.tabs.owner(of: $0.id) == info.id }
+            for tab in tabs {
+                let title = tabs.count == 1 ? "Show as a tab" : "Show \(tab.title) as a tab"
+                let show = ActionSwitch(info.title + ": " + title, value: shell.general.isTabVisible(tab.id)) { [weak self] value in
+                    self?.shell.updateGeneral { $0.setTabVisible(tab.id, value) }
+                }
+                show.identifier = NSUserInterfaceItemIdentifier("feature-tab-" + tab.id)
+                rows.append(settingsRow(title, control: show, width: width))
+            }
+            if !shell.registries.segments.ids(owner: info.id).isEmpty {
+                let show = ActionSwitch(info.title + ": Show beside the notch", value: shell.general.isNotchVisible(info.id)) { [weak self] value in
+                    self?.shell.updateGeneral { $0.setNotchVisible(info.id, value) }
+                }
+                show.identifier = NSUserInterfaceItemIdentifier("feature-notch-" + info.id)
+                rows.append(settingsRow("Show beside the notch", control: show, width: width))
+            }
+            return settingsGroup(rows, footer: shell.general.isEnabled(info.id) ? nil : "Enable this feature to choose where it appears. Your choices are kept while it is off.", width: width)
         }
-        return page("Features", subtitle: "Turn modules on or off. A module that is off is not loaded and uses no resources. Changes apply right away.", [
-            settingsGroup(rows, width: width)
-        ])
+        return page("Features", subtitle: "Enable a feature, then choose where it appears. Hidden cards and tabs keep their place. Actions and shortcuts can still open a hidden tab; it appears temporarily while active. Notch visibility controls regular status, including game mode; alerts keep their own settings. Turning a feature off stops it and uses no resources.", groups)
     }
 
     private func hotkeysPage() -> NSView {
@@ -615,7 +645,7 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
             settingsGroup([
                 settingsRow("Welcome tour", detail: "What QNotch does, your features and accounts, in a few steps.", control: tour, width: width),
                 settingsRow("Hover the notch", detail: "Opens the panel without taking the keyboard.", width: width),
-                settingsRow("Click the notch", detail: "Opens it for typing. Start typing to search, or press ⌘F.", width: width),
+                settingsRow("Click the notch", detail: shell.general.isEnabled("search") ? "Opens it for typing. Start typing to search, or press ⌘F." : "Opens the panel with keyboard control. Enable Search in Features to search by typing.", width: width),
                 settingsRow("Escape or click outside", detail: "Closes the panel and returns focus to your app.", width: width),
                 settingsRow("Menu bar", detail: "Open Panel, Settings and Quit are always in the QNotch menu.", width: width)
             ], header: "Using QNotch", width: width)

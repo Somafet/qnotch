@@ -129,14 +129,60 @@ final class CoreTests: XCTestCase {
         }
     }
 
-    func testNonNotchedExternalDisplayWithNegativeOriginAvoidsMenuBar() {
+    func testNonNotchedExternalDisplayWithNegativeOriginJoinsMenuBar() throws {
         let layout = DisplayLayout(frame: CGRect(x: -1920, y: -100, width: 1920, height: 1080),
                                    visibleFrame: CGRect(x: -1920, y: -100, width: 1920, height: 1055), safeTop: 0, cameraGap: nil)
         XCTAssertEqual(layout.surface(expanded: false).midX, -960)
-        XCTAssertEqual(layout.surface(expanded: false, wing: 120).width, 148, "A floating pill fits its content")
+        XCTAssertFalse(layout.hasCameraHousing)
+        XCTAssertNil(layout.cameraHousing)
+        XCTAssertTrue(layout.integratesTopBand)
+        XCTAssertEqual(layout.topBandHeight, 25)
+        XCTAssertEqual(layout.surface(expanded: false, wing: 120).width, 252, "Symmetric wings flank a zero-width virtual housing")
         XCTAssertEqual(layout.surface(expanded: false).width, 96)
-        XCTAssertEqual(layout.surface(expanded: true).maxY, 949)
-        XCTAssertTrue(layout.visibleFrame.contains(layout.surface(expanded: true)))
+        for expanded in [false, true] {
+            let surface = layout.surface(expanded: expanded, wing: 120)
+            let wings = try XCTUnwrap(layout.wings(expanded: expanded, wing: 120))
+            XCTAssertEqual(surface.maxY, 980)
+            XCTAssertEqual(wings.left.maxX, surface.midX)
+            XCTAssertEqual(wings.right.minX, surface.midX)
+            XCTAssertEqual(wings.left.height, 25)
+            XCTAssertEqual(wings.right.maxY, surface.maxY)
+            XCTAssertTrue(surface.contains(wings.left))
+            XCTAssertTrue(surface.contains(wings.right))
+        }
+        XCTAssertEqual(layout.panelBody.maxY, layout.visibleFrame.maxY)
+        XCTAssertEqual(layout.panelBody.height, DisplayLayout.panelSize.height)
+        XCTAssertTrue(layout.visibleFrame.contains(layout.panelBody))
+    }
+
+    func testVirtualHousingUsesFallbackBandWithoutMenuBar() {
+        let frame = CGRect(x: -1920, y: -1180, width: 1920, height: 1080)
+        for visible in [frame, frame.offsetBy(dx: 0, dy: 10)] {
+            let layout = DisplayLayout(frame: frame, visibleFrame: visible, safeTop: 0, cameraGap: nil)
+            XCTAssertEqual(layout.topBandHeight, 24)
+            XCTAssertEqual(layout.surface(expanded: false).height, 24)
+            XCTAssertEqual(layout.surface(expanded: false).maxY, -100)
+            XCTAssertEqual(layout.panelBody.maxY, -124)
+        }
+    }
+
+    func testVirtualWingsFollowOffsetsAndClamps() throws {
+        let frame = CGRect(x: -1920, y: -100, width: 1920, height: 1080)
+        var layout = DisplayLayout(frame: frame, visibleFrame: frame, safeTop: 0, cameraGap: nil)
+        for offset in [CGFloat(-5000), -400, 0, 400, 5000] {
+            layout.offset = offset
+            for expanded in [false, true] {
+                let surface = layout.surface(expanded: expanded, wing: 120)
+                let wings = try XCTUnwrap(layout.wings(expanded: expanded, wing: 120))
+                XCTAssertEqual(wings.left.maxX, surface.midX)
+                XCTAssertEqual(wings.right.minX, surface.midX)
+                XCTAssertEqual(wings.left.width, wings.right.width)
+                XCTAssertTrue(frame.contains(surface))
+                XCTAssertEqual(surface.maxY, frame.maxY)
+            }
+        }
+        layout.offset = 400
+        XCTAssertEqual(layout.surface(expanded: false, wing: 120).midX, -560)
     }
 
     func testSmallDisplayClampsBothSurfaceSizes() {
@@ -1013,6 +1059,8 @@ final class SetupCodeTests: XCTestCase {
         mine.general.hoverDelayMs = 300
         mine.general.setEnabled("clipboard", false)
         mine.general.setCardVisible("note", false)
+        mine.general.setTabVisible("media", false)
+        mine.general.setNotchVisible("timer", false)
         mine.timer.minutes = 45
         mine.weather.units = .imperial
         mine.gameMode.opacity = 55
@@ -1031,11 +1079,15 @@ final class SetupCodeTests: XCTestCase {
         let windows = "qnotch-setup-1:NY9NS8QwEIb_y-txgxQ_QHNb0sMuUhT8uIiHbDsmYadNSUbLsvS_m4ieHnjnmXmZMxxNlCxDn7GL35TahZi7DH3VNAovnkaCRmvTEQrbvqdJTOSYSnhxY9r7O1PyNmR7YBq6OHwxleV3GA7zIdo04EPBFL6FHIpTi6YohZ-WM62rgo9ypFOuk4c_SnSuujCSeLNl2XSo6kJWPKWqvE5Biov9OFMK5QOFZx-X_fQUmP-vKzg70hiH397H2fZBTtDN5a3CjoLzAn3drOsP"
         var current = base
         current.general.setEnabled("weather", false)
+        current.general.setTabVisible("terminal", false)
+        current.general.setNotchVisible("terminal", false)
         let fromWindows = try SetupCode.read(windows, current: current, modules: ["weather", "clipboard"])
         XCTAssertEqual(fromWindows.result.general.hoverDelayMs, 200)
         XCTAssertEqual(fromWindows.result.general.accent, "#4CD98C")
         XCTAssertEqual(fromWindows.result.general.disabledModules, ["clipboard"])
         XCTAssertEqual(fromWindows.result.general.hiddenCards, ["note"])
+        XCTAssertEqual(fromWindows.result.general.hiddenTabs, ["terminal"], "Windows codes leave Mac tab visibility alone")
+        XCTAssertEqual(fromWindows.result.general.hiddenNotchModules, ["terminal"])
         XCTAssertEqual(fromWindows.result.weather.units, .imperial)
         XCTAssertFalse(fromWindows.result.weather.showInPill)
         XCTAssertEqual(fromWindows.result.gameMode.opacity, 50)
@@ -1045,6 +1097,29 @@ final class SetupCodeTests: XCTestCase {
         }
         let outOfRange = SetupCode.prefix + SetupCode.base64url(SetupCode.deflate(Data(#"{"timer":{"Minutes":999}}"#.utf8)))
         XCTAssertThrowsError(try SetupCode.read(outOfRange, current: base, modules: []))
+    }
+
+    func testMacVisibilityFieldsAreTypedAndLocal() throws {
+        func read(_ json: String) throws -> SetupCode.Plan {
+            let code = SetupCode.prefix + SetupCode.base64url(SetupCode.deflate(Data(json.utf8)))
+            return try SetupCode.read(code, current: base, modules: [])
+        }
+        let plan = try read(#"{"mac":{"hiddenTabs":["terminal"],"hiddenNotchModules":["timer"]}}"#)
+        XCTAssertEqual(plan.result.general.hiddenTabs, ["terminal"])
+        XCTAssertEqual(plan.result.general.hiddenNotchModules, ["timer"])
+        XCTAssertEqual(plan.titles, ["Mac visibility"])
+        for json in [#"{"mac":{"hiddenTabs":false}}"#, #"{"mac":{"hiddenNotchModules":[1]}}"#] {
+            XCTAssertThrowsError(try read(json))
+        }
+        let code = SetupCode.export(plan.result)
+        let packed = try XCTUnwrap(SetupCode.unbase64url(String(code.dropFirst(SetupCode.prefix.count))))
+        let json = try XCTUnwrap(SetupCode.inflate(packed, limit: SetupCode.maxJSON))
+        let root = try XCTUnwrap(JSONSerialization.jsonObject(with: json) as? [String: Any])
+        let general = try XCTUnwrap(root["general"] as? [String: Any])
+        XCTAssertNil(general["HiddenTabs"])
+        XCTAssertNil(general["hiddenTabs"])
+        let mac = try XCTUnwrap(root["mac"] as? [String: Any])
+        XCTAssertEqual(mac["hiddenTabs"] as? [String], ["terminal"])
     }
 
     func testZeroAndOneAreNumbersNotBooleansAndTruncatedCodesFail() throws {
@@ -1148,7 +1223,7 @@ final class OnboardingTests: XCTestCase {
         let groups = Onboarding.groups(available: mac)
         XCTAssertEqual(groups.map(\.title), ["At a glance", "Get things done", "For developers"])
         XCTAssertEqual(groups.flatMap(\.modules).sorted(), mac.sorted(), "Every Mac feature is in exactly one group")
-        XCTAssertEqual(groups[1].modules, ["clipboard", "note", "filetray", "colorpicker", "scheduled"], "Search is not a Mac module")
+        XCTAssertEqual(groups[1].modules, ["clipboard", "search", "note", "filetray", "colorpicker", "scheduled"])
         XCTAssertEqual(Onboarding.groups(available: ["timer"]).map(\.title), ["At a glance"], "Empty groups are left out")
         var settings = GeneralSettings()
         settings.setEnabled("clipboard", false)

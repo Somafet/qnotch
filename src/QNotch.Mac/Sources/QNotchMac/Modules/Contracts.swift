@@ -16,6 +16,15 @@ struct ViewContribution: Contribution {
     let makeView: () -> NSView
 }
 
+/// Optional actions supplied by enabled modules to the menu-bar menu.
+struct MenuActionContribution: Contribution {
+    let id: String
+    let order: Int
+    let title: () -> String
+    let isOn: () -> Bool
+    let run: () -> Void
+}
+
 enum SegmentSlot { case leading, trailing }
 
 /// Collapsed status content. With a camera housing, leading content sits in the left wing and
@@ -61,20 +70,21 @@ final class ModuleRegistries {
     let segments = Registry<SegmentContribution>()
     let searchSources = Registry<SearchSource>()
     let settingsSections = Registry<ViewContribution>()
+    let menuActions = Registry<MenuActionContribution>()
     /// Set by the shell around each module's `initialize`.
     var owner: String? {
         didSet {
             cards.owner = owner; tabs.owner = owner; segments.owner = owner
-            searchSources.owner = owner; settingsSections.owner = owner
+            searchSources.owner = owner; settingsSections.owner = owner; menuActions.owner = owner
         }
     }
     func removeAll(owner: String) {
         cards.removeAll(owner: owner); tabs.removeAll(owner: owner); segments.removeAll(owner: owner)
-        searchSources.removeAll(owner: owner); settingsSections.removeAll(owner: owner)
+        searchSources.removeAll(owner: owner); settingsSections.removeAll(owner: owner); menuActions.removeAll(owner: owner)
     }
     func removeAll() {
         cards.removeAll(); tabs.removeAll(); segments.removeAll()
-        searchSources.removeAll(); settingsSections.removeAll()
+        searchSources.removeAll(); settingsSections.removeAll(); menuActions.removeAll()
     }
 }
 
@@ -98,6 +108,8 @@ protocol ModuleShell: AnyObject {
     @discardableResult
     func peek(symbol: String, tint: NSColor, leading: String, trailing: String, seconds: TimeInterval?) -> PeekHandle?
     func selectTab(_ id: String)
+    /// Opens Search with the keyboard when its feature is enabled.
+    func summonSearch()
     func openSettings()
     /// Opens Settings on a module's section (its `settingsSections` id).
     func openSettings(section: String)
@@ -116,6 +128,8 @@ protocol ModuleShell: AnyObject {
     /// Collapses the panel because another app or window takes over now (a session's terminal,
     /// a launched app): no focus is handed back, and hover does not reopen it under the pointer.
     func dismissPanel()
+    /// A contributed action changed title or state.
+    func actionsChanged()
     /// A segment became visible, hidden, or changed width.
     func segmentsChanged()
 }
@@ -144,7 +158,12 @@ struct ModuleContext {
 
 protocol NotchModule: AnyObject {
     func initialize(_ context: ModuleContext)
+    /// `panel` is true only while an owned Home card or tab is on screen. Presentation changes
+    /// update this without stopping the module; collapsed status has its own visibility rules.
     func setVisibility(panel: Bool, activeTab: String)
     func systemDidWake()
     func stop()
 }
+
+/// Tab content that restores its own input focus when explicitly opened with the keyboard.
+protocol PanelKeyboardContent: AnyObject { func focusKeyboard() }
