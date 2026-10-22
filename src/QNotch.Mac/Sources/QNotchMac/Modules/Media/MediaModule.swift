@@ -33,7 +33,7 @@ final class MediaModule: NotchModule {
         context.registries.tabs.register(ViewContribution(id: "media", title: "Media", order: 10, symbol: "music.note") { [unowned self] in
             self.track(MediaView(module: self, large: true))
         })
-        context.registries.segments.register(SegmentContribution(id: "media.pill", order: 5, slot: .leading) { [weak self] in
+        context.registries.segments.register(SegmentContribution(id: "media.pill", order: 5, slot: .leading, destination: .tab("media"), destinationLabel: "Open media") { [weak self] in
             let view = MediaPillView()
             self?.pills.add(view)
             view.update(self?.current, artwork: self?.current.flatMap { self?.artwork[$0.source] })

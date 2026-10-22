@@ -20,6 +20,13 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     private(set) var surfaceRevision = 0
     /// Width of each status wing beside the camera, or the floating pill's content width.
     private(set) var wing: CGFloat = 0
+    /// Opt-in native smoke trace; nil in normal operation, with no scheduled work of its own.
+    var hoverTrace: ((String) -> Void)?
+    private func traceHover(_ event: String) {
+        guard let hoverTrace else { return }
+        let point = NSEvent.mouseLocation
+        hoverTrace("t=\(ProcessInfo.processInfo.systemUptime) \(event) pointer=\(point) expected=\(String(describing: expectedFrame)) segment=\(segmentID(at: point) ?? "none") suppressed=\(hoverSuppressed) state=\(state.presentation) task_cancelled=\(String(describing: hoverTask?.isCancelled))")
+    }
     private var hoverTask: DispatchWorkItem?
     private var leaveTask: DispatchWorkItem?
     private var globalClick: Any?
@@ -29,6 +36,8 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     private var previousApp: NSRunningApplication?
     private var settingsController: SettingsController?
     private var contentCache: [String: NSView] = [:]
+    private var transientDetail: (cardID: String, view: NSView)?
+    private var emphasizedCardID: String?
     private var panelView: PanelView?
     private var closingPanel: PanelView?
     private var searchView: SearchView?
@@ -54,7 +63,8 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         didSet { panel.alphaValue = renderOnly ? 0 : 1; panel.ignoresMouseEvents = renderOnly || gameActive }
     }
 
-    init(store: SettingsStore, deferModules: Bool = false) {
+    init(store: SettingsStore, deferModules: Bool = false, renderOnly: Bool = false) {
+        self.renderOnly = renderOnly
         self.store = store
         modulesDeferred = deferModules
         general = store.load("general", default: GeneralSettings())
@@ -64,6 +74,8 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         shortcuts = ShortcutRegistry(store: store)
         panel = NotchPanel(contentRect: .zero, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
         super.init()
+        panel.alphaValue = renderOnly ? 0 : 1
+        panel.ignoresMouseEvents = renderOnly
         panel.isFloatingPanel = true
         panel.hidesOnDeactivate = false
         panel.becomesKeyOnlyIfNeeded = false
@@ -90,7 +102,9 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         panel.clicked = { [weak self] in
             guard let self else { return false }
             let opening = !self.state.expanded
+            let target = opening ? self.segmentID(at: NSEvent.mouseLocation) : nil
             if !self.state.acceptsKeyboard { self.open(keyboard: true) }
+            if let target { self.routeSegment(target) }
             return opening
         }
         panel.escaped = { [weak self] in self?.close() }
@@ -243,6 +257,9 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         }
         if previous.hiddenTabs != general.hiddenTabs || previous.disabledModules != general.disabledModules {
             general.tabOrder = LayoutOrder.remember(saved: general.tabOrder, defaults: registries.tabs.items.filter { $0.id != "search" }.map(\.id))
+        }
+        if previous.disabledModules != general.disabledModules || previous.hiddenCards != general.hiddenCards || previous.hiddenTabs != general.hiddenTabs {
+            clearSegmentDetail()
         }
         store.save("general", general)
         Motion.userReduced = general.reduceMotion
@@ -406,7 +423,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         if let layout, layout.hasCameraHousing, !layout.integratesCameraHousing {
             displayMessage += (displayMessage.isEmpty ? "" : " ") + "Camera geometry unavailable. Using a pill below the safe area."
         }
-        if screen == nil { state.close(); panel.orderOut(nil); updateVisibility() }
+        if screen == nil { clearSegmentDetail(); state.close(); panel.orderOut(nil); updateVisibility() }
         statusChanged?()
     }
 
@@ -468,6 +485,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     }
 
     func pointerEntered() {
+        traceHover("entered")
         leaveTask?.cancel()
         guard !gameActive else { return }
         guard !state.expanded else { return }
@@ -480,14 +498,91 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         // The settled shape, not the window: while a close morph runs, the window still covers
         // the panel's old area, and a pointer there must not reopen it.
         let task = DispatchWorkItem { [weak self] in
+            self?.traceHover("dwell-fired")
             guard let self, !self.hoverSuppressed, self.expectedFrame?.containsPointer(NSEvent.mouseLocation) == true else { return }
-            self.open(keyboard: false)
+            self.completeHover(at: NSEvent.mouseLocation)
         }
         hoverTask = task
+        traceHover("scheduled delay_ms=\(general.hoverDelayMs) deadline=\(ProcessInfo.processInfo.systemUptime + Double(general.hoverDelayMs) / 1000)")
         DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(general.hoverDelayMs), execute: task)
     }
 
+    /// Resolve at the dwell deadline, in screen coordinates, before expansion changes the geometry.
+    /// Already-expanded openings are latched: crossing another segment never navigates.
+    func completeHover(at point: NSPoint) {
+        traceHover("completeHover requested=\(point)")
+        guard !state.expanded, !hoverSuppressed, !gameActive,
+              expectedFrame?.containsPointer(point) == true else { return }
+        let target = general.hoverOpensSegment ? segmentID(at: point) : nil
+        open(keyboard: false)
+        if let target, state.expanded { routeSegment(target) }
+    }
+
+    /// Live AppKit conversions account for negative display origins, world offsets and spill wings.
+    func segmentID(at point: NSPoint) -> String? {
+        guard !peekShown, !gameActive else { return nil }
+        let local = panel.convertPoint(fromScreen: point)
+        return (leadingSlots + trailingSlots).first { slot in
+            slot.activate != nil && !slot.isHiddenOrHasHiddenAncestor && slot.subviews.first?.isHidden == false &&
+                slot.bounds.contains(slot.convert(local, from: nil))
+        }?.segmentID
+    }
+
+    /// Explicit clicks and accessibility/keyboard presses route regardless of the hover preference.
+    func activateSegment(_ id: String) {
+        guard !gameActive else { return }
+        open(keyboard: true)
+        if state.expanded { routeSegment(id) }
+    }
+
+    private func clearSegmentDetail() {
+        if let id = emphasizedCardID { (contentCache["card." + id] as? SegmentDetailContent)?.emphasize(nil) }
+        emphasizedCardID = nil
+        transientDetail?.view.removeFromSuperview()
+        transientDetail?.view.layer?.removeAllAnimations()
+        transientDetail = nil
+    }
+
+    private func routeSegment(_ id: String) {
+        guard let item = registries.segments.items.first(where: { $0.id == id }), let destination = item.destination else {
+            selectTab("home")
+            return
+        }
+        switch destination {
+        case .tab(let tab):
+            let available = general.isTabVisible(tab) && registries.tabs.items.contains { $0.id == tab }
+            selectTab(available ? tab : "home")
+        case .card(let id, let emphasis, let allowsHiddenDetail):
+            selectTab("home")
+            guard let card = registries.cards.items.first(where: { $0.id == id }) else { return }
+            let visible = general.isCardVisible(id)
+            guard visible || allowsHiddenDetail else { return }
+            let content = visible ? cached("card." + id, card.makeView) : card.makeView()
+            if let emphasis {
+                guard let details = content as? SegmentDetailContent, details.emphasize(emphasis) else { return }
+                if visible { emphasizedCardID = id }
+            }
+            if visible {
+                homeView?.revealCard(id)
+            } else {
+                // A temporary surface, never a new tab or a change to the saved Home layout.
+                let back = actionButton("Back to Home") { [weak self] in self?.selectTab("home") }
+                back.identifier = NSUserInterfaceItemIdentifier("segment-detail-home")
+                let header = row([line(card.title + " details", size: 15, weight: .semibold, color: Palette.textPrimary), spacer(), back], spacing: 8)
+                let host = NSView()
+                let stack = column([header, content, spacer()], spacing: 18)
+                embed(stack, in: host, inset: 12, fill: true)
+                for view in [header, content] { view.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true }
+                host.identifier = NSUserInterfaceItemIdentifier("segment-detail-" + id)
+                transientDetail = (id, host)
+                showBody()
+                updateVisibility()
+            }
+        }
+    }
+
     func pointerLeft() {
+        traceHover("left; cancelling dwell")
         hoverTask?.cancel()
         leaveTask?.cancel()
         hoverSuppressed = false
@@ -495,6 +590,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         guard state.presentation == .hover, !general.pinned, holds == 0 else { return }
         let task = DispatchWorkItem { [weak self] in
             guard let self, !self.general.pinned, self.holds == 0, !self.panel.frame.containsPointer(NSEvent.mouseLocation) else { return }
+            self.clearSegmentDetail()
             self.state.pointerLeft()
             self.present(.close)
             self.updateVisibility()
@@ -516,7 +612,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         if !wasExpanded { present(.open) }
         updateVisibility()
         if keyboard {
-            panel.makeKeyAndOrderFront(nil)
+            if !renderOnly { panel.makeKeyAndOrderFront(nil) }
             if activeTab == "search" { searchView?.focus(appending: "") }
             else if let input = contentCache["tab." + activeTab] as? PanelKeyboardContent { input.focusKeyboard() }
             else { panel.makeFirstResponder(nil) }
@@ -530,6 +626,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         hoverSuppressed = panel.frame.containsPointer(NSEvent.mouseLocation)
         hovering = false
         setEditing(false)
+        clearSegmentDetail()
         state.close()
         panel.keyboardAllowed = false
         panel.resignKey()
@@ -578,6 +675,9 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     }
 
     func selectTab(_ id: String) {
+        let hadDetail = transientDetail != nil
+        clearSegmentDetail()
+        if hadDetail { showBody(); updateVisibility() }
         // Hidden tabs remain action/shortcut destinations. Show a temporary selected tab while
         // active, then remove it on leaving; Home and enabled Search retain their fixed positions.
         let ids = ["home"] + registries.tabs.items.filter { $0.id == "search" }.map(\.id) +
@@ -666,9 +766,9 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
 
     private func updateVisibility() {
         for (id, module) in loaded {
-            let visible = activeTab == "home"
+            let visible = transientDetail.map { registries.cards.owner(of: $0.cardID) == id } ?? (activeTab == "home"
                 ? registries.cards.ids(owner: id).contains(where: general.isCardVisible)
-                : registries.tabs.owner(of: activeTab) == id
+                : registries.tabs.owner(of: activeTab) == id)
             module.setVisibility(panel: state.expanded && visible, activeTab: activeTab)
         }
     }
@@ -676,6 +776,10 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     private func showBody(direction: Int = 0, animated: Bool = false) {
         guard let panelView else { return }
         let content: NSView
+        if let detail = transientDetail {
+            panelView.show(detail.view, direction: direction, animated: animated)
+            return
+        }
         switch activeTab {
         case "home":
             content = cached("home") { [unowned self] in self.makeHome() }
@@ -726,6 +830,14 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
             let slots = segments.filter { $0.slot == slot }.map { item -> SegmentSlotView in
                 let container = SegmentSlotView()
                 container.owner = registries.segments.owner(of: item.id)
+                container.segmentID = item.id
+                if item.destination != nil, let label = item.destinationLabel {
+                    container.activate = { [weak self] in self?.activateSegment(item.id) }
+                    container.toolTip = label
+                    container.setAccessibilityElement(true)
+                    container.setAccessibilityRole(.button)
+                    container.setAccessibilityLabel(label)
+                }
                 container.identifier = NSUserInterfaceItemIdentifier("segment-slot-" + item.id)
                 embed(item.makeView(), in: container, inset: 0, fill: true)
                 return container
@@ -796,8 +908,6 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         }
         return handle
     }
-
-    private final class SegmentSlotView: NSView { var owner: String? }
 
     private func visibleWidth(_ stack: NSStackView) -> CGFloat {
         stack.arrangedSubviews.contains { !$0.isHidden } ? stack.fittingSize.width : 0
@@ -957,6 +1067,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     // MARK: Surface
 
     private func accentChanged() {
+        clearSegmentDetail()
         contentCache.removeAll()
         searchView = nil
         buildStatus()
@@ -1088,7 +1199,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     // MARK: Diagnostics
 
     func cachedCard(_ id: String) -> NSView? { contentCache["card." + id] }
-    var currentBody: NSView? { contentCache[activeTab == "home" ? "home" : "tab." + activeTab] }
+    var currentBody: NSView? { transientDetail?.view ?? contentCache[activeTab == "home" ? "home" : "tab." + activeTab] }
 
     func snapshot(to url: URL) throws {
         guard let view = panel.contentView else { throw CocoaError(.fileWriteUnknown) }

@@ -226,6 +226,10 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
         let leave = SettingsSlider("Close delay", value: shell.general.closeDelayMs, range: GeneralSettings.closeRange, step: 50) { [weak self] value in
             self?.shell.updateGeneral { $0.closeDelayMs = value }
         }
+        let segmentHover = ActionSwitch("Open hovered feature", value: shell.general.hoverOpensSegment) { [weak self] value in
+            self?.shell.updateGeneral { $0.hoverOpensSegment = value }
+        }
+        segmentHover.identifier = NSUserInterfaceItemIdentifier("hover-opens-segment")
         let pin = ActionSwitch("Keep panel open", value: shell.general.pinned) { [weak self] _ in self?.shell.togglePin() }
         let menuBar = ActionSwitch("Show menu-bar icon", value: shell.general.showMenuBarIcon) { [weak self] value in
             self?.shell.updateGeneral { $0.showMenuBarIcon = value }
@@ -239,6 +243,7 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
             ], width: width),
             settingsGroup([
                 settingsRow("Hover delay", detail: "How long the pointer rests on the notch before the panel opens.", control: hover, width: width),
+                settingsRow("Open hovered feature", detail: "After the hover delay, open details for the status under the pointer. Moving across statuses while open does not change the view.", control: segmentHover, width: width),
                 settingsRow("Close delay", detail: "How long after the pointer leaves before the panel closes.", control: leave, width: width),
                 settingsRow("Keep panel open", detail: "The panel stays open until you close it with Escape, the pin, or the toggle hotkey. Also the pin in the panel header.", control: pin, width: width)
             ], header: "Panel", width: width),

@@ -131,7 +131,7 @@ final class AgentsModule: NotchModule {
             view.reload()
             return view
         })
-        registry.segments.register(SegmentContribution(id: "agents.pill", order: 6, slot: .trailing) { [weak self] in
+        registry.segments.register(SegmentContribution(id: "agents.pill", order: 6, slot: .trailing, destination: .tab("agents"), destinationLabel: "Open agents") { [weak self] in
             let view = AgentPillView()
             self?.pills.add(view)
             view.update(text: self?.board.pillText, needsYou: self?.board.needsYou ?? false)

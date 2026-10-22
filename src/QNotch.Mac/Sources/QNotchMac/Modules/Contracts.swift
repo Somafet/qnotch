@@ -30,10 +30,23 @@ enum SegmentSlot { case leading, trailing }
 /// Collapsed status content. With a camera housing, leading content sits in the left wing and
 /// trailing content in the right wing; a floating pill shows them side by side. A segment shows
 /// only while its view is not hidden; call `ModuleShell.segmentsChanged()` after toggling it.
+/// Destinations are declared by the contribution, never inferred from module names or wings.
+enum SegmentDestination {
+    case tab(String)
+    case card(String, emphasis: String?, allowsHiddenDetail: Bool)
+}
+
+/// Optional card-local emphasis. Nil clears it when this opening/navigation ends.
+protocol SegmentDetailContent: AnyObject {
+    @discardableResult func emphasize(_ detail: String?) -> Bool
+}
+
 struct SegmentContribution: Contribution {
     let id: String
     let order: Int
     let slot: SegmentSlot
+    var destination: SegmentDestination? = nil
+    var destinationLabel: String? = nil
     let makeView: () -> NSView
 }
 

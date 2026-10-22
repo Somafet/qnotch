@@ -37,7 +37,11 @@ final class StatsModule: NotchModule {
                                                  (.network, 13, .leading), (.battery, 15, .trailing), (.clock, 20, .trailing)]
         for (kind, order, slot) in slots {
             segments[kind] = .weakObjects()
-            context.registries.segments.register(SegmentContribution(id: "stats." + kind.rawValue, order: order, slot: slot) { [weak self] in
+            let hasDetails = [.cpu, .memory, .gpu, .network].contains(kind)
+            let label = kind == .cpu || kind == .gpu ? kind.rawValue.uppercased() : kind.rawValue
+            context.registries.segments.register(SegmentContribution(id: "stats." + kind.rawValue, order: order, slot: slot,
+                destination: hasDetails ? .card("system", emphasis: kind.rawValue, allowsHiddenDetail: true) : nil,
+                destinationLabel: hasDetails ? "Open \(label) details" : nil) { [weak self] in
                 let view = StatSegmentView(kind: kind)
                 self?.segments[kind]?.add(view)
                 self?.refreshSegments(notify: false)
@@ -250,7 +254,7 @@ private final class StatSegmentView: NSStackView {
     }
 }
 
-private final class StatsCardView: NSView {
+private final class StatsCardView: NSView, SegmentDetailContent {
     private let cpu = StatRow(title: "CPU", bar: true)
     private let memory = StatRow(title: "RAM", bar: true)
     private let gpu = StatRow(title: "GPU", bar: false)
@@ -263,6 +267,14 @@ private final class StatsCardView: NSView {
         for view in [cpu, memory, gpu, network] { view.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true }
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    @discardableResult
+    func emphasize(_ detail: String?) -> Bool {
+        let rows = [("cpu", cpu), ("memory", memory), ("gpu", gpu), ("network", network)]
+        guard detail == nil || rows.contains(where: { $0.0 == detail }) else { return false }
+        for (id, row) in rows { row.emphasized = id == detail }
+        return true
+    }
 
     func update(_ sample: StatsSample?, gpuAvailable: Bool) {
         cpu.set(SystemStats.percentText(sample?.cpu), progress: sample?.cpu.map { $0 / 100 })
@@ -277,6 +289,17 @@ private final class StatsCardView: NSView {
 private final class StatRow: NSView {
     private let value = line("--", size: 12, weight: .medium, color: Palette.textPrimary)
     private let bar: ProgressBar?
+    var emphasized = false {
+        didSet {
+            guard emphasized != oldValue else { return }
+            wantsLayer = true
+            layer?.backgroundColor = emphasized ? Palette.accentSoft.cgColor : nil
+            layer?.cornerRadius = 4
+            value.textColor = emphasized ? Palette.accent : Palette.textPrimary
+            setAccessibilityHelp(emphasized ? "Selected metric" : nil)
+            setAccessibilitySelected(emphasized)
+        }
+    }
 
     init(title: String, bar hasBar: Bool) {
         bar = hasBar ? ProgressBar() : nil
@@ -296,6 +319,7 @@ private final class StatRow: NSView {
         setAccessibilityElement(true)
         setAccessibilityRole(.staticText)
         setAccessibilityLabel(title)
+        identifier = NSUserInterfaceItemIdentifier("system-metric-" + title.lowercased())
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
