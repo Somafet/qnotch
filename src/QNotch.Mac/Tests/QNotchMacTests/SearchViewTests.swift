@@ -2,12 +2,13 @@ import AppKit
 import XCTest
 @testable import QNotchMac
 
-@MainActor
 final class SearchViewTests: XCTestCase {
+    @MainActor
     private func descendants(_ view: NSView) -> [NSView] {
         [view] + view.subviews.flatMap(descendants)
     }
 
+    @MainActor
     func testBoundedResults() async throws {
         for count in [0, 1, 5, 6] {
             for size in [NSSize(width: 664, height: 308), NSSize(width: 320, height: 180)] {
@@ -18,6 +19,7 @@ final class SearchViewTests: XCTestCase {
         }
     }
 
+    @MainActor
     private func checkBoundedResults(count: Int, size: NSSize) throws {
         let view = SearchView { _ in
             (0..<count).map { index in
@@ -45,6 +47,7 @@ final class SearchViewTests: XCTestCase {
         }
     }
 
+    @MainActor
     func testSelectionClampsAndQueryChangesResetActivation() async throws {
         var activations: [String] = []
         var queries: [String] = []
