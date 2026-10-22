@@ -16,6 +16,7 @@ public sealed class HomeView : ScrollViewer
     readonly ShellController _shell;
     readonly WrapPanel _panel = new() { Width = 3 * (Unit + Gap), HorizontalAlignment = HorizontalAlignment.Center };
     readonly Dictionary<string, CardHost> _hosts = new();
+    readonly StackPanel _root = new();
 
     public HomeView(CardLayout layout, ShellController shell)
     {
@@ -25,7 +26,7 @@ public sealed class HomeView : ScrollViewer
         VerticalScrollBarVisibility = ScrollBarVisibility.Auto;
         HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled;
         Padding = new Thickness(0, 0, 0, 12);
-        Content = _panel;
+        Content = _root;
         layout.Changed += Rebuild;
         shell.EditModeChanged += () => { foreach (var h in _hosts.Values) h.IsEditMode = shell.IsEditMode; };
         Rebuild();
@@ -52,7 +53,16 @@ public sealed class HomeView : ScrollViewer
             shown.Add(host);
         }
         _panel.Children.Clear();
+        _root.Children.Clear();
+        _root.Children.Add(_panel);
         foreach (var h in shown) _panel.Children.Add(h);
+        if (shown.Count == 0)
+        {
+            _root.Children.Add(Placeholder.Create(Glyphs.Apps, "Your Home is empty", "Choose what appears here in Settings, Features."));
+            var recover = new Button { Content = "Open Features", HorizontalAlignment = HorizontalAlignment.Center };
+            recover.Click += (_, _) => _shell.OpenSettings("features");
+            _root.Children.Add(recover);
+        }
         _layout.SetHosts(shown);
     }
 

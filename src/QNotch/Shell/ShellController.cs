@@ -44,6 +44,8 @@ public sealed class ShellController : IShell
     {
         _w = window; _general = settings; _store = store; _shortcuts = shortcuts; _foreground = foreground;
         _layout = layout; _tabs = tabs; _sections = sections; _segments = segments;
+        Presentation = store.Get<WindowsPresentationSettings>("windows-presentation");
+        Presentation.Changed += ApplyPresentation;
         _vm = new ShellViewModel(settings, () => OpenSettings());
         _w.DataContext = _vm;
         GameMode = new GameModeController(this, store, foreground, segments);
@@ -61,6 +63,8 @@ public sealed class ShellController : IShell
     public nint Monitor => _w.MonitorHandle;
     public ShellMode Mode => _mode;
     public string ActiveTab => _activeTab;
+    public WindowsPresentationSettings Presentation { get; }
+    public bool IsTabVisible(string id) => _tabs.Find(id) is not null && Presentation.TabVisible(id);
     public event Action<ShellMode>? ModeChanged;
     public event Action? EditModeChanged;
     public event Action<string>? TabChanged;
@@ -168,7 +172,7 @@ public sealed class ShellController : IShell
         {
             foreach (var d in _segments.Items)
             {
-                if (d.Slot != slot || SegmentHost.Build(d) is not { } el) continue;
+                if (d.Slot != slot || BuildPresentedSegment(d) is not { } el) continue;
                 el.Margin = new Thickness(0, 0, slot == SegmentSlot.PillLeft ? 18 : 12, 0);
                 strip.Children.Add(el);
             }
@@ -184,11 +188,40 @@ public sealed class ShellController : IShell
         var vis = System.ComponentModel.DependencyPropertyDescriptor.FromProperty(UIElement.VisibilityProperty, typeof(UIElement));
         foreach (var d in _segments.Items)
         {
-            if (d.Slot != SegmentSlot.Glance || SegmentHost.Build(d) is not { } el) continue;
+            if (d.Slot != SegmentSlot.Glance || BuildPresentedSegment(d) is not { } el) continue;
             vis.AddValueChanged(el, (_, _) => UpdateGlance());
             strip.Children.Add(el);
         }
         UpdateGlance();
+    }
+
+    readonly List<Action> _syncSegments = new();
+    FrameworkElement? BuildPresentedSegment(SegmentDescriptor d)
+    {
+        if (SegmentHost.Build(d) is not { } el) return null;
+        if (d.Slot is SegmentSlot.PillLeft or SegmentSlot.PillRight) el.Margin = new Thickness(0);
+        var host = new Border { Child = el };
+        void Sync() => host.Visibility = (d.Presented is not null || Presentation.SegmentVisible(d.Id)) && el.Visibility == Visibility.Visible
+            ? Visibility.Visible : Visibility.Collapsed;
+        System.ComponentModel.DependencyPropertyDescriptor.FromProperty(UIElement.VisibilityProperty, typeof(UIElement))
+            .AddValueChanged(el, (_, _) => Sync());
+        _syncSegments.Add(Sync);
+        Sync();
+        return host;
+    }
+
+    void ApplyPresentation()
+    {
+        _store.Save("windows-presentation", Presentation);
+        foreach (var sync in _syncSegments) sync();
+        UpdateGlance();
+        _w.InvalidatePill(exact: true);
+        if (!_built) return;
+        foreach (var (id, button) in _tabButtons) button.Visibility = IsTabVisible(id) ? Visibility.Visible : Visibility.Collapsed;
+        SpaceTabs();
+        if (!IsTabVisible(_activeTab)) SelectTab("home");
+        else UpdateTabIndicator(false);
+        if (!IsTabVisible(_general.LastTab)) _general.LastTab = "home";
     }
 
     void UpdateGlance()
@@ -240,6 +273,7 @@ public sealed class ShellController : IShell
     public bool TryOpenPanel(string? tabId = null, int lingerMs = 0)
     {
         if (_mode == ShellMode.GameBar) return false;
+        if (tabId is not null && !IsTabVisible(tabId)) return false;
         var open = _mode == ShellMode.Collapsed;
         if (open) EnsurePanelBuilt();
         if (tabId is not null) SelectTab(tabId);
@@ -437,9 +471,10 @@ public sealed class ShellController : IShell
             rb.Checked += (_, _) => SelectTab(id);
             strip.Children.Add(rb);
             _tabButtons[id] = rb;
+            rb.Visibility = IsTabVisible(id) ? Visibility.Visible : Visibility.Collapsed;
         }
         SpaceTabs();
-        SelectTab(_tabs.Find(_general.LastTab) is not null ? _general.LastTab : "home");
+        SelectTab(IsTabVisible(_general.LastTab) ? _general.LastTab : "home");
         _w.WarmUpPanel();
         _w.Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, PrebuildNext);
     }
@@ -472,13 +507,14 @@ public sealed class ShellController : IShell
 
     public void SelectTab(string id)
     {
+        if (!IsTabVisible(id)) return;
         var t = _tabs.Find(id);
         if (t is null) return;
         var slot = EnsureView(t);
         var changed = id != _activeTab || slot.Visibility != Visibility.Visible;
         foreach (var (k, el) in _tabViews) el.Visibility = k == id ? Visibility.Visible : Visibility.Hidden;
         if (_tabButtons.TryGetValue(id, out var rb) && rb.IsChecked != true) rb.IsChecked = true;
-        _w.MoveTabIndicator(rb is null ? 0 : Math.Max(0, _w.TabStrip.Children.IndexOf(rb)), changed);
+        UpdateTabIndicator(changed, id);
         if (changed && _mode == ShellMode.Expanded && Motion.Enabled) FadeIn(slot);
         _vm.IsHomeSelected = id == "home";
         if (id != "home") IsEditMode = false;
@@ -500,8 +536,15 @@ public sealed class ShellController : IShell
 
     void SpaceTabs()
     {
-        var children = _w.TabStrip.Children;
-        for (var i = 0; i < children.Count; i++) ((FrameworkElement)children[i]).Margin = new Thickness(i == 0 ? 0 : 2, 0, 0, 0);
+        var i = 0;
+        foreach (FrameworkElement child in _w.TabStrip.Children)
+            child.Margin = new Thickness(child.Visibility != Visibility.Visible || i++ == 0 ? 0 : 2, 0, 0, 0);
+    }
+
+    void UpdateTabIndicator(bool animate, string? id = null)
+    {
+        var visible = _w.TabStrip.Children.OfType<FrameworkElement>().Where(b => b.Visibility == Visibility.Visible).ToList();
+        _w.MoveTabIndicator(Math.Max(0, visible.FindIndex(b => (string)b.Tag == (id ?? _activeTab))), animate);
     }
 
     /// <summary>Edit mode: moves tab <paramref name="id"/> into the slot held by <paramref name="targetId"/> and saves the order

@@ -39,6 +39,9 @@ jobs:
       - name: Welcome tour checks
         run: dotnet run --project tests/QNotch.OnboardingTests -c Release
 
+      - name: Windows behavior checks
+        run: dotnet run --project tests/QNotch.WindowsTests -c Release
+
       # Renders every view (pill states, tabs, cards, settings, welcome tour) off-screen in a clean data folder. Fails if a view throws or it hangs.
       - name: Snapshot smoke test
         shell: pwsh

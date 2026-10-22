@@ -33,6 +33,7 @@ public sealed class CardLayout
     public IReadOnlyList<CardDescriptor> Ordered => _ordered ??= Resolve();
 
     public IEnumerable<CardDescriptor> Visible => Ordered.Where(c => IsVisible(c.Id));
+    public string OwnerOf(string id) => _cards.OwnerOf(id);
 
     public bool IsVisible(string id) =>
         _gs.CardVisible.TryGetValue(id, out var v) ? v : _cards.Find(id)?.DefaultVisible ?? false;
