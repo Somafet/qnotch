@@ -1,0 +1,24 @@
+version: 0.4.0.0
+self-contained: false
+only: settings-*,onboarding-features*
+settings-general: ok
+settings-features: ok
+settings-features-end: ok
+settings-updates: ok
+settings-hotkeys: ok
+settings-sounds: ok
+settings-appearance: ok
+settings-appearance-end: ok
+settings-gamemode: ok
+settings-gamemode-end: ok
+settings-clipboard: ok
+settings-ai: ok
+settings-ai-end: ok
+settings-agents: ok
+settings-github: ok
+settings-weather: ok
+settings-notifications: ok
+settings-notifications-end: ok
+onboarding-features: ok
+onboarding-features-ondemand: ok
+done

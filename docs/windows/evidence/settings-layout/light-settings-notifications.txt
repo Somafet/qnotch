@@ -1,0 +1,43 @@
+"QNotch"
+[Item] "General" #settings-nav-general
+[Item] "Features" #settings-nav-features
+[Item] "Updates" #settings-nav-updates
+[Item] "Hotkeys" #settings-nav-hotkeys
+[Item] "Sounds" #settings-nav-sounds
+[Item] "Appearance" #settings-nav-appearance
+[Item] "Game mode" #settings-nav-gamemode
+[Item] "Clipboard" #settings-nav-clipboard
+[Item] "AI" #settings-nav-ai
+[Item] "Agents" #settings-nav-agents
+[Item] "GitHub" #settings-nav-github
+[Item] "Weather" #settings-nav-weather
+[Item] "Notifications" #settings-nav-notifications selected
+"Notifications"
+"Choose when notifications can interrupt you. History and replies stay available when alerts are muted."
+"Alerts"
+"Mute notifications"
+"Until you unmute, including after a restart. Saved on this PC."
+[Toggle] "Mute notifications" #notifications-mute
+"Show a toast for"
+"How long an alert stays under the pill. A sender can set its own time."
+[PopUp] "Show a toast for" value="6 seconds"
+"Play a sound"
+"Choose the sound in Settings, Sounds."
+[Toggle] "Play a sound"
+"Open the panel on errors"
+"Open Notifications automatically. Never while a game is running."
+[Toggle] "Open the panel on errors" checked
+"Quiet during calls"
+"While the microphone is in use, only questions awaiting a reply can show a toast. The panel stays closed."
+[Toggle] "Quiet during calls" checked
+"History and testing"
+"Keep history for"
+"Keep up to 500 notifications. Older entries are removed."
+[PopUp] "Keep history for" value="7 days"
+"Try it"
+"Send a sample notification using your current alert settings."
+[Button] "Try it"
+  "Send test"
+"Command line and pipe"
+"Run QNotch.exe notify \"Title\" \"Text\" from a script. Use QNotch.exe notify --help for options. Apps can also send JSON to the current-user named pipe."
+"Listening on \\\\.\\pipe\\QNotch.Notify.settings-light-944f7ad1"

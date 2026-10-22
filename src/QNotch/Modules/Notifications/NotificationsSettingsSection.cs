@@ -15,30 +15,42 @@ internal static class NotificationsSettingsSection
     {
         var cfg = m.Config;
         var page = UiKit.Page("Notifications");
-        page.Children.Add(UiKit.Row("Manual mute", "Until you unmute. History and answers stay available; notification alerts stay quiet. This choice stays on this PC.", NotificationMuteViews.Button(m, st)));
+        page.Children.Add(UiKit.SettingsIntro("Choose when notifications can interrupt you. History and replies stay available when alerts are muted."));
+        var behavior = new List<FrameworkElement>();
+        behavior.Add(UiKit.SettingsRow("Mute notifications", "Until you unmute, including after a restart. Saved on this PC.", NotificationMuteViews.Button(m, st)));
 
-        page.Children.Add(UiKit.Row("Show a toast for", "How long a notification stays under the pill. A sender can set its own time.",
+        behavior.Add(UiKit.SettingsRow("Show a toast for", "How long an alert stays under the pill. A sender can set its own time.",
             Choice(ToastSeconds, cfg.ToastSeconds, s => s == 0 ? "Off" : $"{s} seconds", v => { cfg.ToastSeconds = v; m.SaveSettings(); })));
-        page.Children.Add(UiKit.Row("Play a sound", "When a toast shows. Choose the sound in Settings, Sounds.",
+        behavior.Add(UiKit.SettingsRow("Play a sound", "Choose the sound in Settings, Sounds.",
             UiKit.Toggle(cfg.Sound, on => { cfg.Sound = on; m.SaveSettings(); })));
-        page.Children.Add(UiKit.Row("Open the panel on errors", "An error opens the Notifications tab by itself. Never while a game is running.",
+        behavior.Add(UiKit.SettingsRow("Open the panel on errors", "Open Notifications automatically. Never while a game is running.",
             UiKit.Toggle(cfg.OpenOnError, on => { cfg.OpenOnError = on; m.SaveSettings(); })));
-        page.Children.Add(UiKit.Row("Quiet during calls", "While an app uses the microphone, only questions waiting for your answer show a toast, and the panel never opens by itself. Everything still lands in the history.",
+        behavior.Add(UiKit.SettingsRow("Quiet during calls", "While the microphone is in use, only questions awaiting a reply can show a toast. The panel stays closed.",
             UiKit.Toggle(cfg.QuietDuringCalls, on => { cfg.QuietDuringCalls = on; m.SaveSettings(); m.ApplyQuiet(); })));
-        page.Children.Add(UiKit.BindVisible(Status(st, nameof(NotificationsState.QuietStatus)), st, nameof(NotificationsState.IsQuiet)));
-        page.Children.Add(UiKit.Row("Keep history for", "Older notifications are removed. The history holds 500 at most.",
+        var alerts = UiKit.SettingsGroup(behavior, "Alerts");
+        var quietStatus = UiKit.BindVisible(Status(st, nameof(NotificationsState.QuietStatus)), st, nameof(NotificationsState.IsQuiet));
+        quietStatus.Margin = new Thickness(4, 8, 4, 0);
+        alerts.Children.Add(quietStatus);
+        page.Children.Add(alerts);
+
+        var history = new List<FrameworkElement>();
+        history.Add(UiKit.SettingsRow("Keep history for", "Keep up to 500 notifications. Older entries are removed.",
             Choice(RetentionDays, cfg.RetentionDays, d => d == 1 ? "1 day" : $"{d} days", v => { cfg.RetentionDays = v; m.SaveSettings(); })));
         var test = new Button { Content = "Send test", Padding = new Thickness(14, 6, 14, 6) };
         test.Click += (_, _) => m.SendTest();
-        page.Children.Add(UiKit.Row("Try it", "Posts a sample notification.", test));
+        history.Add(UiKit.SettingsRow("Try it", "Send a sample notification using your current alert settings.", test));
+        page.Children.Add(UiKit.SettingsGroup(history, "History and testing"));
 
         // ----- senders -----
-        page.Children.Add(Sub("Command line and pipe"));
-        page.Children.Add(Note("Any script can run QNotch.exe notify \"Title\" \"Text\". QNotch.exe notify --help lists every option. Other programs can write one line of JSON to the named pipe, which only your Windows account can open."));
-        page.Children.Add(Status(st, nameof(NotificationsState.PipeStatus)));
+        var cli = new StackPanel { Margin = new Thickness(16, 12, 16, 12) };
+        cli.Children.Add(Note("Run QNotch.exe notify \"Title\" \"Text\" from a script. Use QNotch.exe notify --help for options. Apps can also send JSON to the current-user named pipe."));
+        var pipeStatus = Status(st, nameof(NotificationsState.PipeStatus));
+        pipeStatus.Margin = new Thickness(0, 8, 0, 0);
+        cli.Children.Add(pipeStatus);
+        page.Children.Add(UiKit.SettingsGroup([cli], "Command line and pipe"));
 
-        page.Children.Add(Sub("Local HTTP"));
-        page.Children.Add(UiKit.Row("Accept HTTP requests", "POST /notify on this computer only. Requests need the token below; web pages are refused.",
+        var http = new List<FrameworkElement>();
+        http.Add(UiKit.SettingsRow("Accept HTTP requests", "On this computer only. Requires the token below; web pages are refused.",
             UiKit.Toggle(cfg.HttpEnabled, on => { cfg.HttpEnabled = on; m.ApplyHttp(); })));
         var port = new TextBox { Text = cfg.HttpPort.ToString(), Width = 80, MaxLength = 5 };
         void ApplyPort()
@@ -49,7 +61,7 @@ internal static class NotificationsSettingsSection
         }
         port.LostFocus += (_, _) => ApplyPort();
         port.KeyDown += (_, e) => { if (e.Key == Key.Enter) ApplyPort(); };
-        page.Children.Add(UiKit.Row("Port", "1024 to 65535. Press Enter to apply.", port));
+        http.Add(UiKit.SettingsRow("Port", "1024 to 65535. Press Enter to apply.", port));
 
         var shown = new TextBlock { Style = (Style)Application.Current.FindResource("Muted"), FontFamily = new System.Windows.Media.FontFamily("Cascadia Mono, Consolas"), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 12, 0) };
         void ShowToken() => shown.Text = m.Token.Length > 6 ? m.Token[..6] + "..." : "not ready";
@@ -62,21 +74,25 @@ internal static class NotificationsSettingsSection
         tokenRow.Children.Add(shown);
         tokenRow.Children.Add(copy);
         tokenRow.Children.Add(renew);
-        page.Children.Add(UiKit.Row("Token", "Send it as the header Authorization: Bearer <token>. Kept in Windows Credential Manager.", tokenRow));
-        page.Children.Add(Status(st, nameof(NotificationsState.HttpStatus)));
+        http.Add(UiKit.SettingsRow("Token", "Authorization: Bearer <token>. Stored in Windows Credential Manager.", tokenRow));
+        var local = UiKit.SettingsGroup(http, "Local HTTP");
+        var httpStatus = Status(st, nameof(NotificationsState.HttpStatus));
+        httpStatus.Margin = new Thickness(4, 8, 4, 0);
+        local.Children.Add(httpStatus);
+        page.Children.Add(local);
 
         // ----- per-app mute -----
-        page.Children.Add(Sub("Apps"));
+        var appRows = new List<FrameworkElement>();
         var apps = st.Items.Select(n => n.App).Concat(cfg.MutedApps).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(a => a, StringComparer.OrdinalIgnoreCase).ToList();
-        if (apps.Count == 0) page.Children.Add(Note("Apps show up here after their first notification, so you can mute them."));
+        if (apps.Count == 0) appRows.Add(new Border { Padding = new Thickness(16, 12, 16, 12), Child = Note("Apps appear here after their first notification.") });
         foreach (var app in apps)
-            page.Children.Add(UiKit.Row(app, null, UiKit.Toggle(!cfg.MutedApps.Contains(app, StringComparer.OrdinalIgnoreCase), on =>
+            appRows.Add(UiKit.SettingsRow(app, null, UiKit.Toggle(!cfg.MutedApps.Contains(app, StringComparer.OrdinalIgnoreCase), on =>
             {
                 cfg.MutedApps.RemoveAll(a => string.Equals(a, app, StringComparison.OrdinalIgnoreCase));
                 if (!on) cfg.MutedApps.Add(app);
                 m.SaveSettings();
             })));
-        if (apps.Count > 0) page.Children.Add(Note("A muted app still lands in the history, but shows no toast, no unread count and never opens the panel."));
+        page.Children.Add(UiKit.SettingsGroup(appRows, "Apps", "Turn an app off to silence its alerts and unread count. Its notifications still go into history."));
         return page;
     }
 
@@ -90,20 +106,17 @@ internal static class NotificationsSettingsSection
         return c;
     }
 
-    static TextBlock Sub(string text) =>
-        new() { Text = text, Style = (Style)Application.Current.FindResource("Title"), Margin = new Thickness(0, 8, 0, 14) };
-
     static TextBlock Note(string text)
     {
-        var t = UiKit.Text(text, "Muted");
-        t.Margin = new Thickness(0, -6, 0, 16);
+        var t = UiKit.Text(text);
+        t.FontSize = 12;
         return t;
     }
 
     static TextBlock Status(NotificationsState st, string path)
     {
         var t = UiKit.Text("", "Caption");
-        t.Margin = new Thickness(0, -6, 0, 16);
+        t.FontSize = 12;
         return UiKit.Bind(t, TextBlock.TextProperty, st, path);
     }
 }

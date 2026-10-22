@@ -232,6 +232,7 @@
 
     <!-- Toggle switch: use on CheckBox -->
     <Style x:Key="ToggleSwitch" TargetType="CheckBox">
+        <Setter Property="MinHeight" Value="28"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
@@ -243,16 +244,21 @@
                                 BorderBrush="{DynamicResource StrokeBrush}" BorderThickness="1">
                             <Ellipse x:Name="Knob" Width="14" Height="14" Fill="{DynamicResource TextSecondaryBrush}" HorizontalAlignment="Left" Margin="2,0,0,0"/>
                         </Border>
-                        <ContentPresenter Margin="10,0,0,0" VerticalAlignment="Center"/>
+                        <ContentPresenter x:Name="Label" Margin="10,0,0,0" VerticalAlignment="Center"/>
                     </StackPanel>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Track" Property="BorderBrush" Value="{DynamicResource StrokeStrongBrush}"/></Trigger>
+                        <Trigger Property="HasContent" Value="False"><Setter TargetName="Label" Property="Margin" Value="0"/></Trigger>
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="Track" Property="Background" Value="{DynamicResource AccentBrush}"/>
                             <Setter TargetName="Track" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
                             <Setter TargetName="Knob" Property="Fill" Value="{DynamicResource ToggleKnobOnBrush}"/>
                             <Setter TargetName="Knob" Property="HorizontalAlignment" Value="Right"/>
                             <Setter TargetName="Knob" Property="Margin" Value="0,0,2,0"/>
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="Track" Property="BorderBrush" Value="{DynamicResource TextPrimaryBrush}"/>
+                            <Setter TargetName="Track" Property="BorderThickness" Value="2"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.4"/></Trigger>
                     </ControlTemplate.Triggers>
