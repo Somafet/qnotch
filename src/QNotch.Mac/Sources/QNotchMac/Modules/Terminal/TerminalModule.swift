@@ -76,9 +76,8 @@ final class TerminalTabView: NSView, PanelKeyboardContent {
         self.module = module
         terminal = TerminalCanvas(module: module)
         super.init(frame: .zero)
-        let title = line("Terminal", size: 17, weight: .semibold)
         let help = line("Quick commands · ⌘V paste · ⌘C copy selection · ⌘F search · ⌃⌥N close", size: 10, color: Palette.textTertiary)
-        heading = row([title, spacer(), help], spacing: 8)
+        heading = row([help, spacer()], spacing: 8)
         scroll.documentView = terminal
         scroll.hasVerticalScroller = true
         scroll.autohidesScrollers = true

@@ -23,7 +23,7 @@ final class ScheduledModule: NotchModule {
         context.registries.cards.register(ViewContribution(id: "scheduled", title: "Scheduled tasks", order: 90, symbol: "clock.arrow.2.circlepath") { [unowned self] in
             self.track(ScheduledCardView(module: self))
         })
-        context.registries.tabs.register(ViewContribution(id: "scheduled", title: "Scheduled", order: 60, symbol: "clock.arrow.2.circlepath") { [unowned self] in
+        context.registries.tabs.register(ViewContribution(id: "scheduled", title: "Scheduled tasks", order: 60, symbol: "clock.arrow.2.circlepath") { [unowned self] in
             self.track(ScheduledTabView(module: self))
         })
         context.registries.searchSources.register(SearchSource(id: "scheduled", order: 50) { [weak self] query in
@@ -193,7 +193,8 @@ final class ScheduledCardView: NSView, ScheduledDisplay {
     }
 }
 
-final class ScheduledTabView: NSView, ScheduledDisplay {
+final class ScheduledTabView: NSView, ScheduledDisplay, TabHeaderProviding {
+    private(set) var tabHeaderActions: NSView = NSView()
     private weak var module: ScheduledModule?
     private let list = NSStackView()
     private let error = label("", size: 11, color: .systemRed)
@@ -210,7 +211,8 @@ final class ScheduledTabView: NSView, ScheduledDisplay {
         list.alignment = .leading
         list.spacing = 6
         let refresh = HoverButton(symbol: "arrow.clockwise", style: .icon, symbolSize: 11, label: "Reload") { [weak module] in module?.reload() }
-        let header = row([line("Launch agents", size: 13, weight: .semibold, color: Palette.textPrimary), count, spacer(), showApps, refresh], spacing: 8)
+        tabHeaderActions = row([showApps, refresh], spacing: 8)
+        let header = row([line("Launch agents", size: 13, weight: .semibold, color: Palette.textPrimary), count, spacer()], spacing: 8)
         error.preferredMaxLayoutWidth = 640
         let document = FlippedView()
         document.translatesAutoresizingMaskIntoConstraints = false

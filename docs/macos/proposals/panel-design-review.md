@@ -1,10 +1,26 @@
-NO SECOND OPINION: the cross-vendor reviewer was unavailable because its session quota gate declined the run.
+Original proposal review: the cross-vendor second opinion was unavailable because its session quota gate declined the run.
 
 # Design review proposal: standardize macOS panel headers and layout
 
-Status: proposal for discussion; no app behavior changes are implemented.
+Status: header contract implemented; original review retained below with its historical evidence limits. Native validation evidence is recorded under Implementation follow-through.
 Platform: native macOS app. Source baseline: `ffe496d6585652d2ef6f38c15056705c9ba83867` (2026-10-18).
 The reported app's exact binary revision and OS version were not supplied; source findings apply to this baseline.
+
+## Implementation follow-through
+
+The title/header portion of [proposal PR #64](https://github.com/Somafet/qnotch/pull/64) is implemented in the native macOS shell. `TabPageView` supplies a fixed 28pt title/action row, 14pt semibold system title, host-aligned leading edge and 12pt gap before the body. Titles come from tab registrations, including **Scheduled tasks** and **Terminal**. They remain outside scrolling, loading, unavailable and empty-state content. Long titles truncate before native actions and keep their full accessibility label. The native page group is named and linked to the static title.
+
+Page-wide Clipboard, Files, Notifications, AI and Scheduled tasks actions occupy the fixed trailing slot. Filters, counts, usage/provider sections, Focus timer, Launch agents and Terminal's command help remain contextual body content. Redundant Files/Notifications/Terminal page headings are removed. Home retains card headings. Search retains its labeled field as an explicit exception. No new typography minimum for stat captions or generic body redesign is included.
+
+Gutter alignment, Search containment/navigation and feature visibility already landed separately; this implementation does not redo them. The original mechanical inventory below describes the source baseline, not today's UI. The original evidence limits likewise describe the review, not the validation of this implementation.
+
+Regression evidence: native `TabPageViewTests` exercises long/localized titles, empty and populated bodies, scrolling, hidden actions, accessible group/title linkage, action activation and focus forwarding. Both offscreen snapshots and graphical smoke now check every registered tab's title origin/baseline, 28pt row, 12pt body gap, action bounds and accessible control names; `tab-header-frames.log` records actual native frames.
+
+Native validation on 2026-10-22 (Apple silicon, macOS 26.3, full Xcode selected by the documented script fallback): release build with warnings as errors and all 131 native tests pass. Offscreen snapshots capture every tab at 2x in the same settled panel size, plus empty Media and Files' drop state; the actual PNGs were inspected and the snapshot checker passes. All nine module title rows measure 28pt high with the same host-leading origin, 19.5pt baseline from the row top and 12pt body gap. Visible page actions end at the host's trailing edge. Home card headings and Search's field exception were inspected too. All 42 repository tests pass.
+
+The coordinated graphical smoke run also passes all 37 checks and ends in `done`, including `tab-headers`, `terminal-input-lifecycle`, `agent-processes` and `accessible-names`; its snapshot checker passes and every module tab's actual PNG was inspected. The run used the committed implementation `8273efb03c9f9848b4337b164795f13ae78a198c`. Agents' PNG included live T3 rows alongside the seeded rows, so the capture is not evidence of fully synthetic diagnostic data isolation. This did not fail a smoke assertion in this run, and no Terminal/Agents behavior or harness change is included here. Remote CI is separate evidence.
+
+Manual VoiceOver navigation, every provider error/loading/filter combination, physical multi-display reconnects and macOS 13 hardware validation remain outside this recorded evidence. Long/localized title geometry and hidden-action/scrolling states have automated AppKit coverage; they are not a claim that every localized module body was visually reviewed.
 
 ## Verdict
 
@@ -57,11 +73,11 @@ Coordinates below are relative to tab content, not the global display. Source la
 
 ## Proposed header contract
 
-Use a shared tab header aligned to the host's existing leading edge, with a stable baseline and height. Prototype 14pt semibold, 28pt row height and 12pt separation from the body; these are proposed values, not existing tokens. Put filters and actions in a trailing slot where they fit; otherwise use a stable second row. Keep long/localized titles from displacing actions. Avoid double insets in scrolling content.
+Use a shared tab header aligned to the host's existing leading edge, with a stable baseline and height. The implementation adopts the proposed 14pt semibold, 28pt row height and 12pt separation from the body. Put actions in a trailing slot where they fit; keep longer filters/context in the body. Keep long/localized titles from displacing actions. Avoid double insets in scrolling content.
 
 Use the tab's accessible title consistently: Media, Timer, Clipboard, AI, Files, Notifications, Agents and Scheduled tasks. Track title, Focus timer and Launch agents remain descriptive body headings where useful. Home may retain its shared card headings; Search may deliberately use its field as the primary landmark if that exception is documented and labeled. Do not force every content mode into the same body layout.
 
-## Acceptance criteria for a later implementation
+## Acceptance criteria from the original proposal
 
 - Capture every tab at one display scale and settled window size; annotate title origin/baseline, action row and body origin. Shared headers match within 1 point after rounding.
 - Review empty, populated, loading, unavailable/error, long/localized text and filtered states. Title placement does not depend on token totals, item count, or selected content.
@@ -74,4 +90,4 @@ Use the tab's accessible title consistently: Media, Timer, Clipboard, AI, Files,
 
 The two user screenshots establish collapsed-wing spacing and the reported populated-search clipping. Other tabs have source-only evidence and need native screenshots before any claim that every title has been visually checked. The originals include unrelated personal desktop content and are intentionally not published in this proposal.
 
-Run the documented macOS build, tests and smoke checks once full Xcode is available. Add a populated-search smoke case and title-frame evidence; existing empty Search snapshots miss the overflow case. This document is the review and proposed acceptance contract, not an implemented redesign or release approval.
+At review time, full Xcode was unavailable; fresh native captures were pending and empty Search snapshots missed the overflow case. The review above is historical evidence and an acceptance contract, not release approval. See Implementation follow-through for the implemented header scope and its current validation.

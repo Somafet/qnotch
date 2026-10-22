@@ -681,7 +681,10 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
             content = cached("home") { [unowned self] in self.makeHome() }
         default:
             if let tab = registries.tabs.items.first(where: { $0.id == activeTab }) {
-                content = cached("tab." + tab.id, tab.makeView)
+                content = cached("tab." + tab.id) {
+                    let body = tab.makeView()
+                    return tab.id == "search" ? body : TabPageView(id: tab.id, title: tab.title, content: body)
+                }
                 if tab.id == "search" { searchView = content as? SearchView }
             } else {
                 content = placeholder(symbol: "exclamationmark.triangle", title: "Unavailable", detail: "This module is not available.")
