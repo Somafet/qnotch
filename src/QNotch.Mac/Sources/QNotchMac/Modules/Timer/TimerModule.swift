@@ -201,17 +201,15 @@ private final class TimerCardView: NSView, TimerDisplay {
         resetButton = HoverButton(symbol: "arrow.counterclockwise", style: .icon, symbolSize: 14, label: "Reset countdown") { [weak module] in module?.reset() }
         presets = ChipPicker(values: TimerModule.presets, format: { "\($0)" }, label: { "\($0) minutes" }) { [weak module] in module?.choose(minutes: $0) }
         super.init(frame: .zero)
-        time.font = .rounded(30, weight: .semibold, monospacedDigits: true)
+        time.font = .rounded(24, weight: .semibold, monospacedDigits: true)
         time.setAccessibilityIdentifier("timer-remaining")
         start.setAccessibilityIdentifier("timer-toggle")
         start.tint = Palette.textPrimary
-        let readout = NSStackView(views: [time, status])
-        readout.orientation = .horizontal
-        readout.alignment = .firstBaseline
-        readout.spacing = 8
+        time.setContentCompressionResistancePriority(.required, for: .horizontal)
+        let readout = column([time, status], spacing: 0)
         let top = row([readout, spacer(), start, resetButton], spacing: 2)
-        let stack = column([top, progress, presets], spacing: 12)
-        stack.setCustomSpacing(14, after: progress)
+        let stack = column([top, progress, presets], spacing: 8)
+        stack.setCustomSpacing(10, after: progress)
         embed(stack, in: self, inset: 0)
         for view in [top, progress] { view.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true }
         toolTip = "Scroll to change the length"

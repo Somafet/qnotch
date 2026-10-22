@@ -1,5 +1,21 @@
 import Foundation
 
+/// Mac Home sizes keep the same row height; Small always occupies exactly one column.
+public enum HomeCardSize: Int, CaseIterable {
+    case small = 1, medium = 2
+    public var title: String { self == .small ? "Small" : "Medium" }
+
+    public static func supported(defaultSpan: Int) -> [HomeCardSize] {
+        defaultSpan == 2 ? [.small, .medium] : [.small]
+    }
+
+    public static func resolve(saved: Int?, defaultSpan: Int) -> HomeCardSize {
+        let sizes = supported(defaultSpan: defaultSpan)
+        return saved.flatMap(HomeCardSize.init(rawValue:)).flatMap { sizes.contains($0) ? $0 : nil }
+            ?? (defaultSpan == 2 ? .medium : .small)
+    }
+}
+
 /// Home grid placement (Windows HomeView: three columns, cards one or two columns wide).
 /// Dense packing: each card takes the first free slot, in reading order, where it fits, so a
 /// one-column card can fill the hole a two-column card left at the end of a row.

@@ -262,6 +262,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
             clearSegmentDetail()
         }
         store.save("general", general)
+        if previous.cardSizes != general.cardSizes { homeView?.applySizes(general.cardSizes) }
         Motion.userReduced = general.reduceMotion
         Palette.accentOverride = general.accent.flatMap(Palette.hex)
         if previous.accent != general.accent || previous.profileName != general.profileName {
@@ -805,7 +806,8 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         }
         let order = LayoutOrder.apply(saved: general.cardOrder, defaults: cards.map(\.id))
         let ordered = order.compactMap { id in cards.first { $0.id == id } }
-        let home = HomeView(cards: ordered.map { ($0, cached("card." + $0.id, $0.makeView)) })
+        let home = HomeView(cards: ordered.map { ($0, cached("card." + $0.id, $0.makeView)) }, sizes: general.cardSizes)
+        home.resized = { [weak self] id, size in self?.updateGeneral { $0.cardSizes[id] = size.rawValue } }
         home.reordered = { [weak self] ids in self?.updateGeneral { $0.cardOrder = LayoutOrder.reorder(ids, saved: $0.cardOrder) } }
         home.editing = editing
         homeView = home

@@ -11,9 +11,16 @@ struct ViewContribution: Contribution {
     var symbol = "square.grid.2x2"
     /// Settings sidebar icon background.
     var tint = NSColor.systemGray
-    /// Home cards only: 1 or 2 grid columns.
+    /// Home cards only: default width. Two-column cards also provide a Small layout.
     var span = 1
     let makeView: () -> NSView
+
+    var supportedCardSizes: [HomeCardSize] { HomeCardSize.supported(defaultSpan: span) }
+}
+
+/// Module-owned adaptation of a cached Home view; resizing never restarts a provider or session.
+protocol HomeCardSizing: AnyObject {
+    func setHomeCardSize(_ size: HomeCardSize)
 }
 
 /// Optional actions supplied by enabled modules to the menu-bar menu.

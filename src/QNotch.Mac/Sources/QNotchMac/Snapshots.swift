@@ -149,6 +149,17 @@ enum SnapshotViews {
         shell.setEditing(false)
         let cards = cardViews(shell)
         for card in shell.registries.cards.items { run.write("card-" + card.id, cards[card.id], missing: "the card is not on Home") }
+        let originalSizes = shell.general.cardSizes
+        shell.updateGeneral { settings in
+            for card in shell.registries.cards.items { settings.cardSizes[card.id] = HomeCardSize.small.rawValue }
+        }
+        run.notch("tab-home-small")
+        shell.setEditing(true)
+        run.notch("tab-home-small-edit")
+        shell.setEditing(false)
+        let smallCards = cardViews(shell)
+        for card in shell.registries.cards.items { run.write("card-" + card.id + "-small", smallCards[card.id], missing: "the Small card is not on Home") }
+        shell.updateGeneral { $0.cardSizes = originalSizes }
         if let tray = shell.module(FileTrayModule.self) {
             shell.selectTab("files")
             tray.dropActive = true
