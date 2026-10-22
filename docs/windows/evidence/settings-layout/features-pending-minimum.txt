@@ -1,0 +1,26 @@
+"QNotch"
+[Item] "General" #settings-nav-general
+[Item] "Features" #settings-nav-features selected
+[Item] "Updates" #settings-nav-updates
+[Item] "Hotkeys" #settings-nav-hotkeys
+[Item] "Sounds" #settings-nav-sounds
+[Item] "Appearance" #settings-nav-appearance
+[Item] "Game mode" #settings-nav-gamemode
+"Features"
+"Choose what runs and where it appears. Placement applies immediately. Turning a feature on or off requires a restart."
+"Feature changes are ready to apply."
+[Button] "Restart now"
+"System stats"
+"CPU, memory, network, battery and clock in the pill, the System card and the game bar."
+[Toggle] "Enable System stats" #feature-stats
+"Show on Home"
+[Toggle] "System stats: Show on Home" #presentation-card-stats checked
+"Show in the notch"
+[Toggle] "System stats: Show in the notch" #presentation-notch-stats checked
+"Will turn off after restart."
+[Button] "Restart to apply System stats" #feature-restart-stats
+  "Restart now"
+"Now playing"
+"Track, artwork and controls for anything that plays media."
+[Toggle] "Enable Now playing" #feature-media
+

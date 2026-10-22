@@ -39,7 +39,7 @@ public partial class SettingsWindow : Window
             row.Children.Add(new TextBlock { Text = s.Title, FontSize = 13, VerticalAlignment = VerticalAlignment.Center });
             var rb = new RadioButton { Style = (Style)FindResource("NavButton"), Content = row, GroupName = "nav", Margin = new Thickness(0, 0, 0, 2) };
             System.Windows.Automation.AutomationProperties.SetAutomationId(rb, "settings-nav-" + id);
-            rb.Checked += (_, _) => Select(id);
+            rb.Checked += (_, _) => { Select(id); rb.BringIntoView(); };
             Nav.Children.Add(rb);
             _buttons[id] = rb;
         }

@@ -1,0 +1,1 @@
+PASS isolated native Settings minimum size, disabled feature guidance, enable switch persistence and inline restart/cancel feedback.
