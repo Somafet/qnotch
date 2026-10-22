@@ -164,3 +164,6 @@ protocol NotchModule: AnyObject {
     func systemDidWake()
     func stop()
 }
+
+/// Tab content that restores its own input focus when explicitly opened with the keyboard.
+protocol PanelKeyboardContent: AnyObject { func focusKeyboard() }

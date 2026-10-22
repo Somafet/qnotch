@@ -62,11 +62,13 @@ enum ModuleList {
                    symbol: "chart.bar.xaxis", tint: .darkGray, setup: GithubModule.setupRow) { GithubModule() },
         ModuleInfo(id: "ai", title: "AI apps and usage", detail: "⌃⌥1 to ⌃⌥6 open your AI apps; plan usage for Claude Code and Codex.",
                    symbol: "gauge.with.dots.needle.33percent", tint: .systemPurple) { AiModule() },
+        ModuleInfo(id: "terminal", title: "Terminal", detail: "A quick login shell in the panel. Off by default. Closing keeps the session; turning this off ends its jobs.",
+                   symbol: "terminal", tint: .systemTeal) { TerminalModule() },
         ModuleInfo(id: "scheduled", title: "Scheduled tasks", detail: "Your launch agents (scripts and jobs on a timer), with pause, resume and delete.",
                    symbol: "clock.arrow.2.circlepath", tint: .systemBrown) { ScheduledModule() }
     ]
 
-    static func make(disabled: [String]) -> [NotchModule] {
-        all.filter { !disabled.contains($0.id) }.map { $0.make() }
+    static func make(disabled: [String], enabledOptional: [String] = []) -> [NotchModule] {
+        all.filter { !disabled.contains($0.id) && (!GeneralSettings.defaultOffModules.contains($0.id) || enabledOptional.contains($0.id)) }.map { $0.make() }
     }
 }

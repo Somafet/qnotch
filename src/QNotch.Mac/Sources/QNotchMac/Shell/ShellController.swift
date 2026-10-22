@@ -250,7 +250,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         if previous.accent != general.accent || previous.profileName != general.profileName {
             accentChanged()
         }
-        if disabled != general.disabledModules {
+        if disabled != general.disabledModules || previous.enabledOptionalModules != general.enabledOptionalModules {
             composeModules()
             contentCache["home"] = nil
             discardPanel()
@@ -517,7 +517,9 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         updateVisibility()
         if keyboard {
             panel.makeKeyAndOrderFront(nil)
-            if activeTab == "search" { searchView?.focus(appending: "") } else { panel.makeFirstResponder(nil) }
+            if activeTab == "search" { searchView?.focus(appending: "") }
+            else if let input = contentCache["tab." + activeTab] as? PanelKeyboardContent { input.focusKeyboard() }
+            else { panel.makeFirstResponder(nil) }
         } else { panel.orderFrontRegardless() }
     }
 
@@ -585,6 +587,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         let stripChanges = !general.isTabVisible(activeTab) || !general.isTabVisible(id)
         guard id != activeTab else {
             if id == "search", state.acceptsKeyboard { searchView?.focus(appending: "") }
+            else if state.acceptsKeyboard { (contentCache["tab." + id] as? PanelKeyboardContent)?.focusKeyboard() }
             return
         }
         if editing, id != "home" { setEditing(false) }
@@ -598,7 +601,10 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         showBody(direction: next > previous ? 1 : -1, animated: true)
         updateVisibility()
         if id == "search", state.acceptsKeyboard { searchView?.focus(appending: "") }
-        else if state.acceptsKeyboard, panel.firstResponder is NSTextView { panel.makeFirstResponder(nil) }
+        else if state.acceptsKeyboard {
+            if let input = contentCache["tab." + id] as? PanelKeyboardContent { input.focusKeyboard() }
+            else { panel.makeFirstResponder(nil) }
+        }
     }
 
     private func typeToSearch(_ text: String) {

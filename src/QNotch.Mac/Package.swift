@@ -11,7 +11,8 @@ let package = Package(
     ],
     targets: [
         .target(name: "QNotchMacCore"),
-        .target(name: "QNotchMac", dependencies: ["QNotchMacCore", .product(name: "Sparkle", package: "Sparkle")]),
+        .target(name: "QNotchTerminalPTY"),
+        .target(name: "QNotchMac", dependencies: ["QNotchMacCore", "QNotchTerminalPTY", .product(name: "Sparkle", package: "Sparkle")]),
         .executableTarget(name: "QNotchMacApp", dependencies: ["QNotchMac"],
                           // Sparkle.framework is copied into Contents/Frameworks by build.sh.
                           linkerSettings: [.unsafeFlags(["-Xlinker", "-rpath", "-Xlinker", "@executable_path/../Frameworks"])]),

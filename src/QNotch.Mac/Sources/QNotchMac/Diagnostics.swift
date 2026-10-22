@@ -35,6 +35,7 @@ enum NativeSmokeTest {
                 SnapshotViews.render(run)
                 try checkSearchEnablement(run)
                 try checkFeatureVisibility(run)
+                try TerminalSmoke.check(run)
                 (timer, note) = try checkShell(run, layout: layout)
             } catch { return finish(error) }
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) {
