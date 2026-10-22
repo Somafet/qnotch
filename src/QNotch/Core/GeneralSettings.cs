@@ -32,6 +32,8 @@ public sealed partial class GeneralSettings : ObservableObject
 
     /// <summary>Ids of modules the user turned off (Settings, Features). They are never created; a change applies on restart.</summary>
     public List<string> DisabledModules { get; set; } = new();
+    /// <summary>Explicit local opt-ins for default-off modules. Never included in setup codes.</summary>
+    [ObservableProperty] List<string> _localEnabledModules = new();
 
     /// <summary>Card ids in display order, including hidden ones (hidden cards keep their slot).</summary>
     public List<string> CardOrder { get; set; } = new();

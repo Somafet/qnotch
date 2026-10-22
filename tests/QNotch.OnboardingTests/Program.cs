@@ -40,14 +40,14 @@ await Test("diagnostic runs never show it", () =>
 await Test("on demand: features are read-only, first run: editable", () =>
 {
     var gs = new GeneralSettings { DisabledModules = ["note"] };
-    var onDemand = new TourChoices(TourMode.OnDemand, gs, Ids());
+    var onDemand = new TourChoices(TourMode.OnDemand, gs, Ids(), DefaultOff());
     Assert(!onDemand.FeaturesEditable);
     onDemand.SetOn("note", true);
     onDemand.SetOn("media", false);
     Assert(!onDemand.IsOn("note") && onDemand.IsOn("media"));
     onDemand.Apply(gs, TourEnd.Finished);
     Assert(gs.DisabledModules.SequenceEqual(["note"]));
-    Assert(new TourChoices(TourMode.FirstRun, new GeneralSettings(), Ids()).FeaturesEditable);
+    Assert(new TourChoices(TourMode.FirstRun, new GeneralSettings(), Ids(), DefaultOff()).FeaturesEditable);
     return Task.CompletedTask;
 });
 await Test("OnboardingDone is never in a setup code", () =>
@@ -60,11 +60,11 @@ await Test("OnboardingDone is never in a setup code", () =>
 
 // ---------- feature choices ----------
 
-await Test("every switch starts on; DisabledModules lists the switched-off ones in ModuleList order", () =>
+await Test("declared feature defaults apply; DisabledModules lists switched-off default-on modules in order", () =>
 {
     var gs = new GeneralSettings();
-    var c = new TourChoices(TourMode.FirstRun, gs, Ids());
-    Assert(Ids().All(c.IsOn));
+    var c = new TourChoices(TourMode.FirstRun, gs, Ids(), DefaultOff());
+    Assert(ModuleList.All.All(m => c.IsOn(m.Id) == m.DefaultEnabled));
     c.SetOn("weather", false);
     c.SetOn("agents", false);
     c.SetOn("clipboard", false);
@@ -74,17 +74,17 @@ await Test("every switch starts on; DisabledModules lists the switched-off ones 
     Assert(gs.DisabledModules.SequenceEqual(expected), string.Join(",", gs.DisabledModules));
     return Task.CompletedTask;
 });
-await Test("untouched features stay all on, also when skipped", () =>
+await Test("untouched features keep their defaults, also when skipped", () =>
 {
     var gs = new GeneralSettings();
-    new TourChoices(TourMode.FirstRun, gs, Ids()).Apply(gs, TourEnd.Skipped);
+    new TourChoices(TourMode.FirstRun, gs, Ids(), DefaultOff()).Apply(gs, TourEnd.Skipped);
     Assert(gs.DisabledModules.Count == 0);
     return Task.CompletedTask;
 });
 await Test("a skip keeps the features toggled so far", () =>
 {
     var gs = new GeneralSettings();
-    var c = new TourChoices(TourMode.FirstRun, gs, Ids());
+    var c = new TourChoices(TourMode.FirstRun, gs, Ids(), DefaultOff());
     c.SetOn("github", false);
     c.Apply(gs, TourEnd.Skipped);
     Assert(gs.DisabledModules.SequenceEqual(["github"]));
@@ -110,7 +110,7 @@ await Test("every module is in exactly one Features group", () =>
 await Test("finish applies the switches as shown", () =>
 {
     var gs = new GeneralSettings();
-    var c = new TourChoices(TourMode.FirstRun, gs, Ids());
+    var c = new TourChoices(TourMode.FirstRun, gs, Ids(), DefaultOff());
     Assert(c.Updates && c.StartWithWindows); // on by default in the tour
     c.SetUpdates(false);
     c.Apply(gs, TourEnd.Finished);
@@ -120,14 +120,14 @@ await Test("finish applies the switches as shown", () =>
 await Test("skip on a first run: updates on and chosen, start at login unchanged", () =>
 {
     var gs = new GeneralSettings();
-    new TourChoices(TourMode.FirstRun, gs, Ids()).Apply(gs, TourEnd.Skipped);
+    new TourChoices(TourMode.FirstRun, gs, Ids(), DefaultOff()).Apply(gs, TourEnd.Skipped);
     Assert(gs.CheckForUpdates && gs.UpdateChecksChoiceMade && !gs.StartWithWindows && gs.OnboardingDone);
     return Task.CompletedTask;
 });
 await Test("skip keeps toggles the user already changed", () =>
 {
     var gs = new GeneralSettings();
-    var c = new TourChoices(TourMode.FirstRun, gs, Ids());
+    var c = new TourChoices(TourMode.FirstRun, gs, Ids(), DefaultOff());
     c.SetUpdates(false);
     c.SetStartWithWindows(true);
     c.Apply(gs, TourEnd.Skipped);
@@ -137,14 +137,14 @@ await Test("skip keeps toggles the user already changed", () =>
 await Test("on demand: a skip changes nothing but the flag", () =>
 {
     var gs = new GeneralSettings { CheckForUpdates = false, UpdateChecksChoiceMade = true, StartWithWindows = true, OnboardingDone = true };
-    new TourChoices(TourMode.OnDemand, gs, Ids()).Apply(gs, TourEnd.Skipped);
+    new TourChoices(TourMode.OnDemand, gs, Ids(), DefaultOff()).Apply(gs, TourEnd.Skipped);
     Assert(!gs.CheckForUpdates && gs.StartWithWindows && gs.OnboardingDone);
     return Task.CompletedTask;
 });
 await Test("on demand: the finish switches start at the current values", () =>
 {
     var gs = new GeneralSettings { CheckForUpdates = false, UpdateChecksChoiceMade = true, StartWithWindows = false };
-    var c = new TourChoices(TourMode.OnDemand, gs, Ids());
+    var c = new TourChoices(TourMode.OnDemand, gs, Ids(), DefaultOff());
     Assert(!c.Updates && !c.StartWithWindows);
     c.Apply(gs, TourEnd.Finished);
     Assert(!gs.CheckForUpdates && !gs.StartWithWindows);
@@ -231,6 +231,7 @@ Console.WriteLine($"{checks - failures}/{checks} onboarding checks passed.");
 return failures == 0 ? 0 : 1;
 
 static List<string> Ids() => ModuleList.All.Select(m => m.Id).ToList();
+static IEnumerable<string> DefaultOff() => ModuleList.All.Where(m => !m.DefaultEnabled).Select(m => m.Id);
 
 static DeviceCode Code(int interval = 5, int expiresIn = 900) => new("dev", "WDJB-MJHT", "https://github.com/login/device", expiresIn, interval);
 

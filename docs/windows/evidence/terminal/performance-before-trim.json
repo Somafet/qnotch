@@ -1,0 +1,45 @@
+{
+  "owned_children": [
+    {
+      "name": "conhost.exe",
+      "resident_bytes": 10121216
+    },
+    {
+      "name": "pwsh.exe",
+      "resident_bytes": 100347904
+    }
+  ],
+  "cycle_hz": 3691234945.421528,
+  "warmup_seconds": 20,
+  "cpu": "AMD Ryzen 9 5900X, 24 logical processors",
+  "pid": 62044,
+  "platform": "Windows x64",
+  "source_revision": "02799790bfda68066874a30a5df5281f885e822f",
+  "version": "0.4.0",
+  "source_dirty": false,
+  "intervals": [
+    {
+      "start_local": "2026-10-22T12:32:15.7943530+02:00",
+      "panel_start": "collapsed",
+      "cpu_percent_one_core": 0.12345040094298271,
+      "panel_end": "collapsed",
+      "end_local": "2026-10-22T12:32:45.8136949+02:00",
+      "interval_seconds": 30.0147887,
+      "resident_bytes_end": 106729472,
+      "resident_bytes_start": 110477312
+    },
+    {
+      "start_local": "2026-10-22T12:32:45.8463071+02:00",
+      "panel_start": "collapsed",
+      "cpu_percent_one_core": 0.521568378960151,
+      "panel_end": "collapsed",
+      "end_local": "2026-10-22T12:33:15.8585635+02:00",
+      "interval_seconds": 30.0116761,
+      "resident_bytes_end": 106643456,
+      "resident_bytes_start": 106729472
+    }
+  ],
+  "state": "collapsed; Terminal on; all other modules off; retained idle shell when on",
+  "os": "Microsoft Windows NT 10.0.26200.0",
+  "method": "QueryProcessCycleTime; three 100ms thread-cycle calibrations; two 30s intervals; WPF ETW PID filtered; no IPC or input during intervals"
+}

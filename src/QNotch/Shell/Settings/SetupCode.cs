@@ -127,7 +127,7 @@ public static class SetupCode
     {
         var off = merged["DisabledModules"]?.AsArray().Select(n => n?.GetValue<string>()).ToHashSet(StringComparer.OrdinalIgnoreCase) ?? [];
         var now = store.Get<GeneralSettings>("general").DisabledModules;
-        return ModuleList.All.Where(m => now.Contains(m.Id, StringComparer.OrdinalIgnoreCase) && !off.Contains(m.Id)).Select(m => m.Title);
+        return ModuleList.All.Where(m => m.DefaultEnabled && now.Contains(m.Id, StringComparer.OrdinalIgnoreCase) && !off.Contains(m.Id)).Select(m => m.Title);
     }
 
     /// <summary>Every gesture is empty (off) or parses and holds Alt or Win, so a code cannot take Ctrl+C or a plain key from other apps.</summary>

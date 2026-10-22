@@ -20,7 +20,7 @@ public static class Tour
         TourWindow? w = null;
         try
         {
-            w = new TourWindow(new TourChoices(TourMode.FirstRun, gs, modules.Select(m => m.Id)), gs, store, shortcuts, modules, null);
+            w = new TourWindow(new TourChoices(TourMode.FirstRun, gs, modules.Select(m => m.Id), modules.Where(m => !m.DefaultEnabled).Select(m => m.Id)), gs, store, shortcuts, modules, null);
             w.ShowDialog();
             return w.OpenPanel;
         }
@@ -30,7 +30,7 @@ public static class Tour
             try { w?.Close(); } catch { }
             if (!gs.OnboardingDone)
             {
-                new TourChoices(TourMode.FirstRun, gs, modules.Select(m => m.Id)).Apply(gs, TourEnd.Skipped);
+                new TourChoices(TourMode.FirstRun, gs, modules.Select(m => m.Id), modules.Where(m => !m.DefaultEnabled).Select(m => m.Id)).Apply(gs, TourEnd.Skipped);
                 store.Save("general", gs);
             }
             return false;
@@ -44,7 +44,7 @@ public static class Tour
         if (_open is { } existing) { existing.Activate(); return; }
         try
         {
-            var w = _open = new TourWindow(new TourChoices(TourMode.OnDemand, gs, modules.Select(m => m.Id)), gs, store, shortcuts, modules, openSettings)
+            var w = _open = new TourWindow(new TourChoices(TourMode.OnDemand, gs, modules.Select(m => m.Id), modules.Where(m => !m.DefaultEnabled).Select(m => m.Id)), gs, store, shortcuts, modules, openSettings)
             {
                 Arrive = openPanel, // Open QNotch: the panel opens as the flying tour reaches the notch
             };
@@ -69,7 +69,7 @@ public static class Tour
     {
         foreach (var mode in new[] { TourMode.FirstRun, TourMode.OnDemand })
         {
-            var w = new TourWindow(new TourChoices(mode, gs, modules.Select(m => m.Id)), gs, store, shortcuts, modules, _ => { })
+            var w = new TourWindow(new TourChoices(mode, gs, modules.Select(m => m.Id), modules.Where(m => !m.DefaultEnabled).Select(m => m.Id)), gs, store, shortcuts, modules, _ => { })
             {
                 NoAnimation = true, WindowStartupLocation = WindowStartupLocation.Manual, Left = -20000, Top = 0, ShowActivated = false, ShowInTaskbar = false,
             };

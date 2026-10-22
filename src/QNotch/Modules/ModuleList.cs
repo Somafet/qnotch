@@ -12,6 +12,7 @@ using QNotch.Modules.Pomodoro;
 using QNotch.Modules.Scheduled;
 using QNotch.Modules.Search;
 using QNotch.Modules.Stats;
+using QNotch.Modules.Terminal;
 using QNotch.Modules.Volume;
 using QNotch.Modules.Weather;
 using QNotch.Theme;
@@ -47,6 +48,8 @@ public static class ModuleList
             Shared: new(typeof(WeatherSettings), "Units", "ShowInPill"), Glyph: WeatherModule.Sun, Setup: c => WeatherSetup.Create(c)),
         new("search", "Search", "One search box for clipboard history, files, notes, notifications, tasks, tabs and settings, with its own hotkey.", () => new SearchModule(),
             Glyph: "", Tip: ctx => ctx.Shortcuts.GestureOf("search", SearchModule.DefaultKey) is { Length: > 0 } g ? $"Press {g} to search clipboard, files, notes and settings." : null),
+        new("terminal", "Terminal", "An interactive Windows shell in your home folder. Sessions stay open when the panel closes. Local opt-in; off by default.",
+            () => new TerminalModule(), Glyph: "", DefaultEnabled: false),
     ];
 
     /// <summary>The welcome tour's Features step: groups in order, each with module ids in order. A module missing here joins the last group.</summary>
@@ -54,7 +57,7 @@ public static class ModuleList
     [
         ("At a glance", ["stats", "media", "weather", "capture", "timer", "volume"]),
         ("Get things done", ["clipboard", "search", "note", "filetray", "colorpicker", "scheduled"]),
-        ("For developers", ["agents", "ai", "github", "notifications"]),
+        ("For developers", ["agents", "ai", "github", "notifications", "terminal"]),
     ];
 
     /// <summary>Old module id to the ids it was split into. An old id in DisabledModules turns all of them off.</summary>

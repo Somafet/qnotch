@@ -1,0 +1,4 @@
+monitor Display 1  (2560 x 1440)  primary, scale 1, 2560 x 1440 DIPs
+display 0: bounds (0,0) 2560x1440, scale 1; full-top attachment and +/-10000 DIP nudge clamping passed collapsed/expanded
+display 1: bounds (2560,-731) 5120x2880, scale 2; full-top attachment and +/-10000 DIP nudge clamping passed collapsed/expanded
+foreground before MozillaWindowClass, after MozillaWindowClass; window keyboard False, active True

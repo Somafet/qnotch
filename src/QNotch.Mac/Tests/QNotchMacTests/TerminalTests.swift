@@ -184,10 +184,18 @@ final class TerminalTests: XCTestCase {
         session.stop()
         XCTAssertLessThan(Date().timeIntervalSince(started), 2, "Closing the master before waitpid must not hang")
         XCTAssertTrue(session.reaped)
-        // A killed descendant can briefly remain a zombie awaiting launchd; it cannot run.
-        var info = proc_bsdinfo()
-        let count = proc_pidinfo(child, PROC_PIDTBSDINFO, 0, &info, Int32(MemoryLayout.size(ofValue: info)))
-        XCTAssertTrue(count == 0 || info.pbi_status == 5, "Owned background job remains alive")
+        // stop() reaps the shell, but this descendant is not our direct child. SIGKILL
+        // delivery and launchd's reaping of it can finish after waitpid(shell) returns.
+        // Wait for the same gone-or-zombie condition instead of sampling that race once.
+        var lastState = "not inspected"
+        let stopped = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            var info = proc_bsdinfo()
+            let count = proc_pidinfo(child, PROC_PIDTBSDINFO, 0, &info, Int32(MemoryLayout.size(ofValue: info)))
+            lastState = "proc_pidinfo bytes=\(count), status=\(info.pbi_status)"
+            return count == 0 || info.pbi_status == 5 // A zombie cannot run while awaiting launchd.
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [stopped], timeout: 2), .completed,
+                       "Owned background job remains alive: \(lastState)")
         XCTAssertEqual(kill(other.pid, 0), 0)
         XCTAssertFalse(other.reaped)
     }

@@ -1,0 +1,7 @@
+version: 0.4.0.0
+self-contained: false
+only: settings-notifications*,pill
+pill: ok
+settings-notifications: ok
+settings-notifications-end: ok
+done

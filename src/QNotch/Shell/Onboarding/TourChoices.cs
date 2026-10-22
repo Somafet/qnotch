@@ -18,13 +18,20 @@ public sealed class TourChoices
     public static readonly IReadOnlyList<string> StepIds = ["welcome", "open", "features", "connect", "finish"];
 
     readonly List<string> _ids;
+    readonly HashSet<string> _defaultOff;
     bool _updatesTouched, _startTouched;
 
-    public TourChoices(TourMode mode, GeneralSettings gs, IEnumerable<string> moduleIds)
+    public TourChoices(TourMode mode, GeneralSettings gs, IEnumerable<string> moduleIds, IEnumerable<string>? defaultOff = null)
     {
         Mode = mode;
         _ids = moduleIds.ToList();
+        _defaultOff = new(defaultOff ?? [], StringComparer.OrdinalIgnoreCase);
         Off = mode == TourMode.FirstRun ? new(StringComparer.OrdinalIgnoreCase) : new(gs.DisabledModules, StringComparer.OrdinalIgnoreCase);
+        foreach (var id in _defaultOff)
+        {
+            if (mode == TourMode.FirstRun || !gs.LocalEnabledModules.Contains(id, StringComparer.OrdinalIgnoreCase)) Off.Add(id);
+            else Off.Remove(id);
+        }
         // The tour shows the defaults on a fresh install, the current values when opened from Settings.
         Updates = mode == TourMode.FirstRun || gs.CheckForUpdates;
         StartWithWindows = mode == TourMode.FirstRun || gs.StartWithWindows;
@@ -67,7 +74,11 @@ public sealed class TourChoices
     /// </summary>
     public void Apply(GeneralSettings gs, TourEnd end)
     {
-        if (FeaturesEditable) gs.DisabledModules = DisabledModules(_ids, Off, gs.DisabledModules);
+        if (FeaturesEditable)
+        {
+            gs.DisabledModules = DisabledModules(_ids.Where(id => !_defaultOff.Contains(id)), Off, gs.DisabledModules).Where(id => !_defaultOff.Contains(id)).ToList();
+            gs.LocalEnabledModules = gs.LocalEnabledModules.Where(id => !_defaultOff.Contains(id)).Concat(_defaultOff.Where(id => !Off.Contains(id))).ToList();
+        }
         var finished = end == TourEnd.Finished;
         if (finished || _updatesTouched || Mode == TourMode.FirstRun)
         {
