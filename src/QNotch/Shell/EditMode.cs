@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
@@ -72,6 +73,8 @@ internal sealed class EditModeController
         sv.PreviewMouseMove += OnMove;
         sv.PreviewMouseLeftButtonUp += OnUp;
         sv.LostMouseCapture += OnLostCapture;
+        sv.AddHandler(Thumb.DragStartedEvent, new DragStartedEventHandler(OnResizeStarted));
+        sv.AddHandler(Thumb.DragCompletedEvent, new DragCompletedEventHandler(OnResizeCompleted));
     }
 
     void Stop()
@@ -83,6 +86,8 @@ internal sealed class EditModeController
         sv.PreviewMouseMove -= OnMove;
         sv.PreviewMouseLeftButtonUp -= OnUp;
         sv.LostMouseCapture -= OnLostCapture;
+        sv.RemoveHandler(Thumb.DragStartedEvent, new DragStartedEventHandler(OnResizeStarted));
+        sv.RemoveHandler(Thumb.DragCompletedEvent, new DragCompletedEventHandler(OnResizeCompleted));
         if (sv.IsMouseCaptured) sv.ReleaseMouseCapture();
         EndDrag(false);
         foreach (var (h, f) in _fx) Reset(h, f);
@@ -148,6 +153,8 @@ internal sealed class EditModeController
 
     void OnDown(object sender, MouseButtonEventArgs e)
     {
+        // Edge anchors handle their own drag; all other card content moves the card.
+        if (Ancestor<CardResizeHandle>(e.OriginalSource as DependencyObject) is not null) return;
         var h = Ancestor<CardHost>(e.OriginalSource as DependencyObject);
         if (h == null || !_fx.ContainsKey(h) || _press != null) return;
         e.Handled = true; // edit mode: card contents are not clickable
@@ -176,6 +183,18 @@ internal sealed class EditModeController
     }
 
     void OnLostCapture(object sender, MouseEventArgs e) => EndDrag(true);
+
+    void OnResizeStarted(object sender, DragStartedEventArgs e)
+    {
+        if (Ancestor<CardHost>(e.OriginalSource as DependencyObject) is not { } h || !_fx.TryGetValue(h, out var f)) return;
+        Snap(f.Rot, RotateTransform.AngleProperty);
+        f.Rot.Angle = 0;
+    }
+
+    void OnResizeCompleted(object sender, DragCompletedEventArgs e)
+    {
+        if (_editing && Ancestor<CardHost>(e.OriginalSource as DependencyObject) is { } h && _fx.TryGetValue(h, out var f)) Jiggle(h, f);
+    }
 
     // ---- Drag ----
 

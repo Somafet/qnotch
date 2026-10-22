@@ -114,6 +114,7 @@ internal sealed partial class SmokeTest
             await Check("placement", () => Task.FromResult(Placement()));
             await Check("placement-displays", PlacementDisplays);
             await Check("presentation", PresentationCheck);
+            await Check("card-sizes", CardSizesCheck);
             await Check("hover-keeps-focus", HoverKeepsFocus);
             await Check("hotkey-toggle", () => Foreground(HotkeyToggle));
             await Check("hotkey-search", () => Foreground(HotkeySearch));
@@ -282,7 +283,6 @@ internal sealed partial class SmokeTest
 
     async Task<string?> EditMode()
     {
-        if (!Motion.Enabled) return "skip: edit mode needs animations, and Windows animation effects or Reduce motion turn them off here";
         S.OpenPanel();
         S.SelectTab("home");
         await Task.Delay(400);

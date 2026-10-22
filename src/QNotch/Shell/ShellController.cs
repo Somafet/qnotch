@@ -82,7 +82,7 @@ public sealed class ShellController : IShell
     internal System.Windows.Threading.Dispatcher Dispatcher => _w.Dispatcher;
 
     public bool IsPinned => _general.Pinned;
-    public bool IsEditMode { get => _vm.IsEditMode; set => _vm.IsEditMode = value && Motion.Enabled && _mode == ShellMode.Expanded; }
+    public bool IsEditMode { get => _vm.IsEditMode; set => _vm.IsEditMode = value && _mode == ShellMode.Expanded; }
 
     // ---------- startup ----------
 
