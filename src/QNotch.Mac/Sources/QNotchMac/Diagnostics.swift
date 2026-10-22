@@ -34,6 +34,7 @@ enum NativeSmokeTest {
                                       "panel_body=\(layout.panelBody)"])
                 SnapshotViews.render(run)
                 try checkSearchEnablement(run)
+                try checkFeatureVisibility(run)
                 (timer, note) = try checkShell(run, layout: layout)
             } catch { return finish(error) }
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) {

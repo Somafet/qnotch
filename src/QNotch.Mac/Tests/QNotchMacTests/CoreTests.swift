@@ -1059,6 +1059,8 @@ final class SetupCodeTests: XCTestCase {
         mine.general.hoverDelayMs = 300
         mine.general.setEnabled("clipboard", false)
         mine.general.setCardVisible("note", false)
+        mine.general.setTabVisible("media", false)
+        mine.general.setNotchVisible("timer", false)
         mine.timer.minutes = 45
         mine.weather.units = .imperial
         mine.gameMode.opacity = 55
@@ -1077,11 +1079,15 @@ final class SetupCodeTests: XCTestCase {
         let windows = "qnotch-setup-1:NY9NS8QwEIb_y-txgxQ_QHNb0sMuUhT8uIiHbDsmYadNSUbLsvS_m4ieHnjnmXmZMxxNlCxDn7GL35TahZi7DH3VNAovnkaCRmvTEQrbvqdJTOSYSnhxY9r7O1PyNmR7YBq6OHwxleV3GA7zIdo04EPBFL6FHIpTi6YohZ-WM62rgo9ypFOuk4c_SnSuujCSeLNl2XSo6kJWPKWqvE5Biov9OFMK5QOFZx-X_fQUmP-vKzg70hiH397H2fZBTtDN5a3CjoLzAn3drOsP"
         var current = base
         current.general.setEnabled("weather", false)
+        current.general.setTabVisible("terminal", false)
+        current.general.setNotchVisible("terminal", false)
         let fromWindows = try SetupCode.read(windows, current: current, modules: ["weather", "clipboard"])
         XCTAssertEqual(fromWindows.result.general.hoverDelayMs, 200)
         XCTAssertEqual(fromWindows.result.general.accent, "#4CD98C")
         XCTAssertEqual(fromWindows.result.general.disabledModules, ["clipboard"])
         XCTAssertEqual(fromWindows.result.general.hiddenCards, ["note"])
+        XCTAssertEqual(fromWindows.result.general.hiddenTabs, ["terminal"], "Windows codes leave Mac tab visibility alone")
+        XCTAssertEqual(fromWindows.result.general.hiddenNotchModules, ["terminal"])
         XCTAssertEqual(fromWindows.result.weather.units, .imperial)
         XCTAssertFalse(fromWindows.result.weather.showInPill)
         XCTAssertEqual(fromWindows.result.gameMode.opacity, 50)
@@ -1091,6 +1097,29 @@ final class SetupCodeTests: XCTestCase {
         }
         let outOfRange = SetupCode.prefix + SetupCode.base64url(SetupCode.deflate(Data(#"{"timer":{"Minutes":999}}"#.utf8)))
         XCTAssertThrowsError(try SetupCode.read(outOfRange, current: base, modules: []))
+    }
+
+    func testMacVisibilityFieldsAreTypedAndLocal() throws {
+        func read(_ json: String) throws -> SetupCode.Plan {
+            let code = SetupCode.prefix + SetupCode.base64url(SetupCode.deflate(Data(json.utf8)))
+            return try SetupCode.read(code, current: base, modules: [])
+        }
+        let plan = try read(#"{"mac":{"hiddenTabs":["terminal"],"hiddenNotchModules":["timer"]}}"#)
+        XCTAssertEqual(plan.result.general.hiddenTabs, ["terminal"])
+        XCTAssertEqual(plan.result.general.hiddenNotchModules, ["timer"])
+        XCTAssertEqual(plan.titles, ["Mac visibility"])
+        for json in [#"{"mac":{"hiddenTabs":false}}"#, #"{"mac":{"hiddenNotchModules":[1]}}"#] {
+            XCTAssertThrowsError(try read(json))
+        }
+        let code = SetupCode.export(plan.result)
+        let packed = try XCTUnwrap(SetupCode.unbase64url(String(code.dropFirst(SetupCode.prefix.count))))
+        let json = try XCTUnwrap(SetupCode.inflate(packed, limit: SetupCode.maxJSON))
+        let root = try XCTUnwrap(JSONSerialization.jsonObject(with: json) as? [String: Any])
+        let general = try XCTUnwrap(root["general"] as? [String: Any])
+        XCTAssertNil(general["HiddenTabs"])
+        XCTAssertNil(general["hiddenTabs"])
+        let mac = try XCTUnwrap(root["mac"] as? [String: Any])
+        XCTAssertEqual(mac["hiddenTabs"] as? [String], ["terminal"])
     }
 
     func testZeroAndOneAreNumbersNotBooleansAndTruncatedCodesFail() throws {

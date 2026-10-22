@@ -27,6 +27,10 @@ public struct GeneralSettings: Codable, Equatable {
     public var profileName: String?
     /// Home cards the user hid (by card id).
     public var hiddenCards: [String] = []
+    /// Tab-strip visibility is independent of module enablement. Hidden tabs can be opened by actions.
+    public var hiddenTabs: [String] = []
+    /// Module owners whose regular status segments are hidden beside the notch (peeks are separate).
+    public var hiddenNotchModules: [String] = []
     /// Edit mode: the user's order of Home cards and of module tabs (see LayoutOrder).
     public var cardOrder: [String] = []
     public var tabOrder: [String] = []
@@ -50,6 +54,17 @@ public struct GeneralSettings: Codable, Equatable {
         if !visible { hiddenCards.append(card); hiddenCards.sort() }
     }
 
+    public func isTabVisible(_ tab: String) -> Bool { !hiddenTabs.contains(tab) }
+    public mutating func setTabVisible(_ tab: String, _ visible: Bool) {
+        hiddenTabs.removeAll { $0 == tab }
+        if !visible { hiddenTabs.append(tab); hiddenTabs.sort() }
+    }
+    public func isNotchVisible(_ module: String) -> Bool { !hiddenNotchModules.contains(module) }
+    public mutating func setNotchVisible(_ module: String, _ visible: Bool) {
+        hiddenNotchModules.removeAll { $0 == module }
+        if !visible { hiddenNotchModules.append(module); hiddenNotchModules.sort() }
+    }
+
     /// Name for the panel header: the chosen name, else the account's first name, else "QNotch".
     public static func displayName(chosen: String?, fullUserName: String) -> String {
         if let chosen = chosen?.trimmingCharacters(in: .whitespacesAndNewlines), !chosen.isEmpty { return String(chosen.prefix(40)) }
@@ -57,7 +72,7 @@ public struct GeneralSettings: Codable, Equatable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case displayID, reduceMotion, disabledModules, timerEnabled, hoverDelayMs, closeDelayMs, pinned, accent, profileName, hiddenCards, cardOrder, tabOrder, pillOffsets, betaUpdates, onboardingDone
+        case displayID, reduceMotion, disabledModules, timerEnabled, hoverDelayMs, closeDelayMs, pinned, accent, profileName, hiddenCards, hiddenTabs, hiddenNotchModules, cardOrder, tabOrder, pillOffsets, betaUpdates, onboardingDone
     }
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -72,6 +87,8 @@ public struct GeneralSettings: Codable, Equatable {
         accent = c.value(.accent, String?.none).flatMap { Self.accents.contains($0) ? $0 : nil }
         profileName = c.value(.profileName, String?.none)
         hiddenCards = c.value(.hiddenCards, [])
+        hiddenTabs = c.value(.hiddenTabs, [])
+        hiddenNotchModules = c.value(.hiddenNotchModules, [])
         cardOrder = c.value(.cardOrder, [])
         tabOrder = c.value(.tabOrder, [])
         pillOffsets = c.value(.pillOffsets, [:])
@@ -89,6 +106,8 @@ public struct GeneralSettings: Codable, Equatable {
         try c.encodeIfPresent(accent, forKey: .accent)
         try c.encodeIfPresent(profileName, forKey: .profileName)
         try c.encode(hiddenCards, forKey: .hiddenCards)
+        try c.encode(hiddenTabs, forKey: .hiddenTabs)
+        try c.encode(hiddenNotchModules, forKey: .hiddenNotchModules)
         try c.encode(cardOrder, forKey: .cardOrder)
         try c.encode(tabOrder, forKey: .tabOrder)
         try c.encode(pillOffsets, forKey: .pillOffsets)
