@@ -22,6 +22,7 @@ extension NotificationsModule {
         var quietDetail = "While an app uses the microphone: no toasts (except notifications waiting for an answer) and no automatic panel. History and the unread count still update."
         if !quietStatus.isEmpty { quietDetail += " " + quietStatus }
         let behavior = settingsGroup([
+            settingsRow("Mute notifications", detail: "Until you unmute, including after a restart. No toasts, sounds or automatic opening; history and answers stay available. Timer and agent alerts are unchanged.", control: makeSettingsMuteButton(), width: width),
             settingsRow("Show a toast for", detail: "Beside the notch. Notifications waiting for an answer stay until answered.", control: toast, width: width),
             settingsRow("Play a sound", detail: "Pick the sound in Settings, Sounds.", control: sound, width: width),
             settingsRow("Open the panel on errors", detail: "An error-level notification opens the panel without taking the keyboard.", control: errors, width: width),

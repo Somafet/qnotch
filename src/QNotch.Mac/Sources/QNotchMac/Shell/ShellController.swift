@@ -184,6 +184,8 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         if !general.pinned, state.presentation == .hover, !panel.frame.containsPointer(NSEvent.mouseLocation) { pointerLeft() }
     }
 
+    func actionsChanged() { statusChanged?() }
+
     func stop() {
         hoverTask?.cancel(); leaveTask?.cancel()
         modules.forEach { $0.stop() }

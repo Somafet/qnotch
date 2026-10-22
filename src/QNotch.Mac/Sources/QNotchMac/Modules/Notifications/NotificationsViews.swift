@@ -3,25 +3,30 @@ import QNotchMacCore
 
 protocol NotificationsDisplay: AnyObject { func reload() }
 
-/// Bell and unread count in the right wing; hidden when everything is read.
+/// Bell and unread count in the right wing; the manual mute glyph stays even with no unread items.
 final class BellSegmentView: NSStackView {
+    private let bell = symbol("bell.fill", size: 11, weight: .semibold, color: Palette.accent)
     private let count = line("", size: 12, weight: .semibold, color: Palette.textPrimary)
     init() {
         super.init(frame: .zero)
         orientation = .horizontal
         spacing = 3
         count.font = .rounded(12, weight: .semibold, monospacedDigits: true)
-        [symbol("bell.fill", size: 11, weight: .semibold, color: Palette.accent), count].forEach(addArrangedSubview)
+        [bell, count].forEach(addArrangedSubview)
         setAccessibilityElement(true)
         setAccessibilityRole(.staticText)
         identifier = NSUserInterfaceItemIdentifier("notifications-segment")
         isHidden = true
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
-    func update(unread: Int) {
+    func update(unread: Int, muted: Bool) {
+        bell.image = NSImage(systemSymbolName: muted ? "bell.slash.fill" : "bell.fill", accessibilityDescription: nil)
+        bell.contentTintColor = muted ? .systemOrange : Palette.accent
+        count.isHidden = unread == 0
         count.stringValue = unread > 99 ? "99+" : "\(unread)"
-        isHidden = unread == 0
-        setAccessibilityLabel(unread == 1 ? "1 unread notification" : "\(unread) unread notifications")
+        isHidden = unread == 0 && !muted
+        toolTip = muted ? "Notifications muted" : nil
+        setAccessibilityLabel((muted ? "Notifications muted. " : "") + (unread == 1 ? "1 unread notification" : "\(unread) unread notifications"))
     }
 }
 
@@ -38,13 +43,13 @@ final class NotificationsCardView: NSView, NotificationsDisplay {
         list.orientation = .vertical
         list.alignment = .leading
         list.spacing = 6
-        let stack = column([list, empty], spacing: 4)
+        let stack = column([row([spacer(), module.makeMuteButton()]), list, empty], spacing: 4)
         embed(stack, in: self, inset: 0)
         list.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
-        addGestureRecognizer(NSClickGestureRecognizer(target: self, action: #selector(openTab)))
+        for view in [list, empty] { view.addGestureRecognizer(NSClickGestureRecognizer(target: self, action: #selector(openTab))) }
         setAccessibilityElement(true)
-        setAccessibilityRole(.button)
-        setAccessibilityLabel("Notifications. Opens the Notifications tab.")
+        setAccessibilityRole(.group)
+        setAccessibilityLabel("Notifications. Click a notification to open the Notifications tab.")
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
     @objc private func openTab() { module?.contextShell?.selectTab("notifications") }
@@ -80,7 +85,7 @@ final class NotificationsTabView: NSView, NotificationsDisplay {
         emptyView = placeholder(symbol: "bell.slash", title: "No notifications", detail: "Apps and scripts can post here with QNotch notify.")
         super.init(frame: .zero)
         let title = line("Notifications", size: 13, weight: .semibold, color: Palette.textPrimary)
-        let header = row([title, count, quiet, spacer(), clear], spacing: 8)
+        let header = row([title, count, spacer(), module.makeMuteButton(), clear], spacing: 8)
         list.orientation = .vertical
         list.alignment = .leading
         list.spacing = 6
@@ -90,7 +95,7 @@ final class NotificationsTabView: NSView, NotificationsDisplay {
         scroll.hasVerticalScroller = true
         scroll.autohidesScrollers = true
         scroll.scrollerStyle = .overlay
-        let stack = column([header, scroll], spacing: 10)
+        let stack = column([header, quiet, scroll], spacing: 10)
         embed(stack, in: self, inset: 0, fill: true)
         header.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
         scroll.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
