@@ -1,6 +1,6 @@
 # Windows settings layout
 
-Native WPF evidence, 2026-10-22, Windows x64. This follow-up improves the Windows UI for #78 and #77 and is stacked on the Windows Terminal PR #89. It changes no Mac code or portable settings fields.
+Native WPF evidence, 2026-10-22, Windows x64. This follow-up improves the Windows UI for #78 and #77 and is stacked on the Windows Terminal PR #89. It changes no Mac UI/runtime code or portable settings fields.
 
 The layout reference is the actual Mac implementation: `SettingsController.featuresPage` and `Controls.settingsGroup` / `settingsRow` from merged #84, plus the grouped notification settings in #83. Windows keeps its own enablement/restart, navigation and presentation behavior.
 
@@ -35,3 +35,5 @@ All runs used unique `QNOTCH_INSTANCE` values and explicit test data directories
 Windows refused foreground acquisition during two synthetic hotkey smoke checks; they reported explicit skips while verifying panel open/close and internal Search focus. Whole-module live teardown remains intentionally skipped under the Windows restart contract. Physical hotkey foreground transfer, keyboard-only navigation through an overflowing sidebar, and a subjective layout review on another Windows display remain manual checks.
 
 This is a settings UI change: no new providers, idle timers, animation loops or terminal work. No new idle CPU or memory result is claimed; the previously documented CPU gap in #89 remains open. No scripts, shared contracts, CI, release configuration or runtime dependencies changed.
+
+The initial PR CI run passed Windows, repository and website validation but failed the inherited Mac Terminal descendant-cleanup test. That test sampled a descendant immediately after reaping the shell, although signal delivery to the descendant can finish later. A separate test-only follow-up waits up to two seconds for the same gone-or-zombie condition, retaining the shell's shutdown deadline and unrelated-session survival assertions. Native Mac validation runs in CI; this Windows host cannot run XCTest.
