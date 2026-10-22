@@ -129,10 +129,13 @@ final class PanelView: NSView {
     }
 }
 
-/// Search tab: a field and up to six results. Return runs the first result.
+/// Search tab: a fixed field over a bounded results viewport. Keyboard selection keeps the caret in the field.
 final class SearchView: NSView, NSTextFieldDelegate {
     let field = NSTextField()
-    private let results = NSStackView()
+    private let results = SearchResultsColumn()
+    private let scroll = NSScrollView()
+    private var rows: [(background: FillView, button: HoverButton)] = []
+    private var selectedIndex: Int?
     private let find: (String) -> [SearchHit]
     private var hits: [SearchHit] = []
 
@@ -167,10 +170,30 @@ final class SearchView: NSView, NSTextFieldDelegate {
         results.orientation = .vertical
         results.alignment = .leading
         results.spacing = 2
-        let stack = column([box, results], spacing: 10)
-        embed(stack, in: self, inset: 0)
-        box.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
-        results.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
+        results.translatesAutoresizingMaskIntoConstraints = false
+        results.identifier = NSUserInterfaceItemIdentifier("search-results")
+        scroll.identifier = NSUserInterfaceItemIdentifier("search-viewport")
+        scroll.documentView = results
+        scroll.drawsBackground = false
+        scroll.hasVerticalScroller = true
+        scroll.autohidesScrollers = true
+        scroll.scrollerStyle = .overlay
+        for child in [box, scroll] {
+            child.translatesAutoresizingMaskIntoConstraints = false
+            addSubview(child)
+        }
+        NSLayoutConstraint.activate([
+            box.topAnchor.constraint(equalTo: topAnchor),
+            box.leadingAnchor.constraint(equalTo: leadingAnchor),
+            box.trailingAnchor.constraint(equalTo: trailingAnchor),
+            scroll.topAnchor.constraint(equalTo: box.bottomAnchor, constant: 10),
+            scroll.leadingAnchor.constraint(equalTo: leadingAnchor),
+            scroll.trailingAnchor.constraint(equalTo: trailingAnchor),
+            scroll.bottomAnchor.constraint(equalTo: bottomAnchor),
+            results.leadingAnchor.constraint(equalTo: scroll.contentView.leadingAnchor),
+            results.trailingAnchor.constraint(equalTo: scroll.contentView.trailingAnchor),
+            results.topAnchor.constraint(equalTo: scroll.contentView.topAnchor)
+        ])
         reload()
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -188,45 +211,97 @@ final class SearchView: NSView, NSTextFieldDelegate {
     func controlTextDidChange(_ notification: Notification) { reload() }
 
     func control(_ control: NSControl, textView: NSTextView, doCommandBy selector: Selector) -> Bool {
-        guard selector == #selector(NSResponder.insertNewline(_:)), let first = hits.first else { return false }
-        first.run()
+        switch selector {
+        case #selector(NSResponder.moveDown(_:)):
+            select(offset: 1)
+        case #selector(NSResponder.moveUp(_:)):
+            select(offset: -1)
+        case #selector(NSResponder.insertNewline(_:)):
+            if let selectedIndex, hits.indices.contains(selectedIndex) { hits[selectedIndex].run() }
+        default:
+            return false
+        }
         return true
     }
 
     private func reload() {
         let query = field.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
         hits = query.isEmpty ? [] : Array(find(query).prefix(6))
+        selectedIndex = hits.isEmpty ? nil : 0
+        rows.removeAll()
         results.arrangedSubviews.forEach { $0.removeFromSuperview() }
         if query.isEmpty {
             results.addArrangedSubview(hint("Type to find modules and actions.", symbol: "sparkle.magnifyingglass"))
         } else if hits.isEmpty {
             results.addArrangedSubview(hint("No results for “\(query)”", symbol: "questionmark.circle"))
         } else {
-            for hit in hits {
+            for (index, hit) in hits.enumerated() {
+                let background = FillView(fill: nil, radius: 8)
                 let button = HoverButton("", style: .row, label: hit.title) { hit.run() }
+                button.identifier = NSUserInterfaceItemIdentifier("search-result-\(index)")
+                button.refusesFirstResponder = true
+                embed(button, in: background, inset: 0, fill: true)
                 let icon = symbol(hit.symbol, size: 14, weight: .medium, color: Palette.accent)
+                size(icon, width: 18)
                 let title = line(hit.title, size: 13, weight: .medium, color: Palette.textPrimary)
                 let detail = line(hit.detail, size: 11, color: Palette.textTertiary)
-                let content = row([icon, column([title, detail], spacing: 1)], spacing: 10)
+                let text = column([title, detail], spacing: 1)
+                for label in [title, detail] {
+                    label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+                    label.widthAnchor.constraint(equalTo: text.widthAnchor).isActive = true
+                }
+                let content = row([icon, text], spacing: 10)
+                content.distribution = .fill
                 content.translatesAutoresizingMaskIntoConstraints = false
                 button.addSubview(content)
                 NSLayoutConstraint.activate([
                     content.leadingAnchor.constraint(equalTo: button.leadingAnchor, constant: 10),
+                    content.trailingAnchor.constraint(equalTo: button.trailingAnchor, constant: -10),
                     content.centerYAnchor.constraint(equalTo: button.centerYAnchor),
                     button.heightAnchor.constraint(equalToConstant: 44)
                 ])
-                results.addArrangedSubview(button)
-                button.widthAnchor.constraint(equalTo: results.widthAnchor).isActive = true
+                results.addArrangedSubview(background)
+                rows.append((background, button))
             }
+        }
+        for row in results.arrangedSubviews { row.widthAnchor.constraint(equalTo: results.widthAnchor).isActive = true }
+        layoutSubtreeIfNeeded()
+        scroll.contentView.scroll(to: .zero)
+        scroll.reflectScrolledClipView(scroll.contentView)
+        revealSelection()
+    }
+
+    private func select(offset: Int) {
+        guard !hits.isEmpty else { return }
+        selectedIndex = min(hits.count - 1, max(0, (selectedIndex ?? 0) + offset))
+        revealSelection()
+    }
+
+    private func revealSelection() {
+        for (index, row) in rows.enumerated() {
+            let selected = index == selectedIndex
+            row.button.isSelectedLook = selected
+            row.background.fill = selected ? Palette.accentSoft : nil
+        }
+        if let selectedIndex, rows.indices.contains(selectedIndex) {
+            layoutSubtreeIfNeeded()
+            let row = rows[selectedIndex].background
+            row.scrollToVisible(row.bounds)
         }
     }
 
     private func hint(_ text: String, symbol name: String) -> NSView {
-        let view = row([symbol(name, size: 13, color: Palette.textTertiary), line(text, size: 12, color: Palette.textTertiary)], spacing: 8)
+        let message = line(text, size: 12, color: Palette.textTertiary)
+        message.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        let view = row([symbol(name, size: 13, color: Palette.textTertiary), message], spacing: 8)
         let wrap = NSView()
         embed(view, in: wrap, inset: NSEdgeInsets(top: 10, left: 10, bottom: 4, right: 10), fill: true)
         return wrap
     }
+}
+
+private final class SearchResultsColumn: NSStackView {
+    override var isFlipped: Bool { true }
 }
 
 /// Centered glyph, title, subtitle and an optional action (Windows Placeholder).

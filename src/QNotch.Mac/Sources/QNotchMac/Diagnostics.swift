@@ -218,6 +218,7 @@ enum NativeSmokeTest {
         guard let field = find("search-field", in: shell.panel.contentView), Outline.focused(field) else {
             throw Failure("hotkey-search", "Search shortcut did not put the cursor in search-field")
         }
+        try NativeSearchSmoke.check(run)
         shell.summonSearch()
         guard !shell.state.expanded else { throw Failure("hotkey-search", "Search shortcut did not close an open Search") }
         run.pass("hotkey-search")
