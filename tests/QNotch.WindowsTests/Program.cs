@@ -1,12 +1,21 @@
 using System.Text.Json;
 using QNotch.Core;
 using QNotch.Modules;
+using QNotch.Modules.Notifications;
 using QNotch.Shell;
 using QNotch.Shell.Onboarding;
 using QNotch.Shell.Settings;
 
 var tests = new List<(string Name, Action Run)>
 {
+    ("notification manual mute persists locally outside setup codes", () =>
+    {
+        Require(!new NotificationLocalSettings().Muted);
+        var local = JsonSerializer.Deserialize<NotificationLocalSettings>(JsonSerializer.Serialize(new NotificationLocalSettings { Muted = true }, SettingsStore.Json), SettingsStore.Json)!;
+        Require(local.Muted);
+        Require(!SetupCode.All(ModuleList.All).Any(s => s.Id == "notifications.local"));
+        Require(!ModuleList.All.Single(m => m.Id == "notifications").Shared!.Fields.Contains("Muted"));
+    }),
     ("presentation round trip keeps unknown ids and Home recovery", () =>
     {
         var p = new WindowsPresentationSettings();

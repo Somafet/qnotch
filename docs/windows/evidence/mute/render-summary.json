@@ -1,0 +1,8 @@
+{
+  "provider": "Microsoft-Windows-WPF E13B77A8-14B6-11DE-8069-001B212B5009",
+  "idle_render_begin_events": 1,
+  "interval_seconds": 30.004,
+  "own_startup_events": 2758,
+  "note": "PID-filtered ETW summary; startup render events confirm provider was active. One render during interval, zero-repaint target not met. Raw ETL stays local.",
+  "idle_events": 33
+}

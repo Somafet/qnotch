@@ -1,0 +1,79 @@
+version: 0.4.0.0
+self-contained: false
+pill: ok
+pill-peek: ok
+pill-running: ok
+pill-capture: ok
+pill-waiting: ok
+pill-agent: ok
+tab-home: ok
+tab-search: ok
+tab-media: ok
+tab-clipboard: ok
+tab-ai: ok
+tab-agents: ok
+tab-files: ok
+tab-notifications: ok
+tab-scheduled: ok
+tab-home-edit: ok
+card-stats: ok
+card-weather: ok
+card-media: ok
+card-volume: ok
+card-timer: ok
+card-colorpicker: ok
+card-clipboard: ok
+card-ai-usage: ok
+card-note: ok
+card-github: ok
+card-notifications: ok
+card-ai-apps: ok
+card-files: ok
+card-scheduled: ok
+pill-game: ok
+gamebar-corner: ok
+settings-general: ok
+settings-general-end: ok
+settings-features: ok
+settings-features-end: ok
+settings-updates: ok
+settings-hotkeys: ok
+settings-hotkeys-end: ok
+settings-sounds: ok
+settings-appearance: ok
+settings-appearance-end: ok
+settings-gamemode: ok
+settings-gamemode-end: ok
+settings-clipboard: ok
+settings-ai: ok
+settings-ai-end: ok
+settings-agents: ok
+settings-github: ok
+settings-weather: ok
+settings-notifications: ok
+settings-notifications-end: ok
+onboarding-welcome: ok
+onboarding-open: ok
+onboarding-features: ok
+onboarding-connect: ok
+onboarding-finish: ok
+onboarding-features-ondemand: ok
+check placement: ok
+check presentation: ok
+check hover-keeps-focus: ok
+check hotkey-toggle: skip: Windows kept the foreground with MozillaWindowClass: this process may not take it without input (the real hotkey may); the panel opened and closed again
+check hotkey-search: skip: Windows kept the foreground with MozillaWindowClass: this process may not take it without input; Search opened with search-field focused within the window
+check escape-collapses: ok
+check module-disabled: ok
+check module-toggle: skip: modules apply on restart on Windows (Settings, Features asks for one)
+check edit-mode: ok
+check pin: ok
+check notify-cli: ok
+check notify-transport: ok
+check agents-hook: ok
+check game-mode: ok
+check accessible-names: ok
+check onboarding: ok
+check debug-channel: ok
+check notify-manual-mute: ok
+done

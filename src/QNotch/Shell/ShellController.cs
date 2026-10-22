@@ -40,10 +40,12 @@ public sealed class ShellController : IShell
     string _activeTab = "home";
 
     public ShellController(NotchWindow window, GeneralSettings settings, SettingsStore store, Shortcuts shortcuts, ForegroundWatcher foreground,
-        CardLayout layout, Registry<TabDescriptor> tabs, Registry<SettingsSectionDescriptor> sections, Registry<SegmentDescriptor> segments)
+        CardLayout layout, Registry<TabDescriptor> tabs, Registry<SettingsSectionDescriptor> sections, Registry<SegmentDescriptor> segments,
+        Registry<QuickActionDescriptor>? quickActions = null)
     {
         _w = window; _general = settings; _store = store; _shortcuts = shortcuts; _foreground = foreground;
         _layout = layout; _tabs = tabs; _sections = sections; _segments = segments;
+        QuickActions = quickActions ?? new();
         Presentation = store.Get<WindowsPresentationSettings>("windows-presentation");
         Presentation.Changed += ApplyPresentation;
         _vm = new ShellViewModel(settings, () => OpenSettings());
@@ -64,6 +66,7 @@ public sealed class ShellController : IShell
     public ShellMode Mode => _mode;
     public string ActiveTab => _activeTab;
     public WindowsPresentationSettings Presentation { get; }
+    internal Registry<QuickActionDescriptor> QuickActions { get; }
     public bool IsTabVisible(string id) => _tabs.Find(id) is not null && Presentation.TabVisible(id);
     public event Action<ShellMode>? ModeChanged;
     public event Action? EditModeChanged;
@@ -462,6 +465,11 @@ public sealed class ShellController : IShell
     {
         if (_built) return;
         _built = true;
+        foreach (var action in QuickActions.Items.Reverse())
+        {
+            try { _w.PanelActions.Children.Insert(0, action.Factory()); }
+            catch (Exception ex) { Log.Error($"Quick action '{action.Id}' failed", ex); }
+        }
         var strip = _w.TabStrip;
         foreach (var t in OrderedTabs())
         {
