@@ -13,7 +13,7 @@ enum NativeSmokeTest {
             || NSWorkspace.shared.frontmostApplication?.bundleIdentifier == "com.apple.loginwindow"
     }
 
-    static func run(shell: ShellController, output: URL, ready: TimeInterval, options: DiagnosticOptions) {
+    static func run(shell: ShellController, menuBar: MenuBarController, output: URL, ready: TimeInterval, options: DiagnosticOptions) {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
             let run = SnapshotRun(shell: shell, output: output, options: options, readsAllOutlines: true)
             func finish(_ error: Error?) {
@@ -33,8 +33,12 @@ enum NativeSmokeTest {
                                       "collapsed_status_frame=\(layout.surface(expanded: false, wing: 56))", "expanded_frame=\(layout.surface(expanded: true))",
                                       "panel_body=\(layout.panelBody)"])
                 SnapshotViews.render(run)
+                try MenuBarSmoke.check(run, menuBar: menuBar)
                 try checkSearchEnablement(run)
                 try checkFeatureVisibility(run)
+                // Feature visibility leaves the primary panel open. Terminal's toggle check
+                // starts collapsed so the first toggle opens rather than closes it.
+                shell.close(restoreFocus: false)
                 try TerminalSmoke.check(run)
                 (timer, note) = try checkShell(run, layout: layout)
             } catch { return finish(error) }

@@ -64,6 +64,11 @@ public enum DebugClient {
             $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { Darwin.connect(fd, $0, socklen_t(MemoryLayout<sockaddr_un>.size)) }
         } == 0
         guard connected else { close(fd); return .failure(.notRunning) }
+        var uid: uid_t = 0, gid: gid_t = 0
+        guard getpeereid(fd, &uid, &gid) == 0, uid == geteuid() else {
+            close(fd)
+            return .failure(.io("The socket is not owned by the current user."))
+        }
         return .success(fd)
     }
 
