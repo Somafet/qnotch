@@ -104,7 +104,7 @@ final class NotificationsModule: NotchModule {
         registry.tabs.register(ViewContribution(id: "notifications", title: "Notifications", order: 50, symbol: "bell") { [unowned self] in
             self.track(NotificationsTabView(module: self))
         })
-        registry.segments.register(SegmentContribution(id: "notifications.pill", order: 5, slot: .trailing) { [weak self] in
+        registry.segments.register(SegmentContribution(id: "notifications.pill", order: 5, slot: .trailing, destination: .tab("notifications"), destinationLabel: "Open notifications") { [weak self] in
             let view = BellSegmentView()
             self?.bells.add(view)
             view.update(unread: self?.unread ?? 0, muted: self?.settings.manuallyMuted == true)

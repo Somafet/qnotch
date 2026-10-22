@@ -181,6 +181,10 @@ enum SnapshotViews {
             for session in agents.board.sessions where session.id.hasPrefix("seed-") { agents.dismiss(session) }
         }
 
+        // Real destination routing, including the transient hidden-card surface, rendered offscreen.
+        do { try HoverTargetSmoke.check(run) }
+        catch { run.fail("hover-targets", "\(error)") }
+
         // Settings and the welcome tour, without showing their windows.
         let settings = shell.makeSettings()
         if run.wants(settings.snapshotNames) {

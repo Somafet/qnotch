@@ -34,7 +34,7 @@ final class TimerModule: NotchModule {
         registry.tabs.register(ViewContribution(id: "timer", title: "Timer", order: 10, symbol: "timer") { [unowned self] in
             self.track(TimerTabView(module: self))
         })
-        registry.segments.register(SegmentContribution(id: "timer.ring", order: 7, slot: .leading) { [weak self] in
+        registry.segments.register(SegmentContribution(id: "timer.ring", order: 7, slot: .leading, destination: .tab("timer"), destinationLabel: "Open timer") { [weak self] in
             let ring = ProgressRing(lineWidth: 2.5)
             size(ring, width: 15, height: 15)
             ring.setAccessibilityElement(false)
@@ -42,7 +42,7 @@ final class TimerModule: NotchModule {
             self?.refreshSegments(notify: false)
             return ring
         })
-        registry.segments.register(SegmentContribution(id: "timer.pill", order: 7, slot: .trailing) { [weak self] in
+        registry.segments.register(SegmentContribution(id: "timer.pill", order: 7, slot: .trailing, destination: .tab("timer"), destinationLabel: "Open timer") { [weak self] in
             let text = line("", size: 13, weight: .semibold, color: Palette.textPrimary)
             text.font = .rounded(13, weight: .semibold, monospacedDigits: true)
             text.setContentCompressionResistancePriority(.required, for: .horizontal)

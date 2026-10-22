@@ -32,6 +32,12 @@ final class HomeView: NSScrollView {
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
+    func revealCard(_ id: String) {
+        layoutSubtreeIfNeeded()
+        guard let card = document.cards.first(where: { $0.id == id }) else { return }
+        document.scrollToVisible(card.view.frame)
+    }
+
     var editing: Bool {
         get { document.editing }
         set { document.editing = newValue }

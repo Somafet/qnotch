@@ -42,7 +42,7 @@ final class WeatherModule: NotchModule {
             view.reload()
             return view
         })
-        context.registries.segments.register(SegmentContribution(id: "weather.pill", order: 9, slot: .trailing) { [weak self] in
+        context.registries.segments.register(SegmentContribution(id: "weather.pill", order: 9, slot: .trailing, destination: .card("weather", emphasis: nil, allowsHiddenDetail: false), destinationLabel: "Open weather") { [weak self] in
             let view = WeatherPillView()
             self?.pills.add(view)
             self?.refreshViews(notify: false)

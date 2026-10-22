@@ -19,6 +19,8 @@ public struct GeneralSettings: Codable, Equatable {
     /// Explicit opt-in for new, default-off modules; old saved settings never enable a shell.
     public var enabledOptionalModules: [String] = []
     public static let defaultOffModules: Set<String> = ["terminal"]
+    /// Choose the segment under the pointer once after hover dwell. Opt-in.
+    public var hoverOpensSegment = false
     /// Pointer rest before the panel opens, and pointer absence before it closes (milliseconds).
     public var hoverDelayMs = 120
     public var closeDelayMs = 400
@@ -81,7 +83,7 @@ public struct GeneralSettings: Codable, Equatable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case displayID, reduceMotion, disabledModules, enabledOptionalModules, timerEnabled, hoverDelayMs, closeDelayMs, pinned, accent, profileName, hiddenCards, hiddenTabs, hiddenNotchModules, cardOrder, tabOrder, pillOffsets, betaUpdates, onboardingDone
+        case displayID, reduceMotion, disabledModules, enabledOptionalModules, timerEnabled, hoverOpensSegment, hoverDelayMs, closeDelayMs, pinned, accent, profileName, hiddenCards, hiddenTabs, hiddenNotchModules, cardOrder, tabOrder, pillOffsets, betaUpdates, onboardingDone
     }
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -91,6 +93,7 @@ public struct GeneralSettings: Codable, Equatable {
         enabledOptionalModules = c.value(.enabledOptionalModules, [])
         // The first milestone stored one switch for its only module.
         if c.value(.timerEnabled, true) == false, !disabledModules.contains("timer") { disabledModules.append("timer") }
+        hoverOpensSegment = c.value(.hoverOpensSegment, false)
         hoverDelayMs = min(Self.hoverRange.upperBound, max(Self.hoverRange.lowerBound, c.value(.hoverDelayMs, 120)))
         closeDelayMs = min(Self.closeRange.upperBound, max(Self.closeRange.lowerBound, c.value(.closeDelayMs, 400)))
         pinned = c.value(.pinned, false)
@@ -111,6 +114,7 @@ public struct GeneralSettings: Codable, Equatable {
         try c.encode(reduceMotion, forKey: .reduceMotion)
         try c.encode(disabledModules, forKey: .disabledModules)
         try c.encode(enabledOptionalModules, forKey: .enabledOptionalModules)
+        try c.encode(hoverOpensSegment, forKey: .hoverOpensSegment)
         try c.encode(hoverDelayMs, forKey: .hoverDelayMs)
         try c.encode(closeDelayMs, forKey: .closeDelayMs)
         try c.encode(pinned, forKey: .pinned)
