@@ -39,6 +39,8 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     private var pill = NSStackView()
     private var pillIdle = NSView()
     private var screen: NSScreen?
+    /// Native diagnostics can exercise an external display without requiring that hardware.
+    private var diagnosticLayout: DisplayLayout?
     var statusChanged: (() -> Void)?
     /// Sparkle updates; nil in development, diagnostic and isolated runs.
     var updater: Updater?
@@ -394,10 +396,26 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
             gap = CGRect(x: left.maxX, y: screen.frame.maxY - screen.safeAreaInsets.top,
                          width: max(0, right.minX - left.maxX), height: screen.safeAreaInsets.top)
         } else { gap = nil }
-        var layout = DisplayLayout(frame: screen.frame, visibleFrame: screen.visibleFrame, safeTop: screen.safeAreaInsets.top, cameraGap: gap)
+        var layout = diagnosticLayout ?? DisplayLayout(frame: screen.frame, visibleFrame: screen.visibleFrame, safeTop: screen.safeAreaInsets.top, cameraGap: gap)
         layout.offset = nudgeOffset ?? CGFloat(general.pillOffsets[String(Self.displayID(screen))] ?? 0)
         if nudgeOffset != nil { layout.edgeStretch = 8 }
         return layout
+    }
+
+    /// Render synthetic display geometry through the real shell, invisibly and with isolated
+    /// diagnostic data. The selected physical display and its saved offsets are not changed.
+    func withDiagnosticLayout(_ layout: DisplayLayout, perform: () throws -> Void) rethrows {
+        let previous = diagnosticLayout
+        let wasRenderOnly = renderOnly
+        diagnosticLayout = layout
+        renderOnly = true
+        rebuildSurface()
+        defer {
+            diagnosticLayout = previous
+            rebuildSurface()
+            renderOnly = wasRenderOnly
+        }
+        try perform()
     }
 
     /// The settled window frame for the current presentation.
@@ -410,7 +428,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         guard hovering, !state.expanded, Motion.moves else { return rect }
         // Attached to the bezel it grows sideways and down; a floating pill grows all round.
         let swell: CGFloat = 2
-        return layout.integratesCameraHousing ? CGRect(x: rect.minX - swell, y: rect.minY - swell, width: rect.width + swell * 2, height: rect.height + swell)
+        return layout.integratesTopBand ? CGRect(x: rect.minX - swell, y: rect.minY - swell, width: rect.width + swell * 2, height: rect.height + swell)
                                               : rect.insetBy(dx: -swell, dy: -swell / 2)
     }
 
@@ -766,7 +784,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     }
 
     private func measureWing() -> CGFloat {
-        let integrated = layout?.integratesCameraHousing == true
+        let integrated = layout?.integratesTopBand == true
         // The wing grows to at most 170 points (content plus 24 of margin); a pill to 300.
         var capacity: CGFloat = integrated ? 146 : 150
         if integrated, let wings = layout?.wings(expanded: false, wing: 170) {
@@ -776,7 +794,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         let left = peekShown ? peekLeft.fittingSize.width : visibleWidth(leading)
         let right = peekShown ? peekRight.fittingSize.width : visibleWidth(trailing)
         guard left > 0 || right > 0 else { return 0 }
-        if layout?.integratesCameraHousing == true {
+        if layout?.integratesTopBand == true {
             // Symmetric wings; rounded so a one-character change does not resize the notch.
             return min(peekShown ? 180 : 170, ceil((max(left, right) + 24) / 8) * 8)
         }
@@ -794,7 +812,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         }
     }
 
-    /// Places status content. With a camera housing it sits in the side wings (also while expanded,
+    /// Places status content. With a physical or virtual housing it sits in the side wings (also while expanded,
     /// so nothing jumps); a floating pill shows it centered and hides it under the open panel.
     private func layoutStatus() {
         guard let layout else { return }
@@ -827,7 +845,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         }
     }
 
-    // MARK: Nudge (floating pill only)
+    // MARK: Nudge (no physical camera housing)
 
     private var nudgeStart: CGFloat?
     /// Where the dragged pill shows, rubber-banded at the edges; nil when not dragging.
@@ -915,8 +933,8 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         // A floating pill moves sideways: spanning the display, the world stays put when it is
         // dropped somewhere new, so the release spring starts exactly where the pill shows.
         if !layout.integratesCameraHousing { world = CGRect(x: layout.frame.minX - 40, y: world.minY, width: layout.frame.width + 80, height: world.height) }
-        surface.configure(world: world, integrated: layout.integratesCameraHousing, band: layout.topBandHeight)
-        panel.level = layout.integratesCameraHousing ? .statusBar : .floating
+        surface.configure(world: world, integrated: layout.integratesTopBand, band: layout.topBandHeight)
+        panel.level = layout.integratesTopBand ? .statusBar : .floating
         wing = measureWing()
         if let panelView { surface.place(panelView, at: layout.panelBody) }
         present(.none)
@@ -969,7 +987,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
                 view.isHidden = true
             } else { view.removeFromSuperview(); closingPanel = nil }
         }
-        let integrated = layout.integratesCameraHousing
+        let integrated = layout.integratesTopBand
         let bottom: CGFloat = expanded ? 22 : integrated ? 11 : 16
         var window = target
         if animated {

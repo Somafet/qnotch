@@ -58,14 +58,20 @@ final class StatusGutterTests: XCTestCase {
         XCTAssertTrue(StatusGutters.frame(size: CGSize(width: 116, height: 17), in: wings.right, side: .right)?.maxX == 884)
     }
 
-    func testIdleAndExternalDisplaysKeepTheirOwnGeometry() {
+    func testIdleAndExternalDisplaysKeepTheirOwnGeometry() throws {
         XCTAssertTrue(layout.surface(expanded: false).width == 204)
         let empty = layout.wings(expanded: false)!
         XCTAssertTrue(StatusGutters.frame(size: CGSize(width: 40, height: 17), in: empty.left, side: .left) == nil)
         let external = DisplayLayout(frame: CGRect(x: -1920, y: -100, width: 1920, height: 1080),
                                      visibleFrame: CGRect(x: -1920, y: -100, width: 1920, height: 1055), safeTop: 0, cameraGap: nil)
-        XCTAssertTrue(external.wings(expanded: false, wing: 120) == nil)
-        XCTAssertTrue(external.surface(expanded: false, wing: 120) == CGRect(x: -1034, y: 917, width: 148, height: 32))
+        let virtual = try XCTUnwrap(external.wings(expanded: false, wing: 120))
+        XCTAssertEqual(external.surface(expanded: false, wing: 120), CGRect(x: -1086, y: 955, width: 252, height: 25))
+        let left = try XCTUnwrap(StatusGutters.frame(size: CGSize(width: 40, height: 17), in: virtual.left, side: .left))
+        let right = try XCTUnwrap(StatusGutters.frame(size: CGSize(width: 90, height: 17), in: virtual.right, side: .right))
+        XCTAssertEqual(left.minX - virtual.left.minX, 12)
+        XCTAssertEqual(virtual.right.maxX - right.maxX, 12)
+        XCTAssertTrue(external.surface(expanded: true, wing: 120).contains(left))
+        XCTAssertTrue(external.surface(expanded: true, wing: 120).contains(right))
     }
 
     func testClampedWingOmitsContentRatherThanEnteringCamera() throws {

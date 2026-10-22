@@ -49,7 +49,7 @@ enum StatusGutterSmoke {
             if name == "mixed" {
                 shell.open(keyboard: false)
                 let expanded = try check(run, phase: "mixed-open")
-                if shell.layout?.integratesCameraHousing == true, collapsed != expanded {
+                if shell.layout?.integratesTopBand == true, collapsed != expanded {
                     throw Failure("Opening moved the status clusters: \(collapsed) -> \(expanded)")
                 }
             }

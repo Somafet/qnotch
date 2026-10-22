@@ -12,7 +12,7 @@ public struct DisplayLayout {
     public let visibleFrame: CGRect
     public let safeTop: CGFloat
     public let cameraGap: CGRect?
-    /// Sideways offset of a floating pill from the display's center (Windows NotchNudge). A notch
+    /// Sideways offset of a virtual notch from the display's center (Windows NotchNudge). A notch
     /// that wraps the camera housing never moves.
     public var offset: CGFloat = 0
     /// How far a dragged pill may enter the 8-point edge margin while it rubber-bands.
@@ -34,19 +34,28 @@ public struct DisplayLayout {
     }
 
     public var integratesCameraHousing: Bool { cameraHousing != nil }
-    public var topBandHeight: CGFloat { integratesCameraHousing ? safeTop : 0 }
+    /// Non-notched displays have a zero-width virtual housing in the menu-bar band. Unknown
+    /// physical camera geometry still uses the safe-area fallback instead of covering the camera.
+    public var integratesTopBand: Bool { integratesCameraHousing || !hasCameraHousing }
+    public var topBandHeight: CGFloat {
+        if integratesCameraHousing { return safeTop }
+        guard !hasCameraHousing else { return 0 }
+        let menuBar = frame.maxY - visibleFrame.maxY
+        return menuBar > 0 ? menuBar : 24
+    }
 
-    /// - Parameter wing: with a camera housing, the width of each status wing beside it (0 hugs the
-    ///   housing, so an idle surface is indistinguishable from the hardware). Without one, the width
-    ///   of the floating pill's content.
+    /// - Parameter wing: the width of each status wing beside a physical or virtual housing.
+    ///   Zero hugs physical hardware; a virtual notch retains a 96-point idle pointer target.
+    ///   For the unknown-camera fallback only, this is the floating pill's content width.
     public func surface(expanded: Bool, wing: CGFloat = 0) -> CGRect {
         // The housing is part of the surface, rather than an inset above a detached pill.
         // Reserve the occluded center; only the side wings contain status content.
-        let top = integratesCameraHousing ? frame.maxY : hasCameraHousing ? frame.maxY - safeTop : min(frame.maxY, visibleFrame.maxY) - 6
+        let top = integratesTopBand ? frame.maxY : frame.maxY - safeTop
         let available = frame.insetBy(dx: 8, dy: 8)
         let collapsed: CGSize
-        if let housing = cameraHousing {
-            collapsed = CGSize(width: housing.width + 2 * (Self.flare + max(0, wing)), height: safeTop)
+        if integratesTopBand {
+            let width = (cameraHousing?.width ?? 0) + 2 * (Self.flare + max(0, wing))
+            collapsed = CGSize(width: hasCameraHousing ? width : max(96, width), height: topBandHeight)
         } else {
             collapsed = CGSize(width: max(96, wing + 28), height: 32)
         }
@@ -62,18 +71,20 @@ public struct DisplayLayout {
     /// Panel controls stay below the housing even though the window itself reaches the bezel.
     public var panelBody: CGRect {
         let window = surface(expanded: true)
-        let inset = integratesCameraHousing ? Self.flare : 0
+        let inset = integratesTopBand ? Self.flare : 0
         return CGRect(x: window.minX + inset, y: window.minY, width: window.width - inset * 2, height: window.height - topBandHeight)
     }
 
-    /// Global screen coordinates, entirely inside the auxiliary clear areas beside the camera.
+    /// Global clear areas beside the physical camera or zero-width virtual housing. A virtual
+    /// housing follows the clamped surface center, including negative origins and dragged offsets.
     public func wings(expanded: Bool, wing: CGFloat = 0) -> (left: CGRect, right: CGRect)? {
-        guard let housing = cameraHousing else { return nil }
+        guard integratesTopBand else { return nil }
         let window = surface(expanded: expanded, wing: wing)
+        let housing = cameraHousing ?? CGRect(x: window.midX, y: frame.maxY - topBandHeight, width: 0, height: topBandHeight)
         let left = window.minX + Self.flare, right = window.maxX - Self.flare
         return (
-            CGRect(x: left, y: housing.minY, width: max(0, housing.minX - left), height: safeTop),
-            CGRect(x: housing.maxX, y: housing.minY, width: max(0, right - housing.maxX), height: safeTop)
+            CGRect(x: left, y: housing.minY, width: max(0, housing.minX - left), height: topBandHeight),
+            CGRect(x: housing.maxX, y: housing.minY, width: max(0, right - housing.maxX), height: topBandHeight)
         )
     }
 }
