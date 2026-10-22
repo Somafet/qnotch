@@ -770,7 +770,11 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     private func measureWing() -> CGFloat {
         let integrated = layout?.integratesCameraHousing == true
         // The wing grows to at most 170 points (content plus 24 of margin); a pill to 300.
-        fitWings(maxWidth: integrated ? 146 : 150)
+        var capacity: CGFloat = integrated ? 146 : 150
+        if integrated, let wings = layout?.wings(expanded: false, wing: 170) {
+            capacity = min(capacity, max(0, min(wings.left.width, wings.right.width) - StatusGutters.inset * 2))
+        }
+        fitWings(maxWidth: capacity)
         let left = peekShown ? peekLeft.fittingSize.width : visibleWidth(leading)
         let right = peekShown ? peekRight.fittingSize.width : visibleWidth(trailing)
         guard left > 0 || right > 0 else { return 0 }
@@ -801,11 +805,15 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         if let wings = layout.wings(expanded: false, wing: wing) {
             pill.isHidden = true
             peekLeft.isHidden = !peeking; peekRight.isHidden = !peeking
-            for (stack, area) in [(leading, wings.left), (trailing, wings.right), (peekLeft, wings.left), (peekRight, wings.right)] {
+            for (stack, area, side) in [(leading, wings.left, StatusGutters.Side.left), (trailing, wings.right, .right),
+                                        (peekLeft, wings.left, .left), (peekRight, wings.right, .right)] {
                 if stack === leading || stack === trailing { stack.isHidden = !active || peeking }
                 guard !stack.isHidden else { continue }
-                let size = stack.fittingSize
-                surface.place(stack, at: CGRect(x: area.midX - size.width / 2, y: area.midY - size.height / 2, width: size.width, height: size.height))
+                guard let frame = StatusGutters.frame(size: stack.fittingSize, in: area, side: side) else {
+                    stack.isHidden = true
+                    continue
+                }
+                surface.place(stack, at: frame)
             }
         } else {
             if pill.arrangedSubviews.isEmpty { [pillIdle, leading, trailing].forEach(pill.addArrangedSubview) }

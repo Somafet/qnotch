@@ -114,6 +114,8 @@ enum NativeSmokeTest {
     private static func checkShell(_ run: SnapshotRun, layout: DisplayLayout) throws -> (TimerModule, NoteModule?) {
         let shell = run.shell
         try checkPlacement(shell: shell, layout: layout)
+        try StatusGutterSmoke.check(run, phase: "collapsed")
+        try StatusGutterSmoke.exercise(run)
         shell.gameMode.override = .on
         shell.open(keyboard: false)
         guard shell.gameActive, !shell.state.expanded, shell.panel.ignoresMouseEvents,
@@ -127,12 +129,14 @@ enum NativeSmokeTest {
             capture.apply(CaptureState(microphone: true, microphoneApps: ["FaceTime"], camera: true))
             guard shell.wing > 0 else { throw Failure("capture-segment", "Mic and camera use did not show a status segment") }
             try checkPlacement(shell: shell, layout: layout)
+            try StatusGutterSmoke.check(run, phase: "capture")
             capture.apply(real)
             run.log("capture", ["capture_input_devices=\(shell.capture.inputDevices.count)", "capture_cameras=\(shell.capture.cameras.count)", "capture_active_now=\(real.active)"])
             run.pass("capture-segment")
         }
         shell.open(keyboard: false)
         try checkPlacement(shell: shell, layout: layout)
+        try StatusGutterSmoke.check(run, phase: "expanded")
         guard shell.state.presentation == .hover, !shell.panel.isKeyWindow, !shell.panel.canBecomeKey else {
             throw Failure("hover-keeps-focus", "Hover took keyboard focus")
         }
@@ -182,6 +186,8 @@ enum NativeSmokeTest {
         timer.startShortTimer(seconds: 1)
         shell.close(restoreFocus: false)
         try checkPlacement(shell: shell, layout: layout)
+        try StatusGutterSmoke.check(run, phase: "timer")
+        run.pass("status-gutters")
         run.pass("placement")
         guard shell.wing > 0 else { throw Failure("timer-segment", "A running timer did not show its status segment") }
         run.pass("timer-segment")
@@ -492,6 +498,7 @@ enum NativeSmokeTest {
         guard let housing = layout.cameraHousing, let wings = layout.wings(expanded: shell.state.expanded, wing: shell.wing) else { return }
         guard shell.panel.level == .statusBar else { throw Failure("placement", "Integrated surface is below the menu bar level") }
         func walk(_ view: NSView) throws {
+            guard !view.isHidden else { return }
             let global = shell.panel.convertToScreen(view.convert(view.bounds, to: nil))
             let id = view.identifier?.rawValue
             if id == "panel", global.maxY > housing.minY + 0.5 { throw Failure("placement", "Panel controls overlap the camera band") }
