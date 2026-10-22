@@ -14,12 +14,17 @@ public static class MemoryTrim
     const int IdleMs = 10 * 60 * 1000;
     static DispatcherTimer? _timer;
     static bool _trimWorkingSet;
+    static bool _initialTrimPending;
 
     /// <summary>Startup: compact and empty the working set once after <paramref name="delayMs"/>.</summary>
-    public static void Schedule(int delayMs) => Arm(delayMs, true);
+    public static void Schedule(int delayMs) { _initialTrimPending = true; Arm(delayMs, true); }
 
     /// <summary>After a panel close or a big allocation: compact the heap soon, then empty the working set after a long idle.</summary>
     public static void AfterActivity(int delayMs = 3000) => Arm(delayMs, false);
+
+    /// <summary>An early keyboard open can cancel startup trimming. Preserve that one initial trim until an idle close;
+    /// later closes retain the existing heap-only policy. Opening again cancels this same one-shot timer.</summary>
+    public static void AfterPanelClose(int delayMs = 3000) => Arm(delayMs, _initialTrimPending);
 
     /// <summary>The panel opened: drop any pending working-set trim.</summary>
     public static void Cancel() => _timer?.Stop();
@@ -34,7 +39,7 @@ public static class MemoryTrim
                 _timer.Stop();
                 var ws = _trimWorkingSet;
                 Compact();
-                if (ws) Native.SetProcessWorkingSetSize(-1, -1, -1);
+                if (ws) { Native.SetProcessWorkingSetSize(-1, -1, -1); _initialTrimPending = false; }
                 else Arm(IdleMs, true);
             };
         }

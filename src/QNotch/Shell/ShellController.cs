@@ -274,7 +274,7 @@ public sealed class ShellController : IShell
         _w.DisableKeyboard();
         SetMode(ShellMode.Collapsed);
         _w.SetOpen(false);
-        MemoryTrim.AfterActivity();
+        MemoryTrim.AfterPanelClose();
     }
 
     public bool TryOpenPanel(string? tabId = null, int lingerMs = 0)
