@@ -5,6 +5,47 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
 <title>QNotch for Mac</title>
 <link>https://github.com/Somafet/qnotch</link>
 <item>
+<title>QNotch 0.4.0</title>
+<pubDate>Thu, 22 Oct 2026 12:15:47 GMT</pubDate>
+<sparkle:version>7</sparkle:version>
+<sparkle:shortVersionString>0.4.0</sparkle:shortVersionString>
+<sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+<sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+<sparkle:fullReleaseNotesLink>https://github.com/Somafet/qnotch/releases/tag/macos-v0.4.0</sparkle:fullReleaseNotesLink>
+<description sparkle:format="markdown">## What's Changed
+* Integrate all open QNotch PRs for main by @Somafet in https://github.com/Somafet/qnotch/pull/88
+* Proposal: open from the physical notch area on macOS by @norbert-pap in https://github.com/Somafet/qnotch/pull/59
+* Proposal: expand the feature under the pointer on macOS by @norbert-pap in https://github.com/Somafet/qnotch/pull/60
+* Proposal: align macOS status content to consistent outer gutters by @norbert-pap in https://github.com/Somafet/qnotch/pull/61
+* Proposal: contain macOS search results without displacing the panel by @norbert-pap in https://github.com/Somafet/qnotch/pull/62
+* Proposal: make Search and feature visibility configurable on macOS by @norbert-pap in https://github.com/Somafet/qnotch/pull/63
+* Design review proposal: standardize macOS panel headers and layout by @norbert-pap in https://github.com/Somafet/qnotch/pull/64
+* Proposal: let users hide the macOS menu-bar icon by @norbert-pap in https://github.com/Somafet/qnotch/pull/65
+* fix(mac): align status clusters to consistent outer gutters by @Somafet in https://github.com/Somafet/qnotch/pull/79
+* Add native Mac Search feature enablement by @Somafet in https://github.com/Somafet/qnotch/pull/80
+* Fix Mac search containment and keyboard selection by @Somafet in https://github.com/Somafet/qnotch/pull/81
+* fix(mac): attach virtual notch to the menu-bar band by @Somafet in https://github.com/Somafet/qnotch/pull/82
+* Add persistent manual notification mute on macOS by @Somafet in https://github.com/Somafet/qnotch/pull/83
+* Separate Mac feature enablement from Home, tab and notch visibility by @Somafet in https://github.com/Somafet/qnotch/pull/84
+* Add independent Windows feature presentation controls by @Somafet in https://github.com/Somafet/qnotch/pull/85
+* Add manual notification mute on Windows by @Somafet in https://github.com/Somafet/qnotch/pull/86
+* Add an opt-in native macOS Terminal tab by @Somafet in https://github.com/Somafet/qnotch/pull/87
+* Improve Windows Features and Notifications settings layout by @Somafet in https://github.com/Somafet/qnotch/pull/91
+* Integrate all open PRs for Windows and macOS releases by @Somafet in https://github.com/Somafet/qnotch/pull/97
+* Add a default-off ConPTY Terminal on Windows by @Somafet in https://github.com/Somafet/qnotch/pull/89
+* Standardize macOS tab titles and page actions by @Somafet in https://github.com/Somafet/qnotch/pull/92
+* macOS: hide menu-bar icon with safe Settings recovery by @Somafet in https://github.com/Somafet/qnotch/pull/93
+* feat(macos): opt-in feature-aware hover destinations by @Somafet in https://github.com/Somafet/qnotch/pull/94
+* macOS: add Small Home widgets and drag resizing by @Somafet in https://github.com/Somafet/qnotch/pull/95
+* Windows: add Small Home widgets and edge resizing by @Somafet in https://github.com/Somafet/qnotch/pull/96
+
+## New Contributors
+* @norbert-pap made their first contribution in https://github.com/Somafet/qnotch/pull/59
+
+**Full Changelog**: https://github.com/Somafet/qnotch/compare/macos-v0.3.0...macos-v0.4.0</description>
+<enclosure url="https://github.com/Somafet/qnotch/releases/download/macos-v0.4.0/QNotch-macos-arm64.zip" length="3435726" type="application/octet-stream" sparkle:edSignature="Qa1X3KzgYOTZO99HzSjCpZsKPKt5hlz+nwK1VbwchwcxCJuGZbrDK+EM2/A42f7cywrWd/dBkM1VKlVgzjQKAQ=="/>
+</item>
+<item>
 <title>QNotch 0.3.0</title>
 <pubDate>Tue, 20 Oct 2026 13:17:39 GMT</pubDate>
 <sparkle:version>6</sparkle:version>
@@ -74,6 +115,6 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
 </channel>
 </rss>
 <!-- sparkle-signatures:
-edSignature: kAZUW1IdCAZecKl2GMX1hFeD2c5iR8/YgQRd9zGJAFcUw9lXWCCS97IsM0WFa2NCNJhvEY5Eq2gy7qrPmCj1Aw==
-length: 5241
+edSignature: pYLn+tLacUDFuyPtC60ftyEt4X9PQS2E7EcGnwgwH74KA9p8N/mN46k2KJfjPeUY8ov+9xH7XEppxeJ3yW0SBg==
+length: 9057
 -->
