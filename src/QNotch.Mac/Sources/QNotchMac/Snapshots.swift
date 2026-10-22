@@ -147,7 +147,7 @@ enum SnapshotViews {
             tray.dropActive = false
             addSampleFiles(shell, to: tray)
         }
-        for id in ["search"] + shell.registries.tabs.items.map(\.id) {
+        for id in shell.registries.tabs.items.map(\.id) {
             shell.selectTab(id)
             run.notch("tab-" + id)
         }

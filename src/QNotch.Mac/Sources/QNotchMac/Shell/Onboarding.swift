@@ -874,9 +874,13 @@ final class OnboardingController: NSObject, NSWindowDelegate {
 
     private func finishHero() -> NSView {
         var tips: [NSView] = []
-        let search = shell.shortcuts.shortcut("search")?.combo
-        tips.append(tipCard("magnifyingglass", tint: .systemBlue, title: "Search everything",
-                            detail: search.map { "Press \($0.display) from any app." } ?? "Click the notch and start typing."))
+        if shell.general.isEnabled("search") {
+            // The first-run tour defers modules, so use the saved gesture before Search exists.
+            let saved = shell.store.load("hotkeys", default: ShortcutSettings())
+            let search = shell.shortcuts.shortcut("search")?.combo ?? KeyCombo(saved.keys["search"] ?? "ctrl+opt+f")
+            tips.append(tipCard("magnifyingglass", tint: .systemBlue, title: "Search everything",
+                                detail: search.map { "Press \($0.display) from any app." } ?? "Click the notch and start typing."))
+        }
         tips.append(tipCard("menubar.rectangle", tint: .systemGray, title: "Settings",
                             detail: "Use the menu-bar item, or the gear in the panel."))
         if shell.general.isEnabled("filetray") {

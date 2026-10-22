@@ -615,7 +615,7 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
             settingsGroup([
                 settingsRow("Welcome tour", detail: "What QNotch does, your features and accounts, in a few steps.", control: tour, width: width),
                 settingsRow("Hover the notch", detail: "Opens the panel without taking the keyboard.", width: width),
-                settingsRow("Click the notch", detail: "Opens it for typing. Start typing to search, or press ⌘F.", width: width),
+                settingsRow("Click the notch", detail: shell.general.isEnabled("search") ? "Opens it for typing. Start typing to search, or press ⌘F." : "Opens the panel with keyboard control. Enable Search in Features to search by typing.", width: width),
                 settingsRow("Escape or click outside", detail: "Closes the panel and returns focus to your app.", width: width),
                 settingsRow("Menu bar", detail: "Open Panel, Settings and Quit are always in the QNotch menu.", width: width)
             ], header: "Using QNotch", width: width)

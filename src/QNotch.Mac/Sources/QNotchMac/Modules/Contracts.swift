@@ -98,6 +98,8 @@ protocol ModuleShell: AnyObject {
     @discardableResult
     func peek(symbol: String, tint: NSColor, leading: String, trailing: String, seconds: TimeInterval?) -> PeekHandle?
     func selectTab(_ id: String)
+    /// Opens Search with the keyboard when its feature is enabled.
+    func summonSearch()
     func openSettings()
     /// Opens Settings on a module's section (its `settingsSections` id).
     func openSettings(section: String)
