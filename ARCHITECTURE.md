@@ -72,6 +72,8 @@ public sealed class MyModule : INotchModule, ICadenceAware   // ICadenceAware op
 
 ### Registries
 
+`ModuleContext.QuickActions` also accepts a `QuickActionDescriptor` for a module-owned panel header control and optional tray-menu item. The shell hosts the factories without naming the module. Like other registrations, a disabled module contributes nothing. Keep controls accessible and update them from set-if-changed state, without idle polling.
+
 ```csharp
 ctx.Cards.Register(new CardDescriptor("clipboard", "Clipboard", DefaultOrder: 30, () => new MyCardBody(), DefaultVisible: true, ColumnSpan: 1, RowSpan: 1));
 ctx.Tabs.Register(new TabDescriptor("clipboard", "Clipboard", Glyphs.Clipboard, Order: 20, () => new MyTab()));

@@ -15,6 +15,7 @@ internal static class NotificationsSettingsSection
     {
         var cfg = m.Config;
         var page = UiKit.Page("Notifications");
+        page.Children.Add(UiKit.Row("Manual mute", "Until you unmute. History and answers stay available; notification alerts stay quiet. This choice stays on this PC.", NotificationMuteViews.Button(m, st)));
 
         page.Children.Add(UiKit.Row("Show a toast for", "How long a notification stays under the pill. A sender can set its own time.",
             Choice(ToastSeconds, cfg.ToastSeconds, s => s == 0 ? "Off" : $"{s} seconds", v => { cfg.ToastSeconds = v; m.SaveSettings(); })));

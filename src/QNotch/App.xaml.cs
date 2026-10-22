@@ -112,6 +112,7 @@ public partial class App : Application
         var sections = new Registry<SettingsSectionDescriptor>();
         var segments = new Registry<SegmentDescriptor>();
         var demos = new Registry<DemoState>();
+        var quickActions = new Registry<QuickActionDescriptor>();
 
         var window = new NotchWindow { Offscreen = snapDir is not null };
         window.InitHandle();
@@ -121,7 +122,7 @@ public partial class App : Application
         var layout = new CardLayout(cards, gs);
         var shortcuts = new Shortcuts(_hotkeys, _store);
         var sounds = new Sounds(_store);
-        _shell = new ShellController(window, gs, _store, shortcuts, _foreground, layout, tabs, sections, segments);
+        _shell = new ShellController(window, gs, _store, shortcuts, _foreground, layout, tabs, sections, segments, quickActions);
         var shell = _shell;
         shell.AddShortcuts();
         // Before any module and the update service: the feature choices apply now, and a completed or skipped tour has made the update choice.
@@ -153,7 +154,7 @@ public partial class App : Application
         var ctx = new ModuleContext
         {
             Bus = bus, Settings = _store, Hotkeys = _hotkeys, Shell = shell, Dispatcher = Dispatcher,
-            Cards = cards, Tabs = tabs, SettingsSections = sections, Segments = segments, Search = new(), Shortcuts = shortcuts, Sounds = sounds, Demos = demos,
+            Cards = cards, Tabs = tabs, SettingsSections = sections, Segments = segments, Search = new(), Shortcuts = shortcuts, Sounds = sounds, Demos = demos, QuickActions = quickActions,
         };
         var built = new List<(string Id, INotchModule Module)>();
         List<INotchModule> Init(IEnumerable<ModuleInfo> list)

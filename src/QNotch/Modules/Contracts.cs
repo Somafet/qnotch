@@ -93,6 +93,9 @@ public sealed record TabDescriptor(string Id, string Title, string Glyph, int Or
 /// <summary>A section in the Settings window left nav. Factory is called once, lazily.</summary>
 public sealed record SettingsSectionDescriptor(string Id, string Title, string Glyph, int Order, Func<FrameworkElement> Factory) : IRegistryItem;
 
+/// <summary>Module-owned quick control in the panel header, optionally repeated in the tray menu. Factories run on the UI thread.</summary>
+public sealed record QuickActionDescriptor(string Id, int Order, Func<FrameworkElement> Factory, Func<MenuItem>? TrayFactory = null) : IRegistryItem;
+
 /// <summary>
 /// A collapsed pill state a module shows with demo data in a snapshot run (spec/diagnostics.md, <c>pill-&lt;State&gt;.png</c>). State <c>idle</c>
 /// hides what the module adds to the resting pill; any other (<c>running</c>, <c>capture</c>, <c>waiting</c>, <c>agent</c>) shows it. Show
@@ -167,4 +170,5 @@ public sealed class ModuleContext
     public required Registry<SearchSource> Search { get; init; }
     /// <summary>Snapshot run only: pill states the snapshot shows one at a time, see <see cref="DemoState"/>.</summary>
     public Registry<DemoState> Demos { get; init; } = new();
+    public Registry<QuickActionDescriptor> QuickActions { get; init; } = new();
 }

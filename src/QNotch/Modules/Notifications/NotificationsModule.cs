@@ -23,6 +23,7 @@ public sealed partial class NotificationsModule : INotchModule, ICadenceAware
 
     ModuleContext _ctx = null!;
     NotificationSettings _cfg = null!;
+    NotificationLocalSettings _local = null!;
     readonly NotificationsState _st = new();
     readonly Dictionary<string, long> _lastToast = new(StringComparer.OrdinalIgnoreCase);
     NotifyServer? _server;
@@ -41,6 +42,10 @@ public sealed partial class NotificationsModule : INotchModule, ICadenceAware
     {
         _ctx = ctx;
         _cfg = ctx.Settings.Get<NotificationSettings>(SettingsFile);
+        _local = ctx.Settings.Get<NotificationLocalSettings>("notifications.local");
+        _st.Muted = _local.Muted;
+        ctx.QuickActions.Register(new QuickActionDescriptor("notifications.mute", 10,
+            () => NotificationMuteViews.Button(this, _st, compact: true), () => NotificationMuteViews.Tray(this, _st)));
 
         ctx.Tabs.Register(new TabDescriptor(TabId, "Notifications", NotifyIcons.Bell, 50, () => new NotificationsTab(this, _st), () => _st.IsEmpty));
         ctx.Cards.Register(new CardDescriptor("notifications", "Notifications", 60, () => new NotificationsCard(_st, ctx.Shell)));
@@ -212,11 +217,12 @@ public sealed partial class NotificationsModule : INotchModule, ICadenceAware
             if (_transient == old) _transient = null;
         }
         var muted = IsMuted(n.App);
+        n.AlertSuppressed = _st.Muted;
         n.Read = muted || (TabVisible && !_autoOpened);
         _st.Items.Insert(0, n);
         Prune();
         Changed();
-        var quiet = muted || _inCall;
+        var quiet = muted || _inCall || _st.Muted;
         if (!quiet) Toast(n, ttl);
         UpdateToast();
         if (quiet || n.Level != NoteLevel.Error || !_cfg.OpenOnError || _fast) return;
@@ -253,7 +259,22 @@ public sealed partial class NotificationsModule : INotchModule, ICadenceAware
     }
 
     /// <summary>A notification waiting for an answer shows even during a call: someone is blocked on it.</summary>
-    void UpdateToast() => _st.Toast = _transient ?? _st.Items.FirstOrDefault(n => n.Pending && !IsMuted(n.App));
+    void UpdateToast() => _st.Toast = _st.Muted ? null : _transient ?? _st.Items.FirstOrDefault(n => n.Pending && !n.AlertSuppressed && !IsMuted(n.App));
+
+    internal void SetMuted(bool muted)
+    {
+        if (_st.Muted == muted) return;
+        _st.Muted = _local.Muted = muted;
+        if (muted)
+        {
+            _transient = null;
+            _toastTimer?.Stop();
+            // Returning from mute never resurrects old waiting alerts. Answers remain available in history.
+            foreach (var note in _st.Items) note.AlertSuppressed = true;
+        }
+        _ctx.Settings.Save("notifications.local", _local);
+        UpdateToast();
+    }
 
     /// <summary>Starts or stops watching the microphone to match the Quiet during calls setting.</summary>
     internal void ApplyQuiet()

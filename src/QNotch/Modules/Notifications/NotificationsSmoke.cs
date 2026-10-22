@@ -16,6 +16,7 @@ public sealed partial class NotificationsModule : ISmokeChecks
     {
         yield return new("notify-cli", () => NotifyCli(ctx));
         yield return new("notify-transport", () => NotifyTransport(ctx));
+        yield return new("notify-manual-mute", () => ManualMute(ctx));
     }
 
     async Task<bool> EnsurePipe()
@@ -80,5 +81,82 @@ public sealed partial class NotificationsModule : ISmokeChecks
         if (!gone.TryGetProperty("ok", out var ok2) || !ok2.GetBoolean()) return "the pipe did not accept the dismiss";
         for (var i = 0; i < 40 && _st.Items.Any(n => n.Id == "smoke-pipe"); i++) await Task.Delay(50);
         return _st.Items.Any(n => n.Id == "smoke-pipe") ? "the dismissed notification stayed in the history" : null;
+    }
+
+    async Task<string?> ManualMute(SmokeContext ctx)
+    {
+        var wasMuted = _st.Muted;
+        var sound = _cfg.Sound;
+        var notes = new List<Note>();
+        Note Add(string id, bool pending = false)
+        {
+            var n = new Note { Id = "mute-" + id, App = "Mute test " + id, Title = id, Level = NoteLevel.Error, Pending = pending };
+            if (pending)
+            {
+                n.Waiter = new(TaskCreationOptions.RunContinuationsAsynchronously);
+                n.Actions = [new NoteAction { Owner = n, Id = "yes", Label = "Yes" }];
+            }
+            notes.Add(n);
+            Post(n, 10);
+            return n;
+        }
+        _ctx.Shell.ClosePanel();
+        SetCadence(Cadence.Slow);
+        try
+        {
+            _cfg.Sound = false;
+            SetMuted(false);
+            var existing = Add("existing", pending: true);
+            var waiter = existing.Waiter!;
+            if (_st.Toast is null) return "fixture did not create a waiting toast";
+            var button = (System.Windows.Controls.Primitives.ToggleButton)NotificationMuteViews.Button(this, _st, compact: true);
+            var peer = new System.Windows.Automation.Peers.ToggleButtonAutomationPeer(button);
+            ((System.Windows.Automation.Provider.IToggleProvider)peer.GetPattern(System.Windows.Automation.Peers.PatternInterface.Toggle)).Toggle();
+            if (!_st.Muted || _st.Toast is not null || _transient is not null || _toastTimer?.IsEnabled == true) return "accessible mute did not clear alerts";
+            if (waiter.Task.IsCompleted || !existing.Pending || existing.Read) return "mute changed the existing wait/read state";
+            _ctx.Shell.ClosePanel();
+            SetCadence(Cadence.Slow);
+            _cfg.Sound = true; // suppressed path must return before Toast and sound playback
+            var transient = Add("error");
+            var pending = Add("pending", pending: true);
+            var reply = pending.Waiter!;
+            if (_st.Toast is not null || _fast || transient.Read || pending.Read) return "muted error/pending notification alerted or was silently read";
+            if (!pending.Pending || reply.Task.IsCompleted || !_st.Items.Contains(transient)) return "muted history/wait semantics lost";
+            if (await NotifyCli(ctx) is { } cliError) return "muted CLI: " + cliError;
+            if (await NotifyTransport(ctx) is { } transportError) return "muted transport: " + transportError;
+            if (_st.Toast is not null) return "muted CLI/pipe notification showed a toast";
+            foreach (var ended in new[] { false, true })
+            {
+                var req = new NotifyRequest { Id = "mute-lifecycle-" + ended, Title = "Lifecycle", App = "Mute lifecycle", Wait = true, Timeout = .1 };
+                var gone = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                if (ended) gone.SetResult();
+                var response = await HandleAsync(req, () => gone.Task);
+                await Task.Delay(50);
+                if (!response.Json.Contains("timeout", StringComparison.Ordinal) || Find(req.Id) is not { Pending: false } expired)
+                    return "muted timeout/disconnect lifecycle changed";
+                notes.Add(expired);
+            }
+            SetMuted(false);
+            if (_st.Toast is not null) return "unmute replayed an old alert";
+            Invoke(pending.Actions[0]);
+            var result = await reply.Task;
+            if (result.Result != "clicked" || result.Action != "yes") return "muted-period answer was not delivered";
+            Dismiss(existing);
+            if ((await waiter.Task).Result != "dismissed") return "existing waiter dismissal changed";
+            SetCall(["Smoke call"]);
+            var call = Add("call", pending: true);
+            if (_st.Toast != call) return "manual mute changed the pending exception during calls";
+            SetMuted(true);
+            if (_st.Toast is not null || !call.Pending) return "mute failed to suppress pending call toast";
+            ctx.Log("Accessible quick toggle, existing/waiting peek cancellation, muted unread error/history, no replay, answer/dismiss replies and quiet-call pending exception passed.");
+            return null;
+        }
+        finally
+        {
+            _cfg.Sound = sound;
+            foreach (var n in notes) Dismiss(n);
+            SetCall([]);
+            SetMuted(wasMuted);
+        }
     }
 }

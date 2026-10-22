@@ -93,6 +93,11 @@ public sealed unsafe class TrayIcon : IDisposable
             m.Items.Add(open);
         }
         m.Items.Add(Item("Settings", () => _shell.OpenSettings()));
+        foreach (var action in _shell.QuickActions.Items)
+        {
+            try { if (action.TrayFactory?.Invoke() is { } item) m.Items.Add(item); }
+            catch (Exception ex) { Log.Warn($"Tray action '{action.Id}' failed", ex); }
+        }
         m.Items.Add(Item(_updates.State.HasUpdate ? $"Update to {_updates.State.AvailableVersion}…" : "Updates…",
             () => _shell.OpenSettings("updates")));
         m.Items.Add(new Separator());

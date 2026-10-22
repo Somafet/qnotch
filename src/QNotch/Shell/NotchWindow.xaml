@@ -60,7 +60,7 @@
                             </Grid>
                         </Border>
                         <!-- Actions -->
-                        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right">
+                        <StackPanel x:Name="PanelActions" Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right">
                             <ToggleButton Style="{StaticResource IconToggle}" Content="&#xE70F;" ToolTip="Edit layout" AutomationProperties.AutomationId="panel-edit" IsChecked="{Binding IsEditMode}"
                                           IsEnabled="{Binding MotionEnabled}" Visibility="{Binding IsHomeSelected, Converter={StaticResource BoolToVis}}"/>
                             <ToggleButton Style="{StaticResource IconToggle}" Content="&#xE718;" ToolTip="Keep panel open" AutomationProperties.AutomationId="panel-pin" IsChecked="{Binding Settings.Pinned}" Margin="4,0,0,0"/>
