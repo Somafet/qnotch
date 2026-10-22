@@ -40,6 +40,8 @@ enum ModuleList {
                    symbol: "timer", tint: .systemOrange) { TimerModule() },
         ModuleInfo(id: "volume", title: "Volume", detail: "System volume and mute on a Home card. Follows the current output device.",
                    symbol: "speaker.wave.2.fill", tint: .systemPink) { VolumeModule() },
+        ModuleInfo(id: "search", title: "Search", detail: "Search enabled features, tabs and settings, with a global shortcut and type-to-search.",
+                   symbol: "magnifyingglass", tint: .systemBlue) { SearchModule() },
         ModuleInfo(id: "note", title: "Note", detail: "A quick note on a Home card, saved as you type.",
                    symbol: "note.text", tint: .systemYellow) { NoteModule() },
         ModuleInfo(id: "colorpicker", title: "Color picker", detail: "Pick a color anywhere on screen with the system loupe and copy its hex code.",

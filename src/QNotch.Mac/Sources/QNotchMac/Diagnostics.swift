@@ -33,6 +33,7 @@ enum NativeSmokeTest {
                                       "collapsed_status_frame=\(layout.surface(expanded: false, wing: 56))", "expanded_frame=\(layout.surface(expanded: true))",
                                       "panel_body=\(layout.panelBody)"])
                 SnapshotViews.render(run)
+                try checkSearchEnablement(run)
                 (timer, note) = try checkShell(run, layout: layout)
             } catch { return finish(error) }
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) {
@@ -315,6 +316,8 @@ enum NativeSmokeTest {
                 tour.advance()
             }
             try expect(.features)
+            try checkSearchOnboarding(tour, run: run)
+            run.pass("search-onboarding")
             guard tour.flipFeature("note"), !shell.general.isEnabled("note"), shell.module(NoteModule.self) == nil else {
                 throw Failure("onboarding", "A feature switch in the tour did not turn the feature off")
             }
@@ -514,7 +517,7 @@ enum NativeSmokeTest {
     }
 
     /// A failed check: its name and what went wrong.
-    private struct Failure: Error, CustomStringConvertible {
+    struct Failure: Error, CustomStringConvertible {
         let check: String
         let description: String
         init(_ check: String, _ description: String) { self.check = check; self.description = description }

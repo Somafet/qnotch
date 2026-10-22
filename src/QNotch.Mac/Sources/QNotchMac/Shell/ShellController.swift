@@ -103,9 +103,6 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         shortcuts.add("toggle", title: "Toggle panel", hint: "Opens or closes the panel, ready for typing.", gesture: "ctrl+opt+n", order: 0) { [weak self] in
             self?.toggleFromKeyboard()
         }
-        shortcuts.add("search", title: "Open search", hint: "Opens the Search tab with the cursor in the box.", gesture: "ctrl+opt+f", order: 20) { [weak self] in
-            self?.summonSearch()
-        }
         shortcuts.add("gamemode", title: "Cycle game mode", hint: "Automatic, then forced on, then forced off.", gesture: "ctrl+opt+g", order: 10) { [weak self] in
             self?.gameMode.cycle()
         }
@@ -222,8 +219,12 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         // Card and tab views of removed modules go; kept modules keep their (cached) views.
         let live = Set(registries.cards.items.map { "card." + $0.id } + registries.tabs.items.map { "tab." + $0.id })
         contentCache = contentCache.filter { live.contains($0.key) }
+        contentCache["tab.search"] = nil
         searchView = nil
-        if !tabs.contains(where: { $0.id == activeTab }) { activeTab = "home" }
+        if !tabs.contains(where: { $0.id == activeTab }) {
+            activeTab = "home"
+            if state.acceptsKeyboard { panel.makeFirstResponder(nil) }
+        }
         buildStatus()
     }
 
@@ -509,10 +510,11 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     // MARK: Tabs and search
 
     private var tabs: [PanelView.Tab] {
-        let items = registries.tabs.items
+        let search = registries.tabs.items.filter { $0.id == "search" }
+        let items = registries.tabs.items.filter { $0.id != "search" }
         let order = LayoutOrder.apply(saved: general.tabOrder, defaults: items.map(\.id))
-        return [PanelView.Tab(id: "home", symbol: "house", title: "Home"),
-                PanelView.Tab(id: "search", symbol: "magnifyingglass", title: "Search")] +
+        return [PanelView.Tab(id: "home", symbol: "house", title: "Home")] +
+            search.map { PanelView.Tab(id: $0.id, symbol: $0.symbol, title: $0.title) } +
             order.compactMap { id in items.first { $0.id == id } }.map { PanelView.Tab(id: $0.id, symbol: $0.symbol, title: $0.title) }
     }
 
@@ -552,14 +554,12 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     }
 
     private func typeToSearch(_ text: String) {
-        guard state.acceptsKeyboard else { return }
+        guard searchAvailable, state.acceptsKeyboard else { return }
         selectTab("search")
         searchView?.focus(appending: text)
     }
 
-    private func search(_ query: String) -> [SearchHit] {
-        registries.searchSources.items.flatMap { Array($0.find(query).prefix(5)) }
-    }
+    private var searchAvailable: Bool { !modulesDeferred && general.isEnabled("search") }
 
     /// Tabs (order 80) and Settings pages (order 90), as on Windows.
     private func registerShellSearch() {
@@ -580,7 +580,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         })
     }
 
-    static let shellShortcuts: Set<String> = ["toggle", "search", "gamemode"]
+    static let shellShortcuts: Set<String> = ["toggle", "gamemode"]
 
     // MARK: Game mode
 
@@ -603,6 +603,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
 
     /// ⌃⌥F: opens Search with the cursor in the box; pressed again there, it closes the panel.
     func summonSearch() {
+        guard searchAvailable else { return }
         if state.acceptsKeyboard, activeTab == "search" { close(); return }
         open(keyboard: true)
         selectTab("search")
@@ -617,15 +618,12 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         guard let panelView else { return }
         let content: NSView
         switch activeTab {
-        case "search":
-            let view = searchView ?? SearchView { [weak self] in self?.search($0) ?? [] }
-            searchView = view
-            content = view
         case "home":
             content = cached("home") { [unowned self] in self.makeHome() }
         default:
             if let tab = registries.tabs.items.first(where: { $0.id == activeTab }) {
                 content = cached("tab." + tab.id, tab.makeView)
+                if tab.id == "search" { searchView = content as? SearchView }
             } else {
                 content = placeholder(symbol: "exclamationmark.triangle", title: "Unavailable", detail: "This module is not available.")
             }
