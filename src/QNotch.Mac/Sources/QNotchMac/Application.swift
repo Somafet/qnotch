@@ -12,15 +12,13 @@ public enum QNotchApplication {
     }
 }
 
-private final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenuItemValidation {
+private final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     private var shell: ShellController!
-    private var item: NSStatusItem!
-    private var status: NSMenuItem!
+    private var menuBar: MenuBarController?
+    private var instance: ApplicationInstance?
+    private var pendingReopen = false
     private let launched = ProcessInfo.processInfo.systemUptime
     private var dataDirectory: URL!
-    private var moduleActionItems: [NSMenuItem] = []
-    private var gameItems: [NSMenuItem] = []
-    private var lockDescriptor: Int32 = -1
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let args = ProcessInfo.processInfo.arguments
@@ -46,18 +44,19 @@ private final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenu
         }
         dataDirectory = isolated.map { URL(fileURLWithPath: $0, isDirectory: true) } ??
             FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("QNotch.Mac", isDirectory: true)
-        // Advisory, per-data-root instance lock. Never terminate another user's app. Diagnostic
-        // runs never take it, so they run beside a normal instance.
-        do {
-            try FileManager.default.createDirectory(at: dataDirectory, withIntermediateDirectories: true)
-            if options.mode == nil {
-                lockDescriptor = Darwin.open(dataDirectory.appendingPathComponent("instance.lock").path, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR)
-                if lockDescriptor >= 0, flock(lockDescriptor, LOCK_EX | LOCK_NB) != 0 {
-                    fputs("QNotch is already running with this data directory.\n", stderr)
-                    exit(1)
-                }
+        // Acquire before constructing any provider. A second process only delivers Settings to
+        // the owner of this data directory, then exits; diagnostics retain their separate contract.
+        if options.mode == nil {
+            do { instance = try ApplicationInstance.acquire(directory: dataDirectory) }
+            catch ApplicationInstance.Failure.alreadyRunning {
+                let delivered = ApplicationInstance.requestSettings(directory: dataDirectory)
+                if !delivered { fputs("QNotch is already running; Settings recovery could not be delivered.\n", stderr) }
+                exit(delivered ? 0 : 1)
+            } catch {
+                fputs("QNotch could not acquire its data-directory instance lock: \(error)\n", stderr)
+                exit(1)
             }
-        } catch { /* The Settings window reports persistence failures; the app remains usable. */ }
+        }
         // The welcome tour: on a fresh install it runs before any module is constructed; settings
         // from before the tour are marked done without showing it. Diagnostic and debug-control runs never show it.
         let debugControl = args.contains("--debug-control")
@@ -74,10 +73,13 @@ private final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenu
         shell.updater = Updater.makeIfAvailable(isolated: isolated != nil) { [weak shell] in shell?.general.betaUpdates == true }
         installMainMenu()
         // A snapshot run shows nothing: no menu-bar item, and the notch is rendered at alpha 0.
-        if options.mode == .snapshot { shell.renderOnly = true } else { installStatusItem() }
-        shell.statusChanged = { [weak self] in self?.refreshStatus() }
-        refreshStatus()
+        if options.mode == .snapshot { shell.renderOnly = true }
+        menuBar = MenuBarController(shell: shell, suppressed: options.mode == .snapshot)
+        shell.statusChanged = { [weak self] in self?.menuBar?.refreshStatus() }
         if tour == .show { shell.showOnboarding(firstRun: true, isolated: isolated != nil) } else { shell.start() }
+        do { try instance?.startRecovery { [weak self] in self?.reopenSettings() } }
+        catch { fputs("Settings reopen recovery did not open: \(error)\n", stderr) }
+        if pendingReopen { pendingReopen = false; reopenSettings() }
         // The debug channel opens only on request, and never in a diagnostic run (spec/diagnostics.md, Debug channel).
         if debugControl && options.mode == nil {
             do { try DebugChannel.start(shell: shell, directory: dataDirectory) } catch { fputs("The debug channel did not open: \(error)\n", stderr) }
@@ -87,86 +89,36 @@ private final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenu
         if let output = options.output.map({ URL(fileURLWithPath: $0, isDirectory: true) }) {
             switch options.mode {
             case .snapshot?: NativeSnapshot.run(shell: shell, output: output, options: options)
-            case .smoke?: NativeSmokeTest.run(shell: shell, output: output, ready: ready, options: options)
+            case .smoke?: NativeSmokeTest.run(shell: shell, menuBar: menuBar!, output: output, ready: ready, options: options)
             case .measure?: PerformanceMeasurement.run(shell: shell, output: output, ready: ready)
             case nil: break
             }
         }
     }
 
-    private func installStatusItem() {
-        item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
-        item.button?.image = NSImage(systemSymbolName: "circle.lefthalf.filled", accessibilityDescription: "QNotch")
-        item.button?.setAccessibilityLabel("QNotch menu")
-        let menu = NSMenu()
-        menu.delegate = self
-        menu.addItem(withTitle: "Open Panel", action: #selector(openPanel), keyEquivalent: "o").target = self
-        menu.addItem(withTitle: "Settings…", action: #selector(openSettings), keyEquivalent: ",").target = self
-        if shell.updater != nil { menu.addItem(withTitle: "Check for Updates…", action: #selector(checkForUpdates), keyEquivalent: "").target = self }
-        status = NSMenuItem(title: "", action: nil, keyEquivalent: "")
-        menu.addItem(status)
-        menu.addItem(.separator())
-        let gameHeader = NSMenuItem(title: "Game Mode", action: nil, keyEquivalent: "")
-        gameHeader.isEnabled = false
-        menu.addItem(gameHeader)
-        for (title, mode) in [("Automatic", GameOverride.auto), ("On", .on), ("Off", .off)] {
-            let entry = NSMenuItem(title: title, action: #selector(setGameMode(_:)), keyEquivalent: "")
-            entry.target = self
-            entry.representedObject = mode.rawValue
-            entry.indentationLevel = 1
-            menu.addItem(entry)
-            gameItems.append(entry)
-        }
-        menu.addItem(.separator())
-        menu.addItem(withTitle: "Quit QNotch", action: #selector(quit), keyEquivalent: "q").target = self
-        item.menu = menu
-    }
-
     func applicationWillTerminate(_ notification: Notification) {
+        menuBar?.removeStatusItem()
         DebugChannel.stop()
         shell?.stop()
-        if lockDescriptor >= 0 { Darwin.close(lockDescriptor) }
+        // Keep the lock through provider teardown as well as startup.
+        instance?.close()
     }
-    @objc private func openPanel() {
-        // During the first-run tour there is no panel content yet: bring the tour forward.
-        if shell.modulesDeferred, let tour = shell.onboarding { tour.show() } else { shell.open(keyboard: true) }
+
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        reopenSettings()
+        return false
     }
-    @objc private func setGameMode(_ sender: NSMenuItem) {
-        if let raw = sender.representedObject as? String, let mode = GameOverride(rawValue: raw) { shell.gameMode.override = mode }
+
+    private func reopenSettings() {
+        guard let shell else { pendingReopen = true; return }
+        shell.openSettings(page: "general")
     }
-    @objc private func runModuleAction(_ sender: NSMenuItem) {
-        guard let id = sender.representedObject as? String,
-              let action = shell.registries.menuActions.items.first(where: { $0.id == id }) else { return }
-        action.run()
-    }
+
     @objc private func openSettings() { shell.openSettings() }
     @objc private func quit() { NSApp.terminate(nil) }
     @objc private func checkForUpdates() { shell.updater?.check() }
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
         menuItem.action == #selector(checkForUpdates) ? shell.updater?.canCheck == true : true
-    }
-    func menuWillOpen(_ menu: NSMenu) {
-        refreshStatus()
-        for item in gameItems { item.state = (item.representedObject as? String) == shell.gameMode.override.rawValue ? .on : .off }
-    }
-    private func refreshStatus() {
-        guard status != nil else { return }
-        if let menu = item?.menu {
-            moduleActionItems.forEach { menu.removeItem($0) }
-            moduleActionItems = shell.registries.menuActions.items.map { action in
-                let entry = NSMenuItem(title: action.title(), action: #selector(runModuleAction(_:)), keyEquivalent: "")
-                entry.target = self
-                entry.representedObject = action.id
-                entry.state = action.isOn() ? .on : .off
-                return entry
-            }
-            for entry in moduleActionItems { menu.insertItem(entry, at: menu.index(of: status)) }
-        }
-        let problem = [shell.displayMessage, shell.store.problem ?? ""].filter { !$0.isEmpty }.joined(separator: " ")
-        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "development"
-        let message = !problem.isEmpty ? problem : shell.updater == nil ? "Development build · Updates unavailable" : "QNotch \(version)"
-        status.title = message
-        status.isEnabled = false
     }
     private func installMainMenu() {
         let main = NSMenu()
