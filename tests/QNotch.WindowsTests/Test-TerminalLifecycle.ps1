@@ -41,7 +41,12 @@ function WaitText($marker) {
     } while ($clock.Elapsed.TotalSeconds -lt 15)
     throw "Missing terminal output: $marker"
 }
-function Alive($processId) { return $null -ne (Get-Process -Id $processId -ErrorAction SilentlyContinue) }
+function Alive($processId) {
+    if ($processId -le 0) { throw 'Invalid owned process id' }
+    $owned = Get-Process -Id $processId -ErrorAction SilentlyContinue
+    if (!$owned) { return $false }
+    try { return !$owned.HasExited } finally { $owned.Dispose() }
+}
 $app = Boot
 try {
     $state = Must (Call 'state')
@@ -80,9 +85,10 @@ try {
     $app = Boot
     Must (Call 'select-tab' @{id='terminal'}) | Out-Null
     WaitText 'PS ' | Out-Null
-    Must (Call 'type' @{id='terminal-input';text="'QNOTCH_PID='+`$PID`r"}) | Out-Null
+    # Expand a variable in the shell so echoed input cannot be mistaken for its output.
+    Must (Call 'type' @{id='terminal-input';text="`$m='QNOTCH'; `$m+'_PID='+`$PID`r"}) | Out-Null
     $text = WaitText 'QNOTCH_PID='
-    $text -match 'QNOTCH_PID=(\d+)' | Out-Null
+    if ($text -notmatch 'QNOTCH_PID=(\d+)') { throw 'Shell PID output not reported' }
     $terminalProcessId = [int]$Matches[1]
     Quit $app
     if (Alive $terminalProcessId) { throw 'Quit did not reap owned shell' }

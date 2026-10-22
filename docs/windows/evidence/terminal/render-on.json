@@ -1,0 +1,17 @@
+{
+  "provider": "Microsoft-Windows-WPF E13B77A8-14B6-11DE-8069-001B212B5009",
+  "startup_render_events": 99,
+  "own_events": 12255,
+  "intervals": [
+    {
+      "render_begin_events": 0,
+      "events": 0,
+      "event_ids": []
+    },
+    {
+      "render_begin_events": 0,
+      "events": 0,
+      "event_ids": []
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "warmup_seconds": 20,
+  "platform": "Windows x64",
+  "version": "0.4.0",
+  "state": "collapsed; Terminal off; all other modules off; retained idle shell when on",
+  "cpu": "AMD Ryzen 9 5900X, 24 logical processors",
+  "source_dirty": false,
+  "method": "QueryProcessCycleTime; three 100ms thread-cycle calibrations; two 30s intervals; WPF ETW PID filtered; no IPC or input during intervals",
+  "intervals": [
+    {
+      "start_local": "2026-10-22T12:30:26.1393592+02:00",
+      "cpu_percent_one_core": 0.15199404635309605,
+      "resident_bytes_end": 103886848,
+      "interval_seconds": 30.0147703,
+      "resident_bytes_start": 103686144,
+      "panel_start": "collapsed",
+      "panel_end": "collapsed",
+      "end_local": "2026-10-22T12:30:56.1587635+02:00"
+    },
+    {
+      "start_local": "2026-10-22T12:30:56.1912041+02:00",
+      "cpu_percent_one_core": 0.1779792279171613,
+      "resident_bytes_end": 103911424,
+      "interval_seconds": 30.002807,
+      "resident_bytes_start": 103886848,
+      "panel_start": "collapsed",
+      "panel_end": "collapsed",
+      "end_local": "2026-10-22T12:31:26.1945968+02:00"
+    }
+  ],
+  "pid": 63540,
+  "cycle_hz": 3684682459.5262146,
+  "os": "Microsoft Windows NT 10.0.26200.0",
+  "source_revision": "02799790bfda68066874a30a5df5281f885e822f",
+  "owned_children": []
+}
