@@ -1,28 +1,29 @@
 import Foundation
-import Testing
+import XCTest
 import QNotchMacCore
 @testable import QNotchMac
 
-struct SearchEnablementTests {
-    @Test(arguments: ["{}", #"{"timerEnabled":false}"#, #"{"disabledModules":["note"]}"#])
-    func searchDefaultsOnForExistingSettings(json: String) throws {
-        let settings = try JSONDecoder().decode(GeneralSettings.self, from: Data(json.utf8))
-        #expect(settings.isEnabled("search"))
+final class SearchEnablementTests: XCTestCase {
+    func testSearchDefaultsOnForExistingSettings() throws {
+        for json in ["{}", #"{"timerEnabled":false}"#, #"{"disabledModules":["note"]}"#] {
+            let settings = try JSONDecoder().decode(GeneralSettings.self, from: Data(json.utf8))
+            XCTAssertTrue(settings.isEnabled("search"), json)
+        }
     }
 
-    @Test func searchChoicePersistsAndGroupTogglePreservesOtherFeatures() throws {
+    func testSearchChoicePersistsAndGroupTogglePreservesOtherFeatures() throws {
         var settings = GeneralSettings()
         settings.setEnabled("timer", false)
         settings.setEnabled("search", false)
         settings = try JSONDecoder().decode(GeneralSettings.self, from: JSONEncoder().encode(settings))
-        #expect(!settings.isEnabled("search"))
-        let group = try #require(Onboarding.groups(available: ModuleList.all.map(\.id)).first { $0.modules.contains("search") })
+        XCTAssertTrue(!settings.isEnabled("search"))
+        let group = try XCTUnwrap(Onboarding.groups(available: ModuleList.all.map(\.id)).first { $0.modules.contains("search") })
         Onboarding.setGroup(group, enabled: true, in: &settings)
-        #expect(settings.isEnabled("search"))
-        #expect(!settings.isEnabled("timer"))
+        XCTAssertTrue(settings.isEnabled("search"))
+        XCTAssertTrue(!settings.isEnabled("timer"))
         Onboarding.setGroup(group, enabled: false, in: &settings)
-        #expect(!settings.isEnabled("search"))
-        #expect(settings.isEnabled("stats"))
-        #expect(ModuleList.all.filter { $0.id == "search" }.count == 1)
+        XCTAssertTrue(!settings.isEnabled("search"))
+        XCTAssertTrue(settings.isEnabled("stats"))
+        XCTAssertTrue(ModuleList.all.filter { $0.id == "search" }.count == 1)
     }
 }
