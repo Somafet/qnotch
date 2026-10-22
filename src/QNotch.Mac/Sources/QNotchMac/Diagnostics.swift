@@ -32,12 +32,15 @@ enum NativeSmokeTest {
                                       "collapsed_status_frame=\(layout.surface(expanded: false, wing: 56))", "expanded_frame=\(layout.surface(expanded: true))",
                                       "panel_body=\(layout.panelBody)"])
                 SnapshotViews.render(run)
-                try MenuBarSmoke.check(run, menuBar: menuBar)
             } catch { return finish(error) }
             // Exercise hover before unrelated module checks, so a later environmental failure
             // cannot conceal whether the production dwell path passed.
             HoverTargetSmoke.exerciseDwell(run) { error in
                 if let error { return finish(error) }
+                // Recovery opens and activates Settings. Run it after the nonactivating
+                // hover assertion so its pending focus events cannot affect that probe.
+                do { try MenuBarSmoke.check(run, menuBar: menuBar) }
+                catch { return finish(error) }
                 checkInteractions(run, finish: finish)
             }
         }
