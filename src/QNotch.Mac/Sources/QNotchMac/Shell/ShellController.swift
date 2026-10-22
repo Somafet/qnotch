@@ -232,14 +232,33 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         let previous = general
         let disabled = general.disabledModules
         change(&general)
+        // Materialize the full order before anything disappears, including never-dragged defaults.
+        // Later drags replace only shown slots, so hidden/off contributions keep their place.
+        if previous.hiddenCards != general.hiddenCards || previous.disabledModules != general.disabledModules {
+            general.cardOrder = LayoutOrder.remember(saved: general.cardOrder, defaults: registries.cards.items.map(\.id))
+        }
+        if previous.hiddenTabs != general.hiddenTabs || previous.disabledModules != general.disabledModules {
+            general.tabOrder = LayoutOrder.remember(saved: general.tabOrder, defaults: registries.tabs.items.filter { $0.id != "search" }.map(\.id))
+        }
         store.save("general", general)
         Motion.userReduced = general.reduceMotion
         Palette.accentOverride = general.accent.flatMap(Palette.hex)
-        if previous.accent != general.accent || previous.profileName != general.profileName || previous.hiddenCards != general.hiddenCards {
+        if previous.accent != general.accent || previous.profileName != general.profileName {
             accentChanged()
         }
         if disabled != general.disabledModules {
             composeModules()
+            contentCache["home"] = nil
+            discardPanel()
+        } else if previous.hiddenCards != general.hiddenCards || previous.hiddenTabs != general.hiddenTabs {
+            if previous.hiddenCards != general.hiddenCards {
+                contentCache["home"] = nil
+                if activeTab == "home", state.acceptsKeyboard { panel.makeFirstResponder(nil) }
+            }
+            if !general.isTabVisible(activeTab), previous.isTabVisible(activeTab) {
+                activeTab = "home"
+                if state.acceptsKeyboard { panel.makeFirstResponder(nil) }
+            }
             discardPanel()
         }
         resolveDisplay()
@@ -343,7 +362,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     func tryOpenPanel(tab: String, linger: TimeInterval) -> Bool {
         guard screen != nil, !gameActive else { return false }
         guard !state.expanded else { return true }
-        if tabs.contains(where: { $0.id == tab }) { activeTab = tab }
+        selectTab(tab)
         open(keyboard: false)
         lingerTask?.cancel()
         let task = DispatchWorkItem { [weak self] in
@@ -510,8 +529,9 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     // MARK: Tabs and search
 
     private var tabs: [PanelView.Tab] {
-        let search = registries.tabs.items.filter { $0.id == "search" }
-        let items = registries.tabs.items.filter { $0.id != "search" }
+        let visible = registries.tabs.items.filter { general.isTabVisible($0.id) || $0.id == activeTab }
+        let search = visible.filter { $0.id == "search" }
+        let items = visible.filter { $0.id != "search" }
         let order = LayoutOrder.apply(saved: general.tabOrder, defaults: items.map(\.id))
         return [PanelView.Tab(id: "home", symbol: "house", title: "Home")] +
             search.map { PanelView.Tab(id: $0.id, symbol: $0.symbol, title: $0.title) } +
@@ -536,15 +556,23 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     }
 
     func selectTab(_ id: String) {
-        let ids = tabs.map(\.id)
+        // Hidden tabs remain action/shortcut destinations. Show a temporary selected tab while
+        // active, then remove it on leaving; Home and enabled Search retain their fixed positions.
+        let ids = ["home"] + registries.tabs.items.filter { $0.id == "search" }.map(\.id) +
+            LayoutOrder.apply(saved: general.tabOrder, defaults: registries.tabs.items.filter { $0.id != "search" }.map(\.id))
         guard let next = ids.firstIndex(of: id) else { return }
         let previous = ids.firstIndex(of: activeTab) ?? 0
+        let stripChanges = !general.isTabVisible(activeTab) || !general.isTabVisible(id)
         guard id != activeTab else {
             if id == "search", state.acceptsKeyboard { searchView?.focus(appending: "") }
             return
         }
         if editing, id != "home" { setEditing(false) }
         activeTab = id
+        if stripChanges {
+            discardPanel()
+            present(.none)
+        }
         panelView?.select(id, animated: true)
         panelView?.setEditing(editing, onHome: id == "home")
         showBody(direction: next > previous ? 1 : -1, animated: true)
@@ -611,7 +639,12 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     }
 
     private func updateVisibility() {
-        modules.forEach { $0.setVisibility(panel: state.expanded, activeTab: activeTab) }
+        for (id, module) in loaded {
+            let visible = activeTab == "home"
+                ? registries.cards.ids(owner: id).contains(where: general.isCardVisible)
+                : registries.tabs.owner(of: activeTab) == id
+            module.setVisibility(panel: state.expanded && visible, activeTab: activeTab)
+        }
     }
 
     private func showBody(direction: Int = 0, animated: Bool = false) {
@@ -664,6 +697,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
             let slots = segments.filter { $0.slot == slot }.map { item -> SegmentSlotView in
                 let container = SegmentSlotView()
                 container.owner = registries.segments.owner(of: item.id)
+                container.identifier = NSUserInterfaceItemIdentifier("segment-slot-" + item.id)
                 embed(item.makeView(), in: container, inset: 0, fill: true)
                 return container
             }
@@ -742,7 +776,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
 
     /// Shows each wing's visible segments while they fit, spilling over to the other wing (WingFit).
     private func fitWings(maxWidth: CGFloat) {
-        let hidden = gameActive ? Set(gameMode.settings.hiddenModules) : []
+        let hidden = Set(general.hiddenNotchModules).union(gameActive ? Set(gameMode.settings.hiddenModules) : [])
         func widths(_ slots: [SegmentSlotView]) -> [(ObjectIdentifier, Double?)] {
             slots.map { slot in
                 guard let segment = slot.subviews.first, !segment.isHidden, !hidden.contains(slot.owner ?? "") else { return (ObjectIdentifier(slot), nil) }
@@ -1015,6 +1049,9 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     }
 
     // MARK: Diagnostics
+
+    func cachedCard(_ id: String) -> NSView? { contentCache["card." + id] }
+    var currentBody: NSView? { contentCache[activeTab == "home" ? "home" : "tab." + activeTab] }
 
     func snapshot(to url: URL) throws {
         guard let view = panel.contentView else { throw CocoaError(.fileWriteUnknown) }

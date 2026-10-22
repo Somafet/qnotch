@@ -146,6 +146,8 @@ struct ModuleContext {
 
 protocol NotchModule: AnyObject {
     func initialize(_ context: ModuleContext)
+    /// `panel` is true only while an owned Home card or tab is on screen. Presentation changes
+    /// update this without stopping the module; collapsed status has its own visibility rules.
     func setVisibility(panel: Bool, activeTab: String)
     func systemDidWake()
     func stop()

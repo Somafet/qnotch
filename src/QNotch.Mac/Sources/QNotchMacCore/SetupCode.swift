@@ -54,7 +54,7 @@ public enum SetupCode {
             "ai": ["RefreshMinutes": s.ai.refreshMinutes],
             "agents": ["SoundNeedsYou": s.agents.soundNeedsYou, "SoundDone": s.agents.soundDone],
             "mac": ["accent": s.general.accent ?? "auto", "anyFullScreen": s.gameMode.anyFullScreen, "hiddenGameModules": s.gameMode.hiddenModules,
-                    "agentsShowCost": s.agents.showCost]
+                    "agentsShowCost": s.agents.showCost, "hiddenTabs": s.general.hiddenTabs, "hiddenNotchModules": s.general.hiddenNotchModules]
         ]
         let json = (try? JSONSerialization.data(withJSONObject: root, options: [.sortedKeys])) ?? Data()
         return prefix + base64url(deflate(json))
@@ -143,6 +143,9 @@ public enum SetupCode {
             if let v = try bool(f["SoundDone"], "Agents") { s.agents.soundDone = v }
         }
         if let mac = root["mac"] as? [String: Any] {
+            if mac["hiddenTabs"] != nil || mac["hiddenNotchModules"] != nil { titles.append("Mac visibility") }
+            if let hidden = try strings(mac["hiddenTabs"], "Mac visibility") { s.general.hiddenTabs = hidden }
+            if let hidden = try strings(mac["hiddenNotchModules"], "Mac visibility") { s.general.hiddenNotchModules = hidden }
             if let accent = mac["accent"] as? String { s.general.accent = accent == "auto" ? nil : GeneralSettings.accents.first { $0 == accent } }
             if let any = mac["anyFullScreen"] as? Bool { s.gameMode.anyFullScreen = any }
             if let hidden = mac["hiddenGameModules"] as? [String] { s.gameMode.hiddenModules = hidden }
