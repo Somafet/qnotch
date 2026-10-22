@@ -8,6 +8,7 @@ using QNotch.Shell.Settings;
 
 var tests = new List<(string Name, Action Run)>
 {
+    ("Terminal defaults, local opt-in, bounded VT screen and input encoding", TerminalChecks.Deterministic),
     ("notification manual mute persists locally outside setup codes", () =>
     {
         Require(!new NotificationLocalSettings().Muted);
@@ -60,6 +61,11 @@ foreach (var (name, run) in tests)
 {
     try { run(); Console.WriteLine("PASS " + name); }
     catch (Exception ex) { failures++; Console.Error.WriteLine("FAIL " + name + ": " + ex); }
+}
+if (args.Contains("--conpty"))
+{
+    try { await TerminalChecks.ConPty(); }
+    catch (Exception ex) { failures++; Console.Error.WriteLine("FAIL real ConPTY: " + ex); }
 }
 return failures == 0 ? 0 : 1;
 

@@ -20,16 +20,15 @@ public static class FeaturesSection
         var presentation = store.Get<WindowsPresentationSettings>("windows-presentation");
 
         var bar = RestartBar(restart);
-        void Sync() => bar.Visibility = gs.DisabledModules.ToHashSet(StringComparer.OrdinalIgnoreCase).SetEquals(bootDisabled) ? Visibility.Collapsed : Visibility.Visible;
+        void Sync() => bar.Visibility = modules.Where(m => !m.IsEnabled(gs)).Select(m => m.Id).ToHashSet(StringComparer.OrdinalIgnoreCase).SetEquals(bootDisabled) ? Visibility.Collapsed : Visibility.Visible;
 
         foreach (var info in modules)
         {
             var id = info.Id;
-            var on = !gs.DisabledModules.Contains(id, StringComparer.OrdinalIgnoreCase);
+            var on = info.IsEnabled(gs);
             var toggle = UiKit.Toggle(on, v =>
             {
-                gs.DisabledModules.RemoveAll(x => string.Equals(x, id, StringComparison.OrdinalIgnoreCase));
-                if (!v) gs.DisabledModules.Add(id);
+                info.SetEnabled(gs, v);
                 store.Save("general", gs);
                 Sync();
             });

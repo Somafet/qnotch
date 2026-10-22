@@ -10,6 +10,7 @@ dotnet run --project tests/QNotch.UpdateTests -c Release
 dotnet run --project tests/QNotch.PhoneShareTests -c Release
 dotnet run --project tests/QNotch.OnboardingTests -c Release
 dotnet run --project tests/QNotch.WindowsTests -c Release
+dotnet run --project tests/QNotch.WindowsTests -c Release -- --conpty
 ```
 
 The updater suite covers release selection, variant selection, checksums, executable validation, cancellation, replacement/recovery, and update settings. It consumes the shared release-tag fixtures to confirm Mac tags are ignored. The phone-sharing suite covers the existing transfer protocol. The onboarding suite covers when the welcome tour shows, what its choices write to `general.json`, and the GitHub device flow against canned responses, with no network.
@@ -158,3 +159,5 @@ Follow the [Windows architecture contract](../../ARCHITECTURE.md), including [ha
 Windows extensions live in `src/QNotch/Modules/<Name>/`. Read [the module checklist](../../ARCHITECTURE.md#add-a-new-extension). Secrets belong in Windows Credential Manager; network access must be explained and switchable. Discuss new runtime dependencies before adding them.
 
 Notifications has an indefinite manual mute in the panel header, tray menu and Notifications settings. It persists in `notifications.local.json`, outside setup codes. It clears current alerts and suppresses ordinary and waiting toasts, sounds and automatic error opening. History, unread tracking and waiting actions remain available; unmuting does not replay suppressed alerts. Timer and Agents alerts are independent. Timed durations are not implemented.
+
+The default-off [Windows Terminal](terminal.md) uses ConPTY and local enablement. Its real lifecycle/I/O regressions run separately from diagnostic fixtures, which never execute a shell.

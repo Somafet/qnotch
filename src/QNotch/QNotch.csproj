@@ -44,6 +44,7 @@
     <InternalsVisibleTo Include="QNotch.UpdateTests" />
     <InternalsVisibleTo Include="QNotch.PhoneShareTests" />
     <InternalsVisibleTo Include="QNotch.OnboardingTests" />
+    <InternalsVisibleTo Include="QNotch.WindowsTests" />
   </ItemGroup>
   <!-- Evaluate after the publish profile, so the updater preserves the installed runtime variant. -->
   <Target Name="UpdateBuildMetadata" BeforeTargets="GetAssemblyAttributes">

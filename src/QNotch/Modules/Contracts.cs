@@ -50,7 +50,36 @@ public sealed record SegmentDescriptor(string Id, SegmentSlot Slot, int Order, F
 /// Setup: optional static factory for the tour's Connect step (see <see cref="SetupContext"/>); null when there is nothing to set up right now.
 /// Tip: optional one-line tip for the tour's last step, with real gestures; null for none.</summary>
 public sealed record ModuleInfo(string Id, string Title, string Description, Func<INotchModule> Create, bool Early = false, SharedSettings? Shared = null,
-    string Glyph = "", Func<SetupContext, SetupRow?>? Setup = null, Func<SetupContext, string?>? Tip = null);
+    string Glyph = "", Func<SetupContext, SetupRow?>? Setup = null, Func<SetupContext, string?>? Tip = null, bool DefaultEnabled = true)
+{
+    public bool IsEnabled(GeneralSettings settings) => DefaultEnabled
+        ? !settings.DisabledModules.Contains(Id, StringComparer.OrdinalIgnoreCase)
+        : settings.LocalEnabledModules.Contains(Id, StringComparer.OrdinalIgnoreCase);
+
+    public void SetEnabled(GeneralSettings settings, bool on)
+    {
+        if (DefaultEnabled)
+        {
+            settings.DisabledModules.RemoveAll(id => string.Equals(id, Id, StringComparison.OrdinalIgnoreCase));
+            if (!on) settings.DisabledModules.Add(Id);
+        }
+        else
+        {
+            var local = settings.LocalEnabledModules.Where(id => !string.Equals(id, Id, StringComparison.OrdinalIgnoreCase)).ToList();
+            if (on) local.Add(Id);
+            settings.LocalEnabledModules = local;
+        }
+    }
+}
+
+/// <summary>A tab with custom input. The shell restores focus after a keyboard summon.</summary>
+public interface IPanelKeyboardInput { void FocusInput(); }
+/// <summary>Module shortcuts are released while this custom input surface owns the keyboard.</summary>
+public interface IExclusiveKeyboardInput
+{
+    string Text { get; }
+    void InsertText(string text);
+}
 
 /// <summary>
 /// What a setup row (<see cref="ModuleInfo.Setup"/>) and a tip may use. The welcome tour builds rows before the module exists, so a row

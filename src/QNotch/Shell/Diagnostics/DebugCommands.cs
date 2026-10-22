@@ -324,13 +324,13 @@ internal sealed class DebugCommands : IDisposable
         if (id is { Length: > 0 })
         {
             field = Find(id);
-            if (field is not (TextBox { IsReadOnly: false } or PasswordBox)) throw new DebugException($"control {id} is not a text field");
+            if (field is not (TextBox { IsReadOnly: false } or PasswordBox or IExclusiveKeyboardInput)) throw new DebugException($"control {id} is not a text field");
             Focus(field);
         }
         else
         {
             field = KeyTarget().Target;
-            if (field is not (TextBox { IsReadOnly: false } or PasswordBox)) throw new DebugException("no text field has the focus (pass --id)");
+            if (field is not (TextBox { IsReadOnly: false } or PasswordBox or IExclusiveKeyboardInput)) throw new DebugException("no text field has the focus (pass --id)");
         }
         Insert(field, text);
     }
@@ -346,6 +346,7 @@ internal sealed class DebugCommands : IDisposable
     static void Insert(UIElement field, string text)
     {
         if (field is PasswordBox pb) { pb.Password += text; return; }
+        if (field is IExclusiveKeyboardInput input) { input.InsertText(text); return; }
         var tb = (TextBox)field;
         tb.SelectedText = text;
         tb.Select(tb.SelectionStart + text.Length, 0);

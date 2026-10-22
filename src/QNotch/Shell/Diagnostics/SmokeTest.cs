@@ -112,6 +112,7 @@ internal sealed partial class SmokeTest
             Task<string?> Module(string name) => modules.Remove(name, out var c) ? c.Run() : Task.FromResult<string?>("no module provides this check");
 
             await Check("placement", () => Task.FromResult(Placement()));
+            await Check("placement-displays", PlacementDisplays);
             await Check("presentation", PresentationCheck);
             await Check("hover-keeps-focus", HoverKeepsFocus);
             await Check("hotkey-toggle", () => Foreground(HotkeyToggle));
@@ -189,7 +190,10 @@ internal sealed partial class SmokeTest
         Log($"foreground before {Describe(before)}, after {Describe(after)}; window keyboard {W.HasKeyboard}, active {W.IsActive}");
         S.Hover(false);
         if (!opened) return "the hover dwell did not open the panel";
-        if (W.HasKeyboard || W.IsActive || Ours(after)) return $"opening on hover took the keyboard (foreground {Describe(after)})";
+        // WPF's logical IsActive can remain true after a cross-DPI move even when Win32 still reports the external
+        // foreground and the shell has not enabled keyboard input. Assert the OS foreground and our actual keyboard lease.
+        if (W.HasKeyboard || Ours(after)) return $"opening on hover took the keyboard (foreground {Describe(after)})";
+        if (before != after) return "skip: the foreground changed externally during the hover check";
         return null;
     }
 

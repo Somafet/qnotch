@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Interop;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
@@ -91,8 +92,8 @@ public sealed class ShellController : IShell
     /// module, so the shell's keys win a clash. They do nothing until <see cref="Start"/>.</summary>
     public void AddShortcuts()
     {
-        _shortcuts.Add("toggle", "Toggle panel", "Opens or closes the panel and takes the keyboard.", _general.ToggleHotkey, ToggleFromUser, 0);
-        _shortcuts.Add("gamemode", "Cycle Game mode", "Auto, Force on, Force off.", _general.GameModeHotkey, () => { if (_started) GameMode.CycleOverride(); }, 10);
+        _shortcuts.Add("toggle", "Toggle panel", "Opens or closes the panel and takes the keyboard.", _general.ToggleHotkey, ToggleFromUser, 0, allowDuringInput: true);
+        _shortcuts.Add("gamemode", "Cycle Game mode", "Auto, Force on, Force off.", _general.GameModeHotkey, () => { if (_started) GameMode.CycleOverride(); }, 10, allowDuringInput: true);
     }
 
     public void Start()
@@ -109,7 +110,9 @@ public sealed class ShellController : IShell
         _w.HoverEntered += OnHoverEnter;
         _w.HoverLeft += OnHoverLeave;
         _w.EscPressed += ClosePanel;
-        _w.KeyboardFocusLost += () => { if (!_w.IsPointerOver()) { _hovering = false; StartLeave(); } };
+        _w.KeyboardFocusLost += () => { _shortcuts.InputCaptured = false; if (!_w.IsPointerOver()) { _hovering = false; StartLeave(); } };
+        _w.AddHandler(Keyboard.GotKeyboardFocusEvent, new KeyboardFocusChangedEventHandler((_, e) =>
+            _shortcuts.InputCaptured = _w.HasKeyboard && e.NewFocus is IExclusiveKeyboardInput));
         _w.FileDragOver += OnFileDragOver;
         _w.DragLeft += OnHoverLeave;
         _w.FilesDropped += files =>
@@ -158,6 +161,7 @@ public sealed class ShellController : IShell
     {
         if (_mode == m) return;
         _mode = m;
+        if (m != ShellMode.Expanded) _shortcuts.InputCaptured = false;
         _peek?.Dispose(); // the panel or the game bar takes over the pill: a peek never comes back afterwards
         UpdateGlance();
         ModeChanged?.Invoke(m);
@@ -203,7 +207,7 @@ public sealed class ShellController : IShell
     {
         if (SegmentHost.Build(d) is not { } el) return null;
         if (d.Slot is SegmentSlot.PillLeft or SegmentSlot.PillRight) el.Margin = new Thickness(0);
-        var host = new Border { Child = el };
+        var host = new Border { Child = el, Tag = d.Id };
         void Sync() => host.Visibility = (d.Presented is not null || Presentation.SegmentVisible(d.Id)) && el.Visibility == Visibility.Visible
             ? Visibility.Visible : Visibility.Collapsed;
         System.ComponentModel.DependencyPropertyDescriptor.FromProperty(UIElement.VisibilityProperty, typeof(UIElement))
@@ -326,6 +330,7 @@ public sealed class ShellController : IShell
         if (!TryOpenPanel(tabId)) return false;
         _leave?.Stop();
         _w.EnableKeyboard();
+        FocusActiveInput();
         return true;
     }
 
@@ -336,6 +341,13 @@ public sealed class ShellController : IShell
         if (_mode == ShellMode.Expanded) { ClosePanel(); return; }
         OpenPanel();
         _w.EnableKeyboard();
+        FocusActiveInput();
+    }
+
+    void FocusActiveInput()
+    {
+        if (_tabViews.TryGetValue(_activeTab, out var slot) && slot.Child is IPanelKeyboardInput input) input.FocusInput();
+        _shortcuts.InputCaptured = _w.HasKeyboard && Keyboard.FocusedElement is IExclusiveKeyboardInput;
     }
 
     public void RequestKeyboardFocus() => _w.EnableKeyboard();
@@ -520,6 +532,10 @@ public sealed class ShellController : IShell
         if (t is null) return;
         var slot = EnsureView(t);
         var changed = id != _activeTab || slot.Visibility != Visibility.Visible;
+        if (id != _activeTab && _tabViews.TryGetValue(_activeTab, out var previous) && previous.IsKeyboardFocusWithin)
+        {
+            if (_w.HasKeyboard) Keyboard.Focus(_w); else Keyboard.ClearFocus();
+        }
         foreach (var (k, el) in _tabViews) el.Visibility = k == id ? Visibility.Visible : Visibility.Hidden;
         if (_tabButtons.TryGetValue(id, out var rb) && rb.IsChecked != true) rb.IsChecked = true;
         UpdateTabIndicator(changed, id);
@@ -530,6 +546,7 @@ public sealed class ShellController : IShell
         if (id == _activeTab) return;
         _activeTab = id;
         TabChanged?.Invoke(id);
+        if (_mode == ShellMode.Expanded && !_store.ReadOnly && slot.Child is IPanelKeyboardInput) { _w.EnableKeyboard(); FocusActiveInput(); }
     }
 
     /// <summary>Registered tabs in strip order: the saved order first, then the rest by their default Order.</summary>
@@ -544,15 +561,22 @@ public sealed class ShellController : IShell
 
     void SpaceTabs()
     {
+        var count = _w.TabStrip.Children.OfType<FrameworkElement>().Count(b => b.Visibility == Visibility.Visible);
+        var width = count >= 8 ? 32d : NotchWindow.TabW;
         var i = 0;
         foreach (FrameworkElement child in _w.TabStrip.Children)
+        {
+            child.Width = width;
             child.Margin = new Thickness(child.Visibility != Visibility.Visible || i++ == 0 ? 0 : 2, 0, 0, 0);
+        }
+        _w.TabIndicator.Width = width;
     }
 
     void UpdateTabIndicator(bool animate, string? id = null)
     {
         var visible = _w.TabStrip.Children.OfType<FrameworkElement>().Where(b => b.Visibility == Visibility.Visible).ToList();
-        _w.MoveTabIndicator(Math.Max(0, visible.FindIndex(b => (string)b.Tag == (id ?? _activeTab))), animate);
+        var index = Math.Max(0, visible.FindIndex(b => (string)b.Tag == (id ?? _activeTab)));
+        _w.MoveTabIndicator(index * ((visible.FirstOrDefault()?.Width ?? NotchWindow.TabW) + NotchWindow.TabGap), animate);
     }
 
     /// <summary>Edit mode: moves tab <paramref name="id"/> into the slot held by <paramref name="targetId"/> and saves the order

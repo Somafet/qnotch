@@ -19,7 +19,8 @@ namespace QNotch.Shell;
 public partial class NotchWindow : Window
 {
     public const double WinW = 760, WinH = 430, PanelW = 720, PanelH = 380, PillH = 38, PillR = 16, PanelR = 26;
-    const double OpenMs = 240, CloseMs = 180, TabW = 40, TabGap = 2;
+    const double OpenMs = 240, CloseMs = 180;
+    internal const double TabW = 40, TabGap = 2;
 
     nint _hwnd, _prevForeground;
     HwndSource _src = null!;
