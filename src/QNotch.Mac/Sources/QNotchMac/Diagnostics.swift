@@ -33,6 +33,7 @@ enum NativeSmokeTest {
                                       "collapsed_status_frame=\(layout.surface(expanded: false, wing: 56))", "expanded_frame=\(layout.surface(expanded: true))",
                                       "panel_body=\(layout.panelBody)"])
                 SnapshotViews.render(run)
+                try TerminalSmoke.check(run)
                 (timer, note) = try checkShell(run, layout: layout)
             } catch { return finish(error) }
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) {

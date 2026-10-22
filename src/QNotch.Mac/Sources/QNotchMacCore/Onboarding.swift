@@ -43,7 +43,7 @@ public enum Onboarding {
     public static let groups: [Group] = [
         Group(title: "At a glance", modules: ["stats", "media", "weather", "capture", "timer", "volume"]),
         Group(title: "Get things done", modules: ["clipboard", "search", "note", "filetray", "colorpicker", "scheduled"]),
-        Group(title: "For developers", modules: ["agents", "ai", "github", "notifications"])
+        Group(title: "For developers", modules: ["agents", "ai", "github", "notifications", "terminal"])
     ]
 
     /// The groups with only the modules this platform has; a group left empty is dropped.

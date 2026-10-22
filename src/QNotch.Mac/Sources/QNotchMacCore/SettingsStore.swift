@@ -16,6 +16,9 @@ public struct GeneralSettings: Codable, Equatable {
     public var reduceMotion = false
     /// Module ids that are off. A module that is off is never constructed.
     public var disabledModules: [String] = []
+    /// Explicit opt-in for new, default-off modules; old saved settings never enable a shell.
+    public var enabledOptionalModules: [String] = []
+    public static let defaultOffModules: Set<String> = ["terminal"]
     /// Pointer rest before the panel opens, and pointer absence before it closes (milliseconds).
     public var hoverDelayMs = 120
     public var closeDelayMs = 400
@@ -39,8 +42,14 @@ public struct GeneralSettings: Codable, Equatable {
     public var onboardingDone: Bool?
     public init() {}
 
-    public func isEnabled(_ module: String) -> Bool { !disabledModules.contains(module) }
+    public func isEnabled(_ module: String) -> Bool {
+        !disabledModules.contains(module) && (!Self.defaultOffModules.contains(module) || enabledOptionalModules.contains(module))
+    }
     public mutating func setEnabled(_ module: String, _ enabled: Bool) {
+        if Self.defaultOffModules.contains(module) {
+            enabledOptionalModules.removeAll { $0 == module }
+            if enabled { enabledOptionalModules.append(module) }
+        }
         disabledModules.removeAll { $0 == module }
         if !enabled { disabledModules.append(module); disabledModules.sort() }
     }
@@ -57,13 +66,14 @@ public struct GeneralSettings: Codable, Equatable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case displayID, reduceMotion, disabledModules, timerEnabled, hoverDelayMs, closeDelayMs, pinned, accent, profileName, hiddenCards, cardOrder, tabOrder, pillOffsets, betaUpdates, onboardingDone
+        case displayID, reduceMotion, disabledModules, enabledOptionalModules, timerEnabled, hoverDelayMs, closeDelayMs, pinned, accent, profileName, hiddenCards, cardOrder, tabOrder, pillOffsets, betaUpdates, onboardingDone
     }
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         displayID = c.value(.displayID, nil)
         reduceMotion = c.value(.reduceMotion, false)
         disabledModules = c.value(.disabledModules, [])
+        enabledOptionalModules = c.value(.enabledOptionalModules, [])
         // The first milestone stored one switch for its only module.
         if c.value(.timerEnabled, true) == false, !disabledModules.contains("timer") { disabledModules.append("timer") }
         hoverDelayMs = min(Self.hoverRange.upperBound, max(Self.hoverRange.lowerBound, c.value(.hoverDelayMs, 120)))
@@ -83,6 +93,7 @@ public struct GeneralSettings: Codable, Equatable {
         try c.encodeIfPresent(displayID, forKey: .displayID)
         try c.encode(reduceMotion, forKey: .reduceMotion)
         try c.encode(disabledModules, forKey: .disabledModules)
+        try c.encode(enabledOptionalModules, forKey: .enabledOptionalModules)
         try c.encode(hoverDelayMs, forKey: .hoverDelayMs)
         try c.encode(closeDelayMs, forKey: .closeDelayMs)
         try c.encode(pinned, forKey: .pinned)

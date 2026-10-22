@@ -90,7 +90,7 @@ final class SnapshotRun {
 enum SnapshotViews {
     static func render(_ run: SnapshotRun) {
         let shell = run.shell
-        shell.updateGeneral { $0.reduceMotion = true }
+        shell.updateGeneral { $0.reduceMotion = true; $0.setEnabled("terminal", true) }
         shell.module(ColorPickerModule.self)?.seedRecent(["#3CC8D9", "#4CD98C", "#FFB54D", "#FF7A6B", "#B07CFF", "#5B9DFF"])
         shell.module(StatsModule.self)?.sampleNow()
         shell.close(restoreFocus: false)
