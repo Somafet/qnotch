@@ -118,6 +118,16 @@ enum SnapshotViews {
             run.notch("pill-peek")
             post(#"{"id":"demo-question","title":"Run the migration?","body":"3 pending migrations in api","app":"Claude Code","icon":"chat","wait":true,"actions":[{"id":"yes","label":"Approve"},{"id":"no","label":"Deny"}]}"#)
             run.notch("pill-waiting")
+            notifications.toggleMute()
+            run.notch("notifications-muted")
+            shell.open(keyboard: false)
+            shell.selectTab("notifications")
+            run.notch("tab-notifications-muted")
+            shell.selectTab("home")
+            run.notch("tab-home-muted")
+            run.write("notifications-muted-card", cardViews(shell)["notifications"], missing: "Notifications card unavailable")
+            shell.close(restoreFocus: false)
+            notifications.toggleMute()
             // The waiting one replaced the first toast; answered, no toast is left. The last shows none.
             if let note = notifications.items.first(where: { $0.pending }), let approve = note.actions.first { notifications.invoke(approve, on: note) }
             post(#"{"id":"demo-backup","title":"Backup failed","body":"The disk Archive is full.","app":"Time Machine","level":"warning","ttl":0,"actions":[{"label":"Open log","url":"https://example.com"}]}"#)

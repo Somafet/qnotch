@@ -72,6 +72,9 @@ final class NotificationsModule: NotchModule {
     private var peek: PeekHandle?
     private var peekNote: Note?
     private(set) var quietApps: [String] = []
+    private var stopped = false
+    private let muteButtons = NSHashTable<HoverButton>.weakObjects()
+    private let settingsMuteButtons = NSHashTable<NSButton>.weakObjects()
     private var panelOpen = false
     private var activeTab = ""
     private var autoOpened = false
@@ -92,6 +95,9 @@ final class NotificationsModule: NotchModule {
         settings = context.settings.load("notifications", default: NotificationSettings())
         context.sounds.add("notifications.toast", title: "New notification", hint: "A notification arrived (when Play a sound is on).", defaultName: "Ping", order: 10)
         let registry = context.registries
+        registry.menuActions.register(MenuActionContribution(id: "notifications.mute", order: 10,
+            title: { "Mute Notifications" }, isOn: { [weak self] in self?.settings.manuallyMuted == true },
+            run: { [weak self] in self?.toggleMute() }))
         registry.cards.register(ViewContribution(id: "notifications", title: "Notifications", order: 60, symbol: "bell") { [unowned self] in
             self.track(NotificationsCardView(module: self))
         })
@@ -101,7 +107,7 @@ final class NotificationsModule: NotchModule {
         registry.segments.register(SegmentContribution(id: "notifications.pill", order: 5, slot: .trailing) { [weak self] in
             let view = BellSegmentView()
             self?.bells.add(view)
-            view.update(unread: self?.unread ?? 0)
+            view.update(unread: self?.unread ?? 0, muted: self?.settings.manuallyMuted == true)
             return view
         })
         registry.searchSources.register(SearchSource(id: "notifications", order: 40) { [weak self] query in
@@ -144,6 +150,7 @@ final class NotificationsModule: NotchModule {
     func systemDidWake() {}
 
     func stop() {
+        stopped = true
         // Waiting senders get their "timeout" reply (exit 2) before the connections go away.
         for note in items where note.pending { close(note, status: "Expired", result: "timeout") }
         server?.stopAll()
@@ -158,7 +165,7 @@ final class NotificationsModule: NotchModule {
     // MARK: Servers
 
     private func startServers() {
-        guard context != nil else { return }
+        guard context != nil, !stopped else { return }
         let server = NotifyServer { [weak self] line, exchange in self?.handle(line, exchange: exchange) }
         server.token = { [weak self] in self?.currentToken() ?? "" }
         self.server = server
@@ -282,7 +289,7 @@ final class NotificationsModule: NotchModule {
         items.insert(note, at: 0)
         prune()
         changed()
-        let quiet = muted || !quietApps.isEmpty
+        let quiet = settings.manuallyMuted || muted || !quietApps.isEmpty
         if !quiet { toast(note, ttl: ttl) }
         updateToast()
         guard !quiet, note.level == .error, settings.openOnError, !panelOpen else { return }
@@ -312,6 +319,7 @@ final class NotificationsModule: NotchModule {
 
     /// A notification waiting for an answer shows even during a call: someone is blocked on it.
     private func updateToast() {
+        guard !settings.manuallyMuted else { endPeek(); return }
         let shown = transient ?? items.first { $0.pending && !settings.isMuted($0.app) }
         guard shown !== peekNote || (shown != nil && peek?.ended == true) else { return }
         endPeek()
@@ -390,12 +398,49 @@ final class NotificationsModule: NotchModule {
     private func changed() {
         refresh()
         let count = unread
-        bells.allObjects.forEach { $0.update(unread: count) }
+        bells.allObjects.forEach { $0.update(unread: count, muted: settings.manuallyMuted) }
         context.shell?.segmentsChanged()
         scheduleSave()
     }
 
-    func refresh() { for case let view as NotificationsDisplay in views.allObjects { view.reload() } }
+    func refresh() {
+        for case let view as NotificationsDisplay in views.allObjects { view.reload() }
+        for button in muteButtons.allObjects { updateMuteButton(button) }
+        for button in settingsMuteButtons.allObjects { updateSettingsMuteButton(button) }
+    }
+
+    func toggleMute() { set { $0.manuallyMuted.toggle() } }
+
+    func makeSettingsMuteButton() -> NSButton {
+        let button = actionButton("") { [weak self] in self?.toggleMute() }
+        button.identifier = NSUserInterfaceItemIdentifier("notifications-mute-settings")
+        settingsMuteButtons.add(button)
+        updateSettingsMuteButton(button)
+        return button
+    }
+
+    private func updateSettingsMuteButton(_ button: NSButton) {
+        button.title = settings.manuallyMuted ? "Unmute" : "Mute"
+        button.setAccessibilityLabel(settings.manuallyMuted ? "Unmute notifications" : "Mute notifications")
+    }
+
+    /// The same live action on Home and the Notifications tab.
+    func makeMuteButton() -> HoverButton {
+        let button = HoverButton(style: .plain) { [weak self] in self?.toggleMute() }
+        button.identifier = NSUserInterfaceItemIdentifier("notifications-mute")
+        muteButtons.add(button)
+        updateMuteButton(button)
+        return button
+    }
+
+    private func updateMuteButton(_ button: HoverButton) {
+        let muted = settings.manuallyMuted
+        button.text = muted ? "Unmute" : "Mute"
+        button.setSymbol(muted ? "bell.slash.fill" : "bell", size: 12, label: muted ? "Unmute notifications" : "Mute notifications")
+        button.imagePosition = .imageLeading
+        button.tint = muted ? .systemOrange : nil
+        button.isSelectedLook = muted
+    }
 
     // MARK: Quiet during calls
 
@@ -425,9 +470,17 @@ final class NotificationsModule: NotchModule {
         let before = settings
         change(&settings)
         context.settings.save("notifications", settings)
+        if before.manuallyMuted != settings.manuallyMuted {
+            // Drop the current transient toast; unmuting never replays stale notifications.
+            transient = nil
+            toastTask?.cancel(); toastTask = nil
+            endPeek()
+            context.shell?.actionsChanged()
+        }
         if before.quietDuringCalls != settings.quietDuringCalls { applyQuiet() }
         if before.httpEnabled != settings.httpEnabled || before.httpPort != settings.httpPort { applyHTTP() }
         if before.retentionDays != settings.retentionDays { prune() }
+        updateToast()
         changed()
     }
 

@@ -448,7 +448,10 @@ enum NativeSmokeTest {
         }
         let directory = shell.store.directory.path
         // The user's own QNotch may own the default port; this isolated instance uses its own.
-        module.set { $0.httpPort = 49152 + Int(getpid() % 10000) }
+        module.set {
+            $0.httpPort = 49152 + Int(getpid() % 10000)
+            $0.manuallyMuted = true
+        }
         func notify(_ arguments: [String], finished: @escaping (Int32, String) -> Void) {
             let process = Process()
             process.executableURL = URL(fileURLWithPath: Bundle.main.executablePath!)
@@ -486,6 +489,9 @@ enum NativeSmokeTest {
                                     return done(Failure("notify-transport", "Loopback HTTP: ok=\(ok ?? 0) wrong token=\(rejected ?? 0) origin=\(origin ?? 0)"))
                                 }
                                 run.pass("notify-transport")
+                                guard module.settings.manuallyMuted else { return done(Failure("notifications-mute", "Manual mute changed during transport requests")) }
+                                module.toggleMute()
+                                run.pass("notifications-mute")
                                 done(nil)
                             }
                         }.resume()
