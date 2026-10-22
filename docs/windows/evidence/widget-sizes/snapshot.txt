@@ -1,0 +1,20 @@
+version: 0.4.0.0
+self-contained: false
+only: card-*,tab-home,tab-home-edit
+tab-home: ok
+tab-home-edit: ok
+card-weather: ok
+card-media: ok
+card-github: ok
+card-stats: ok
+card-volume: ok
+card-timer: ok
+card-colorpicker: ok
+card-clipboard: ok
+card-ai-usage: ok
+card-note: ok
+card-notifications: ok
+card-ai-apps: ok
+card-files: ok
+card-scheduled: ok
+done

@@ -53,6 +53,7 @@ public partial class App : Application
     bool _debugControl;
     IDisposable? _debug;
     readonly HashSet<string> _running = new(StringComparer.OrdinalIgnoreCase);
+    readonly List<IDisposable> _moduleResources = new();
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -99,6 +100,7 @@ public partial class App : Application
         if (snapDir is not null) // snapshots load every module, follow the system appearance unless told otherwise and show a demo profile
         {
             gs.Pinned = false; gs.DisabledModules = DiagnosticRun.BootDisabled(diag); gs.ProfileName = "Alex"; gs.ProfileImagePath = "";
+            gs.LocalEnabledModules = ModuleList.All.Where(i => !i.DefaultEnabled && !gs.DisabledModules.Contains(i.Id)).Select(i => i.Id).ToList();
             gs.Theme = diag.Appearance switch { "light" => ThemeChoice.Light, "dark" => ThemeChoice.Dark, _ => ThemeChoice.System };
         }
         // Welcome tour: only on a fresh install. Settings from before it existed record it as done, silently.
@@ -136,7 +138,8 @@ public partial class App : Application
         // Modules the user turned off are never created. A change in Settings, Features applies on the next start.
         foreach (var (old, ids) in ModuleList.Renamed)
             if (gs.DisabledModules.RemoveAll(x => string.Equals(x, old, StringComparison.OrdinalIgnoreCase)) > 0) gs.DisabledModules.AddRange(ids);
-        var bootDisabled = gs.DisabledModules.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var bootDisabled = (snapDir is not null ? DiagnosticRun.BootDisabled(diag) : ModuleList.All.Where(i => !i.IsEnabled(gs)).Select(i => i.Id))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
         var enabled = ModuleList.All.Where(i => !bootDisabled.Contains(i.Id)).ToList();
         Log.Info($"Modules: {string.Join(", ", enabled.Select(i => i.Id))} (off: {(bootDisabled.Count == 0 ? "none" : string.Join(", ", bootDisabled))})");
 
@@ -167,6 +170,7 @@ public partial class App : Application
                 catch (Exception ex) { Log.Error($"Module '{info.Id}' failed to create", ex); continue; }
                 done.Add(m);
                 built.Add((info.Id, m));
+                if (m is IDisposable resource) _moduleResources.Add(resource);
                 cards.RegistrationOwner = tabs.RegistrationOwner = segments.RegistrationOwner = info.Id;
                 try { m.Initialize(ctx); _running.Add(info.Id); }
                 catch (Exception ex) { Log.Error($"Module '{info.Id}' failed to initialize", ex); }
@@ -270,6 +274,8 @@ public partial class App : Application
         try
         {
             _debug?.Dispose();
+            foreach (var resource in _moduleResources)
+                try { resource.Dispose(); } catch (Exception ex) { Log.Warn("Module cleanup failed", ex); }
             _updates?.Dispose();
             _tray?.Dispose();
             _hotkeys?.UnregisterAll();

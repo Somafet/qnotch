@@ -36,7 +36,7 @@ public static class SetupCode
     public static readonly IReadOnlyList<Section> ShellSections =
     [
         new("general", "Appearance and features", new(typeof(GeneralSettings), "HoverDwellMs:0..600", "LeaveDelayMs:100..1500",
-            "AccentColor", "Theme", "ReduceMotion", "DisabledModules", "CardOrder", "CardVisible", "TabOrder")),
+            "AccentColor", "Theme", "ReduceMotion", "DisabledModules", "CardOrder", "CardVisible", "CardSizes", "TabOrder")),
         new("hotkeys", "Hotkeys", new(typeof(ShortcutSettings), "Keys")),
         new("gamemode", "Game mode", new(typeof(GameModeSettings), "AutoDetect", "Opacity:0.3..1", "Height:16..40",
             "OffsetX:-1500..1500", "OffsetY:0..400", "Segments")),
@@ -127,7 +127,7 @@ public static class SetupCode
     {
         var off = merged["DisabledModules"]?.AsArray().Select(n => n?.GetValue<string>()).ToHashSet(StringComparer.OrdinalIgnoreCase) ?? [];
         var now = store.Get<GeneralSettings>("general").DisabledModules;
-        return ModuleList.All.Where(m => now.Contains(m.Id, StringComparer.OrdinalIgnoreCase) && !off.Contains(m.Id)).Select(m => m.Title);
+        return ModuleList.All.Where(m => m.DefaultEnabled && now.Contains(m.Id, StringComparer.OrdinalIgnoreCase) && !off.Contains(m.Id)).Select(m => m.Title);
     }
 
     /// <summary>Every gesture is empty (off) or parses and holds Alt or Win, so a code cannot take Ctrl+C or a plain key from other apps.</summary>

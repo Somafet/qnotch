@@ -49,7 +49,7 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
 
     /// App pages before the module sections, with extra search words (Search, Settings source).
     static let appPages: [(id: String, title: String, symbol: String, tint: NSColor, keywords: String)] = [
-        ("general", "General", "gearshape.fill", .systemGray, "display monitor motion animation preferences"),
+        ("general", "General", "gearshape.fill", .systemGray, "display monitor motion animation preferences menu bar icon recovery reopen"),
         ("features", "Features", "square.grid.2x2.fill", .systemBlue, "modules enable disable turn on off"),
         ("hotkeys", "Hotkeys", "command", .systemIndigo, "shortcuts keyboard keys"),
         ("sounds", "Sounds", "speaker.wave.2.fill", .systemPink, "audio chime alert"),
@@ -74,6 +74,7 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
         rebuildNavigation()
         select(page.flatMap { id in pages.contains { $0.id == id } ? id : nil } ?? selected, animated: false)
         NSApp.activate(ignoringOtherApps: true)
+        if window.isMiniaturized { window.deminiaturize(nil) }
         window.makeKeyAndOrderFront(nil)
     }
 
@@ -81,7 +82,10 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
     func refreshShortcuts() { if window.isVisible, selected == "hotkeys", !recording { select("hotkeys", animated: false) } }
     private var recording: Bool { window.firstResponder is ShortcutRecorder }
 
-    func refreshDisplays() { if window.isVisible, selected == "general" { select("general", animated: false) } }
+    func refreshDisplays() {
+        refreshIssue()
+        if window.isVisible, selected == "general" { select("general", animated: false) }
+    }
 
     func refreshIssue() {
         let text = [shell.displayMessage, shell.store.problem ?? ""].filter { !$0.isEmpty }.joined(separator: "\n")
@@ -222,14 +226,24 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
         let leave = SettingsSlider("Close delay", value: shell.general.closeDelayMs, range: GeneralSettings.closeRange, step: 50) { [weak self] value in
             self?.shell.updateGeneral { $0.closeDelayMs = value }
         }
+        let segmentHover = ActionSwitch("Open hovered feature", value: shell.general.hoverOpensSegment) { [weak self] value in
+            self?.shell.updateGeneral { $0.hoverOpensSegment = value }
+        }
+        segmentHover.identifier = NSUserInterfaceItemIdentifier("hover-opens-segment")
         let pin = ActionSwitch("Keep panel open", value: shell.general.pinned) { [weak self] _ in self?.shell.togglePin() }
+        let menuBar = ActionSwitch("Show menu-bar icon", value: shell.general.showMenuBarIcon) { [weak self] value in
+            self?.shell.updateGeneral { $0.showMenuBarIcon = value }
+        }
+        menuBar.identifier = NSUserInterfaceItemIdentifier("show-menu-bar-icon")
         return page("General", [
             banner(),
             settingsGroup([
-                settingsRow("Display", detail: "Where the notch lives. If the chosen display is disconnected, QNotch moves to the main display.", control: picker, width: width)
+                settingsRow("Display", detail: "Where the notch lives. If the chosen display is disconnected, QNotch moves to the main display.", control: picker, width: width),
+                settingsRow("Show menu-bar icon", detail: "Reopen QNotch from Finder or Spotlight to restore it here, even during game mode or with shortcuts turned off.", control: menuBar, width: width)
             ], width: width),
             settingsGroup([
                 settingsRow("Hover delay", detail: "How long the pointer rests on the notch before the panel opens.", control: hover, width: width),
+                settingsRow("Open hovered feature", detail: "After the hover delay, open details for the status under the pointer. Moving across statuses while open does not change the view.", control: segmentHover, width: width),
                 settingsRow("Close delay", detail: "How long after the pointer leaves before the panel closes.", control: leave, width: width),
                 settingsRow("Keep panel open", detail: "The panel stays open until you close it with Escape, the pin, or the toggle hotkey. Also the pin in the panel header.", control: pin, width: width)
             ], header: "Panel", width: width),
@@ -639,15 +653,21 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
         let identity = row([tile, column([label("QNotch", size: 20, weight: .bold),
                                           label("Version \(version)\(build)", size: 12, color: .secondaryLabelColor)], spacing: 2)], spacing: 14)
         let tour = actionButton("Show Welcome Tour") { [weak self] in _ = self?.shell.showOnboarding() }
+        let quit = actionButton("Quit QNotch") { NSApp.terminate(nil) }
+        quit.identifier = NSUserInterfaceItemIdentifier("quit-qnotch")
         let stack = column([
             identity,
+            banner(),
             updatesGroup(width: width),
+            settingsGroup([
+                settingsRow("Quit QNotch", detail: "Stops QNotch and its running features.", control: quit, width: width)
+            ], width: width),
             settingsGroup([
                 settingsRow("Welcome tour", detail: "What QNotch does, your features and accounts, in a few steps.", control: tour, width: width),
                 settingsRow("Hover the notch", detail: "Opens the panel without taking the keyboard.", width: width),
                 settingsRow("Click the notch", detail: shell.general.isEnabled("search") ? "Opens it for typing. Start typing to search, or press ⌘F." : "Opens the panel with keyboard control. Enable Search in Features to search by typing.", width: width),
                 settingsRow("Escape or click outside", detail: "Closes the panel and returns focus to your app.", width: width),
-                settingsRow("Menu bar", detail: "Open Panel, Settings and Quit are always in the QNotch menu.", width: width)
+                settingsRow("Reopen QNotch", detail: "Finder or Spotlight brings Settings forward in the running instance, including during game mode. Restore the icon in General; choose a game-mode override in Game mode.", width: width)
             ], header: "Using QNotch", width: width)
         ], spacing: 22)
         stack.widthAnchor.constraint(equalToConstant: width).isActive = true

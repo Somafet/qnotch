@@ -49,12 +49,13 @@ final class FileTrayCardView: NSView, FileTrayDisplay {
 
 // MARK: - Files tab
 
-final class FileTrayTabView: NSView, FileTrayDisplay {
+final class FileTrayTabView: NSView, FileTrayDisplay, TabHeaderProviding {
+    private(set) var tabHeaderActions: NSView = NSView()
     private weak var module: FileTrayModule?
     private let scroll = NSScrollView()
     private let grid = FlippedStack()
     private let status = line("", size: 11, color: Palette.textTertiary)
-    private let title = line("", size: 13, weight: .semibold, color: Palette.textPrimary)
+    private let count = line("", size: 11, color: Palette.textTertiary)
     private let overlay = FillView(fill: Palette.accentSoft, stroke: Palette.accent, radius: 14)
     private var emptyView: NSView!
     private var buttons: [HoverButton] = []
@@ -77,7 +78,8 @@ final class FileTrayTabView: NSView, FileTrayDisplay {
         export.toolTip = "Copy the selected file, or all files, to a folder"
         clear.toolTip = "Empty the tray. Your files are not touched."
         buttons = [add, share, export, clear]
-        let header = row([title, status, spacer(), add, share, export, clear], spacing: 6)
+        tabHeaderActions = row([add, share, export, clear], spacing: 6)
+        let header = row([count, status, spacer()], spacing: 8)
         grid.orientation = .vertical
         grid.alignment = .leading
         grid.spacing = 6
@@ -98,14 +100,14 @@ final class FileTrayTabView: NSView, FileTrayDisplay {
         ])
         emptyView = placeholder(symbol: "tray.and.arrow.down", title: "Drop files on the notch", detail: "They stay where they are; the tray keeps a reference.",
                                 action: ("Add Files…", { [weak module] in module?.addWithPanel() }))
-        embed(emptyView, in: self, inset: NSEdgeInsets(top: 40, left: 0, bottom: 0, right: 0), fill: true)
+        embed(emptyView, in: self, inset: NSEdgeInsets(top: 24, left: 0, bottom: 0, right: 0), fill: true)
         let drop = column([symbol("tray.and.arrow.down.fill", size: 26, weight: .medium, color: Palette.accent),
                            line("Drop to add to the tray", size: 14, weight: .semibold, color: Palette.textPrimary)], spacing: 8, alignment: .centerX)
         drop.translatesAutoresizingMaskIntoConstraints = false
         overlay.addSubview(drop)
         NSLayoutConstraint.activate([drop.centerXAnchor.constraint(equalTo: overlay.centerXAnchor), drop.centerYAnchor.constraint(equalTo: overlay.centerYAnchor)])
         // Over the body only, as on Windows: the header and its buttons stay readable.
-        embed(overlay, in: self, inset: NSEdgeInsets(top: 40, left: 0, bottom: 0, right: 0), fill: true)
+        embed(overlay, in: self, inset: NSEdgeInsets(top: 24, left: 0, bottom: 0, right: 0), fill: true)
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
@@ -120,7 +122,7 @@ final class FileTrayTabView: NSView, FileTrayDisplay {
         guard let module else { return }
         let items = module.items
         overlay.isHidden = !module.dropActive
-        title.stringValue = items.isEmpty ? "Files" : FileTrayList.countText(items.count, missing: items.filter(\.missing).count)
+        count.stringValue = items.isEmpty ? "" : FileTrayList.countText(items.count, missing: items.filter(\.missing).count)
         status.stringValue = module.status ?? ""
         // The drop target replaces the empty state rather than showing it through its tint.
         emptyView.isHidden = !items.isEmpty || module.dropActive

@@ -119,14 +119,30 @@ class FillView: NSView {
 final class CardView: FillView {
     init(title: String?, content: NSView, padding: CGFloat = 14) {
         super.init(fill: Palette.card, stroke: Palette.stroke, radius: 14)
-        var views: [NSView] = []
+        content.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(content)
+        var top = topAnchor
+        var topInset = padding
         if let title {
-            views.append(line(title, size: 12, weight: .semibold, color: Palette.textSecondary))
+            let text = line(title, size: 12, weight: .semibold, color: Palette.textSecondary)
+            text.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+            let header = text
+            header.translatesAutoresizingMaskIntoConstraints = false
+            addSubview(header)
+            NSLayoutConstraint.activate([
+                header.leadingAnchor.constraint(equalTo: leadingAnchor, constant: padding),
+                header.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -padding),
+                header.topAnchor.constraint(equalTo: topAnchor, constant: padding)
+            ])
+            top = header.bottomAnchor
+            topInset = 8
         }
-        views.append(content)
-        let stack = column(views, spacing: 10)
-        embed(stack, in: self, inset: padding, fill: true)
-        content.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
+        NSLayoutConstraint.activate([
+            content.leadingAnchor.constraint(equalTo: leadingAnchor, constant: padding),
+            content.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -padding),
+            content.topAnchor.constraint(equalTo: top, constant: topInset),
+            content.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -padding)
+        ])
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 }

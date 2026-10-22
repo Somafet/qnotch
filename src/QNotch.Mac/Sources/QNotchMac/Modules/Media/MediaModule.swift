@@ -33,7 +33,7 @@ final class MediaModule: NotchModule {
         context.registries.tabs.register(ViewContribution(id: "media", title: "Media", order: 10, symbol: "music.note") { [unowned self] in
             self.track(MediaView(module: self, large: true))
         })
-        context.registries.segments.register(SegmentContribution(id: "media.pill", order: 5, slot: .leading) { [weak self] in
+        context.registries.segments.register(SegmentContribution(id: "media.pill", order: 5, slot: .leading, destination: .tab("media"), destinationLabel: "Open media") { [weak self] in
             let view = MediaPillView()
             self?.pills.add(view)
             view.update(self?.current, artwork: self?.current.flatMap { self?.artwork[$0.source] })
@@ -259,9 +259,11 @@ final class MediaPillView: NSStackView {
     }
 }
 
-final class MediaView: NSView, MediaDisplay {
+final class MediaView: NSView, MediaDisplay, HomeCardSizing {
     private weak var module: MediaModule?
     private let large: Bool
+    private var compact = false
+    private var infoMinimum: NSLayoutConstraint!
     private let art = NSImageView()
     private let title: NSTextField
     private let artist: NSTextField
@@ -314,11 +316,28 @@ final class MediaView: NSView, MediaDisplay {
         super.init(frame: .zero)
         seek.changed = { [weak module] value in module?.seek(to: value) }
         embed(content, in: self, inset: large ? NSEdgeInsets(top: 20, left: 20, bottom: 20, right: 20) : NSEdgeInsetsZero, fill: !large)
-        info.widthAnchor.constraint(greaterThanOrEqualToConstant: large ? 360 : 250).isActive = true
+        infoMinimum = info.widthAnchor.constraint(greaterThanOrEqualToConstant: large ? 360 : 250)
+        infoMinimum.isActive = true
+        if !large {
+            for field in [title, artist] {
+                field.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+                field.widthAnchor.constraint(lessThanOrEqualTo: info.widthAnchor).isActive = true
+            }
+        }
         empty.translatesAutoresizingMaskIntoConstraints = false
         addSubview(empty)
         NSLayoutConstraint.activate([empty.centerXAnchor.constraint(equalTo: centerXAnchor), empty.centerYAnchor.constraint(equalTo: centerYAnchor),
                                      empty.widthAnchor.constraint(lessThanOrEqualTo: widthAnchor)])
+    }
+
+    func setHomeCardSize(_ size: HomeCardSize) {
+        guard !large else { return }
+        compact = size == .small
+        art.isHidden = compact
+        chips.isHidden = compact
+        infoMinimum.constant = compact ? 0 : 250
+        emptyDetail.preferredMaxLayoutWidth = compact ? 180 : 300
+        tick()
     }
 
     private static func emptyHint(large: Bool) -> String {
@@ -355,7 +374,7 @@ final class MediaView: NSView, MediaDisplay {
         let hasTimeline = session.duration != nil
         seek.isHidden = !hasTimeline
         elapsed.isHidden = !hasTimeline
-        total.isHidden = !hasTimeline
+        total.isHidden = !hasTimeline || compact
         guard let duration = session.duration else { return }
         let position = session.position(at: Date()) ?? 0
         seek.maxValue = duration

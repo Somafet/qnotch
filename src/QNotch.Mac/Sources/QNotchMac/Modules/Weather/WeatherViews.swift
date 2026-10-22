@@ -56,7 +56,7 @@ final class WeatherPillView: NSStackView {
     }
 }
 
-final class WeatherCardView: NSView {
+final class WeatherCardView: NSView, HomeCardSizing {
     private weak var module: WeatherModule?
     private let icon = NSImageView()
     private let temp = line("", size: 26, weight: .semibold, color: Palette.textPrimary)
@@ -89,16 +89,24 @@ final class WeatherCardView: NSView {
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
+    func setHomeCardSize(_ size: HomeCardSize) {
+        days.isHidden = size == .small
+        for field in [condition, detail, status] { field.setContentCompressionResistancePriority(.defaultLow, for: .horizontal) }
+    }
+
     func reload() {
         guard let module else { return }
         let view = module.view
         content.isHidden = view == nil
         empty.isHidden = view != nil
         empty.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        defer {
+            for child in empty.arrangedSubviews { child.widthAnchor.constraint(lessThanOrEqualTo: empty.widthAnchor).isActive = true }
+        }
         guard let view, let place = module.settings.place else {
             switch module.status {
             case .noPlace:
-                empty.addArrangedSubview(line("Pick a place for the forecast.", size: 13, color: Palette.textSecondary))
+                empty.addArrangedSubview(label("Pick a place for the forecast.", size: 13, color: Palette.textSecondary))
                 empty.addArrangedSubview(HoverButton("Choose a Place", style: .plain) { [weak module] in module?.contextShell?.openSettings(section: "weather") })
             case .loading:
                 empty.addArrangedSubview(line("Loading the forecast for \(module.settings.place?.name ?? "")…", size: 13, color: Palette.textSecondary))

@@ -1,0 +1,45 @@
+{
+  "version": "0.4.0",
+  "source_dirty": false,
+  "os": "Microsoft Windows NT 10.0.26200.0",
+  "state": "collapsed; Terminal on; all other modules off; retained idle shell when on",
+  "intervals": [
+    {
+      "end_local": "2026-10-22T12:35:51.0188555+02:00",
+      "cpu_percent_one_core": 0.19767992869363846,
+      "panel_end": "collapsed",
+      "start_local": "2026-10-22T12:35:21.0000776+02:00",
+      "resident_bytes_end": 13479936,
+      "resident_bytes_start": 6864896,
+      "interval_seconds": 30.0147603,
+      "panel_start": "collapsed"
+    },
+    {
+      "end_local": "2026-10-22T12:36:21.0612182+02:00",
+      "cpu_percent_one_core": 0.2514060360596484,
+      "panel_end": "collapsed",
+      "start_local": "2026-10-22T12:35:51.0530346+02:00",
+      "resident_bytes_end": 14487552,
+      "resident_bytes_start": 13479936,
+      "interval_seconds": 30.0076443,
+      "panel_start": "collapsed"
+    }
+  ],
+  "method": "QueryProcessCycleTime; three 100ms thread-cycle calibrations; two 30s intervals; WPF ETW PID filtered; no IPC or input during intervals",
+  "warmup_seconds": 20,
+  "owned_children": [
+    {
+      "name": "conhost.exe",
+      "resident_bytes": 10133504
+    },
+    {
+      "name": "pwsh.exe",
+      "resident_bytes": 101765120
+    }
+  ],
+  "platform": "Windows x64",
+  "pid": 54448,
+  "source_revision": "017d700018f1740ebd8017336568daf3164fcd9d",
+  "cycle_hz": 3686913387.905466,
+  "cpu": "AMD Ryzen 9 5900X, 24 logical processors"
+}

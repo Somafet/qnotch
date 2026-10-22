@@ -40,6 +40,22 @@ public sealed class CardLayout
 
     public int OrderNumber(string id) => Ordered.ToList().FindIndex(c => c.Id == id) + 1;
 
+    public CardSize SizeOf(string id)
+    {
+        var card = _cards.Find(id);
+        if (card is null) return CardSize.Small;
+        if (_gs.CardSizes.TryGetValue(id, out var value) && Enum.TryParse<CardSize>(value, out var size)
+            && card.SupportedSizes.Contains(size)) return size;
+        return card.SupportedSizes.Contains(card.DefaultSize) ? card.DefaultSize : CardSize.Small;
+    }
+
+    public void SetSize(string id, CardSize size)
+    {
+        if (_cards.Find(id) is not { } card || !card.SupportedSizes.Contains(size) || SizeOf(id) == size) return;
+        _gs.CardSizes[id] = size.ToString();
+        Save();
+    }
+
     public void SetVisible(string id, bool visible)
     {
         _gs.CardVisible[id] = visible;

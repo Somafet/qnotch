@@ -1,0 +1,71 @@
+"A"
+"Alex"
+"Thursday, October 22"
+[Tab] "Home" #tab-home selected
+[Tab] "Search" #tab-search
+[Tab] "Media" #tab-media
+[Tab] "Clipboard" #tab-clipboard
+[Tab] "AI" #tab-ai
+[Tab] "Agents" #tab-agents
+[Tab] "Files" #tab-files
+[Tab] "Notifications" #tab-notifications
+[Tab] "Scheduled" #tab-scheduled
+[Toggle] "Mute notifications" #panel-notifications-mute
+[Toggle] "Edit layout" #panel-edit checked
+[Toggle] "Keep panel open" #panel-pin
+[Button] "Settings" #open-settings
+"1"
+"Weather"
+[Button] "Open on yr.no"
+"12°"
+"Partly cloudy"
+"Oslo · Feels 10° · 4 m/s"
+[Slider] "Resize Weather, left edge" #card-resize-weather-left 1 of 2
+[Slider] "Resize Weather, right edge" #card-resize-weather-right 1 of 2
+"2"
+"Now playing"
+"Midnight City"
+"M83"
+[Button] "Previous"
+[Button] "Play or pause"
+[Button] "Next"
+[Slider] "Resize Now playing, left edge" #card-resize-media-left 1 of 2
+[Slider] "Resize Now playing, right edge" #card-resize-media-right 1 of 2
+"3"
+"GitHub"
+[Button] "Refresh now"
+"1,562 contributions"
+"40 day streak"
+"@octocat · Updated 7 min ago"
+[Slider] "Resize GitHub, left edge" #card-resize-github-left 1 of 2
+[Slider] "Resize GitHub, right edge" #card-resize-github-right 1 of 2
+"4"
+"System"
+"31%"
+"CPU"
+[Progress] 31 of 100
+"23.5/31.9 GB"
+"RAM"
+[Progress] 73 of 100
+"4%"
+"GPU"
+"↓ "
+"55 KB/s"
+"   ↑ "
+"34 KB/s"
+"NET"
+"5"
+"Volume"
+[Button] "Mute or unmute"
+"62%"
+[Slider] "Volume" 62 of 100
+"6"
+"Timer"
+[Button] "Start or pause"
+[Button] "Reset"
+"18:42"
+"Paused"
+[Toggle] "5"
+[Toggle] "15"
+[Toggle] "25" checked
+[Toggle] "50"

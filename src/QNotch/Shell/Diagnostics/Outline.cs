@@ -74,10 +74,15 @@ internal static class Outline
             switch (o)
             {
                 case PasswordBox: role = "SecureField"; break;
+                case Modules.IExclusiveKeyboardInput input: role = "Field"; value = $"value={Quote(input.Text)}"; break;
                 case TextBox { IsReadOnly: false } box: role = "Field"; value = $"value={Quote(box.Text)}"; break;
                 case ComboBox combo: role = "PopUp"; value = $"value={Quote(combo.Text is { Length: > 0 } ct ? ct : combo.SelectionBoxItem as string ?? "")}"; break;
                 case ProgressBar p: role = "Progress"; value = Range(p); break;
                 case RangeBase r: role = "Slider"; value = Range(r); break;
+                case CardResizeHandle handle:
+                    role = "Slider";
+                    value = $"{handle.Columns} of {handle.MaximumColumns}";
+                    break;
                 case RadioButton rb when rb.Style == tab || rb.Style == nav:
                     role = rb.Style == tab ? "Tab" : "Item";
                     if (rb.IsChecked == true) states.Add("selected");

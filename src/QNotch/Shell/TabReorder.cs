@@ -151,7 +151,7 @@ internal sealed class TabReorderController
         foreach (RadioButton o in Strip.Children)
         {
             var ox = VisualTreeHelper.GetOffset(o).X;
-            if (o == rb || center < ox || center > ox + o.ActualWidth) continue;
+            if (o == rb || o.Visibility != Visibility.Visible || center < ox || center > ox + o.ActualWidth) continue;
             Reorder(rb, o);
             Place(rb);
             return;

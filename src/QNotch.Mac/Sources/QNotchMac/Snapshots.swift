@@ -149,6 +149,17 @@ enum SnapshotViews {
         shell.setEditing(false)
         let cards = cardViews(shell)
         for card in shell.registries.cards.items { run.write("card-" + card.id, cards[card.id], missing: "the card is not on Home") }
+        let originalSizes = shell.general.cardSizes
+        shell.updateGeneral { settings in
+            for card in shell.registries.cards.items { settings.cardSizes[card.id] = HomeCardSize.small.rawValue }
+        }
+        run.notch("tab-home-small")
+        shell.setEditing(true)
+        run.notch("tab-home-small-edit")
+        shell.setEditing(false)
+        let smallCards = cardViews(shell)
+        for card in shell.registries.cards.items { run.write("card-" + card.id + "-small", smallCards[card.id], missing: "the Small card is not on Home") }
+        shell.updateGeneral { $0.cardSizes = originalSizes }
         if let tray = shell.module(FileTrayModule.self) {
             shell.selectTab("files")
             tray.dropActive = true
@@ -157,17 +168,29 @@ enum SnapshotViews {
             tray.dropActive = false
             addSampleFiles(shell, to: tray)
         }
-        for id in shell.registries.tabs.items.map(\.id) {
-            shell.selectTab(id)
-            run.notch("tab-" + id)
+        var headerFrames: [String] = ["Native AppKit points; page/header/body use bottom-left origins; title/actions are relative to header."]
+        var headerBaseline: CGFloat?
+        for tab in shell.registries.tabs.items {
+            shell.selectTab(tab.id)
+            run.notch("tab-" + tab.id)
+            if tab.id == "search" {
+                if (shell.currentBody as? SearchView)?.field.accessibilityLabel() != "Search QNotch" {
+                    run.fail("tab-headers", "Search must retain its labeled field landmark")
+                }
+            } else {
+                headerFrames += TabHeaderDiagnostics.check(run, id: tab.id, title: tab.title, baseline: &headerBaseline)
+            }
         }
         if let media = shell.module(MediaModule.self) {
             media.clearForSmoke()
             shell.selectTab("media")
             run.notch("media-empty")
+            headerFrames += TabHeaderDiagnostics.check(run, id: "media-empty", title: "Media", baseline: &headerBaseline)
             shell.selectTab("home")
             run.write("media-empty-card", cardViews(shell)["media"], missing: "the card is not on Home")
         }
+        run.log("tab-header-frames", headerFrames)
+        if !run.failed { run.pass("tab-headers") }
         shell.selectTab("home")
         shell.close(restoreFocus: false)
         // A non-notched external display, even when the developer only has a notched laptop.
@@ -180,6 +203,10 @@ enum SnapshotViews {
         if let agents = shell.module(AgentsModule.self) {
             for session in agents.board.sessions where session.id.hasPrefix("seed-") { agents.dismiss(session) }
         }
+
+        // Real destination routing, including the transient hidden-card surface, rendered offscreen.
+        do { try HoverTargetSmoke.check(run) }
+        catch { run.fail("hover-targets", "\(error)") }
 
         // Settings and the welcome tour, without showing their windows.
         let settings = shell.makeSettings()

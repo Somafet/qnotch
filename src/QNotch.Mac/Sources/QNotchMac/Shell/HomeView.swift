@@ -14,7 +14,7 @@ final class HomeView: NSScrollView {
         set { document.reordered = newValue }
     }
 
-    init(cards: [(contribution: ViewContribution, view: NSView)]) {
+    init(cards: [(contribution: ViewContribution, view: NSView)], sizes: [String: Int] = [:]) {
         super.init(frame: .zero)
         drawsBackground = false
         hasVerticalScroller = true
@@ -24,13 +24,54 @@ final class HomeView: NSScrollView {
         horizontalScrollElasticity = .none
         documentView = document
         document.cards = cards.map { item in
-            let card = CardView(title: item.contribution.title, content: item.view)
+            let contribution = item.contribution
+            let selected = HomeCardSize.resolve(saved: sizes[contribution.id], defaultSpan: contribution.span)
+            (item.view as? HomeCardSizing)?.setHomeCardSize(selected)
+            let card = CardView(title: contribution.title, content: item.view)
+            if contribution.supportedCardSizes.count > 1 {
+                let handles = [-1, 1].map { direction in
+                    let handle = HomeResizeHandle(title: contribution.title, direction: direction)
+                    handle.identifier = NSUserInterfaceItemIdentifier("home-resize-" + contribution.id + (direction < 0 ? "-leading" : "-trailing"))
+                    handle.currentSize = selected
+                    handle.began = { [weak document] in document?.beginResize(contribution.id) }
+                    handle.moved = { [weak document] delta in document?.resizeBy(delta) }
+                    handle.ended = { [weak document] in document?.finishResize() }
+                    handle.adjusted = { [weak document] delta in document?.adjustSize(contribution.id, by: delta) }
+                    handle.translatesAutoresizingMaskIntoConstraints = false
+                    card.addSubview(handle)
+                    NSLayoutConstraint.activate([
+                        handle.widthAnchor.constraint(equalToConstant: 16), handle.heightAnchor.constraint(equalToConstant: 36),
+                        handle.centerYAnchor.constraint(equalTo: card.centerYAnchor),
+                        direction < 0 ? handle.leadingAnchor.constraint(equalTo: card.leadingAnchor)
+                            : handle.trailingAnchor.constraint(equalTo: card.trailingAnchor)
+                    ])
+                    return handle
+                }
+                document.handles[contribution.id] = handles
+            }
             card.identifier = NSUserInterfaceItemIdentifier("card-" + item.contribution.id)
             document.addSubview(card)
-            return (item.contribution.id, card, item.contribution.span)
+            return (contribution.id, card, selected.rawValue, contribution.span, item.view)
         }
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    func revealCard(_ id: String) {
+        layoutSubtreeIfNeeded()
+        guard let card = document.cards.first(where: { $0.id == id }) else { return }
+        document.scrollToVisible(card.view.frame)
+    }
+
+    var resized: ((String, HomeCardSize) -> Void)? {
+        get { document.resized }
+        set { document.resized = newValue }
+    }
+
+    func applySizes(_ sizes: [String: Int]) {
+        for card in document.cards {
+            document.resizeCard(card.id, to: HomeCardSize.resolve(saved: sizes[card.id], defaultSpan: card.defaultSpan), notify: false)
+        }
+    }
 
     var editing: Bool {
         get { document.editing }
@@ -45,7 +86,10 @@ final class HomeView: NSScrollView {
 }
 
 private final class GridDocument: NSView {
-    var cards: [(id: String, view: NSView, span: Int)] = []
+    var cards: [(id: String, view: NSView, span: Int, defaultSpan: Int, content: NSView)] = []
+    var handles: [String: [HomeResizeHandle]] = [:]
+    private var resizing: (id: String, startSpan: Int)?
+    var resized: ((String, HomeCardSize) -> Void)?
     var width: CGFloat = 0
     var reordered: (([String]) -> Void)?
     var editing = false { didSet { if oldValue != editing { applyEditing() } } }
@@ -82,14 +126,60 @@ private final class GridDocument: NSView {
         if frame.size != NSSize(width: width, height: rows) { setFrameSize(NSSize(width: width, height: rows)) }
     }
 
+    func resizeCard(_ id: String, to size: HomeCardSize, notify: Bool = true) {
+        guard dragging == nil, let index = cards.firstIndex(where: { $0.id == id }),
+              HomeCardSize.supported(defaultSpan: cards[index].defaultSpan).contains(size),
+              cards[index].span != size.rawValue else { return }
+        cards[index].view.layer?.removeAnimation(forKey: "jiggle")
+        cards[index].span = size.rawValue
+        (cards[index].content as? HomeCardSizing)?.setHomeCardSize(size)
+        for handle in handles[id] ?? [] { handle.currentSize = size }
+        layoutCards(animated: false)
+        applyEditing()
+        if notify { resized?(id, size) }
+    }
+
+    func beginResize(_ id: String) {
+        guard editing, dragging == nil, let card = cards.first(where: { $0.id == id }) else { return }
+        resizing = (id, card.span)
+        applyEditing()
+    }
+
+    /// Snap the dragged edge to a supported column width. Persist once, when released.
+    func resizeBy(_ delta: CGFloat) {
+        guard let resizing, let card = cards.first(where: { $0.id == resizing.id }) else { return }
+        let step = max(1, floor((width - HomeView.gap * 2) / 3) + HomeView.gap)
+        let sizes = HomeCardSize.supported(defaultSpan: card.defaultSpan)
+        let requested = CGFloat(resizing.startSpan) + delta / step
+        let closest = sizes.min { abs(CGFloat($0.rawValue) - requested) < abs(CGFloat($1.rawValue) - requested) }!
+        resizeCard(card.id, to: closest, notify: false)
+    }
+
+    func finishResize() {
+        guard let previous = resizing else { return }
+        resizing = nil
+        applyEditing()
+        if let card = cards.first(where: { $0.id == previous.id }), card.span != previous.startSpan,
+           let size = HomeCardSize(rawValue: card.span) { resized?(card.id, size) }
+    }
+
+    func adjustSize(_ id: String, by delta: Int) {
+        guard editing, let card = cards.first(where: { $0.id == id }),
+              let size = HomeCardSize(rawValue: card.span + delta) else { return }
+        resizeCard(id, to: size)
+    }
+
     // MARK: Edit mode
 
     private func applyEditing() {
+        if !editing, resizing != nil { finishResize() }
+        for handle in handles.values.flatMap({ $0 }) { handle.isHidden = !editing }
+        if !editing, window?.firstResponder is HomeResizeHandle { window?.makeFirstResponder(nil) }
         for (index, card) in cards.enumerated() {
             guard let layer = card.view.layer else { continue }
             layer.removeAnimation(forKey: "jiggle")
             (card.view as? FillView)?.stroke = editing ? Palette.strokeStrong : Palette.stroke
-            guard editing, Motion.enabled else { continue }
+            guard editing, Motion.enabled, resizing?.id != card.id else { continue }
             // About ±0.7° around the card's center, each card a little out of phase.
             let bounds = card.view.bounds
             func tilt(_ degrees: CGFloat) -> CATransform3D {
@@ -108,14 +198,18 @@ private final class GridDocument: NSView {
         }
     }
 
-    /// While editing, the grid takes every click so card content stays inert.
+    /// While editing, only the resize handles receive clicks; the grid owns card reordering.
     override func hitTest(_ point: NSPoint) -> NSView? {
         guard editing else { return super.hitTest(point) }
-        return frame.contains(point) ? self : nil
+        guard frame.contains(point) else { return nil }
+        for handle in handles.values.flatMap({ $0 }) where !handle.isHidden {
+            if handle.bounds.contains(handle.convert(point, from: superview)) { return handle }
+        }
+        return self
     }
 
     override func mouseDown(with event: NSEvent) {
-        guard editing else { return super.mouseDown(with: event) }
+        guard editing, resizing == nil else { return super.mouseDown(with: event) }
         let point = convert(event.locationInWindow, from: nil)
         guard let index = cards.firstIndex(where: { $0.view.frame.contains(point) }) else { return }
         let card = cards[index].view

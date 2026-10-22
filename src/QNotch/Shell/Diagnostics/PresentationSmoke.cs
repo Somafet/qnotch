@@ -15,6 +15,7 @@ internal sealed partial class SmokeTest
         var cardOrder = _h.Settings.CardOrder.ToList();
         var tabOrder = _h.Settings.TabOrder.ToList();
         var modules = _h.Modules.Select(x => x.Module).ToArray();
+        var legacySegments = _h.Segments.Items.Where(s => s.Presented is not null && s.SetPresented is not null).ToDictionary(s => s, s => s.Presented!());
         try
         {
             S.OpenPanel();
@@ -40,7 +41,11 @@ internal sealed partial class SmokeTest
             W.RootElement.UpdateLayout();
             if (Outline.Of(home).Contains("Open Features", StringComparison.Ordinal) == false) return "empty Home has no recovery action";
             p.SetSegments(_h.Segments.Items.Where(s => s.Slot != SegmentSlot.GameBar).Select(s => s.Id), false);
+            foreach (var (segment, _) in legacySegments) segment.SetPresented!(false);
             await Task.Delay(50);
+            if (W.PillStrip.Children.OfType<FrameworkElement>().Any(e => e.Visibility == Visibility.Visible)
+                || W.GlanceStrip.Children.OfType<FrameworkElement>().Any(e => e.Visibility == Visibility.Visible))
+                return "hidden notch contributions remain visible";
             if (!modules.SequenceEqual(_h.Modules.Select(x => x.Module))) return "presentation recreated modules";
             if (!tabOrder.SequenceEqual(_h.Settings.TabOrder)) return "hiding changed tab ordering";
             Log("All module tabs: selected/last tab fallback, direct/keyboard/search blocking, Search shortcut release/restore; empty Home recovery; module identities retained.");
@@ -50,6 +55,7 @@ internal sealed partial class SmokeTest
         {
             p.Tabs = tabs;
             p.Segments = segments;
+            foreach (var (segment, visible) in legacySegments) segment.SetPresented!(visible);
             p.SetSegments([], true);
             foreach (var c in _h.Cards.Items) _h.Layout.SetVisible(c.Id, cards.GetValueOrDefault(c.Id, c.DefaultVisible));
             _h.Settings.CardVisible = cards;

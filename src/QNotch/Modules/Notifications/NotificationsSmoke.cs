@@ -110,9 +110,17 @@ public sealed partial class NotificationsModule : ISmokeChecks
             var waiter = existing.Waiter!;
             if (_st.Toast is null) return "fixture did not create a waiting toast";
             var button = (System.Windows.Controls.Primitives.ToggleButton)NotificationMuteViews.Button(this, _st, compact: true);
+            var settings = (System.Windows.Controls.CheckBox)NotificationMuteViews.Button(this, _st);
+            var settingsPeer = new System.Windows.Automation.Peers.CheckBoxAutomationPeer(settings);
+            var settingsToggle = (System.Windows.Automation.Provider.IToggleProvider)settingsPeer.GetPattern(System.Windows.Automation.Peers.PatternInterface.Toggle);
             var peer = new System.Windows.Automation.Peers.ToggleButtonAutomationPeer(button);
             ((System.Windows.Automation.Provider.IToggleProvider)peer.GetPattern(System.Windows.Automation.Peers.PatternInterface.Toggle)).Toggle();
             if (!_st.Muted || _st.Toast is not null || _transient is not null || _toastTimer?.IsEnabled == true) return "accessible mute did not clear alerts";
+            if (settingsToggle.ToggleState != System.Windows.Automation.ToggleState.On) return "quick mute did not update Settings";
+            settingsToggle.Toggle();
+            if (_st.Muted || button.IsChecked == true || _st.Toast is not null) return "Settings unmute did not synchronize or replayed an alert";
+            settingsToggle.Toggle();
+            if (!_st.Muted || button.IsChecked != true) return "Settings mute did not synchronize the quick toggle";
             if (waiter.Task.IsCompleted || !existing.Pending || existing.Read) return "mute changed the existing wait/read state";
             _ctx.Shell.ClosePanel();
             SetCadence(Cadence.Slow);

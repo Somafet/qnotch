@@ -11,19 +11,20 @@ internal static class NotificationMuteViews
 
     public static FrameworkElement Button(NotificationsModule module, NotificationsState state, bool compact = false)
     {
-        var button = new ToggleButton { Margin = new Thickness(0, 0, 4, 0) };
-        if (compact) button.Style = (Style)Application.Current.FindResource("IconToggle");
+        ToggleButton button = compact
+            ? new ToggleButton { Style = (Style)Application.Current.FindResource("IconToggle"), Margin = new Thickness(0, 0, 4, 0) }
+            : UiKit.Toggle();
         System.Windows.Automation.AutomationProperties.SetAutomationId(button, compact ? "panel-notifications-mute" : "notifications-mute");
         button.Checked += (_, _) => module.SetMuted(true);
         button.Unchecked += (_, _) => module.SetMuted(false);
         void Sync()
         {
             button.IsChecked = state.Muted;
-            button.Content = compact ? (state.Muted ? MutedGlyph : NotifyIcons.Bell) : state.Muted ? "Unmute notifications" : "Mute notifications";
+            if (compact) button.Content = state.Muted ? MutedGlyph : NotifyIcons.Bell;
             button.ToolTip = state.Muted ? "Notifications muted. Click to unmute." : "Mute notifications";
-            System.Windows.Automation.AutomationProperties.SetName(button, state.Muted ? "Unmute notifications (muted)" : "Mute notifications");
+            System.Windows.Automation.AutomationProperties.SetName(button, compact && state.Muted ? "Unmute notifications (muted)" : "Mute notifications");
         }
-        state.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(NotificationsState.Muted)) Sync(); };
+        System.ComponentModel.PropertyChangedEventManager.AddHandler(state, (_, _) => Sync(), nameof(NotificationsState.Muted));
         Sync();
         return button;
     }

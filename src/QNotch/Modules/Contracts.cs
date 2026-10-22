@@ -23,11 +23,15 @@ public interface ICadenceAware
 
 public interface IRegistryItem { string Id { get; } int Order { get; } }
 
-/// <summary>A card on the Home grid. The card body comes from Factory (called once, lazily, on the UI thread); CardHost draws title and order badge.</summary>
+public enum CardSize { Small = 1, Medium = 2 }
+
+/// <summary>A card on the Home grid. Factory runs once; the body adapts to its arranged width. Every card supports Small.</summary>
 public sealed record CardDescriptor(string Id, string Title, int DefaultOrder, Func<FrameworkElement> Factory,
-    bool DefaultVisible = true, int ColumnSpan = 1, int RowSpan = 1) : IRegistryItem
+    bool DefaultVisible = true, CardSize DefaultSize = CardSize.Small, IReadOnlyList<CardSize>? Sizes = null) : IRegistryItem
 {
     public int Order => DefaultOrder;
+    public IReadOnlyList<CardSize> SupportedSizes { get; } = (Sizes ?? [DefaultSize]).Prepend(CardSize.Small)
+        .Where(s => Enum.IsDefined(s)).Distinct().OrderBy(s => s).ToArray();
 }
 
 /// <summary>Where a segment is hosted: the pill (left or right cluster), the glance strip under the collapsed pill, or the game bar.</summary>
@@ -50,7 +54,36 @@ public sealed record SegmentDescriptor(string Id, SegmentSlot Slot, int Order, F
 /// Setup: optional static factory for the tour's Connect step (see <see cref="SetupContext"/>); null when there is nothing to set up right now.
 /// Tip: optional one-line tip for the tour's last step, with real gestures; null for none.</summary>
 public sealed record ModuleInfo(string Id, string Title, string Description, Func<INotchModule> Create, bool Early = false, SharedSettings? Shared = null,
-    string Glyph = "", Func<SetupContext, SetupRow?>? Setup = null, Func<SetupContext, string?>? Tip = null);
+    string Glyph = "", Func<SetupContext, SetupRow?>? Setup = null, Func<SetupContext, string?>? Tip = null, bool DefaultEnabled = true)
+{
+    public bool IsEnabled(GeneralSettings settings) => DefaultEnabled
+        ? !settings.DisabledModules.Contains(Id, StringComparer.OrdinalIgnoreCase)
+        : settings.LocalEnabledModules.Contains(Id, StringComparer.OrdinalIgnoreCase);
+
+    public void SetEnabled(GeneralSettings settings, bool on)
+    {
+        if (DefaultEnabled)
+        {
+            settings.DisabledModules.RemoveAll(id => string.Equals(id, Id, StringComparison.OrdinalIgnoreCase));
+            if (!on) settings.DisabledModules.Add(Id);
+        }
+        else
+        {
+            var local = settings.LocalEnabledModules.Where(id => !string.Equals(id, Id, StringComparison.OrdinalIgnoreCase)).ToList();
+            if (on) local.Add(Id);
+            settings.LocalEnabledModules = local;
+        }
+    }
+}
+
+/// <summary>A tab with custom input. The shell restores focus after a keyboard summon.</summary>
+public interface IPanelKeyboardInput { void FocusInput(); }
+/// <summary>Module shortcuts are released while this custom input surface owns the keyboard.</summary>
+public interface IExclusiveKeyboardInput
+{
+    string Text { get; }
+    void InsertText(string text);
+}
 
 /// <summary>
 /// What a setup row (<see cref="ModuleInfo.Setup"/>) and a tip may use. The welcome tour builds rows before the module exists, so a row

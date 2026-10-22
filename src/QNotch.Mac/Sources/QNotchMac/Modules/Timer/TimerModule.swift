@@ -34,7 +34,7 @@ final class TimerModule: NotchModule {
         registry.tabs.register(ViewContribution(id: "timer", title: "Timer", order: 10, symbol: "timer") { [unowned self] in
             self.track(TimerTabView(module: self))
         })
-        registry.segments.register(SegmentContribution(id: "timer.ring", order: 7, slot: .leading) { [weak self] in
+        registry.segments.register(SegmentContribution(id: "timer.ring", order: 7, slot: .leading, destination: .tab("timer"), destinationLabel: "Open timer") { [weak self] in
             let ring = ProgressRing(lineWidth: 2.5)
             size(ring, width: 15, height: 15)
             ring.setAccessibilityElement(false)
@@ -42,7 +42,7 @@ final class TimerModule: NotchModule {
             self?.refreshSegments(notify: false)
             return ring
         })
-        registry.segments.register(SegmentContribution(id: "timer.pill", order: 7, slot: .trailing) { [weak self] in
+        registry.segments.register(SegmentContribution(id: "timer.pill", order: 7, slot: .trailing, destination: .tab("timer"), destinationLabel: "Open timer") { [weak self] in
             let text = line("", size: 13, weight: .semibold, color: Palette.textPrimary)
             text.font = .rounded(13, weight: .semibold, monospacedDigits: true)
             text.setContentCompressionResistancePriority(.required, for: .horizontal)
@@ -201,17 +201,15 @@ private final class TimerCardView: NSView, TimerDisplay {
         resetButton = HoverButton(symbol: "arrow.counterclockwise", style: .icon, symbolSize: 14, label: "Reset countdown") { [weak module] in module?.reset() }
         presets = ChipPicker(values: TimerModule.presets, format: { "\($0)" }, label: { "\($0) minutes" }) { [weak module] in module?.choose(minutes: $0) }
         super.init(frame: .zero)
-        time.font = .rounded(30, weight: .semibold, monospacedDigits: true)
+        time.font = .rounded(24, weight: .semibold, monospacedDigits: true)
         time.setAccessibilityIdentifier("timer-remaining")
         start.setAccessibilityIdentifier("timer-toggle")
         start.tint = Palette.textPrimary
-        let readout = NSStackView(views: [time, status])
-        readout.orientation = .horizontal
-        readout.alignment = .firstBaseline
-        readout.spacing = 8
+        time.setContentCompressionResistancePriority(.required, for: .horizontal)
+        let readout = column([time, status], spacing: 0)
         let top = row([readout, spacer(), start, resetButton], spacing: 2)
-        let stack = column([top, progress, presets], spacing: 12)
-        stack.setCustomSpacing(14, after: progress)
+        let stack = column([top, progress, presets], spacing: 8)
+        stack.setCustomSpacing(10, after: progress)
         embed(stack, in: self, inset: 0)
         for view in [top, progress] { view.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true }
         toolTip = "Scroll to change the length"

@@ -27,7 +27,7 @@ internal sealed partial class TimerState : ObservableObject
 /// Countdown with Pomodoro presets. The end is a wall clock time, so ticks only refresh the text: once a second while the panel is
 /// open or in the last minute, once a minute while collapsed. No timer exists while nothing runs.
 /// </summary>
-public sealed class PomodoroModule : INotchModule, ICadenceAware
+public sealed partial class PomodoroModule : INotchModule, ICadenceAware
 {
     const string Id = "timer", Clock = "", Reset = "";
     static readonly int[] Presets = [5, 15, 25, 50];

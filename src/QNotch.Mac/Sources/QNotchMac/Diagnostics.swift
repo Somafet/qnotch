@@ -13,7 +13,7 @@ enum NativeSmokeTest {
             || NSWorkspace.shared.frontmostApplication?.bundleIdentifier == "com.apple.loginwindow"
     }
 
-    static func run(shell: ShellController, output: URL, ready: TimeInterval, options: DiagnosticOptions) {
+    static func run(shell: ShellController, menuBar: MenuBarController, output: URL, ready: TimeInterval, options: DiagnosticOptions) {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
             let run = SnapshotRun(shell: shell, output: output, options: options, readsAllOutlines: true)
             func finish(_ error: Error?) {
@@ -24,7 +24,6 @@ enum NativeSmokeTest {
                 for line in run.lines where line.hasPrefix("FAILED") { fputs("Native smoke \(line)\n", stderr) }
                 exit(1)
             }
-            let timer: TimerModule, note: NoteModule?
             do {
                 try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
                 guard let layout = shell.layout else { throw Failure("placement", "No display available for native UI validation") }
@@ -33,29 +32,50 @@ enum NativeSmokeTest {
                                       "collapsed_status_frame=\(layout.surface(expanded: false, wing: 56))", "expanded_frame=\(layout.surface(expanded: true))",
                                       "panel_body=\(layout.panelBody)"])
                 SnapshotViews.render(run)
-                try checkSearchEnablement(run)
-                try checkFeatureVisibility(run)
-                try TerminalSmoke.check(run)
-                (timer, note) = try checkShell(run, layout: layout)
             } catch { return finish(error) }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) {
-                do { try checkAfterWake(run, timer: timer, note: note) } catch { return finish(error) }
-                // Keep panel open: the pointer leaving does not close it, also after the close delay.
-                shell.pointerLeft()
-                DispatchQueue.main.asyncAfter(deadline: .now() + Double(shell.general.closeDelayMs) / 1000 + 0.2) {
-                    do { try checkPinAndCards(run) } catch { return finish(error) }
-                    exerciseNotifications(run) { error in
+            // Exercise hover before unrelated module checks, so a later environmental failure
+            // cannot conceal whether the production dwell path passed.
+            HoverTargetSmoke.exerciseDwell(run) { error in
+                if let error { return finish(error) }
+                // Recovery opens and activates Settings. Run it after the nonactivating
+                // hover assertion so its pending focus events cannot affect that probe.
+                do { try MenuBarSmoke.check(run, menuBar: menuBar) }
+                catch { return finish(error) }
+                checkInteractions(run, finish: finish)
+            }
+        }
+    }
+
+    private static func checkInteractions(_ run: SnapshotRun, finish: @escaping (Error?) -> Void) {
+        let shell = run.shell
+        let timer: TimerModule, note: NoteModule?
+        do {
+            guard let layout = shell.layout else { throw Failure("placement", "No display available for native UI validation") }
+            try checkSearchEnablement(run)
+            try checkFeatureVisibility(run)
+            try checkHomeCardSizes(run)
+            // Visibility exercises keyboard-open navigation; Terminal's toggle starts collapsed.
+            shell.close(restoreFocus: false)
+            try TerminalSmoke.check(run)
+            (timer, note) = try checkShell(run, layout: layout)
+        } catch { return finish(error) }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) {
+            do { try checkAfterWake(run, timer: timer, note: note) } catch { return finish(error) }
+            // Keep panel open: the pointer leaving does not close it, also after the close delay.
+            shell.pointerLeft()
+            DispatchQueue.main.asyncAfter(deadline: .now() + Double(shell.general.closeDelayMs) / 1000 + 0.2) {
+                do { try checkPinAndCards(run) } catch { return finish(error) }
+                exerciseNotifications(run) { error in
+                    if let error { return finish(error) }
+                    exerciseAgents(run) { error in
                         if let error { return finish(error) }
-                        exerciseAgents(run) { error in
+                        exerciseOnboarding(run) { error in
                             if let error { return finish(error) }
-                            exerciseOnboarding(run) { error in
-                                if let error { return finish(error) }
-                                guard shell.registries.searchSources.items.contains(where: { $0.find("updates").contains { $0.title == "About" } }) else {
-                                    return finish(Failure("settings-search", "Search does not find the About page"))
-                                }
-                                run.pass("settings-search")
-                                exerciseDebugChannel(run, done: finish)
+                            guard shell.registries.searchSources.items.contains(where: { $0.find("updates").contains { $0.title == "About" } }) else {
+                                return finish(Failure("settings-search", "Search does not find the About page"))
                             }
+                            run.pass("settings-search")
+                            exerciseDebugChannel(run, done: finish)
                         }
                     }
                 }

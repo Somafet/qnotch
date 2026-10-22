@@ -39,23 +39,31 @@ public sealed class HomeView : ScrollViewer
         {
             if (!_hosts.TryGetValue(d.Id, out var host))
             {
-                host = new CardHost(d)
+                host = new CardHost(d, _layout)
                 {
                     Content = Create(d),
-                    Width = d.ColumnSpan * Unit + (d.ColumnSpan - 1) * Gap,
-                    Height = d.RowSpan * RowHeight + (d.RowSpan - 1) * Gap,
+                    Height = RowHeight,
                     Margin = new Thickness(Gap / 2, 0, Gap / 2, Gap),
                     IsEditMode = _shell.IsEditMode,
                 };
                 _hosts[d.Id] = host;
             }
+            host.Width = (int)_layout.SizeOf(d.Id) * (Unit + Gap) - Gap;
+            host.SyncSize();
             host.OrderNumber = _layout.OrderNumber(d.Id);
             shown.Add(host);
         }
-        _panel.Children.Clear();
-        _root.Children.Clear();
-        _root.Children.Add(_panel);
-        foreach (var h in shown) _panel.Children.Add(h);
+        // A size change only rearranges the existing children, preserving keyboard focus on its size choice.
+        if (!_panel.Children.Cast<CardHost>().SequenceEqual(shown))
+        {
+            _panel.Children.Clear();
+            foreach (var h in shown) _panel.Children.Add(h);
+        }
+        if (_root.Children.Count != 1 || _root.Children[0] != _panel || shown.Count == 0)
+        {
+            _root.Children.Clear();
+            _root.Children.Add(_panel);
+        }
         if (shown.Count == 0)
         {
             _root.Children.Add(Placeholder.Create(Glyphs.Apps, "Your Home is empty", "Choose what appears here in Settings, Features."));
