@@ -11,6 +11,7 @@ final class DeviceNode {
     private var listener: NWListener?
     private var invitation: DeviceInvitation?
     private var pairing = false
+    private var pairingAttempts: [TimeInterval] = []
     private var peers: [String: (DevicePeer, Data)] = [:]
     private var sockets: [UUID: DeviceSocket] = [:]
     private var generation = UUID()
@@ -19,6 +20,8 @@ final class DeviceNode {
     var persist: @MainActor (DevicePeer, Data) async -> Bool = { _, _ in false }
     var changed: () -> Void = {}
     var received: (String, URL, Bool) -> Void = { _, _, _ in }
+    var incomingProgress: (String, Int64, Int64) -> Void = { _, _, _ in }
+    var incomingFailed: (String) -> Void = { _ in }
     var exchange: (@MainActor (String, Data) async throws -> Data)?
     var devices: [DevicePeer] { peers.values.map(\.0).sorted { $0.name < $1.name } }
     init(id: String, name: String, inbox: URL) { self.id = id; self.name = name; self.inbox = inbox }
@@ -39,7 +42,7 @@ final class DeviceNode {
             Task { @MainActor [weak self] in
                 guard let self, self.generation == current, self.sockets.count < 4,
                       case let .hostPort(host, _) = connection.endpoint, DeviceWire.localAddress(String(describing: host)) else { connection.cancel(); return }
-                let socket = DeviceSocket(connection), token = UUID()
+                let socket = DeviceSocket(connection, timeout: 10), token = UUID()
                 self.sockets[token] = socket
                 defer { socket.close(); self.sockets[token] = nil }
                 try? await self.serve(socket, host: String(describing: host), generation: current)
@@ -76,6 +79,10 @@ final class DeviceNode {
         let invite = invitation
         if hello.pair {
             guard !pairing, let invite, invite.expires > Int64(Date().timeIntervalSince1970), let key = Data(base64Encoded: invite.secret) else { throw DeviceError.declined }
+            let now = ProcessInfo.processInfo.systemUptime
+            pairingAttempts.removeAll { now - $0 >= 60 }
+            guard pairingAttempts.count < 5 else { throw DeviceError.declined }
+            pairingAttempts.append(now)
             secret = key; pairing = true
         } else {
             guard let peer = peers[hello.id] else { throw DeviceError.declined }
@@ -86,6 +93,7 @@ final class DeviceNode {
         try await socket.write(challenge)
         let channel = DeviceChannel(socket: socket, key: DeviceWire.connectionKey(secret: secret, challenge: challenge, hello: bytes), challenge: challenge, client: false)
         let request = try JSONDecoder().decode(DeviceMessage.self, from: await channel.read())
+        socket.authenticated()
         if hello.pair {
             guard request.op == "pair", request.id == hello.id, let name = request.name, !name.isEmpty, name.count <= 80,
                   let port = request.port, (1...65535).contains(port), let encoded = request.key, let key = Data(base64Encoded: encoded), key.count == 32, peers[hello.id] == nil else { throw DeviceError.invalid }
@@ -112,26 +120,34 @@ final class DeviceNode {
         }
         if request.op == "text", let text = request.text, text.utf16.count <= 16000 {
             let path = inbox.appendingPathComponent(UUID().uuidString.lowercased() + "-text.txt")
-            try await disk.saveText(text, at: path)
+            do { try await disk.saveText(text, at: path) }
+            catch { incomingFailed(trusted.0.name); throw error }
             received(trusted.0.name, path, false); try await channel.send(DeviceReply(ok: true)); return
         }
         guard request.op == "file", let name = request.name, let length = request.size, (0...DeviceWire.maxFile).contains(length) else { throw DeviceError.invalid }
         try DeviceWire.validateName(name)
         let target = inbox.appendingPathComponent(UUID().uuidString.lowercased() + "-" + name)
         let part = target.appendingPathExtension("part")
-        let file = try await disk.prepare(part)
+        let file: FileHandle
+        do { file = try await disk.prepare(part) }
+        catch { incomingFailed(trusted.0.name); throw error }
         do {
+            incomingProgress(trusted.0.name, 0, length)
+            var progressAt = ProcessInfo.processInfo.systemUptime
             try await channel.send(DeviceReply(ok: true))
             var count: Int64 = 0
             while count < length {
                 let data = try await channel.read()
                 guard !data.isEmpty, data.count <= length - count, current == generation, peers[hello.id] != nil else { throw DeviceError.invalid }
                 try await disk.append(data, to: file); count += Int64(data.count)
+                if ProcessInfo.processInfo.systemUptime - progressAt >= 0.25 {
+                    progressAt = ProcessInfo.processInfo.systemUptime; incomingProgress(trusted.0.name, count, length)
+                }
             }
             guard current == generation, peers[hello.id]?.0.receive == true else { throw DeviceError.declined }
             try await disk.finish(file, part: part, target: target)
             received(trusted.0.name, target, true); try await channel.send(DeviceReply(ok: true))
-        } catch { await disk.discard(file, part: part); throw error }
+        } catch { incomingFailed(trusted.0.name); await disk.discard(file, part: part); throw error }
     }
     @MainActor private func use(_ peer: DevicePeer, key: Data, pair: Bool, action: (DeviceChannel) async throws -> Void) async throws {
         guard port > 0, DeviceWire.localAddress(peer.host), (1...65535).contains(peer.port), let port = NWEndpoint.Port(rawValue: UInt16(peer.port)) else { throw DeviceError.unavailable }
@@ -182,6 +198,7 @@ final class DeviceNode {
     }
     func stop() {
         generation = UUID(); invitation = nil; listener?.cancel(); listener = nil; port = 0
+        disk.stop()
         for socket in sockets.values { socket.close() }
     }
     @MainActor func synchronize(_ id: String, payload: Data) async throws -> Data {

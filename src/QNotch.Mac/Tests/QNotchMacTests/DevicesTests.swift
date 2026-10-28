@@ -42,6 +42,17 @@ final class DevicesTests: XCTestCase {
                                           secret: DeviceWire.randomKey().base64EncodedString(), expires: Int64(Date().timeIntervalSince1970) + 300)
         XCTAssertEqual(try DeviceInvitation.parse(invitation.code).id, invitation.id)
     }
+    func testReceiverShutdownUnlinksOpenPartsAndPreventsNewOnes() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let disk = DeviceDisk(), part = root.appendingPathComponent("unfinished.part")
+        let file = try await disk.prepare(part)
+        try await disk.append(Data(repeating: 1, count: 1024), to: file)
+        disk.stop()
+        XCTAssertFalse(FileManager.default.fileExists(atPath: part.path))
+        do { _ = try await disk.prepare(root.appendingPathComponent("late.part")); XCTFail("Stopped receiver must not create parts") } catch { }
+        await disk.discard(file, part: part)
+    }
     func testCausalSyncFixturesRecoveryAndClipboardReplay() throws {
         let fixtures = try JSONDecoder().decode([String: NoteRevision].self, from: Data(contentsOf: repository.appendingPathComponent("tests/fixtures/devices/sync-v1.json")))
         let base = fixtures["base"]!, windows = fixtures["windows"]!, mac = fixtures["mac"]!, deletion = fixtures["resolvedDeletion"]!
@@ -98,6 +109,30 @@ final class DevicesTests: XCTestCase {
         XCTAssertTrue(restored.isReady)
         _ = try await restored.exchange(remoteID, input: payload)
         XCTAssertEqual(clipboardWrites, 1); XCTAssertTrue(restored.conflicts.isEmpty)
+    }
+    @MainActor func testPairingRateLimitAndCorruptJournalPreservation() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let host = DeviceNode(id: UUID().uuidString.lowercased(), name: "Limited host", inbox: root)
+        let joining = DeviceNode(id: UUID().uuidString.lowercased(), name: "Joining", inbox: root)
+        defer { host.stop(); joining.stop(); try? FileManager.default.removeItem(at: root) }
+        host.approve = { _ in true }; host.persist = { _, _ in true }; joining.persist = { _, _ in true }
+        try await host.start(port: 0); try await joining.start(port: 0)
+        let invitation = try host.invite(host: "127.0.0.1")
+        let wrong = DeviceInvitation(v: invitation.v, id: invitation.id, name: invitation.name, host: invitation.host,
+                                     port: invitation.port, secret: DeviceWire.randomKey().base64EncodedString(), expires: invitation.expires)
+        for _ in 0..<5 { do { try await joining.pair(wrong.code); XCTFail("Wrong pairing key must fail") } catch { } }
+        do { try await joining.pair(invitation.code); XCTFail("Pairing quota must apply to subsequent attempts") } catch { }
+        XCTAssertTrue(host.devices.isEmpty)
+        let oldDiagnostics = Runtime.diagnostics; Runtime.diagnostics = false
+        defer { Runtime.diagnostics = oldDiagnostics }
+        let path = root.appendingPathComponent("devices-sync.json"), original = Data("{not valid JSON".utf8)
+        try original.write(to: path)
+        let runtime = DeviceSyncRuntime(context: ModuleContext(settings: .init(directory: root), registries: ModuleRegistries(), shell: nil),
+                                        deviceID: host.id, peers: { [] }, node: { nil })
+        for _ in 0..<200 where !runtime.status.contains("could not be read") { try await Task.sleep(nanoseconds: 10_000_000) }
+        XCTAssertFalse(runtime.isReady); XCTAssertTrue(runtime.status.contains("could not be read")); runtime.stop()
+        XCTAssertEqual(try Data(contentsOf: path), original)
     }
     @MainActor func testNativePairTextFilesPermissionsAndRevocation() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)

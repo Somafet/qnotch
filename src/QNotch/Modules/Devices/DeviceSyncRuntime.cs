@@ -46,8 +46,7 @@ sealed class DeviceSyncRuntime : IDisposable
                 if (!File.Exists(path)) return new SyncJournal();
                 if (new FileInfo(path).Length > DeviceProtocol.MaxSync) throw new IOException("Sync journal is too large.");
                 var result = DeviceProtocol.Decode<SyncJournal>(File.ReadAllBytes(path));
-                DeviceSync.Merge(result.Notes, []);
-                if (result.ActiveClock is null || result.ActiveClock.Count > DeviceSync.MaxAuthors || result.ClipboardCounter < 0) throw new IOException("Invalid sync journal.");
+                DeviceSync.ValidateJournal(result);
                 return result;
             });
             if (disposed) return;
@@ -100,7 +99,7 @@ sealed class DeviceSyncRuntime : IDisposable
     string Fingerprint() => string.Join(',', state.Notes.Select(i => i.Id)) + ":" + state.Journal.ClipboardCounter + ":" + state.Journal.ClipboardAuthor;
     void Merge(DevicePeer peer, SyncBundle incoming)
     {
-        var before = Fingerprint(); var candidate = state.Clone();
+        var before = Fingerprint(); var previousStatus = Status; var candidate = state.Clone();
         string? note = null, clip = null;
         if (peer.SyncNotes && incoming.NotesEnabled && Source("note")?.Read() is not null) note = candidate.ReceiveNotes(incoming.Notes);
         if (peer.SyncClipboard && incoming.ClipboardEnabled && Source("clipboard") is not null) clip = candidate.ReceiveClipboard(incoming.Clipboard);
@@ -114,16 +113,17 @@ sealed class DeviceSyncRuntime : IDisposable
         finally { applying = false; }
         if (before != Fingerprint()) { Persist(); Schedule(1); }
         Status = state.Notes.Count > 1 ? "Note conflict: both versions are preserved. Choose a version below to resolve it." : "Sync is up to date.";
-        Changed?.Invoke();
+        if (before != Fingerprint() || previousStatus != Status) Changed?.Invoke();
     }
     public async Task<byte[]> Exchange(string peerId, byte[] input)
     {
         var incoming = DeviceProtocol.Decode<SyncBundle>(input);
-        return await ctx.Dispatcher.InvokeAsync(() =>
+        var bundle = await ctx.Dispatcher.InvokeAsync(() =>
         {
             if (!loaded || failed || disposed || settings.Peers.FirstOrDefault(p => p.Id == peerId && p.Receive) is not { } peer) throw new IOException("Sync is unavailable.");
-            Merge(peer, incoming); return DeviceProtocol.Encode(Bundle(peer));
+            Merge(peer, incoming); return Bundle(peer);
         });
+        return await Task.Run(() => DeviceProtocol.Encode(bundle));
     }
     public void Resolve(string id)
     {
@@ -154,9 +154,11 @@ sealed class DeviceSyncRuntime : IDisposable
                 if (disposed || node() != active) return;
                 try
                 {
-                    var payload = DeviceProtocol.Encode(Bundle(peer));
+                    var outgoing = Bundle(peer);
+                    var payload = await Task.Run(() => DeviceProtocol.Encode(outgoing));
                     var result = await Task.Run(() => active.Synchronize(peer.Id, payload));
-                    if (node() == active && settings.Peers.FirstOrDefault(p => p.Id == peer.Id && p.Receive) is { } current) Merge(current, DeviceProtocol.Decode<SyncBundle>(result));
+                    var incoming = await Task.Run(() => DeviceProtocol.Decode<SyncBundle>(result));
+                    if (node() == active && settings.Peers.FirstOrDefault(p => p.Id == peer.Id && p.Receive) is { } current) Merge(current, incoming);
                 }
                 catch (Exception ex) when (ex is IOException or System.Net.Sockets.SocketException or OperationCanceledException or ObjectDisposedException or System.Security.Cryptography.CryptographicException or System.Text.Json.JsonException)
                 { hadFailure = true; Status = "A device is offline or sync is unavailable. Notes are kept locally and will retry."; Changed?.Invoke(); }

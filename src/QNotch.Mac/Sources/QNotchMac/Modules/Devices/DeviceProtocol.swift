@@ -109,14 +109,15 @@ enum DeviceWire {
 /// Exactly one reader and writer per connection. Network.framework owns socket I/O on a utility queue.
 final class DeviceSocket {
     let connection: NWConnection
-    private let deadline: DispatchWorkItem
-    init(_ connection: NWConnection) {
+    private let deadline = DispatchSource.makeTimerSource(queue: DispatchQueue.global(qos: .utility))
+    init(_ connection: NWConnection, timeout: TimeInterval = 120) {
         self.connection = connection
-        deadline = DispatchWorkItem { connection.cancel() }
+        deadline.setEventHandler { [weak connection] in connection?.cancel() }
+        deadline.schedule(deadline: .now() + timeout); deadline.resume()
         connection.start(queue: DispatchQueue.global(qos: .utility))
-        DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + 120, execute: deadline)
     }
     func close() { deadline.cancel(); connection.cancel() }
+    func authenticated() { deadline.schedule(deadline: .now() + 120) }
     func write(_ bytes: Data) async throws {
         try Task.checkCancellation()
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
@@ -192,21 +193,53 @@ final class DeviceChannel {
     }
 }
 
-/// File work is serialized off the main thread. Only bounded chunks cross the actor boundary.
-actor DeviceDisk {
-    func prepare(_ path: URL) throws -> FileHandle {
+/// Shutdown can unlink open parts synchronously while actor I/O unwinds. The lock makes file
+/// creation and shutdown atomic relative to each other; no part can appear after stop's sweep.
+private final class IncomingFiles: @unchecked Sendable {
+    private let lock = NSLock()
+    private var stopped = false
+    private var paths: Set<URL> = []
+    func create(_ path: URL) throws -> FileHandle {
+        lock.lock(); defer { lock.unlock() }
+        guard !stopped else { throw DeviceError.unavailable }
         try FileManager.default.createDirectory(at: path.deletingLastPathComponent(), withIntermediateDirectories: true)
         guard !FileManager.default.fileExists(atPath: path.path), FileManager.default.createFile(atPath: path.path, contents: nil) else { throw DeviceError.unavailable }
-        return try FileHandle(forWritingTo: path)
+        do { let file = try FileHandle(forWritingTo: path); paths.insert(path); return file }
+        catch { try? FileManager.default.removeItem(at: path); throw error }
+    }
+    func commit(_ path: URL, target: URL) throws {
+        lock.lock(); defer { lock.unlock() }
+        guard !stopped else { throw DeviceError.unavailable }
+        try FileManager.default.moveItem(at: path, to: target); paths.remove(path)
+    }
+    func discard(_ path: URL) {
+        lock.lock(); defer { lock.unlock() }
+        try? FileManager.default.removeItem(at: path); paths.remove(path)
+    }
+    func stop() {
+        lock.lock(); defer { lock.unlock() }
+        stopped = true
+        for path in paths { try? FileManager.default.removeItem(at: path) }
+        paths.removeAll()
+    }
+}
+
+/// File work is serialized off the main thread. Only bounded chunks cross the actor boundary.
+actor DeviceDisk {
+    private let incoming = IncomingFiles()
+    nonisolated func stop() { incoming.stop() }
+    func prepare(_ path: URL) throws -> FileHandle {
+        try incoming.create(path)
     }
     func append(_ data: Data, to file: FileHandle) throws { try file.write(contentsOf: data) }
     func finish(_ file: FileHandle, part: URL, target: URL) throws {
-        try file.synchronize(); try file.close(); try FileManager.default.moveItem(at: part, to: target)
+        try file.synchronize(); try file.close(); try incoming.commit(part, target: target)
     }
-    func discard(_ file: FileHandle?, part: URL) { try? file?.close(); try? FileManager.default.removeItem(at: part) }
+    func discard(_ file: FileHandle?, part: URL) { try? file?.close(); incoming.discard(part) }
     func saveText(_ text: String, at url: URL) throws {
-        try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
-        try Data(text.utf8).write(to: url, options: .atomic)
+        let part = url.appendingPathExtension("part"), file = try incoming.create(part)
+        do { try file.write(contentsOf: Data(text.utf8)); try file.synchronize(); try file.close(); try incoming.commit(part, target: url) }
+        catch { try? file.close(); incoming.discard(part); throw error }
     }
     func open(_ url: URL) throws -> (FileHandle, Int64) {
         let handle = try FileHandle(forReadingFrom: url)

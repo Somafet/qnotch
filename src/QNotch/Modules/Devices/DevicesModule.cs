@@ -25,6 +25,7 @@ public sealed class DevicesModule : INotchModule
     DeviceNode? node;
     string status = "Local sharing is off.", latest = "";
     Action? refresh;
+    Action<string>? transferStatus;
     readonly List<(string Name, string Path)> received = [];
     CancellationTokenSource? operation;
     string draftText = "";
@@ -78,6 +79,9 @@ public sealed class DevicesModule : INotchModule
                 received.Insert(0, (name, path)); if (received.Count > 20) received.RemoveAt(20);
                 Update($"Received from {name}. Saved to Downloads/QNotch/Devices.");
             });
+            fresh.IncomingProgress = (name, count, total) => ctx.Bus.Run(() =>
+            { status = $"Receiving from {name}: {count * 100 / Math.Max(1, total)}%"; transferStatus?.Invoke(status); });
+            fresh.IncomingFailed = name => ctx.Bus.Run(() => Update($"Transfer from {name} was interrupted or could not be saved. Ask the sender to retry."));
             await Task.Run(() => fresh.Start(settings.Port));
             if (node != fresh) { fresh.Dispose(); return; }
             settings.Enabled = true; Save(); Update("Ready. Add a device or send to a paired device.");
@@ -225,8 +229,9 @@ public sealed class DevicesModule : INotchModule
                 inbox.Children.Add(UiKit.Row(item.Name, Path.GetFileName(item.Path), show));
             }
         }
-        page.Loaded += (_, _) => { refresh += Refresh; Refresh(); };
-        page.Unloaded += (_, _) => refresh -= Refresh;
+        void Progress(string value) => result.Text = value;
+        page.Loaded += (_, _) => { refresh += Refresh; transferStatus += Progress; Refresh(); };
+        page.Unloaded += (_, _) => { refresh -= Refresh; transferStatus -= Progress; };
         Refresh(); return page;
     }
     async Task Run(Func<DeviceNode, CancellationToken, Task> work, string success)

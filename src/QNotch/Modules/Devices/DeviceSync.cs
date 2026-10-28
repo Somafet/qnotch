@@ -20,6 +20,13 @@ public sealed class DeviceSync(string deviceId, SyncJournal journal)
     public SyncJournal Journal => journal;
     public IReadOnlyList<NoteRevision> Notes => journal.Notes;
     public ClipboardRevision? Clipboard => clipboard;
+    public static void ValidateJournal(SyncJournal value)
+    {
+        Merge(value.Notes, []);
+        if (value.ActiveClock is null || value.ActiveClock.Count > MaxAuthors || value.ActiveClock.Any(p => !DeviceProtocol.ValidId(p.Key) || p.Value is <= 0 or >= 9007199254740991) ||
+            value.ClipboardCounter is < 0 or >= 9007199254740991 || value.ClipboardCounter > 0 && !DeviceProtocol.ValidId(value.ClipboardAuthor))
+            throw new IOException("Invalid sync journal.");
+    }
     public DeviceSync Clone()
     {
         var copy = new DeviceSync(deviceId, new SyncJournal
@@ -90,7 +97,7 @@ public sealed class DeviceSync(string deviceId, SyncJournal journal)
     }
     public void CopyText(string text)
     {
-        if (text.Length > 16000) throw new IOException("Clipboard text exceeds the sync limit.");
+        if (text.Length > 16000 || journal.ClipboardCounter >= 9007199254740990) throw new IOException("Clipboard text or revision exceeds the sync limit.");
         journal.ClipboardCounter = checked(journal.ClipboardCounter + 1); journal.ClipboardAuthor = deviceId;
         clipboard = new(journal.ClipboardCounter, deviceId, text);
     }

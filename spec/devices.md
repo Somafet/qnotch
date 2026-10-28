@@ -15,6 +15,11 @@ Adding it is explicit consent on the joining device; the inviting device must ap
 incoming device's name before trust is stored. Invitations are single-use after approval.
 The joining device generates a fresh independent 32-byte permanent pair key. Store that key in
 Credential Manager / Keychain, not JSON. Each pairing is independent; unpairing removes the key.
+Pairing accepts at most five attempts per minute per instance, using a monotonic clock. The
+four-connection limit also bounds unauthenticated sockets and pending work.
+Unauthenticated clients have ten seconds to send a valid first request. Authenticated sessions
+have a two-minute operation deadline. Open receive files are tracked and deleted during stop,
+including while their asynchronous I/O is unwinding, so normal application exit leaves no parts.
 
 ## Wire encoding
 

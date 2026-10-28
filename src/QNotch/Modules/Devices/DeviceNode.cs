@@ -15,12 +15,17 @@ public sealed class DeviceNode(string id, string name, string inbox) : IDisposab
     TcpListener? listener;
     DeviceInvitation? invitation;
     int pairing;
+    readonly Queue<long> pairingAttempts = new();
+    readonly object partialGate = new();
+    readonly HashSet<string> partialFiles = [];
     public string Id => id;
     public int Port => (listener?.LocalEndpoint as IPEndPoint)?.Port ?? 0;
     public DevicePeer[] Peers => peers.Values.Select(p => p.Peer).OrderBy(p => p.Name).ToArray();
     public Func<DevicePeer, Task<bool>> Approve { get; set; } = _ => Task.FromResult(false);
     public Func<DevicePeer, byte[], Task<bool>> Persist { get; set; } = (_, _) => Task.FromResult(false);
     public Action<string, string, bool>? Received { get; set; }
+    public Action<string, long, long>? IncomingProgress { get; set; }
+    public Action<string>? IncomingFailed { get; set; }
     public Action? Changed { get; set; }
     public Func<string, byte[], Task<byte[]>>? Exchange { get; set; }
     public void Restore(DevicePeer peer, byte[] key) { if (key.Length == 32) peers[peer.Id] = (peer, key); }
@@ -49,6 +54,29 @@ public sealed class DeviceNode(string id, string name, string inbox) : IDisposab
         if (Port == 0 || !DeviceProtocol.LocalAddress(host)) throw new IOException("Enable sharing and choose a local IPv4 address.");
         return invitation = new(1, id, name, host, Port, Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)), DateTimeOffset.UtcNow.AddMinutes(5).ToUnixTimeSeconds());
     }
+    bool AllowPairAttempt()
+    {
+        lock (pairingAttempts)
+        {
+            var now = Environment.TickCount64;
+            while (pairingAttempts.TryPeek(out var time) && now - time >= 60000) pairingAttempts.Dequeue();
+            if (pairingAttempts.Count >= 5) return false;
+            pairingAttempts.Enqueue(now); return true;
+        }
+    }
+    FileStream CreatePartial(string path, CancellationToken ct)
+    {
+        lock (partialGate)
+        {
+            ct.ThrowIfCancellationRequested();
+            var file = new FileStream(path, FileMode.CreateNew, FileAccess.Write, FileShare.Delete, DeviceProtocol.Chunk, true);
+            partialFiles.Add(path); return file;
+        }
+    }
+    void DiscardPartial(string path)
+    {
+        lock (partialGate) { if (File.Exists(path)) File.Delete(path); partialFiles.Remove(path); }
+    }
     async Task Accept()
     {
         try
@@ -72,7 +100,7 @@ public sealed class DeviceNode(string id, string name, string inbox) : IDisposab
     {
         if (client.Client.RemoteEndPoint is not IPEndPoint remote || !DeviceProtocol.LocalAddress(remote.Address.ToString())) return;
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(stopping.Token);
-        timeout.CancelAfter(TimeSpan.FromMinutes(2));
+        timeout.CancelAfter(TimeSpan.FromSeconds(10)); // Unauthenticated connections cannot occupy a slot for two minutes.
         var stream = client.GetStream();
         var helloBytes = await DeviceProtocol.ReadPacket(stream, 1024, timeout.Token);
         var hello = DeviceProtocol.Decode<DeviceHello>(helloBytes);
@@ -81,7 +109,7 @@ public sealed class DeviceNode(string id, string name, string inbox) : IDisposab
         byte[] secret;
         if (hello.Pair)
         {
-            if (invite is null || invite.Expires <= DateTimeOffset.UtcNow.ToUnixTimeSeconds() || Interlocked.CompareExchange(ref pairing, 1, 0) != 0) return;
+            if (invite is null || invite.Expires <= DateTimeOffset.UtcNow.ToUnixTimeSeconds() || !AllowPairAttempt() || Interlocked.CompareExchange(ref pairing, 1, 0) != 0) return;
             secret = Convert.FromBase64String(invite.Secret);
         }
         else
@@ -94,6 +122,7 @@ public sealed class DeviceNode(string id, string name, string inbox) : IDisposab
             var challenge = RandomNumberGenerator.GetBytes(32); await stream.WriteAsync(challenge, timeout.Token);
             var channel = new DeviceChannel(stream, DeviceProtocol.ConnectionKey(secret, challenge, helloBytes), challenge, false, timeout.Token);
             var message = DeviceProtocol.Decode<DeviceMessage>(await channel.Read());
+            timeout.CancelAfter(TimeSpan.FromMinutes(2));
             if (hello.Pair)
             {
                 if (message.Op != "pair" || message.Id != hello.Id || message.Name is not { Length: > 0 and <= 80 } || message.Port is < 1 or > 65535) return;
@@ -122,24 +151,30 @@ public sealed class DeviceNode(string id, string name, string inbox) : IDisposab
             }
             if (message.Op == "text" && message.Text is { Length: <= 16000 })
             {
-                Directory.CreateDirectory(inbox);
                 var path = Path.Combine(inbox, Guid.NewGuid().ToString("N") + "-text.txt");
                 try
                 {
-                    await File.WriteAllTextAsync(path + ".part", message.Text, timeout.Token);
-                    timeout.Token.ThrowIfCancellationRequested(); File.Move(path + ".part", path);
+                    Directory.CreateDirectory(inbox);
+                    await using (var output = CreatePartial(path + ".part", timeout.Token))
+                        await output.WriteAsync(System.Text.Encoding.UTF8.GetBytes(message.Text), timeout.Token);
+                    timeout.Token.ThrowIfCancellationRequested();
+                    if (!peers.TryGetValue(hello.Id, out var current) || !current.Peer.Receive) throw new IOException("Receiving ended.");
+                    File.Move(path + ".part", path);
                 }
-                finally { if (File.Exists(path + ".part")) File.Delete(path + ".part"); }
+                catch { IncomingFailed?.Invoke(trusted.Peer.Name); throw; }
+                finally { DiscardPartial(path + ".part"); }
                 Received?.Invoke(trusted.Peer.Name, path, false); await channel.Reply(new(true)); return;
             }
             if (message.Op != "file" || message.Size < 0 || message.Size > DeviceProtocol.MaxFile) { await channel.Reply(new(false, "Unsupported request.")); return; }
             DeviceProtocol.ValidateName(message.Name);
-            Directory.CreateDirectory(inbox);
             var target = Path.Combine(inbox, Guid.NewGuid().ToString("N") + "-" + message.Name);
             var part = target + ".part";
             try
             {
-                await using (var file = new FileStream(part, FileMode.CreateNew, FileAccess.Write, FileShare.None, DeviceProtocol.Chunk, true))
+                Directory.CreateDirectory(inbox);
+                IncomingProgress?.Invoke(trusted.Peer.Name, 0, message.Size);
+                var progressAt = Environment.TickCount64;
+                await using (var file = CreatePartial(part, timeout.Token))
                 {
                     await channel.Reply(new(true));
                     long count = 0;
@@ -149,6 +184,8 @@ public sealed class DeviceNode(string id, string name, string inbox) : IDisposab
                         var bytes = await channel.Read();
                         if (bytes.Length == 0 || bytes.Length > message.Size - count || !peers.ContainsKey(hello.Id)) throw new IOException("Transfer ended.");
                         await file.WriteAsync(bytes, timeout.Token); count += bytes.Length;
+                        if (Environment.TickCount64 - progressAt >= 250)
+                        { progressAt = Environment.TickCount64; IncomingProgress?.Invoke(trusted.Peer.Name, count, message.Size); }
                     }
                     await file.FlushAsync(timeout.Token);
                 }
@@ -156,7 +193,8 @@ public sealed class DeviceNode(string id, string name, string inbox) : IDisposab
                 if (!peers.TryGetValue(hello.Id, out var current) || !current.Peer.Receive) throw new IOException("Receiving ended.");
                 File.Move(part, target); Received?.Invoke(trusted.Peer.Name, target, true); await channel.Reply(new(true));
             }
-            finally { if (File.Exists(part)) File.Delete(part); }
+            catch { IncomingFailed?.Invoke(trusted.Peer.Name); throw; }
+            finally { DiscardPartial(part); }
         }
         finally { if (hello.Pair) Interlocked.Exchange(ref pairing, 0); }
     }
@@ -235,5 +273,10 @@ public sealed class DeviceNode(string id, string name, string inbox) : IDisposab
     {
         invitation = null; stopping.Cancel(); listener?.Stop(); listener = null;
         foreach (var client in connections.Keys) client.Dispose();
+        // Mark open receive files for deletion before the UI can exit. FileShare.Delete lets
+        // Windows finish deletion when the process closes a still-unwinding file handle.
+        lock (partialGate)
+            foreach (var path in partialFiles.ToArray())
+                try { File.Delete(path); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 }

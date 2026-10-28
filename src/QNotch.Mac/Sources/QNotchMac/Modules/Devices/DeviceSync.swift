@@ -1,26 +1,32 @@
 import Foundation
 
-struct NoteRevision: Codable, Equatable {
+struct NoteRevision: Codable, Equatable, Sendable {
     let id: String
     let clock: [String: Int64]
     let text: String
 }
-struct ClipboardRevision: Codable {
+struct ClipboardRevision: Codable, Sendable {
     let counter: Int64
     let author: String
     let text: String
 }
-struct SyncBundle: Codable {
+struct SyncBundle: Codable, Sendable {
     let notesEnabled: Bool
     let clipboardEnabled: Bool
     let notes: [NoteRevision]
     let clipboard: ClipboardRevision?
 }
-struct SyncJournal: Codable {
+struct SyncJournal: Codable, Sendable {
     var notes: [NoteRevision] = []
     var activeClock: [String: Int64] = [:]
     var clipboardCounter: Int64 = 0
     var clipboardAuthor = ""
+}
+
+/// Swift 5.9 nonisolated async work runs off the main actor; large snapshots never decode there.
+enum DeviceSyncCodec {
+    static func decode(_ bytes: Data) async throws -> SyncBundle { try JSONDecoder().decode(SyncBundle.self, from: bytes) }
+    static func encode(_ bundle: SyncBundle) async throws -> Data { try JSONEncoder().encode(bundle) }
 }
 
 /// Native counterpart of DeviceSync.cs. State lives on the module's main actor.
@@ -39,6 +45,13 @@ final class DeviceSync {
         journal.notes = try Self.merge(journal.notes, [recovery]); journal.activeClock = recovery.clock; return true
     }
     static func includes(_ a: [String: Int64], _ b: [String: Int64]) -> Bool { b.allSatisfy { a[$0.key, default: 0] >= $0.value } }
+    static func validateJournal(_ journal: SyncJournal) throws {
+        _ = try merge(journal.notes, [])
+        guard journal.activeClock.count <= maxAuthors,
+              journal.activeClock.allSatisfy({ DeviceWire.validID($0.key) && $0.value > 0 && $0.value < 9007199254740991 }),
+              journal.clipboardCounter >= 0, journal.clipboardCounter < 9007199254740991,
+              journal.clipboardCounter == 0 || DeviceWire.validID(journal.clipboardAuthor) else { throw DeviceError.invalid }
+    }
     static func validate(_ item: NoteRevision) throws {
         guard DeviceWire.validID(item.id), item.text.utf16.count <= maxNoteChars, (1...maxAuthors).contains(item.clock.count),
               item.clock.allSatisfy({ DeviceWire.validID($0.key) && $0.value > 0 && $0.value < 9007199254740991 }) else { throw DeviceError.invalid }

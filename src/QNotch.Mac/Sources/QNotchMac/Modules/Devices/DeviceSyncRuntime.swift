@@ -38,8 +38,7 @@ final class DeviceSyncRuntime {
                     guard (attributes[.size] as? NSNumber)?.intValue ?? Int.max <= DeviceWire.maxSync else { throw DeviceError.invalid }
                     let bytes = try Data(contentsOf: path)
                     journal = try JSONDecoder().decode(SyncJournal.self, from: bytes)
-                    _ = try DeviceSync.merge(journal.notes, [])
-                    guard journal.activeClock.count <= DeviceSync.maxAuthors, journal.clipboardCounter >= 0 else { throw DeviceError.invalid }
+                    try DeviceSync.validateJournal(journal)
                 } else { journal = SyncJournal() }
                 DispatchQueue.main.async { [weak self] in
                     guard let self, !self.stopped else { return }
@@ -97,7 +96,7 @@ final class DeviceSyncRuntime {
         state.journal.notes.map(\.id).joined(separator: ",") + ":\(state.journal.clipboardCounter):" + state.journal.clipboardAuthor
     }
     private func merge(_ peer: DevicePeer, _ incoming: SyncBundle) throws {
-        let before = fingerprint(), candidate = state.clone()
+        let before = fingerprint(), previousStatus = status, candidate = state.clone()
         var note: String?, clip: String?
         if peer.syncNotes, incoming.notesEnabled, source("note")?.read() != nil { note = try candidate.receiveNotes(incoming.notes) }
         if peer.syncClipboard, incoming.clipboardEnabled, source("clipboard") != nil { clip = try candidate.receiveClipboard(incoming.clipboard) }
@@ -108,12 +107,12 @@ final class DeviceSyncRuntime {
         state = candidate
         if before != fingerprint() { persist(); schedule(1) }
         status = conflicts.isEmpty ? "Sync is up to date." : "Note conflict: both versions are preserved. Choose a version below to resolve it."
-        changed()
+        if before != fingerprint() || previousStatus != status { changed() }
     }
     @MainActor func exchange(_ id: String, input: Data) async throws -> Data {
+        let incoming = try await DeviceSyncCodec.decode(input)
         guard loaded, !failed, !stopped, let peer = peers().first(where: { $0.id == id && $0.receive }) else { throw DeviceError.unavailable }
-        let incoming = try JSONDecoder().decode(SyncBundle.self, from: input)
-        try merge(peer, incoming); return try JSONEncoder().encode(bundle(peer))
+        try merge(peer, incoming); return try await DeviceSyncCodec.encode(bundle(peer))
     }
     func resolve(_ id: String) {
         guard loaded, !failed, !Runtime.diagnostics, let source = source("note"), let selected = state.journal.notes.first(where: { $0.id == id }) else { return }
@@ -138,10 +137,11 @@ final class DeviceSyncRuntime {
         for peer in peers().filter({ $0.receive && ($0.syncNotes || $0.syncClipboard) }) {
             guard !stopped, node() === active else { working = false; return }
             do {
-                let payload = try JSONEncoder().encode(bundle(peer))
+                let payload = try await DeviceSyncCodec.encode(bundle(peer))
                 let response = try await active.synchronize(peer.id, payload: payload)
+                let incoming = try await DeviceSyncCodec.decode(response)
                 if node() === active, let current = peers().first(where: { $0.id == peer.id && $0.receive }) {
-                    try merge(current, JSONDecoder().decode(SyncBundle.self, from: response))
+                    try merge(current, incoming)
                 }
             } catch { hadFailure = true; status = "A device is offline or sync is unavailable. Notes are kept locally and will retry."; changed() }
         }

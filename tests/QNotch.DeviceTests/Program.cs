@@ -101,6 +101,16 @@ try
     a.Persist = (p, key) => { persisted[p.Id] = (p, key); return Task.FromResult(true); };
     b.Persist = (_, _) => Task.FromResult(true);
     a.Start(0, IPAddress.Loopback); b.Start(0, IPAddress.Loopback);
+    using (var limited = new DeviceNode(DeviceProtocol.Id(), "Rate-limited host", Path.Combine(root, "limited")))
+    using (var joining = new DeviceNode(DeviceProtocol.Id(), "Joining device", Path.Combine(root, "joining")))
+    {
+        limited.Approve = _ => Task.FromResult(true); limited.Persist = (_, _) => Task.FromResult(true); joining.Persist = (_, _) => Task.FromResult(true);
+        limited.Start(0, IPAddress.Loopback); joining.Start(0, IPAddress.Loopback);
+        var code = limited.Invite("127.0.0.1");
+        var wrong = code with { Secret = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)) };
+        for (var attempt = 0; attempt < 5; attempt++) await Reject(() => joining.Pair(wrong.Code), "invalid pairing attempt rejected");
+        await Reject(() => joining.Pair(code.Code), "pairing attempts are rate-limited after five per minute");
+    }
     await Reject(() => a.Pair(b.Invite("127.0.0.1").Code), "host declines pairing");
     var invite = a.Invite("127.0.0.1");
     await b.Pair(invite.Code);
@@ -139,6 +149,8 @@ try
     Check(new FileInfo(Directory.GetFiles(Path.Combine(root, "a"), "*-payload.bin").Single()).Length == 0, "empty file");
     a.SetReceive(b.Id, false); await Reject(() => b.Send(a.Id, text: "blocked"), "receive permission"); a.SetReceive(b.Id, true);
     // Send a valid authenticated offer, then close midway through its declared payload.
+    var failedTransfer = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+    a.IncomingFailed = _ => failedTransfer.TrySetResult();
     using (var truncated = new TcpClient())
     {
         await truncated.ConnectAsync("127.0.0.1", a.Port);
@@ -151,10 +163,26 @@ try
         await channel.CheckReply(); await channel.Send([1, 2, 3]);
     }
     for (var attempt = 0; attempt < 100 && Directory.GetFiles(root, "*.part", SearchOption.AllDirectories).Any(); attempt++) await Task.Delay(10);
+    await failedTransfer.Task.WaitAsync(TimeSpan.FromSeconds(2)); Check(true, "incoming transfer failures are reported to the native UI");
     Check(!Directory.GetFiles(Path.Combine(root, "a"), "*interrupted.bin").Any() && !Directory.GetFiles(root, "*.part", SearchOption.AllDirectories).Any(), "truncated transfer is removed");
     using var cancelled = new CancellationTokenSource(); cancelled.Cancel();
     await Reject(() => b.Send(a.Id, text: "cancelled", ct: cancelled.Token), "cancelled send");
     Check(!Directory.GetFiles(root, "*.part", SearchOption.AllDirectories).Any(), "no partial files after checks");
+    using (var shutdownHost = new DeviceNode(DeviceProtocol.Id(), "Exiting receiver", Path.Combine(root, "shutdown")))
+    using (var partialClient = new TcpClient())
+    {
+        var key = RandomNumberGenerator.GetBytes(32); shutdownHost.Restore(new(b.Id, "Sender", "127.0.0.1", b.Port), key);
+        shutdownHost.Start(0, IPAddress.Loopback); await partialClient.ConnectAsync("127.0.0.1", shutdownHost.Port);
+        var stream = partialClient.GetStream();
+        var hello = DeviceProtocol.Encode(new DeviceHello(1, b.Id, false, Convert.ToBase64String(RandomNumberGenerator.GetBytes(32))));
+        await DeviceProtocol.WritePacket(stream, hello, CancellationToken.None);
+        var challenge = new byte[32]; await stream.ReadExactlyAsync(challenge);
+        var channel = new DeviceChannel(stream, DeviceProtocol.ConnectionKey(key, challenge, hello), challenge, true, CancellationToken.None);
+        await channel.Send(DeviceProtocol.Encode(new DeviceMessage("file", Name: "unfinished.bin", Size: 1000000))); await channel.CheckReply();
+        await channel.Send(new byte[1024]); shutdownHost.Dispose();
+        for (var attempt = 0; attempt < 100 && Directory.GetFiles(Path.Combine(root, "shutdown")).Length > 0; attempt++) await Task.Delay(10);
+        Check(Directory.GetFiles(Path.Combine(root, "shutdown")).Length == 0, "receiver shutdown removes active partial files");
+    }
     // A restarted transport can authenticate using only persisted metadata and the credential-store key.
     using var restored = new DeviceNode(a.Id, "Windows A restarted", Path.Combine(root, "restored"));
     var saved = persisted[b.Id]; restored.Restore(saved.Item1, saved.Item2); restored.Start(0, IPAddress.Loopback);

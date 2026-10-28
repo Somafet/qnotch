@@ -36,8 +36,8 @@ retried; this version does not promise exactly-once delivery.
 Computers must be reachable over the local network or Tailscale. Ethernet and Wi-Fi can be mixed. Allow
 QNotch's listening port (45874 by default) for private networks in your firewall. macOS may also
 ask for local-network permission. Guest Wi-Fi often isolates devices. This version supports
-private/link-local IPv4 addresses and Tailscale IPv4 addresses, with manual pairing; it does not discover peers, relay over
-the internet, or support IPv6-only networks. Change the listening port while sharing is off if
+private/link-local IPv4 addresses and Tailscale IPv4 addresses, with manual pairing. QNotch does
+not discover peers, operate a cloud relay or support IPv6-only networks. Change the listening port while sharing is off if
 another app uses it.
 
 **Check connection** tests the authenticated connection. Saved addresses are fixed; if DHCP
@@ -62,6 +62,9 @@ from a device also stops synchronization with it. Turning local sharing off keep
 edits locally until sharing is enabled again.
 
 ## Checks
+
+For running the builds and checking real LAN/Tailscale connections, see the
+[manual test checklist](devices-testing.md).
 
 Run `dotnet run --project tests/QNotch.DeviceTests -c Release` on Windows or macOS to test
 the exact transport compiled into Windows. Native Mac tests cover shared cryptographic fixtures

@@ -45,6 +45,7 @@ final class DevicesModule: NotchModule {
     func stop() { stopped = true; operation?.cancel(); node?.stop(); node = nil; sync.stop() }
     private func save() { if !Runtime.diagnostics { context.settings.save("devices", settings) } }
     private func update(_ text: String) { status = text; refresh() }
+    private func progress(_ text: String) { status = text; for view in views.allObjects { view.updateProgress(text) } }
     private func refresh() { for view in views.allObjects { view.reload() } }
     private func credentials<T>(_ action: @escaping () -> T) async -> T {
         await withCheckedContinuation { continuation in DispatchQueue.global(qos: .utility).async { continuation.resume(returning: action()) } }
@@ -80,6 +81,8 @@ final class DevicesModule: NotchModule {
             self.received.insert((name, path), at: 0); self.received = Array(self.received.prefix(20))
             self.update("Received from \(name). Saved to Downloads/QNotch/Devices.")
         }
+        fresh.incomingProgress = { [weak self] name, count, total in self?.progress("Receiving from \(name): \(count * 100 / max(1, total))%") }
+        fresh.incomingFailed = { [weak self] name in self?.update("Transfer from \(name) was interrupted or could not be saved. Ask the sender to retry.") }
         do {
             try await fresh.start(port: settings.port)
             guard node === fresh, !stopped else { fresh.stop(); return }
@@ -231,6 +234,7 @@ final class DevicesModule: NotchModule {
             embed(list, in: self, inset: 0, fill: true); reload()
         }
         required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+        func updateProgress(_ text: String) { status.stringValue = text }
         private var selected: DevicePeer? {
             guard let module else { return nil }
             let list = module.node?.devices ?? module.settings.peers

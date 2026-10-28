@@ -1,4 +1,7 @@
 using System.IO;
+using System.Diagnostics;
+using System.Net;
+using System.Security.Cryptography;
 using System.Windows.Threading;
 using QNotch.Core;
 using QNotch.Modules;
@@ -25,6 +28,52 @@ internal static class DeviceSyncChecks
         thread.SetApartmentState(ApartmentState.STA); thread.Start();
         if (!thread.Join(15000)) throw new TimeoutException("Device sync coordinator test timed out.");
         if (failure is not null) throw new InvalidOperationException("Device sync coordinator failed.", failure);
+    }
+    public static void MeasureIdle()
+    {
+        Exception? failure = null;
+        var thread = new Thread(() =>
+        {
+            var dispatcher = Dispatcher.CurrentDispatcher;
+            SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext(dispatcher));
+            dispatcher.BeginInvoke(async () =>
+            {
+                var folder = Path.Combine(Path.GetTempPath(), "qnotch-devices-idle-" + Guid.NewGuid().ToString("N")); Directory.CreateDirectory(folder);
+                try
+                {
+                    using var a = new DeviceNode(DeviceProtocol.Id(), "Idle local", folder);
+                    using var b = new DeviceNode(DeviceProtocol.Id(), "Idle remote", folder);
+                    a.Start(0, IPAddress.Loopback); b.Start(0, IPAddress.Loopback);
+                    var key = RandomNumberGenerator.GetBytes(32);
+                    var peer = new DevicePeer(b.Id, "Idle remote", "127.0.0.1", b.Port, SyncNotes: true, SyncClipboard: true);
+                    a.Restore(peer, key); b.Restore(new(a.Id, "Idle local", "127.0.0.1", a.Port), key);
+                    var exchanges = 0;
+                    b.Exchange = (_, input) => { Interlocked.Increment(ref exchanges); return Task.FromResult(input); };
+                    var settings = new DevicesSettings { Id = a.Id, Peers = [peer] };
+                    var ctx = new ModuleContext
+                    {
+                        Bus = new EventBus(dispatcher), Dispatcher = dispatcher, Settings = new SettingsStore(), Cards = new(), Tabs = new(),
+                        SettingsSections = new(), Segments = new(), Search = new(), Shell = null!, Hotkeys = null!, Shortcuts = null!, Sounds = null!,
+                    };
+                    ctx.SharedText.Register(new("note", 10, () => "Idle note", _ => { }));
+                    ctx.SharedText.Register(new("clipboard", 20, () => null, _ => { }));
+                    using var runtime = new DeviceSyncRuntime(ctx, settings, () => a, Path.Combine(folder, "sync.json"));
+                    await Ready(runtime); await Task.Delay(10000);
+                    var initialExchanges = Volatile.Read(ref exchanges);
+                    var process = Process.GetCurrentProcess(); var cpu = process.TotalProcessorTime; var elapsed = Stopwatch.StartNew();
+                    await Task.Delay(30000); process.Refresh();
+                    var percent = (process.TotalProcessorTime - cpu).TotalSeconds / elapsed.Elapsed.TotalSeconds * 100;
+                    Console.WriteLine($"Devices-only idle: {percent:F3}% of one core; {process.WorkingSet64 / 1048576.0:F1} MiB resident; 30 s after 10 s warmup; two active socket listeners, enabled note/clipboard policy. Sync exchanges during measurement: {Volatile.Read(ref exchanges) - initialExchanges}.");
+                    Require(percent <= 0.1 && process.WorkingSet64 < 80 * 1048576, "Devices-only idle exceeds the CPU/memory budget");
+                }
+                catch (Exception ex) { failure = ex; }
+                finally { Directory.Delete(folder, true); dispatcher.BeginInvokeShutdown(DispatcherPriority.Background); }
+            });
+            Dispatcher.Run();
+        }) { IsBackground = true };
+        thread.SetApartmentState(ApartmentState.STA); thread.Start();
+        if (!thread.Join(55000)) throw new TimeoutException("Devices idle measurement timed out.");
+        if (failure is not null) throw new InvalidOperationException("Devices idle measurement failed.", failure);
     }
     static async Task Check(Dispatcher dispatcher, string folder)
     {
@@ -66,6 +115,13 @@ internal static class DeviceSyncChecks
             await restored.Exchange(remoteId, DeviceProtocol.Encode(new SyncBundle(true, true, [], new(5, remoteId, "Private incoming clipboard"))));
             Require(clipboardWrites == before && restored.Conflicts.Count == 0, "restart must preserve clipboard replay and note resolution state");
         }
+        var corruptPath = Path.Combine(folder, "corrupt.json"); File.WriteAllText(corruptPath, "{not valid JSON");
+        using (var corrupt = new DeviceSyncRuntime(ctx, settings, () => null, corruptPath))
+        {
+            for (var i = 0; i < 200 && !corrupt.Status.Contains("could not be read", StringComparison.Ordinal); i++) await Task.Delay(10);
+            Require(!corrupt.IsReady && corrupt.Status.Contains("could not be read", StringComparison.Ordinal), "invalid journals must pause sync");
+        }
+        Require(File.ReadAllText(corruptPath) == "{not valid JSON", "invalid journal must be preserved for recovery");
     }
     static async Task Ready(DeviceSyncRuntime runtime)
     {
