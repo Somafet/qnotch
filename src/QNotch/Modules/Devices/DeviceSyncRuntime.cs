@@ -13,6 +13,7 @@ sealed class DeviceSyncRuntime : IDisposable
     readonly object io = new();
     readonly HashSet<SharedTextSource> attached = [];
     readonly DispatcherTimer retry;
+    readonly DispatcherTimer saveTimer;
     DeviceSync state;
     bool loaded, failed, applying, working, again, disposed;
     string? lastNote;
@@ -20,13 +21,16 @@ sealed class DeviceSyncRuntime : IDisposable
     public string Status { get; private set; } = "Sync is off for new devices. Enable it separately on both computers.";
     public event Action? Changed;
     public IReadOnlyList<NoteRevision> Conflicts => state.Notes.Count > 1 ? state.Notes : [];
-    public DeviceSyncRuntime(ModuleContext ctx, DevicesSettings settings, Func<DeviceNode?> node)
+    internal bool IsReady => loaded && !failed;
+    public DeviceSyncRuntime(ModuleContext ctx, DevicesSettings settings, Func<DeviceNode?> node, string? journalPath = null)
     {
         this.ctx = ctx; this.settings = settings; this.node = node;
-        path = Path.Combine(QNotch.Core.Paths.DataDir, "devices-sync.json");
+        path = journalPath ?? Path.Combine(QNotch.Core.Paths.DataDir, "devices-sync.json");
         state = new(settings.Id, new());
         retry = new DispatcherTimer(DispatcherPriority.Background, ctx.Dispatcher);
         retry.Tick += async (_, _) => { retry.Stop(); await Pump(); };
+        saveTimer = new DispatcherTimer(DispatcherPriority.Background, ctx.Dispatcher) { Interval = TimeSpan.FromMilliseconds(250) };
+        saveTimer.Tick += (_, _) => { saveTimer.Stop(); var snapshot = state.Clone().Journal; var version = Interlocked.Increment(ref saveVersion); _ = Task.Run(() => Write(snapshot, version)); };
         ctx.SharedText.Changed += Attach;
         if (ctx.Settings.ReadOnly) { loaded = true; return; }
         NetworkChange.NetworkAddressChanged += NetworkChanged;
@@ -69,6 +73,7 @@ sealed class DeviceSyncRuntime : IDisposable
         {
             if (NotesOn && Source("note")?.Read() is { } current && lastNote != current)
             { if (lastNote is null) state.ReconcileEditor(current); else state.EditNote(current); lastNote = current; Persist(); }
+            if (state.Notes.Count > 1) Status = "Note conflict: both versions are preserved. Choose a version below to resolve it.";
             Schedule(1); Changed?.Invoke();
         }
         catch (IOException ex) { Status = ex.Message; Changed?.Invoke(); }
@@ -164,8 +169,7 @@ sealed class DeviceSyncRuntime : IDisposable
     void Persist()
     {
         if (ctx.Settings.ReadOnly || failed || disposed) return;
-        var snapshot = state.Clone().Journal; var version = Interlocked.Increment(ref saveVersion);
-        _ = Task.Run(() => Write(snapshot, version));
+        saveTimer.Stop(); saveTimer.Start();
     }
     void Write(SyncJournal journal, int version)
     {
@@ -183,7 +187,7 @@ sealed class DeviceSyncRuntime : IDisposable
     }
     public void Dispose()
     {
-        retry.Stop(); ctx.SharedText.Changed -= Attach;
+        retry.Stop(); saveTimer.Stop(); ctx.SharedText.Changed -= Attach;
         NetworkChange.NetworkAddressChanged -= NetworkChanged;
         if (loaded && !failed && !ctx.Settings.ReadOnly) Write(state.Clone().Journal, Interlocked.Increment(ref saveVersion));
         disposed = true;

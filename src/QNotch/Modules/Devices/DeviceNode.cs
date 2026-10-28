@@ -124,7 +124,12 @@ public sealed class DeviceNode(string id, string name, string inbox) : IDisposab
             {
                 Directory.CreateDirectory(inbox);
                 var path = Path.Combine(inbox, Guid.NewGuid().ToString("N") + "-text.txt");
-                await File.WriteAllTextAsync(path, message.Text, timeout.Token);
+                try
+                {
+                    await File.WriteAllTextAsync(path + ".part", message.Text, timeout.Token);
+                    timeout.Token.ThrowIfCancellationRequested(); File.Move(path + ".part", path);
+                }
+                finally { if (File.Exists(path + ".part")) File.Delete(path + ".part"); }
                 Received?.Invoke(trusted.Peer.Name, path, false); await channel.Reply(new(true)); return;
             }
             if (message.Op != "file" || message.Size < 0 || message.Size > DeviceProtocol.MaxFile) { await channel.Reply(new(false, "Unsupported request.")); return; }

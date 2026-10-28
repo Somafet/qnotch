@@ -63,6 +63,42 @@ final class DevicesTests: XCTestCase {
         XCTAssertEqual(restored.journal.notes.count, 2)
         XCTAssertTrue(restored.journal.notes.contains { $0.text == "Chosen resolution" })
     }
+    @MainActor func testNativeSyncCoordinatorAndRestart() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let oldDiagnostics = Runtime.diagnostics; Runtime.diagnostics = false
+        defer { Runtime.diagnostics = oldDiagnostics }
+        let localID = "00000000-0000-0000-0000-000000000001", remoteID = "00000000-0000-0000-0000-000000000002"
+        let registries = ModuleRegistries(), context = ModuleContext(settings: .init(directory: root), registries: registries, shell: nil)
+        let policy = DevicePeer(id: remoteID, name: "Other computer", host: "127.0.0.1", port: 45874, syncNotes: true, syncClipboard: true)
+        var localNote = "Existing local note", clipboardWrites = 0
+        var noteSource: SharedTextSource!, clipboardSource: SharedTextSource!
+        noteSource = SharedTextSource(id: "note", order: 10, read: { localNote }, apply: { text in localNote = text; noteSource.changed?(text) })
+        clipboardSource = SharedTextSource(id: "clipboard", order: 20, read: { nil }, apply: { text in clipboardWrites += 1; clipboardSource.changed?(text) })
+        registries.sharedText.register(noteSource); registries.sharedText.register(clipboardSource)
+        let runtime = DeviceSyncRuntime(context: context, deviceID: localID, peers: { [policy] }, node: { nil })
+        for _ in 0..<200 where !runtime.isReady { try await Task.sleep(nanoseconds: 10_000_000) }
+        XCTAssertTrue(runtime.isReady)
+        let remote = DeviceSync(deviceID: remoteID); try remote.editNote("Other computer note")
+        let incoming = SyncBundle(notesEnabled: true, clipboardEnabled: true, notes: remote.journal.notes,
+                                  clipboard: ClipboardRevision(counter: 5, author: remoteID, text: "Private incoming clipboard"))
+        let payload = try JSONEncoder().encode(incoming)
+        _ = try await runtime.exchange(remoteID, input: payload)
+        XCTAssertEqual(runtime.conflicts.count, 2); XCTAssertEqual(localNote, "Existing local note"); XCTAssertEqual(clipboardWrites, 1)
+        _ = try await runtime.exchange(remoteID, input: payload); XCTAssertEqual(clipboardWrites, 1)
+        runtime.resolve(try XCTUnwrap(runtime.conflicts.first { $0.text == "Other computer note" }).id)
+        XCTAssertEqual(localNote, "Other computer note"); XCTAssertTrue(runtime.conflicts.isEmpty)
+        runtime.stop()
+        let saved = try String(contentsOf: root.appendingPathComponent("devices-sync.json"), encoding: .utf8)
+        XCTAssertFalse(saved.contains("Private incoming clipboard"))
+        let restored = DeviceSyncRuntime(context: context, deviceID: localID, peers: { [policy] }, node: { nil })
+        defer { restored.stop() }
+        for _ in 0..<200 where !restored.isReady { try await Task.sleep(nanoseconds: 10_000_000) }
+        XCTAssertTrue(restored.isReady)
+        _ = try await restored.exchange(remoteID, input: payload)
+        XCTAssertEqual(clipboardWrites, 1); XCTAssertTrue(restored.conflicts.isEmpty)
+    }
     @MainActor func testNativePairTextFilesPermissionsAndRevocation() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let a = DeviceNode(id: UUID().uuidString.lowercased(), name: "Mac A", inbox: root.appendingPathComponent("a"))

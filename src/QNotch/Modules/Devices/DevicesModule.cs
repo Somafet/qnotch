@@ -127,7 +127,7 @@ public sealed class DevicesModule : INotchModule
         var updatingPolicy = false;
         page.Children.Add(receive);
         page.Children.Add(noteSync); page.Children.Add(clipSync);
-        page.Children.Add(UiKit.Text("Enable sync separately on both computers. Clipboard text may contain sensitive content; synced text stays out of the disk journal.", "Muted"));
+        page.Children.Add(UiKit.Text("Enable sync separately on both computers. Copied text may contain sensitive information. Synced clipboard text is not saved to disk.", "Muted"));
         var syncStatus = UiKit.Text(sync.Status); page.Children.Add(syncStatus);
         var conflicts = new StackPanel(); page.Children.Add(conflicts);
         void Receive(bool on)
@@ -217,7 +217,7 @@ public sealed class DevicesModule : INotchModule
                 var choose = new Button { Content = $"Use version {index + 1}", HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 4, 0, 12) };
                 choose.Click += (_, _) => sync.Resolve(revision.Id); conflicts.Children.Add(choose);
             }
-            inbox.Children.Clear(); inbox.Children.Add(UiKit.Text("Received items are saved in Downloads/QNotch/Devices. Text is never copied automatically."));
+            inbox.Children.Clear(); inbox.Children.Add(UiKit.Text("Sent text and files arrive in Downloads/QNotch/Devices. Automatic clipboard sync is controlled above."));
             foreach (var item in received)
             {
                 var show = new Button { Content = "Show in folder" };

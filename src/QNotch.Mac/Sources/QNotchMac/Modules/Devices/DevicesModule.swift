@@ -138,6 +138,7 @@ final class DevicesModule: NotchModule {
         private var shownDraft = -1
         private var noteSyncSwitch: ActionSwitch?
         private var clipboardSyncSwitch: ActionSwitch?
+        private var cancelButton: NSButton?
         private let syncStatus = label("")
         private let conflicts = column([])
         private var sharingSwitch: ActionSwitch?
@@ -203,6 +204,7 @@ final class DevicesModule: NotchModule {
                 Task { @MainActor in module.run(success: "File sent.") { node in try await node.send(peer.id, file: url) { [weak module] percent in module?.update("Sending \(percent)%") } } }
             }
             let cancel = actionButton("Cancel") { [weak module] in module?.operation?.cancel() }
+            cancelButton = cancel
             let openInbox = actionButton("Open Received Folder") { [weak module] in
                 guard let module, !Runtime.diagnostics, let downloads = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first else { return }
                 let inbox = downloads.appendingPathComponent("QNotch/Devices", isDirectory: true)
@@ -219,9 +221,9 @@ final class DevicesModule: NotchModule {
                 invite, code, add, status,
                 settingsGroup([settingsRow("Paired devices", control: peers, width: width),
                                settingsRow("Sync notes with this device", detail: "Enable separately on both computers. Offline edits and conflicting versions are preserved.", control: noteSync, width: width),
-                               settingsRow("Automatically share clipboard text", detail: "Clipboard text may contain sensitive content. It is never written to the sync journal.", control: clipboardSync, width: width)], width: width),
+                               settingsRow("Automatically share clipboard text", detail: "Copied text may contain sensitive information. Synced clipboard text is not saved to disk.", control: clipboardSync, width: width)], width: width),
                 syncStatus, conflicts, row([check, remove, permission]), text, selectedFile, row([sendText, sendFile, cancel]),
-                label("Received items are saved to Downloads/QNotch/Devices. Nothing opens or copies to the clipboard automatically.", size: 11, color: .secondaryLabelColor), received, openInbox
+                label("Sent text and files arrive in Downloads/QNotch/Devices. Automatic clipboard sync is controlled above.", size: 11, color: .secondaryLabelColor), received, openInbox
             ])
             for field in [invite, code, text] { field.widthAnchor.constraint(equalToConstant: width).isActive = true }
             status.preferredMaxLayoutWidth = width
@@ -245,6 +247,7 @@ final class DevicesModule: NotchModule {
         }
         func reload() {
             guard let module else { return }
+            cancelButton?.isEnabled = module.operation != nil
             if shownDraft != module.draftVersion { text.stringValue = module.draftText; shownDraft = module.draftVersion }
             selectedFile.stringValue = module.draftFile.map { "Selected file: " + $0.lastPathComponent } ?? ""
             selectedFile.isHidden = module.draftFile == nil

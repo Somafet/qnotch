@@ -7,11 +7,16 @@ Development environment: Windows 11 Pro 25H2, x64, AMD Ryzen 9 5900X (24 logical
 ## Executed checks
 
 - Release build with warnings treated as errors: passed.
-- Device transport regression executable: 34 checks passed. Includes independent Node.js HMAC
+- Device transport/model regression executable: 48 checks passed. Includes independent Node.js HMAC
   and AES-GCM vectors, reflection/reordering/tamper rejection, fresh-client replay protection,
   pairing refusal, one-use and expired invitations, bidirectional Unicode text, repeated-name
   multi-chunk files, empty files, receive permissions, truncation cleanup, cancellation,
-  restored trust and revoked trust.
+  restored trust and revoked trust. Sync checks cover concurrent offline edits, cleared-text
+  replay, explicit resolution, multi-frame exchange, journal/file recovery, clipboard replay
+  after restart and absence of clipboard text in the journal. Tailscale address boundaries pass.
+- Windows coordinator integration check passes with isolated sources and storage: incoming
+  conflicts preserve the editor, resolution updates it, clipboard echoes are suppressed,
+  and restart restores both resolution and replay metadata.
 - Existing updater checks: 27 passed. Phone-sharing checks: 10 passed. Onboarding checks:
   25 passed. Windows deterministic behavior/rendering checks: passed.
 - Repository checks (`npm ci`, `npm test`, Node 24+): all 42 passed.
@@ -21,15 +26,16 @@ Development environment: Windows 11 Pro 25H2, x64, AMD Ryzen 9 5900X (24 logical
 - Fresh framework-dependent executable published to `dist/QNotch.exe`. The executable that
   existed before this work was preserved as `dist/QNotch-before-devices.exe`.
 
-On macOS CI, commit `5835469` built the native app and passed all four Devices XCTest methods,
-including Mac-to-Mac sockets and native Swift to .NET transfers with .NET sending the payloads
-back. The full suite failed because Devices was missing from the onboarding groups and a
-Terminal PTY resize check timed out. The onboarding entry is fixed in `d2d2d11`; that commit
-also adds a separate .NET-client/native-Mac-host pairing test. Latest-head results must be
-checked before calling the complete change validated. See [PR 99](https://github.com/Somafet/qnotch/pull/99).
+On macOS CI, commit `80042bc` built the native app, passed all 156 XCTest regressions and
+passed native UI smoke and snapshot checks. Devices tests cover Mac-to-Mac sockets, both
+native Swift/.NET pairing directions, text/files in both directions, shared causal sync fixtures,
+and a multi-frame native-to-.NET note/clipboard sync exchange. All CI jobs passed at that head.
+Subsequent coordinator/restart tests and persistence debounce changes still require latest-head
+native validation. See [PR 99](https://github.com/Somafet/qnotch/pull/99).
 
-No physical two-computer LAN check has run. Loopback tests establish implementation
-compatibility, not firewall permissions or actual Windows/Mac network reachability.
+The user deferred the physical two-computer test to a later manual run. Loopback tests establish
+implementation compatibility, not firewall/overlay ACL permissions or actual Windows/Mac
+network reachability. No remote Mac settings or software were changed.
 
 ## Idle performance limitation
 

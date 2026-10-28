@@ -13,11 +13,13 @@ final class DeviceSyncRuntime {
     private var lastNote: String?
     private var attempts = 0
     private var pending: DispatchWorkItem?
+    private var pendingSave: DispatchWorkItem?
     private let network = NWPathMonitor()
     private var attached: [String: ObjectIdentifier] = [:]
     private(set) var status = "Sync is off for new devices. Enable it separately on both computers."
     var changed: () -> Void = {}
     var conflicts: [NoteRevision] { state.journal.notes.count > 1 ? state.journal.notes : [] }
+    var isReady: Bool { loaded && !failed }
     init(context: ModuleContext, deviceID: String, peers: @escaping () -> [DevicePeer], node: @escaping () -> DeviceNode?) {
         self.context = context; self.peers = peers; self.node = node
         path = context.settings.directory.appendingPathComponent("devices-sync.json")
@@ -71,6 +73,7 @@ final class DeviceSyncRuntime {
                 if lastNote == nil { try state.reconcileEditor(text) } else { try state.editNote(text) }
                 lastNote = text; persist()
             }
+            if !conflicts.isEmpty { status = "Note conflict: both versions are preserved. Choose a version below to resolve it." }
             schedule(1); changed()
         } catch { status = "Note sync limit reached. Resolve any conflicts before syncing more versions."; changed() }
     }
@@ -148,6 +151,12 @@ final class DeviceSyncRuntime {
     }
     private func persist() {
         guard !Runtime.diagnostics, !failed, !stopped else { return }
+        pendingSave?.cancel()
+        let item = DispatchWorkItem { [weak self] in self?.saveNow() }
+        pendingSave = item; DispatchQueue.main.asyncAfter(deadline: .now() + 0.25, execute: item)
+    }
+    private func saveNow() {
+        guard !Runtime.diagnostics, !failed, !stopped else { return }
         let snapshot = state.journal, path = path
         io.async { [weak self] in
             do { try JSONEncoder().encode(snapshot).write(to: path, options: .atomic) }
@@ -155,7 +164,7 @@ final class DeviceSyncRuntime {
         }
     }
     func stop() {
-        pending?.cancel(); network.cancel(); context.registries.sharedText.changed = nil
+        pending?.cancel(); pendingSave?.cancel(); network.cancel(); context.registries.sharedText.changed = nil
         if loaded, !failed, !Runtime.diagnostics {
             let snapshot = state.journal, path = path
             io.sync { try? JSONEncoder().encode(snapshot).write(to: path, options: .atomic) }

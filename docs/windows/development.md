@@ -8,6 +8,7 @@ Run all commands below from the repository root on Windows x64 with the .NET 10 
 dotnet build src/QNotch/QNotch.csproj -c Release -warnaserror
 dotnet run --project tests/QNotch.UpdateTests -c Release
 dotnet run --project tests/QNotch.PhoneShareTests -c Release
+dotnet run --project tests/QNotch.DeviceTests -c Release
 dotnet run --project tests/QNotch.OnboardingTests -c Release
 dotnet run --project tests/QNotch.WindowsTests -c Release
 dotnet run --project tests/QNotch.WindowsTests -c Release -- --conpty
