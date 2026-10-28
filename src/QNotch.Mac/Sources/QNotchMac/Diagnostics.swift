@@ -539,12 +539,28 @@ enum NativeSmokeTest {
         guard abs(shell.panel.frame.width - expected.width) <= 0.5, abs(shell.panel.frame.height - expected.height) <= 0.5 else {
             throw Failure("placement", "Settled window differs from the surface: actual=\(shell.panel.frame), expected=\(expected)")
         }
+        if !shell.renderOnly, layout.integratesTopBand {
+            let below = CGPoint(x: expected.midX, y: layout.frame.maxY - layout.topBandHeight - 1)
+            shell.updateMenuBarAccess(at: below)
+            shell.updateMenuBarAccess(at: CGPoint(x: layout.frame.minX + 1, y: layout.frame.maxY))
+            guard shell.menuBarRevealed, shell.panel.level == .floating else {
+                throw Failure("menu-bar-access", "Entering the menu bar did not reveal covered icons")
+            }
+            shell.updateMenuBarAccess(at: CGPoint(x: expected.midX, y: layout.frame.maxY))
+            guard shell.menuBarRevealed else { throw Failure("menu-bar-access", "Crossing QNotch covered the icons again") }
+            shell.updateMenuBarAccess(at: below)
+            guard !shell.menuBarRevealed, shell.panel.level == ShellController.attachedLevel else {
+                throw Failure("menu-bar-access", "Leaving the menu bar did not restore bezel placement")
+            }
+            shell.updateMenuBarAccess(at: CGPoint(x: expected.midX, y: layout.frame.maxY))
+            guard !shell.menuBarRevealed else { throw Failure("menu-bar-access", "Direct QNotch hover yielded to the menu bar") }
+        }
         guard let wings = layout.wings(expanded: false, wing: shell.wing) else { return }
         guard abs(shell.panel.frame.maxY - layout.frame.maxY) <= 0.5 else { throw Failure("placement", "Integrated surface is detached from the bezel") }
         if !shell.state.expanded, abs(shell.panel.frame.height - layout.topBandHeight) > 0.5 {
             throw Failure("placement", "Collapsed virtual or physical notch does not fill its top band")
         }
-        guard shell.panel.level == .statusBar else { throw Failure("placement", "Integrated surface is below the menu bar level") }
+        guard shell.panel.level == ShellController.attachedLevel else { throw Failure("placement", "Integrated surface must be above the menu bar level") }
         guard shell.surface.integrated, shell.surface.band == layout.topBandHeight else { throw Failure("placement", "Surface does not use the integrated flare and band") }
         func walk(_ view: NSView) throws {
             guard !view.isHidden else { return }

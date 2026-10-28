@@ -31,6 +31,10 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     private var leaveTask: DispatchWorkItem?
     private var globalClick: Any?
     private var localClick: Any?
+    private var globalMenuPointer: Any?
+    private var localMenuPointer: Any?
+    private(set) var menuBarRevealed = false
+    static let attachedLevel = NSWindow.Level(rawValue: NSWindow.Level.statusBar.rawValue + 1)
     private var observers: [NSObjectProtocol] = []
     private var workspaceObservers: [NSObjectProtocol] = []
     private var previousApp: NSRunningApplication?
@@ -85,6 +89,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         panel.backgroundColor = .clear
         panel.hasShadow = false
         panel.isMovable = false
+        panel.acceptsMouseMovedEvents = true
         panel.isReleasedWhenClosed = false
         panel.appearance = Palette.dark
         panel.delegate = self
@@ -142,6 +147,15 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         }
         localClick = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] event in
             if event.window !== self?.panel { self?.clickedOutside() }
+            return event
+        }
+        // Event-driven: no polling while the pointer is stationary. Entering the menu bar
+        // outside QNotch yields its whole band, including icons underneath our wings.
+        globalMenuPointer = NSEvent.addGlobalMonitorForEvents(matching: [.mouseMoved, .leftMouseDragged]) { [weak self] _ in
+            self?.updateMenuBarAccess(at: NSEvent.mouseLocation)
+        }
+        localMenuPointer = NSEvent.addLocalMonitorForEvents(matching: [.mouseMoved, .leftMouseDragged]) { [weak self] event in
+            self?.updateMenuBarAccess(at: NSEvent.mouseLocation)
             return event
         }
         let center = NotificationCenter.default
@@ -204,6 +218,8 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         modules.forEach { $0.stop() }
         if let globalClick { NSEvent.removeMonitor(globalClick) }
         if let localClick { NSEvent.removeMonitor(localClick) }
+        if let globalMenuPointer { NSEvent.removeMonitor(globalMenuPointer) }
+        if let localMenuPointer { NSEvent.removeMonitor(localMenuPointer) }
         observers.forEach { NotificationCenter.default.removeObserver($0) }
         workspaceObservers.forEach { NSWorkspace.shared.notificationCenter.removeObserver($0) }
         panel.orderOut(nil)
@@ -471,6 +487,22 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
                                               : rect.insetBy(dx: -swell, dy: -swell / 2)
     }
 
+    /// Keep the menu bar in front while traversing it, even across QNotch's footprint.
+    /// Approaching QNotch directly from below preserves its normal hover/click behavior.
+    func updateMenuBarAccess(at point: CGPoint) {
+        guard !renderOnly, !gameActive, let layout, layout.integratesTopBand else { return }
+        let band = CGRect(x: layout.frame.minX, y: layout.frame.maxY - layout.topBandHeight,
+                          width: layout.frame.width, height: layout.topBandHeight)
+        let reveal = band.containsPointer(point) && (menuBarRevealed || !(expectedFrame?.containsPointer(point) ?? false))
+        guard reveal != menuBarRevealed else { return }
+        menuBarRevealed = reveal
+        if reveal {
+            hoverTask?.cancel()
+            hovering = false
+        }
+        panel.level = reveal ? .floating : Self.attachedLevel
+    }
+
     // MARK: Hover, open and close
 
     /// After an explicit close (Escape, Settings, Show, a pick) with the pointer still on the
@@ -488,7 +520,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     func pointerEntered() {
         traceHover("entered")
         leaveTask?.cancel()
-        guard !gameActive else { return }
+        guard !gameActive, !menuBarRevealed else { return }
         guard !state.expanded else { return }
         if hoverSuppressed {
             guard !(expectedFrame?.containsPointer(NSEvent.mouseLocation) ?? false) else { return }
@@ -1092,7 +1124,8 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         // dropped somewhere new, so the release spring starts exactly where the pill shows.
         if !layout.integratesCameraHousing { world = CGRect(x: layout.frame.minX - 40, y: world.minY, width: layout.frame.width + 80, height: world.height) }
         surface.configure(world: world, integrated: layout.integratesTopBand, band: layout.topBandHeight)
-        panel.level = layout.integratesTopBand ? .statusBar : .floating
+        menuBarRevealed = false
+        panel.level = layout.integratesTopBand ? Self.attachedLevel : .floating
         wing = measureWing()
         if let panelView { surface.place(panelView, at: layout.panelBody) }
         present(.none)
