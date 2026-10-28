@@ -36,6 +36,9 @@ jobs:
       - name: Phone sharing checks
         run: dotnet run --project tests/QNotch.PhoneShareTests -c Release
 
+      - name: Device sharing checks
+        run: dotnet run --project tests/QNotch.DeviceTests -c Release
+
       - name: Welcome tour checks
         run: dotnet run --project tests/QNotch.OnboardingTests -c Release
 
@@ -100,9 +103,16 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Build Windows device transport for interoperability checks
+        run: dotnet build tests/QNotch.DeviceTests -c Release
       - name: Build native Mac app without signing credentials
         run: bash scripts/macos/build.sh
       - name: Mac regression tests
+        env:
+          QNOTCH_DEVICE_TEST_DLL: ${{ github.workspace }}/tests/QNotch.DeviceTests/bin/Release/net10.0/QNotch.DeviceTests.dll
         run: bash scripts/macos/test.sh
       - name: Native Mac UI smoke test
         run: bash scripts/macos/smoke.sh

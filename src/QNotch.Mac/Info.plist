@@ -12,6 +12,7 @@
     <key>LSMinimumSystemVersion</key><string>13.0</string>
     <key>LSUIElement</key><true/>
     <key>NSHighResolutionCapable</key><true/>
+    <key>NSLocalNetworkUsageDescription</key><string>QNotch connects to paired computers on your local network to share text and files.</string>
     <key>NSAppleEventsUsageDescription</key><string>QNotch controls playback and reads the current position and artwork in Music and Spotify.</string>
     <key>NSSupportsAutomaticGraphicsSwitching</key><true/>
     <!-- Sparkle: the feed URL comes from UpdateChannel. Feed and archives must carry an EdDSA
