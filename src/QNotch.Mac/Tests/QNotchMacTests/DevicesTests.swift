@@ -97,4 +97,26 @@ final class DevicesTests: XCTestCase {
         XCTAssertTrue(try paths.contains { try Data(contentsOf: $0) == data })
         XCTAssertTrue(paths.contains { (try? String(contentsOf: $0, encoding: .utf8)) == "Mac → Windows → Mac 👋" })
     }
+    @MainActor func testWindowsClientAddsNativeMacHost() async throws {
+        guard let executable = ProcessInfo.processInfo.environment["QNOTCH_DEVICE_TEST_DLL"] else { throw XCTSkip("Set QNOTCH_DEVICE_TEST_DLL for native/.NET interoperability checks.") }
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let native = DeviceNode(id: UUID().uuidString.lowercased(), name: "Mac host", inbox: root.appendingPathComponent("inbox"))
+        native.approve = { _ in true }; native.persist = { _, _ in true }
+        let file = root.appendingPathComponent("windows-client.bin"), data = Data(repeating: 81, count: DeviceWire.chunk + 29)
+        try data.write(to: file); try await native.start(port: 0)
+        let process = Process()
+        defer { native.stop(); if process.isRunning { process.terminate(); process.waitUntilExit() }; try? FileManager.default.removeItem(at: root) }
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+        process.arguments = ["dotnet", executable, "--send", try native.invite(host: "127.0.0.1").code, file.path]
+        let exit: Int32 = try await withCheckedThrowingContinuation { continuation in
+            process.terminationHandler = { child in continuation.resume(returning: child.terminationStatus) }
+            do { try process.run() } catch { continuation.resume(throwing: error) }
+        }
+        XCTAssertEqual(exit, 0)
+        let paths = try FileManager.default.contentsOfDirectory(at: native.inbox, includingPropertiesForKeys: nil)
+        XCTAssertEqual(paths.count, 2)
+        XCTAssertTrue(try paths.contains { try Data(contentsOf: $0) == data })
+        XCTAssertTrue(paths.contains { (try? String(contentsOf: $0, encoding: .utf8)) == "Windows → Mac 👋" })
+    }
 }

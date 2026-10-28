@@ -33,6 +33,7 @@ public sealed class DeviceNode(string id, string name, string inbox) : IDisposab
     public void SetReceive(string peerId, bool receive)
     {
         if (peers.TryGetValue(peerId, out var p)) peers[peerId] = (p.Peer with { Receive = receive }, p.Key);
+        if (!receive) foreach (var client in connections.Keys) client.Dispose();
     }
     public void Start(int port = 45874, IPAddress? bind = null)
     {
@@ -91,11 +92,13 @@ public sealed class DeviceNode(string id, string name, string inbox) : IDisposab
             if (hello.Pair)
             {
                 if (message.Op != "pair" || message.Id != hello.Id || message.Name is not { Length: > 0 and <= 80 } || message.Port is < 1 or > 65535) return;
-                var key = Convert.FromBase64String(message.Key); if (key.Length != 32) return;
+                var key = Convert.FromBase64String(message.Key); if (key.Length != 32 || peers.ContainsKey(hello.Id)) return;
                 var peer = new DevicePeer(hello.Id, message.Name, remote.Address.ToString(), message.Port);
                 if (!await Approve(peer).WaitAsync(timeout.Token) || invitation != invite || invite!.Expires <= DateTimeOffset.UtcNow.ToUnixTimeSeconds())
                 { await channel.Reply(new(false, "Pairing was declined or expired.")); return; }
+                stopping.Token.ThrowIfCancellationRequested();
                 if (peers.Count >= 20 || !await Persist(peer, key)) { await channel.Reply(new(false, "Could not save device trust.")); return; }
+                stopping.Token.ThrowIfCancellationRequested();
                 peers[peer.Id] = (peer, key); invitation = null; Changed?.Invoke();
                 await channel.Reply(new(true, Id: id, Name: name)); return;
             }
@@ -130,6 +133,7 @@ public sealed class DeviceNode(string id, string name, string inbox) : IDisposab
                     await file.FlushAsync(timeout.Token);
                 }
                 timeout.Token.ThrowIfCancellationRequested();
+                if (!peers.TryGetValue(hello.Id, out var current) || !current.Peer.Receive) throw new IOException("Receiving ended.");
                 File.Move(part, target); Received?.Invoke(trusted.Peer.Name, target, true); await channel.Reply(new(true));
             }
             finally { if (File.Exists(part)) File.Delete(part); }
@@ -155,7 +159,7 @@ public sealed class DeviceNode(string id, string name, string inbox) : IDisposab
     public async Task Pair(string code, CancellationToken ct = default)
     {
         var invite = DeviceInvitation.Parse(code);
-        if (invite.Id == id || peers.Count >= 20) throw new IOException("Cannot add this device.");
+        if (invite.Id == id || peers.ContainsKey(invite.Id) || peers.Count >= 20) throw new IOException("Cannot add this device. Remove an existing pairing before pairing again.");
         var key = RandomNumberGenerator.GetBytes(32);
         await Use(new(invite.Id, invite.Name, invite.Host, invite.Port), Convert.FromBase64String(invite.Secret), true, async channel =>
         {

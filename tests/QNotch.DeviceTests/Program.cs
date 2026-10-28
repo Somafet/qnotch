@@ -5,6 +5,17 @@ using System.Text;
 using System.Text.Json;
 using QNotch.Modules.Devices;
 
+if (args is ["--send", var invitationCode, var sendPath])
+{
+    using var client = new DeviceNode(DeviceProtocol.Id(), "Windows client", Path.Combine(Path.GetTempPath(), DeviceProtocol.Id()));
+    client.Persist = (_, _) => Task.FromResult(true);
+    client.Start(0, IPAddress.Loopback);
+    await client.Pair(invitationCode);
+    await client.Send(client.Peers.Single().Id, text: "Windows → Mac 👋");
+    await client.Send(client.Peers.Single().Id, path: sendPath);
+    return;
+}
+
 // Native Swift integration tests start the exact transport compiled into the Windows app.
 if (args is ["--serve", var serveInbox])
 {
@@ -31,6 +42,8 @@ var fixture = JsonDocument.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDi
 byte[] Bytes(string key) => Convert.FromHexString(fixture.GetProperty(key).GetString()!);
 var derived = DeviceProtocol.ConnectionKey(Bytes("secret"), Bytes("challenge"), Bytes("hello"));
 Check(derived.SequenceEqual(Bytes("key")), "independent Node.js HMAC vector");
+Check(!DeviceProtocol.ConnectionKey(Bytes("secret"), Bytes("challenge"), DeviceProtocol.Encode(new DeviceHello(1, DeviceProtocol.Id(), false,
+    Convert.ToBase64String(RandomNumberGenerator.GetBytes(32))))).SequenceEqual(derived), "fresh client hello prevents server-ack replay");
 var aad = DeviceProtocol.Aad(Bytes("challenge"), 0, 0);
 Check(aad.SequenceEqual(Bytes("aad")), "AAD format");
 var box = DeviceProtocol.Seal(derived, Bytes("plain"), aad, Bytes("nonce"));
@@ -73,6 +86,20 @@ try
     await File.WriteAllBytesAsync(path, []); await b.Send(a.Id, path: path);
     Check(new FileInfo(Directory.GetFiles(Path.Combine(root, "a"), "*-payload.bin").Single()).Length == 0, "empty file");
     a.SetReceive(b.Id, false); await Reject(() => b.Send(a.Id, text: "blocked"), "receive permission"); a.SetReceive(b.Id, true);
+    // Send a valid authenticated offer, then close midway through its declared payload.
+    using (var truncated = new TcpClient())
+    {
+        await truncated.ConnectAsync("127.0.0.1", a.Port);
+        var stream = truncated.GetStream();
+        var hello = DeviceProtocol.Encode(new DeviceHello(1, b.Id, false, Convert.ToBase64String(RandomNumberGenerator.GetBytes(32))));
+        await DeviceProtocol.WritePacket(stream, hello, CancellationToken.None);
+        var challenge = new byte[32]; await stream.ReadExactlyAsync(challenge);
+        var channel = new DeviceChannel(stream, DeviceProtocol.ConnectionKey(persisted[b.Id].Item2, challenge, hello), challenge, true, CancellationToken.None);
+        await channel.Send(DeviceProtocol.Encode(new DeviceMessage("file", Name: "interrupted.bin", Size: 100)));
+        await channel.CheckReply(); await channel.Send([1, 2, 3]);
+    }
+    for (var attempt = 0; attempt < 100 && Directory.GetFiles(root, "*.part", SearchOption.AllDirectories).Any(); attempt++) await Task.Delay(10);
+    Check(!Directory.GetFiles(Path.Combine(root, "a"), "*interrupted.bin").Any() && !Directory.GetFiles(root, "*.part", SearchOption.AllDirectories).Any(), "truncated transfer is removed");
     using var cancelled = new CancellationTokenSource(); cancelled.Cancel();
     await Reject(() => b.Send(a.Id, text: "cancelled", ct: cancelled.Token), "cancelled send");
     Check(!Directory.GetFiles(root, "*.part", SearchOption.AllDirectories).Any(), "no partial files after checks");

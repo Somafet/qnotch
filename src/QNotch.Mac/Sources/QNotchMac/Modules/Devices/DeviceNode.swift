@@ -23,7 +23,10 @@ final class DeviceNode {
     init(id: String, name: String, inbox: URL) { self.id = id; self.name = name; self.inbox = inbox }
     func restore(_ peer: DevicePeer, key: Data) { if key.count == 32 { peers[peer.id] = (peer, key) } }
     func remove(_ id: String) { peers[id] = nil; for socket in sockets.values { socket.close() }; changed() }
-    func setReceive(_ id: String, _ receive: Bool) { peers[id]?.0.receive = receive }
+    func setReceive(_ id: String, _ receive: Bool) {
+        peers[id]?.0.receive = receive
+        if !receive { for socket in sockets.values { socket.close() } }
+    }
 
     @MainActor func start(port requested: Int = 45874) async throws {
         guard let port = NWEndpoint.Port(rawValue: UInt16(exactly: requested) ?? 0) else { throw DeviceError.invalid }
@@ -83,7 +86,7 @@ final class DeviceNode {
         let request = try JSONDecoder().decode(DeviceMessage.self, from: await channel.read())
         if hello.pair {
             guard request.op == "pair", request.id == hello.id, let name = request.name, !name.isEmpty, name.count <= 80,
-                  let port = request.port, (1...65535).contains(port), let encoded = request.key, let key = Data(base64Encoded: encoded), key.count == 32 else { throw DeviceError.invalid }
+                  let port = request.port, (1...65535).contains(port), let encoded = request.key, let key = Data(base64Encoded: encoded), key.count == 32, peers[hello.id] == nil else { throw DeviceError.invalid }
             let peer = DevicePeer(id: hello.id, name: name, host: host, port: port)
             guard await approve(peer), current == generation, invitation?.secret == invite?.secret,
                   (invite?.expires ?? 0) > Int64(Date().timeIntervalSince1970), peers.count < 20, await persist(peer, key) else {
@@ -112,7 +115,7 @@ final class DeviceNode {
                 guard !data.isEmpty, data.count <= length - count, current == generation, peers[hello.id] != nil else { throw DeviceError.invalid }
                 try await disk.append(data, to: file); count += Int64(data.count)
             }
-            guard current == generation, peers[hello.id] != nil else { throw DeviceError.declined }
+            guard current == generation, peers[hello.id]?.0.receive == true else { throw DeviceError.declined }
             try await disk.finish(file, part: part, target: target)
             received(trusted.0.name, target, true); try await channel.send(DeviceReply(ok: true))
         } catch { await disk.discard(file, part: part); throw error }
@@ -131,7 +134,7 @@ final class DeviceNode {
     }
     @MainActor func pair(_ code: String) async throws {
         let invite = try DeviceInvitation.parse(code)
-        guard invite.id != id, peers.count < 20, let secret = Data(base64Encoded: invite.secret) else { throw DeviceError.invalid }
+        guard invite.id != id, peers[invite.id] == nil, peers.count < 20, let secret = Data(base64Encoded: invite.secret) else { throw DeviceError.invalid }
         let key = DeviceWire.randomKey(), current = generation
         let peer = DevicePeer(id: invite.id, name: invite.name, host: invite.host, port: invite.port)
         try await use(peer, key: secret, pair: true) { channel in

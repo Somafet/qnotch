@@ -33,6 +33,10 @@ Alternatively, launch the executable with `--data-dir /absolute/temporary/direct
 
 ## Behavior and availability
 
+- Settings, **Devices** adds trusted Macs and Windows PCs for encrypted text/file sharing over
+  reachable IPv4 LAN connections. Networking is off by default. See [device sharing](../devices.md)
+  for pairing, permissions, transfer limits and the scope of cross-platform validation.
+
 - Settings, General, **Show menu-bar icon** applies immediately and is saved as `showMenuBarIcon` in `general.json`. New settings and older files without the key default to visible. Hiding it leaves the notch, modules, login launch and accessory/Dock behavior unchanged. To restore it, use the notch’s Settings button or reopen QNotch from Finder or Spotlight. Settings, **About** has Quit, updates and storage/display diagnostics; **Game mode** has the session override (Automatic, On, Off). ⌘, opens Settings and ⌘Q quits while a QNotch window has focus. No disabled shortcut is enabled for recovery. Menu-bar visibility is local and is not carried in setup codes.
 
 - Choose the main display or a specific connected display in Settings. If the selected display disconnects, QNotch falls back to the main display and reports the unavailable selection; reconnecting restores it. With no display, the panel is hidden.

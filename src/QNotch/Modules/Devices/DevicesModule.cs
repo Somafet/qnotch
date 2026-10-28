@@ -39,10 +39,11 @@ public sealed class DevicesModule : INotchModule
     void Update(string text) { status = text; refresh?.Invoke(); }
     async Task Start()
     {
+        if (node is not null) return;
+        var fresh = new DeviceNode(settings.Id, Environment.MachineName[..Math.Min(80, Environment.MachineName.Length)],
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads", "QNotch", "Devices"));
         try
         {
-            var fresh = new DeviceNode(settings.Id, Environment.MachineName[..Math.Min(80, Environment.MachineName.Length)],
-                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads", "QNotch", "Devices"));
             node = fresh;
             foreach (var peer in settings.Peers)
             {
@@ -55,9 +56,11 @@ public sealed class DevicesModule : INotchModule
                 "Add device", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes).Task;
             fresh.Persist = async (peer, key) =>
             {
+                if (!await ctx.Dispatcher.InvokeAsync(() => node == fresh)) return false;
                 if (!await Task.Run(() => DeviceCredentials.Write(peer.Id, Convert.ToBase64String(key)))) return false;
-                await ctx.Dispatcher.InvokeAsync(() => { settings.Peers.RemoveAll(p => p.Id == peer.Id); settings.Peers.Add(peer); Save(); });
-                return true;
+                var saved = await ctx.Dispatcher.InvokeAsync(() => { if (node != fresh) return false; settings.Peers.RemoveAll(p => p.Id == peer.Id); settings.Peers.Add(peer); Save(); return true; });
+                if (!saved) await Task.Run(() => DeviceCredentials.Delete(peer.Id));
+                return saved;
             };
             fresh.Changed = () => ctx.Bus.Run(() => { if (node == fresh) { latest = ""; refresh?.Invoke(); } });
             fresh.Received = (name, path, _) => ctx.Bus.Run(() =>
@@ -70,7 +73,7 @@ public sealed class DevicesModule : INotchModule
             settings.Enabled = true; Save(); Update("Ready. Add a device or send to a paired device.");
         }
         catch (Exception ex) when (ex is SocketException or IOException or ArgumentException)
-        { node?.Dispose(); node = null; settings.Enabled = false; Save(); Update("Could not start sharing. Check the port and firewall, then try again."); }
+        { if (node != fresh) return; fresh.Dispose(); node = null; settings.Enabled = false; Save(); Update("Could not start sharing. Check the port and firewall, then try again."); }
     }
     FrameworkElement MakePage()
     {
@@ -96,14 +99,14 @@ public sealed class DevicesModule : INotchModule
         var invite = new Button { Content = "Create invitation" };
         invite.Click += (_, _) => { try { latest = node?.Invite((string)address.SelectedItem).Code ?? ""; invitation.Text = latest; Update("Invitation lasts five minutes. Send it privately; approve the device here when it connects."); } catch (IOException ex) { Update(ex.Message); } };
         page.Children.Add(UiKit.Row("Add another device", "Create an invitation, then paste it into Settings, Devices on the other computer.", invite));
-        page.Children.Add(invitation);
+        invitation.Margin = new Thickness(0, 0, 0, 12); page.Children.Add(invitation);
         var code = new TextBox { MaxLength = 4096, TextWrapping = TextWrapping.Wrap, MaxHeight = 76 };
         AutomationProperties.SetName(code, "Invitation from another device");
         page.Children.Add(UiKit.Text("Or paste an invitation from another device:")); page.Children.Add(code);
         var add = new Button { Content = "Add device", HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 8, 0, 16) };
         add.Click += async (_, _) => await Run(async token => { var value = code.Text.Trim(); code.Clear(); await node!.Pair(value, token); }, "Device paired.");
         page.Children.Add(add);
-        var result = UiKit.Text(status); page.Children.Add(result);
+        var result = UiKit.Text(status); result.Margin = new Thickness(0, 0, 0, 12); page.Children.Add(result);
         var peers = new ComboBox { MinWidth = 180, DisplayMemberPath = "Name" };
         page.Children.Add(UiKit.Row("Paired devices", "Use Check connection to verify reachability. If its address changes, remove it and pair again.", peers));
         var receive = new CheckBox { Content = "Allow incoming text and files", Margin = new Thickness(0, 0, 0, 8) };
@@ -130,21 +133,24 @@ public sealed class DevicesModule : INotchModule
         {
             if (peers.SelectedItem is not DevicePeer p) return;
             var dialog = new OpenFileDialog { Title = "Send file to " + p.Name };
+            var lastPercent = -1;
             if (dialog.ShowDialog() == true) await Run(t => node!.Send(p.Id, path: dialog.FileName,
-                progress: (sent, total) => ctx.Bus.Run(() => { result.Text = $"Sending {sent * 100 / Math.Max(1, total)}%"; }), ct: t), "File sent.");
+                progress: (sent, total) => { var percent = (int)(sent * 100 / Math.Max(1, total)); if (percent != lastPercent) { lastPercent = percent; ctx.Bus.Run(() => { result.Text = $"Sending {percent}%"; }); } }, ct: t), "File sent.");
         };
         cancel.Click += (_, _) => operation?.Cancel();
         var inbox = new StackPanel { Margin = new Thickness(0, 16, 0, 0) }; page.Children.Add(inbox);
         void Refresh()
         {
             result.Text = status; invitation.Text = latest;
+            invitation.Visibility = latest.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
             var selected = (peers.SelectedItem as DevicePeer)?.Id;
             peers.ItemsSource = node?.Peers ?? settings.Peers.ToArray();
             peers.SelectedItem = peers.Items.Cast<DevicePeer>().FirstOrDefault(p => p.Id == selected) ?? peers.Items.Cast<DevicePeer>().FirstOrDefault();
             var ready = node is not null && !ctx.Settings.ReadOnly;
             invite.IsEnabled = add.IsEnabled = ready && operation is null;
             send.IsEnabled = file.IsEnabled = check.IsEnabled = ready && operation is null && peers.SelectedItem is not null;
-            cancel.IsEnabled = operation is not null; port.IsEnabled = node is null; remove.IsEnabled = peers.SelectedItem is not null && operation is null;
+            cancel.IsEnabled = operation is not null; port.IsEnabled = node is null; remove.IsEnabled = peers.SelectedItem is not null && operation is null && !ctx.Settings.ReadOnly;
+            receive.IsEnabled = ready && peers.SelectedItem is not null;
             inbox.Children.Clear(); inbox.Children.Add(UiKit.Text("Received items are saved in Downloads/QNotch/Devices. Text is never copied automatically."));
             foreach (var item in received)
             {

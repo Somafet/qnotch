@@ -18,10 +18,11 @@ public static class DeviceProtocol
     public static T Decode<T>(byte[] bytes) => JsonSerializer.Deserialize<T>(bytes, Json) ?? throw new IOException("Invalid message.");
     public static string Id() => Guid.NewGuid().ToString("D");
     public static bool ValidId(string value) => Guid.TryParseExact(value, "D", out var id) && id.ToString("D") == value;
-    public static bool LocalAddress(string host) => IPAddress.TryParse(host, out var ip) && ip.AddressFamily == AddressFamily.InterNetwork &&
+    public static bool LocalAddress(string host) => IPAddress.TryParse(host, out var ip) && ip.AddressFamily == AddressFamily.InterNetwork && ip.ToString() == host &&
         (IPAddress.IsLoopback(ip) || ip.GetAddressBytes() is [10, _, _, _] or [192, 168, _, _] or [172, >= 16 and <= 31, _, _] or [169, 254, _, _]);
     public static void ValidateName(string name)
     {
+        if (string.IsNullOrEmpty(name)) throw new IOException("Unsupported file name.");
         var stem = name.Split('.')[0].ToUpperInvariant();
         if (name.Length == 0 || Encoding.UTF8.GetByteCount(name) > 180 || name is "." or ".." || name.EndsWith('.') || name.EndsWith(' ') ||
             name.Any(c => char.IsControl(c) || "<>:\"/\\|?*".Contains(c)) || stem is "CON" or "PRN" or "AUX" or "NUL" ||
@@ -77,7 +78,7 @@ public sealed record DeviceInvitation(int V, string Id, string Name, string Host
     {
         if (code.Length > 4096 || !code.StartsWith("qnotch-device:", StringComparison.Ordinal)) throw new IOException("Invalid invitation.");
         var item = DeviceProtocol.Decode<DeviceInvitation>(Convert.FromBase64String(code[14..]));
-        if (item.V != 1 || !DeviceProtocol.ValidId(item.Id) || item.Name.Length is < 1 or > 80 || !DeviceProtocol.LocalAddress(item.Host) ||
+        if (item.V != 1 || !DeviceProtocol.ValidId(item.Id) || item.Name is not { Length: > 0 and <= 80 } || !DeviceProtocol.LocalAddress(item.Host) ||
             item.Port is < 1 or > 65535 || Convert.FromBase64String(item.Secret).Length != 32 || item.Expires <= DateTimeOffset.UtcNow.ToUnixTimeSeconds())
             throw new IOException("Invalid or expired invitation.");
         return item;
