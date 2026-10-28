@@ -120,12 +120,14 @@ final class DevicesModule: NotchModule {
         private let addresses = NSPopUpButton()
         private let port = NSTextField()
         private let received = column([])
+        private var sharingSwitch: ActionSwitch?
         private var buttons: [NSButton] = []
         init(module: DevicesModule) {
             self.module = module
             super.init(frame: .zero)
             let width = SettingsController.contentWidth
             let enabled = ActionSwitch("Local sharing", value: module.settings.enabled) { [weak module] on in Task { @MainActor in module?.enable(on) } }
+            sharingSwitch = enabled
             addresses.addItems(withTitles: Runtime.diagnostics ? ["192.168.1.10"] : DevicesModule.addresses())
             addresses.setAccessibilityLabel("This device's address")
             port.stringValue = String(module.settings.port); port.setAccessibilityLabel("Listening port"); size(port, width: 72)
@@ -175,6 +177,11 @@ final class DevicesModule: NotchModule {
                 Task { @MainActor in module.run(success: "File sent.") { node in try await node.send(peer.id, file: url) { [weak module] percent in module?.update("Sending \(percent)%") } } }
             }
             let cancel = actionButton("Cancel") { [weak module] in module?.operation?.cancel() }
+            let openInbox = actionButton("Open Received Folder") { [weak module] in
+                guard let module, !Runtime.diagnostics, let downloads = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first else { return }
+                let inbox = downloads.appendingPathComponent("QNotch/Devices", isDirectory: true)
+                do { try FileManager.default.createDirectory(at: inbox, withIntermediateDirectories: true); NSWorkspace.shared.open(inbox) } catch { module.update("Could not open the received folder.") }
+            }
             buttons = [create, add, check, remove, permission, sendText, sendFile]
             let list = column([
                 settingsGroup([
@@ -186,7 +193,7 @@ final class DevicesModule: NotchModule {
                 invite, code, add, status,
                 settingsGroup([settingsRow("Paired devices", control: peers, width: width)], width: width),
                 row([check, remove, permission]), text, row([sendText, sendFile, cancel]),
-                label("Received items are saved to Downloads/QNotch/Devices. Nothing opens or copies to the clipboard automatically.", size: 11, color: .secondaryLabelColor), received
+                label("Received items are saved to Downloads/QNotch/Devices. Nothing opens or copies to the clipboard automatically.", size: 11, color: .secondaryLabelColor), received, openInbox
             ])
             for field in [invite, code, text] { field.widthAnchor.constraint(equalToConstant: width).isActive = true }
             status.preferredMaxLayoutWidth = width
@@ -200,6 +207,7 @@ final class DevicesModule: NotchModule {
         }
         func reload() {
             guard let module else { return }
+            sharingSwitch?.state = (module.node?.port ?? 0) > 0 ? .on : .off
             let selectedID = selected?.id
             status.stringValue = module.status; invite.stringValue = module.invitation
             let list = module.node?.devices ?? module.settings.peers

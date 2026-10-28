@@ -40,8 +40,7 @@ public sealed class DevicesModule : INotchModule
     async Task Start()
     {
         if (node is not null) return;
-        var fresh = new DeviceNode(settings.Id, Environment.MachineName[..Math.Min(80, Environment.MachineName.Length)],
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads", "QNotch", "Devices"));
+        var fresh = new DeviceNode(settings.Id, Environment.MachineName[..Math.Min(80, Environment.MachineName.Length)], DevicesNative.Inbox());
         try
         {
             node = fresh;
@@ -78,9 +77,10 @@ public sealed class DevicesModule : INotchModule
     FrameworkElement MakePage()
     {
         var page = UiKit.Page("Devices");
+        var refreshing = false;
         var enabled = UiKit.Toggle(settings.Enabled && node is not null, async on =>
         {
-            if (ctx.Settings.ReadOnly) return;
+            if (ctx.Settings.ReadOnly || refreshing) return;
             if (on) await Start();
             else { operation?.Cancel(); node?.Dispose(); node = null; latest = ""; settings.Enabled = false; Save(); Update("Local sharing is off."); }
         });
@@ -104,7 +104,7 @@ public sealed class DevicesModule : INotchModule
         AutomationProperties.SetName(code, "Invitation from another device");
         page.Children.Add(UiKit.Text("Or paste an invitation from another device:")); page.Children.Add(code);
         var add = new Button { Content = "Add device", HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 8, 0, 16) };
-        add.Click += async (_, _) => await Run(async token => { var value = code.Text.Trim(); code.Clear(); await node!.Pair(value, token); }, "Device paired.");
+        add.Click += async (_, _) => { var value = code.Text.Trim(); code.Clear(); await Run((active, token) => active.Pair(value, token), "Device paired."); };
         page.Children.Add(add);
         var result = UiKit.Text(status); result.Margin = new Thickness(0, 0, 0, 12); page.Children.Add(result);
         var peers = new ComboBox { MinWidth = 180, DisplayMemberPath = "Name" };
@@ -121,26 +121,34 @@ public sealed class DevicesModule : INotchModule
         var actions = new StackPanel { Orientation = Orientation.Horizontal };
         var check = new Button { Content = "Check connection" }; var remove = new Button { Content = "Remove device", Margin = new Thickness(8, 0, 0, 0) };
         actions.Children.Add(check); actions.Children.Add(remove); page.Children.Add(actions);
-        check.Click += async (_, _) => { if (peers.SelectedItem is DevicePeer p) await Run(t => node!.Send(p.Id, ct: t), "Device is reachable."); };
+        check.Click += async (_, _) => { if (peers.SelectedItem is DevicePeer p) await Run((active, t) => active.Send(p.Id, ct: t), "Device is reachable."); };
         remove.Click += async (_, _) => { if (peers.SelectedItem is DevicePeer p) { node?.Remove(p.Id); settings.Peers.RemoveAll(v => v.Id == p.Id); Save(); await Task.Run(() => DeviceCredentials.Delete(p.Id)); Update("Device removed. Pair again to reconnect."); } };
         var text = new TextBox { AcceptsReturn = true, Height = 70, MaxLength = 16000, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 12, 0, 8) };
         AutomationProperties.SetName(text, "Text to send"); page.Children.Add(text);
         var sendActions = new StackPanel { Orientation = Orientation.Horizontal };
         var send = new Button { Content = "Send text" }; var file = new Button { Content = "Send file", Margin = new Thickness(8, 0, 0, 0) }; var cancel = new Button { Content = "Cancel", Margin = new Thickness(8, 0, 0, 0) };
         sendActions.Children.Add(send); sendActions.Children.Add(file); sendActions.Children.Add(cancel); page.Children.Add(sendActions);
-        send.Click += async (_, _) => { if (peers.SelectedItem is DevicePeer p) { var value = text.Text; await Run(t => node!.Send(p.Id, text: value, ct: t), "Text sent."); } };
+        send.Click += async (_, _) => { if (peers.SelectedItem is DevicePeer p) { var value = text.Text; await Run((active, t) => active.Send(p.Id, text: value, ct: t), "Text sent."); } };
         file.Click += async (_, _) =>
         {
             if (peers.SelectedItem is not DevicePeer p) return;
             var dialog = new OpenFileDialog { Title = "Send file to " + p.Name };
             var lastPercent = -1;
-            if (dialog.ShowDialog() == true) await Run(t => node!.Send(p.Id, path: dialog.FileName,
-                progress: (sent, total) => { var percent = (int)(sent * 100 / Math.Max(1, total)); if (percent != lastPercent) { lastPercent = percent; ctx.Bus.Run(() => { result.Text = $"Sending {percent}%"; }); } }, ct: t), "File sent.");
+            if (dialog.ShowDialog() == true)
+            {
+                var path = dialog.FileName;
+                await Run((active, t) => active.Send(p.Id, path: path,
+                    progress: (sent, total) => { var percent = (int)(sent * 100 / Math.Max(1, total)); if (percent != lastPercent) { lastPercent = percent; ctx.Bus.Run(() => { result.Text = $"Sending {percent}%"; }); } }, ct: t), "File sent.");
+            }
         };
         cancel.Click += (_, _) => operation?.Cancel();
         var inbox = new StackPanel { Margin = new Thickness(0, 16, 0, 0) }; page.Children.Add(inbox);
+        var openInbox = new Button { Content = "Open received folder", HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 8, 0, 0), IsEnabled = !ctx.Settings.ReadOnly };
+        openInbox.Click += (_, _) => { var path = DevicesNative.Inbox(); Directory.CreateDirectory(path); System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("explorer.exe", $"\"{path}\"") { UseShellExecute = true }); };
+        page.Children.Add(openInbox);
         void Refresh()
         {
+            refreshing = true; enabled.IsChecked = node?.Port > 0; refreshing = false;
             result.Text = status; invitation.Text = latest;
             invitation.Visibility = latest.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
             var selected = (peers.SelectedItem as DevicePeer)?.Id;
@@ -163,12 +171,13 @@ public sealed class DevicesModule : INotchModule
         page.Unloaded += (_, _) => refresh -= Refresh;
         Refresh(); return page;
     }
-    async Task Run(Func<CancellationToken, Task> work, string success)
+    async Task Run(Func<DeviceNode, CancellationToken, Task> work, string success)
     {
         if (node is null || operation is not null || ctx.Settings.ReadOnly) return;
+        var active = node;
         using var current = new CancellationTokenSource(); operation = current; Update("Connecting...");
-        try { await work(current.Token); Update(success); }
-        catch (Exception ex) when (ex is IOException or SocketException or OperationCanceledException or FormatException or ArgumentException or System.Security.Cryptography.CryptographicException or ObjectDisposedException)
+        try { await Task.Run(() => work(active, current.Token)); Update(success); }
+        catch (Exception ex) when (ex is IOException or SocketException or OperationCanceledException or FormatException or ArgumentException or System.Security.Cryptography.CryptographicException or ObjectDisposedException or System.Text.Json.JsonException)
         { Update(ex is OperationCanceledException ? "Transfer cancelled or timed out." : "Could not connect or transfer. Check both devices, the invitation and private-network firewall permissions."); }
         finally { operation = null; refresh?.Invoke(); }
     }
