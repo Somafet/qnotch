@@ -19,6 +19,7 @@ final class DeviceNode {
     var persist: @MainActor (DevicePeer, Data) async -> Bool = { _, _ in false }
     var changed: () -> Void = {}
     var received: (String, URL, Bool) -> Void = { _, _, _ in }
+    var exchange: (@MainActor (String, Data) async throws -> Data)?
     var devices: [DevicePeer] { peers.values.map(\.0).sorted { $0.name < $1.name } }
     init(id: String, name: String, inbox: URL) { self.id = id; self.name = name; self.inbox = inbox }
     func restore(_ peer: DevicePeer, key: Data) { if key.count == 32 { peers[peer.id] = (peer, key) } }
@@ -27,6 +28,7 @@ final class DeviceNode {
         peers[id]?.0.receive = receive
         if !receive { for socket in sockets.values { socket.close() } }
     }
+    func setSync(_ id: String, notes: Bool, clipboard: Bool) { peers[id]?.0.syncNotes = notes; peers[id]?.0.syncClipboard = clipboard }
 
     @MainActor func start(port requested: Int = 45874) async throws {
         guard let port = NWEndpoint.Port(rawValue: UInt16(exactly: requested) ?? 0) else { throw DeviceError.invalid }
@@ -97,6 +99,17 @@ final class DeviceNode {
         }
         guard current == generation, let trusted = peers[hello.id], trusted.0.receive else { try await channel.send(DeviceReply(ok: false, error: "Receiving from this device is off.")); return }
         if request.op == "ping" { try await channel.send(DeviceReply(ok: true)); return }
+        if request.op == "sync" {
+            guard let exchange, let count = request.size, count > 0, count <= DeviceWire.maxSync else {
+                try await channel.send(DeviceReply(ok: false, error: "Synchronization is unavailable.")); return
+            }
+            try await channel.send(DeviceReply(ok: true))
+            let input = try await channel.readBytes(count)
+            guard current == generation, peers[hello.id]?.0.receive == true else { throw DeviceError.declined }
+            let output = try await exchange(hello.id, input)
+            guard !output.isEmpty, output.count <= DeviceWire.maxSync else { throw DeviceError.invalid }
+            try await channel.send(DeviceReply(ok: true, size: Int64(output.count))); try await channel.sendBytes(output); return
+        }
         if request.op == "text", let text = request.text, text.utf16.count <= 16000 {
             let path = inbox.appendingPathComponent(UUID().uuidString.lowercased() + "-text.txt")
             try await disk.saveText(text, at: path)
@@ -170,5 +183,17 @@ final class DeviceNode {
     func stop() {
         generation = UUID(); invitation = nil; listener?.cancel(); listener = nil; port = 0
         for socket in sockets.values { socket.close() }
+    }
+    @MainActor func synchronize(_ id: String, payload: Data) async throws -> Data {
+        guard let peer = peers[id], !payload.isEmpty, payload.count <= DeviceWire.maxSync else { throw DeviceError.invalid }
+        var result = Data()
+        try await use(peer.0, key: peer.1, pair: false) { channel in
+            try await channel.send(DeviceMessage(op: "sync", size: Int64(payload.count)))
+            try await channel.checkReply(); try await channel.sendBytes(payload)
+            let response = try await channel.reply()
+            guard response.ok, let count = response.size else { throw DeviceError.declined }
+            result = try await channel.readBytes(count)
+        }
+        return result
     }
 }

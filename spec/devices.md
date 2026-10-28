@@ -2,7 +2,8 @@
 
 Devices is an independently enabled module with its own Settings page. Networking is off until
 the user enables local sharing. There is no cloud service. Version 1 uses reachable IPv4 LAN
-addresses (including loopback for tests); guest-network isolation and firewalls can prevent access.
+addresses (including loopback for tests and Tailscale's 100.64.0.0/10 overlay); guest-network
+isolation, overlay ACLs and firewalls can prevent access.
 
 ## Trust
 
@@ -46,6 +47,36 @@ Request and reply metadata are encrypted. Replies have `ok` and optional `error`
   arrived. Receiver commits a uniquely named inbox file atomically and replies `ok` again.
   Empty files still get the final acknowledgement. Failures remove partial files.
 - `ping`: authenticated connection check, reply `ok`.
+- `sync`: `size` is the byte length of a UTF-8 SyncBundle, at most 8 MiB. Receiver replies `ok`,
+  then reads exactly that many bytes in encrypted chunks. It merges the bundle and sends a reply
+  with `ok` and `size`, followed by the response bundle in encrypted chunks. Unknown/disabled
+  sync sources are ignored. Both directions require local, per-peer consent for each source.
+
+## Sync bundle
+
+`notesEnabled` and `clipboardEnabled` declare which sources the sender enabled for this peer.
+`notes` holds up to eight active revisions, each with `id` (UUID), `clock` (UUID to positive
+integer counter), and `text` (at most 100000 UTF-16 code units). Vector clocks have at most
+64 authors; counters are below 2^53-1. Merge by revision id, reject mutated identities, then
+discard revisions causally dominated by another. Concurrent revisions stay separate. Repeated
+merges are idempotent. A normal edit advances the editor's active clock and its own author
+counter; it does not silently resolve other branches. Explicit user resolution joins all clocks
+and advances the local counter. Empty text is a normal causal revision, so stale data cannot
+revive cleared text. The bounded journal retains current branches, not an unbounded history.
+
+`clipboard` is null or `{counter, author, text}`. Order by logical counter then ordinal author
+UUID, and apply only strictly newer stamps. A local copy advances the last observed counter.
+Clipboard text is kept in memory, never in the sync journal; only the last stamp is persisted
+to reject replay after restart. Native clipboard writes suppress their own capture event.
+
+Local sync journals store note branches and the editor's active clock. A note file that differs
+from every journal branch after restart is recovered as an independent branch, preserving both
+copies instead of overwriting one. Source loading is explicit: an unavailable/unloaded note
+must not be interpreted as an empty edit. Corrupt journals pause sync and are left intact.
+
+Notes remain in the journal while a peer is offline. Changes and network/wake events trigger
+exchanges; failures schedule bounded exponential retries (at most once every five minutes).
+No recurring heartbeat runs once all enabled peers have exchanged their current state.
 
 File names must be a single portable component: reject empty names, `.`, `..`, path separators,
 control characters, Windows reserved names and `<>:"|?*`, and trailing dots/spaces.
@@ -54,8 +85,7 @@ unique prefixes to preserve existing files. Never open received files automatica
 
 ## Scope and validation
 
-Version 1 provides explicit text and file sending. Automatic clipboard propagation, note revisions,
-offline queues and deletion reconciliation need a subsequent version; sending is not synchronization.
+Version 1 provides explicit text/file sending and separately enabled clipboard/note synchronization.
 Shared fixtures in `tests/fixtures/devices/` pin the cryptographic bytes across native implementations.
 Native tests must exercise actual sockets, approvals, rejection, truncation, empty and multi-chunk files,
 restarts and revoked trust. A Windows loopback test cannot establish macOS execution or LAN reachability.

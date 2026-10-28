@@ -29,6 +29,11 @@ final class FileTrayModule: NSObject, NotchModule {
     var dropActive = false { didSet { refresh() } }
 
     var contextShell: ModuleShell? { context.shell }
+    func sendToDevice(_ url: URL) {
+        guard (try? url.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true else { show("Choose a regular file to send."); return }
+        if let route = context.registries.shareRoutes.items.first { route.prepare(nil, url) }
+        else { context.shell?.openSettings(section: "features") }
+    }
     private var fileURL: URL { context.settings.directory.appendingPathComponent("filetray.json") }
 
     func initialize(_ context: ModuleContext) {

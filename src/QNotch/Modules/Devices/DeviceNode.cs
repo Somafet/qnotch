@@ -22,6 +22,7 @@ public sealed class DeviceNode(string id, string name, string inbox) : IDisposab
     public Func<DevicePeer, byte[], Task<bool>> Persist { get; set; } = (_, _) => Task.FromResult(false);
     public Action<string, string, bool>? Received { get; set; }
     public Action? Changed { get; set; }
+    public Func<string, byte[], Task<byte[]>>? Exchange { get; set; }
     public void Restore(DevicePeer peer, byte[] key) { if (key.Length == 32) peers[peer.Id] = (peer, key); }
     public void Remove(string peerId)
     {
@@ -34,6 +35,10 @@ public sealed class DeviceNode(string id, string name, string inbox) : IDisposab
     {
         if (peers.TryGetValue(peerId, out var p)) peers[peerId] = (p.Peer with { Receive = receive }, p.Key);
         if (!receive) foreach (var client in connections.Keys) client.Dispose();
+    }
+    public void SetSync(string peerId, bool notes, bool clipboard)
+    {
+        if (peers.TryGetValue(peerId, out var p)) peers[peerId] = (p.Peer with { SyncNotes = notes, SyncClipboard = clipboard }, p.Key);
     }
     public void Start(int port = 45874, IPAddress? bind = null)
     {
@@ -105,6 +110,16 @@ public sealed class DeviceNode(string id, string name, string inbox) : IDisposab
             // Re-check trust at the point of accepting data, including after an unpair.
             if (!peers.TryGetValue(hello.Id, out var trusted) || !trusted.Peer.Receive) { await channel.Reply(new(false, "Receiving from this device is off.")); return; }
             if (message.Op == "ping") { await channel.Reply(new(true)); return; }
+            if (message.Op == "sync")
+            {
+                if (Exchange is null || message.Size is < 1 or > DeviceProtocol.MaxSync) { await channel.Reply(new(false, "Synchronization is unavailable.")); return; }
+                await channel.Reply(new(true));
+                var input = await channel.ReadBytes(message.Size);
+                if (!peers.TryGetValue(hello.Id, out var active) || !active.Peer.Receive) return;
+                var output = await Exchange(hello.Id, input).WaitAsync(timeout.Token);
+                if (output.Length is < 1 or > DeviceProtocol.MaxSync) throw new IOException("Synchronization response too large.");
+                await channel.Reply(new(true, Size: output.Length)); await channel.SendBytes(output); return;
+            }
             if (message.Op == "text" && message.Text is { Length: <= 16000 })
             {
                 Directory.CreateDirectory(inbox);
@@ -196,6 +211,20 @@ public sealed class DeviceNode(string id, string name, string inbox) : IDisposab
             }
             await channel.CheckReply();
         }, ct);
+    }
+    public async Task<byte[]> Synchronize(string peerId, byte[] payload, CancellationToken ct = default)
+    {
+        if (payload.Length is < 1 or > DeviceProtocol.MaxSync || !peers.TryGetValue(peerId, out var peer)) throw new IOException("Synchronization is unavailable.");
+        byte[] result = [];
+        await Use(peer.Peer, peer.Key, false, async channel =>
+        {
+            await channel.Send(DeviceProtocol.Encode(new DeviceMessage("sync", Size: payload.Length)));
+            await channel.CheckReply(); await channel.SendBytes(payload);
+            var response = DeviceProtocol.Decode<DeviceReply>(await channel.Read());
+            if (!response.Ok) throw new IOException("Synchronization was declined.");
+            result = await channel.ReadBytes(response.Size);
+        }, ct);
+        return result;
     }
     public void Dispose()
     {

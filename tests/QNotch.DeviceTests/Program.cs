@@ -22,6 +22,14 @@ if (args is ["--serve", var serveInbox])
     using var server = new DeviceNode(DeviceProtocol.Id(), "Windows transport", serveInbox);
     server.Approve = _ => Task.FromResult(true);
     server.Persist = (_, _) => Task.FromResult(true);
+    var serverSync = new DeviceSync(server.Id, new());
+    server.Exchange = (_, input) =>
+    {
+        var incoming = DeviceProtocol.Decode<SyncBundle>(input);
+        if (incoming.NotesEnabled) { serverSync.ReceiveNotes(incoming.Notes); serverSync.EditNote("Windows read the native note"); }
+        if (incoming.ClipboardEnabled) { serverSync.ReceiveClipboard(incoming.Clipboard); serverSync.CopyText("Windows clipboard reply"); }
+        return Task.FromResult(DeviceProtocol.Encode(serverSync.Bundle(incoming.NotesEnabled, incoming.ClipboardEnabled)));
+    };
     server.Received = (sender, path, file) => _ = Task.Run(async () =>
     {
         try { await server.Send(server.Peers.Single().Id, text: file ? null : await File.ReadAllTextAsync(path), path: file ? path : null); }
@@ -56,6 +64,32 @@ await Reject(() => Task.Run(() => DeviceProtocol.Open(derived, box, aad)), "reje
 foreach (var invalid in new[] { "", "..", "../escape", "a\\b", "CON.txt", "LPT9", "a:", "x.", "x ", "a\0b" })
     await Reject(() => Task.Run(() => DeviceProtocol.ValidateName(invalid)), "unsafe name " + invalid.Replace('\0', '?'));
 Check(DeviceProtocol.LocalAddress("192.168.1.20") && !DeviceProtocol.LocalAddress("8.8.8.8"), "LAN address policy");
+Check(DeviceProtocol.LocalAddress("100.64.0.1") && DeviceProtocol.LocalAddress("100.127.255.254") && !DeviceProtocol.LocalAddress("100.128.0.1"), "Tailscale address boundaries");
+var syncFixture = JsonDocument.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "fixtures", "sync-v1.json"))).RootElement;
+NoteRevision Revision(string key) => DeviceProtocol.Decode<NoteRevision>(Encoding.UTF8.GetBytes(syncFixture.GetProperty(key).GetRawText()));
+var concurrent = DeviceSync.Merge([Revision("base"), Revision("windows")], [Revision("mac")]);
+Check(concurrent.Count == 2 && concurrent.Select(i => i.Text).ToHashSet().SetEquals(["Edited on Windows", "Edited on Mac"]), "offline edits preserve both note versions");
+Check(DeviceSync.Merge(concurrent, concurrent).SequenceEqual(concurrent), "duplicate note sync is idempotent");
+var deleted = DeviceSync.Merge(concurrent, [Revision("resolvedDeletion")]);
+Check(deleted.Count == 1 && deleted[0].Text == "", "explicit deletion resolves both conflicting branches");
+Check(DeviceSync.Merge(deleted, [Revision("base"), Revision("windows"), Revision("mac")]).Single().Text == "", "stale replay cannot revive deleted note text");
+await Reject(() => Task.Run(() => DeviceSync.Merge([Revision("base")], [Revision("base") with { Text = "tampered" }])), "reject revision identity mutation");
+var journal = new SyncJournal { Notes = concurrent, ActiveClock = new(Revision("windows").Clock) };
+var register = new DeviceSync("00000000-0000-0000-0000-000000000001", journal);
+register.EditNote("Continue editing locally");
+Check(register.Notes.Count == 2 && register.Notes.Any(i => i.Text == "Edited on Mac"), "editing through a conflict does not discard remote branch");
+register.EditNote("Chosen resolution", resolveAll: true);
+Check(register.Notes.Count == 1 && register.Notes[0].Text == "Chosen resolution", "user resolution advances every causal branch");
+register.CopyText("Sensitive clipboard example");
+var clipboardVersion = register.Clipboard;
+Check(register.ReceiveClipboard(clipboardVersion) is null, "clipboard echo is suppressed");
+var serializedJournal = Encoding.UTF8.GetString(DeviceProtocol.Encode(journal));
+Check(!serializedJournal.Contains("Sensitive clipboard example", StringComparison.Ordinal), "clipboard text is never journaled to disk");
+var restartedSync = new DeviceSync("00000000-0000-0000-0000-000000000001", DeviceProtocol.Decode<SyncJournal>(DeviceProtocol.Encode(journal)));
+Check(restartedSync.ReceiveClipboard(clipboardVersion) is null, "clipboard replay remains suppressed after restart");
+var recoveredSync = new DeviceSync("00000000-0000-0000-0000-000000000001", DeviceProtocol.Decode<SyncJournal>(DeviceProtocol.Encode(journal)));
+recoveredSync.ReconcileEditor("Different note file after a crash");
+Check(recoveredSync.Notes.Count == 2 && recoveredSync.Notes.Any(i => i.Text == "Chosen resolution"), "journal/file mismatch recovers both copies as a conflict");
 
 var root = Path.Combine(Path.GetTempPath(), "qnotch-devices-" + Guid.NewGuid().ToString("N")); Directory.CreateDirectory(root);
 try
@@ -84,6 +118,18 @@ try
     b.Restore(originalPeer, RandomNumberGenerator.GetBytes(32));
     await Reject(() => b.Send(a.Id, text: "wrong key"), "reject incorrect peer key");
     b.Restore(originalPeer, persisted[b.Id].Item2);
+    var syncA = new DeviceSync(a.Id, new()); var syncB = new DeviceSync(b.Id, new());
+    syncA.EditNote(new string('a', DeviceProtocol.Chunk + 50));
+    a.Exchange = (_, input) =>
+    {
+        var incoming = DeviceProtocol.Decode<SyncBundle>(input); syncA.ReceiveNotes(incoming.Notes);
+        return Task.FromResult(DeviceProtocol.Encode(syncA.Bundle(true, false)));
+    };
+    var pulled = DeviceProtocol.Decode<SyncBundle>(await b.Synchronize(a.Id, DeviceProtocol.Encode(syncB.Bundle(true, false))));
+    Check(syncB.ReceiveNotes(pulled.Notes)?.Length == DeviceProtocol.Chunk + 50, "encrypted sync streams notes larger than one frame");
+    syncA.EditNote("Offline Windows edit"); syncB.EditNote("Offline other-device edit");
+    var reconciled = DeviceProtocol.Decode<SyncBundle>(await b.Synchronize(a.Id, DeviceProtocol.Encode(syncB.Bundle(true, false))));
+    Check(syncB.ReceiveNotes(reconciled.Notes) is null && syncA.Notes.Count == 2 && syncB.Notes.Count == 2, "socket reconciliation preserves concurrent offline changes");
     var path = Path.Combine(root, "payload.bin"); var content = RandomNumberGenerator.GetBytes(DeviceProtocol.Chunk * 3 + 123);
     await File.WriteAllBytesAsync(path, content);
     await a.Send(b.Id, path: path); await a.Send(b.Id, path: path);

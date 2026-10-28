@@ -3,6 +3,25 @@ import QNotchMacCore
 
 protocol Contribution { var id: String { get }; var order: Int { get } }
 
+/// Native sharing composer supplied by an enabled module. Preparing never sends data.
+struct ShareRoute: Contribution {
+    let id: String
+    let order: Int
+    let prepare: (String?, URL?) -> Void
+}
+
+/// Main-thread text owned by a feature; nil Read means not available/loaded yet.
+final class SharedTextSource: Contribution {
+    let id: String
+    let order: Int
+    let read: () -> String?
+    let apply: (String) -> Void
+    var changed: ((String) -> Void)?
+    init(id: String, order: Int, read: @escaping () -> String?, apply: @escaping (String) -> Void) {
+        self.id = id; self.order = order; self.read = read; self.apply = apply
+    }
+}
+
 struct ViewContribution: Contribution {
     let id: String
     let title: String
@@ -75,10 +94,11 @@ final class Registry<T: Contribution> {
     private var values: [String: (owner: String?, value: T)] = [:]
     /// The module whose `initialize` is running; its registrations are removed with it.
     var owner: String?
+    var changed: (() -> Void)?
     var items: [T] { values.values.map(\.value).sorted { ($0.order, $0.id) < ($1.order, $1.id) } }
-    func register(_ value: T) { values[value.id] = (owner, value) }
+    func register(_ value: T) { values[value.id] = (owner, value); changed?() }
     func removeAll() { values.removeAll() }
-    func removeAll(owner: String) { values = values.filter { $0.value.owner != owner } }
+    func removeAll(owner: String) { values = values.filter { $0.value.owner != owner }; changed?() }
     func ids(owner: String) -> [String] { values.filter { $0.value.owner == owner }.map(\.key) }
     func owner(of id: String) -> String? { values[id]?.owner }
 }
@@ -91,20 +111,28 @@ final class ModuleRegistries {
     let searchSources = Registry<SearchSource>()
     let settingsSections = Registry<ViewContribution>()
     let menuActions = Registry<MenuActionContribution>()
+    let shareRoutes = Registry<ShareRoute>()
+    let sharedText = Registry<SharedTextSource>()
     /// Set by the shell around each module's `initialize`.
     var owner: String? {
         didSet {
             cards.owner = owner; tabs.owner = owner; segments.owner = owner
             searchSources.owner = owner; settingsSections.owner = owner; menuActions.owner = owner
+            shareRoutes.owner = owner
+            sharedText.owner = owner
         }
     }
     func removeAll(owner: String) {
         cards.removeAll(owner: owner); tabs.removeAll(owner: owner); segments.removeAll(owner: owner)
         searchSources.removeAll(owner: owner); settingsSections.removeAll(owner: owner); menuActions.removeAll(owner: owner)
+        shareRoutes.removeAll(owner: owner)
+        sharedText.removeAll(owner: owner)
     }
     func removeAll() {
         cards.removeAll(); tabs.removeAll(); segments.removeAll()
         searchSources.removeAll(); settingsSections.removeAll(); menuActions.removeAll()
+        shareRoutes.removeAll()
+        sharedText.removeAll()
     }
 }
 

@@ -37,9 +37,31 @@ final class DevicesTests: XCTestCase {
         for name in ["", "..", "../escape", "a\\b", "CON.txt", "LPT9", "a:", "x.", "x ", "a\0b"] { XCTAssertThrowsError(try DeviceWire.validateName(name)) }
         XCTAssertNoThrow(try DeviceWire.validateName("árvíztűrő.txt"))
         XCTAssertTrue(DeviceWire.localAddress("192.168.1.20")); XCTAssertFalse(DeviceWire.localAddress("8.8.8.8"))
+        XCTAssertTrue(DeviceWire.localAddress("100.64.0.1")); XCTAssertTrue(DeviceWire.localAddress("100.127.255.254")); XCTAssertFalse(DeviceWire.localAddress("100.128.0.1"))
         let invitation = DeviceInvitation(v: 1, id: UUID().uuidString.lowercased(), name: "Mac", host: "127.0.0.1", port: 45874,
                                           secret: DeviceWire.randomKey().base64EncodedString(), expires: Int64(Date().timeIntervalSince1970) + 300)
         XCTAssertEqual(try DeviceInvitation.parse(invitation.code).id, invitation.id)
+    }
+    func testCausalSyncFixturesRecoveryAndClipboardReplay() throws {
+        let fixtures = try JSONDecoder().decode([String: NoteRevision].self, from: Data(contentsOf: repository.appendingPathComponent("tests/fixtures/devices/sync-v1.json")))
+        let base = fixtures["base"]!, windows = fixtures["windows"]!, mac = fixtures["mac"]!, deletion = fixtures["resolvedDeletion"]!
+        let conflicts = try DeviceSync.merge([base, windows], [mac])
+        XCTAssertEqual(Set(conflicts.map(\.text)), Set(["Edited on Windows", "Edited on Mac"]))
+        XCTAssertEqual(try DeviceSync.merge(conflicts, conflicts), conflicts)
+        XCTAssertEqual(try DeviceSync.merge(conflicts, [deletion]), [deletion])
+        XCTAssertEqual(try DeviceSync.merge([deletion], [base, windows, mac]), [deletion])
+        let state = DeviceSync(deviceID: "00000000-0000-0000-0000-000000000001", journal: SyncJournal(notes: conflicts, activeClock: windows.clock))
+        try state.editNote("Continue locally"); XCTAssertEqual(state.journal.notes.count, 2)
+        try state.editNote("Chosen resolution", resolveAll: true); XCTAssertEqual(state.journal.notes.count, 1)
+        try state.copyText("Sensitive clipboard example")
+        XCTAssertNil(try state.receiveClipboard(state.clipboard))
+        let bytes = try JSONEncoder().encode(state.journal)
+        XCTAssertFalse(String(decoding: bytes, as: UTF8.self).contains("Sensitive clipboard example"))
+        let restored = DeviceSync(deviceID: state.deviceID, journal: try JSONDecoder().decode(SyncJournal.self, from: bytes))
+        XCTAssertNil(try restored.receiveClipboard(state.clipboard))
+        try restored.reconcileEditor("Different note file after a crash")
+        XCTAssertEqual(restored.journal.notes.count, 2)
+        XCTAssertTrue(restored.journal.notes.contains { $0.text == "Chosen resolution" })
     }
     @MainActor func testNativePairTextFilesPermissionsAndRevocation() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
@@ -90,6 +112,12 @@ final class DevicesTests: XCTestCase {
         echoed.expectedFulfillmentCount = 2
         native.received = { _, _, _ in echoed.fulfill() }
         try await native.send(native.devices[0].id, text: "Mac → Windows → Mac 👋")
+        let sync = DeviceSync(deviceID: native.id)
+        try sync.editNote(String(repeating: "a", count: DeviceWire.chunk + 50)); try sync.copyText("Native clipboard")
+        let syncBytes = try await native.synchronize(native.devices[0].id, payload: JSONEncoder().encode(sync.bundle(notes: true, clips: true)))
+        let synced = try JSONDecoder().decode(SyncBundle.self, from: syncBytes)
+        XCTAssertEqual(try sync.receiveNotes(synced.notes), "Windows read the native note")
+        XCTAssertEqual(try sync.receiveClipboard(synced.clipboard), "Windows clipboard reply")
         let file = root.appendingPathComponent("cross-platform.bin"), data = Data(repeating: 42, count: DeviceWire.chunk * 2 + 23)
         try data.write(to: file); try await native.send(native.devices[0].id, file: file)
         await fulfillment(of: [echoed], timeout: 20)

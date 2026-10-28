@@ -13,13 +13,14 @@ public static class DeviceProtocol
 {
     public const int Chunk = 65536;
     public const long MaxFile = 2L * 1024 * 1024 * 1024;
+    public const int MaxSync = 8 * 1024 * 1024;
     public static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web) { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
     public static byte[] Encode<T>(T value) => JsonSerializer.SerializeToUtf8Bytes(value, Json);
     public static T Decode<T>(byte[] bytes) => JsonSerializer.Deserialize<T>(bytes, Json) ?? throw new IOException("Invalid message.");
     public static string Id() => Guid.NewGuid().ToString("D");
     public static bool ValidId(string value) => Guid.TryParseExact(value, "D", out var id) && id.ToString("D") == value;
     public static bool LocalAddress(string host) => IPAddress.TryParse(host, out var ip) && ip.AddressFamily == AddressFamily.InterNetwork && ip.ToString() == host &&
-        (IPAddress.IsLoopback(ip) || ip.GetAddressBytes() is [10, _, _, _] or [192, 168, _, _] or [172, >= 16 and <= 31, _, _] or [169, 254, _, _]);
+        (IPAddress.IsLoopback(ip) || ip.GetAddressBytes() is [10, _, _, _] or [192, 168, _, _] or [172, >= 16 and <= 31, _, _] or [169, 254, _, _] or [100, >= 64 and <= 127, _, _]);
     public static void ValidateName(string name)
     {
         if (string.IsNullOrEmpty(name)) throw new IOException("Unsupported file name.");
@@ -69,7 +70,7 @@ public static class DeviceProtocol
 }
 
 public sealed record DeviceHello(int V, string Id, bool Pair, string Nonce);
-public sealed record DevicePeer(string Id, string Name, string Host, int Port, bool Receive = true);
+public sealed record DevicePeer(string Id, string Name, string Host, int Port, bool Receive = true, bool SyncNotes = false, bool SyncClipboard = false);
 public sealed record DeviceInvitation(int V, string Id, string Name, string Host, int Port, string Secret, long Expires)
 {
     [System.Text.Json.Serialization.JsonIgnore]
@@ -85,7 +86,7 @@ public sealed record DeviceInvitation(int V, string Id, string Name, string Host
     }
 }
 public sealed record DeviceMessage(string Op, string Id = "", string Name = "", int Port = 0, string Key = "", string Text = "", long Size = 0);
-public sealed record DeviceReply(bool Ok, string Error = "", string Id = "", string Name = "");
+public sealed record DeviceReply(bool Ok, string Error = "", string Id = "", string Name = "", long Size = 0);
 
 public sealed class DeviceChannel(Stream stream, byte[] key, byte[] challenge, bool client, CancellationToken ct)
 {
@@ -95,6 +96,23 @@ public sealed class DeviceChannel(Stream stream, byte[] key, byte[] challenge, b
     public async Task<byte[]> Read() => DeviceProtocol.Open(key, await DeviceProtocol.ReadPacket(stream, DeviceProtocol.Chunk + 28, ct),
         DeviceProtocol.Aad(challenge, (byte)(client ? 1 : 0), received++));
     public Task Reply(DeviceReply reply) => Send(DeviceProtocol.Encode(reply));
+    public async Task SendBytes(byte[] data)
+    {
+        for (var offset = 0; offset < data.Length; offset += DeviceProtocol.Chunk)
+            await Send(data[offset..Math.Min(data.Length, offset + DeviceProtocol.Chunk)]);
+    }
+    public async Task<byte[]> ReadBytes(long count)
+    {
+        if (count is < 1 or > DeviceProtocol.MaxSync) throw new IOException("Invalid synchronization size.");
+        var result = new byte[count]; var offset = 0;
+        while (offset < result.Length)
+        {
+            var chunk = await Read();
+            if (chunk.Length == 0 || chunk.Length > result.Length - offset) throw new IOException("Invalid synchronization chunk.");
+            chunk.CopyTo(result, offset); offset += chunk.Length;
+        }
+        return result;
+    }
     public async Task CheckReply()
     {
         var reply = DeviceProtocol.Decode<DeviceReply>(await Read());

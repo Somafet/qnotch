@@ -10,6 +10,21 @@ struct DevicePeer: Codable, Equatable {
     var host: String
     let port: Int
     var receive: Bool = true
+    var syncNotes = false
+    var syncClipboard = false
+    init(id: String, name: String, host: String, port: Int, receive: Bool = true, syncNotes: Bool = false, syncClipboard: Bool = false) {
+        self.id = id; self.name = name; self.host = host; self.port = port; self.receive = receive
+        self.syncNotes = syncNotes; self.syncClipboard = syncClipboard
+    }
+    private enum CodingKeys: String, CodingKey { case id, name, host, port, receive, syncNotes, syncClipboard }
+    init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        id = try values.decode(String.self, forKey: .id); name = try values.decode(String.self, forKey: .name)
+        host = try values.decode(String.self, forKey: .host); port = try values.decode(Int.self, forKey: .port)
+        receive = try values.decodeIfPresent(Bool.self, forKey: .receive) ?? true
+        syncNotes = try values.decodeIfPresent(Bool.self, forKey: .syncNotes) ?? false
+        syncClipboard = try values.decodeIfPresent(Bool.self, forKey: .syncClipboard) ?? false
+    }
 }
 
 struct DeviceInvitation: Codable {
@@ -45,12 +60,14 @@ struct DeviceReply: Codable {
     var error: String? = nil
     var id: String? = nil
     var name: String? = nil
+    var size: Int64? = nil
 }
 struct DeviceHello: Codable { let v: Int; let id: String; let pair: Bool; let nonce: String }
 
 enum DeviceWire {
     static let chunk = 65536
     static let maxFile: Int64 = 2147483648
+    static let maxSync = 8 * 1024 * 1024
     static func validID(_ value: String) -> Bool { UUID(uuidString: value)?.uuidString.lowercased() == value }
     static func randomKey() -> Data { SymmetricKey(size: .bits256).withUnsafeBytes { Data($0) } }
     static func localAddress(_ host: String) -> Bool {
@@ -59,7 +76,8 @@ enum DeviceWire {
         let bytes = parts.compactMap { UInt8($0) }
         guard bytes.count == 4, zip(parts, bytes).allSatisfy({ String($0.1) == $0.0 }) else { return false }
         return bytes[0] == 10 || bytes[0] == 127 || (bytes[0] == 192 && bytes[1] == 168) ||
-            (bytes[0] == 172 && (16...31).contains(bytes[1])) || (bytes[0] == 169 && bytes[1] == 254)
+            (bytes[0] == 172 && (16...31).contains(bytes[1])) || (bytes[0] == 169 && bytes[1] == 254) ||
+            (bytes[0] == 100 && (64...127).contains(bytes[1]))
     }
     static func validateName(_ name: String) throws {
         let stem = name.split(separator: ".", omittingEmptySubsequences: false).first.map(String.init)?.uppercased() ?? ""
@@ -158,6 +176,20 @@ final class DeviceChannel {
     func send<T: Encodable>(_ value: T) async throws { try await send(JSONEncoder().encode(value)) }
     func reply() async throws -> DeviceReply { try JSONDecoder().decode(DeviceReply.self, from: await read()) }
     func checkReply() async throws { guard try await reply().ok else { throw DeviceError.declined } }
+    func sendBytes(_ data: Data) async throws {
+        var offset = 0
+        while offset < data.count { let end = min(data.count, offset + DeviceWire.chunk); try await send(data.subdata(in: offset..<end)); offset = end }
+    }
+    func readBytes(_ count: Int64) async throws -> Data {
+        guard count > 0, count <= DeviceWire.maxSync else { throw DeviceError.invalid }
+        var data = Data()
+        while data.count < count {
+            let chunk = try await read()
+            guard !chunk.isEmpty, chunk.count <= count - Int64(data.count) else { throw DeviceError.invalid }
+            data.append(chunk)
+        }
+        return data
+    }
 }
 
 /// File work is serialized off the main thread. Only bounded chunks cross the actor boundary.

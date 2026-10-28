@@ -1223,7 +1223,7 @@ final class OnboardingTests: XCTestCase {
         let groups = Onboarding.groups(available: mac)
         XCTAssertEqual(groups.map(\.title), ["At a glance", "Get things done", "For developers"])
         XCTAssertEqual(groups.flatMap(\.modules).sorted(), mac.sorted(), "Every Mac feature is in exactly one group")
-        XCTAssertEqual(groups[1].modules, ["clipboard", "search", "note", "filetray", "colorpicker", "scheduled"])
+        XCTAssertEqual(groups[1].modules, ["clipboard", "search", "note", "filetray", "devices", "colorpicker", "scheduled"])
         XCTAssertEqual(Onboarding.groups(available: ["timer"]).map(\.title), ["At a glance"], "Empty groups are left out")
         var settings = GeneralSettings()
         settings.setEnabled("clipboard", false)

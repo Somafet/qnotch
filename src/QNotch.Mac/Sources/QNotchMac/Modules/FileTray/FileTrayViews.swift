@@ -228,6 +228,7 @@ private final class FileTile: FillView, NSDraggingSource {
         add("Show in Finder", exists) { [weak self] in guard let self else { return }; self.module?.reveal([self.item.url]) }
         menu.addItem(.separator())
         add("Share…", exists) { [weak self] in guard let self else { return }; self.module?.share([self.item.url], from: self) }
+        add("Send to Device…", exists) { [weak self] in guard let self else { return }; self.module?.sendToDevice(self.item.url) }
         add("Export to Folder…", exists) { [weak self] in guard let self else { return }; self.module?.export([self.item.url]) }
         add("Copy Path") { [weak self] in guard let self else { return }; self.module?.copyPath(self.item.url) }
         menu.addItem(.separator())

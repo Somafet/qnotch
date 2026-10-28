@@ -20,7 +20,11 @@ public sealed class FileTrayModule : INotchModule, ICadenceAware
         var shell = ctx.Shell;
 
         // A running phone session keeps the tab openable even with an empty tray (receive only).
-        ctx.Tabs.Register(new TabDescriptor("files", "Files", Glyphs.Folder, 40, () => new FileTrayView(svc, state, shell, share), () => state.IsEmpty && !state.Share.IsActive));
+        ctx.Tabs.Register(new TabDescriptor("files", "Files", Glyphs.Folder, 40, () => new FileTrayView(svc, state, shell, share, path =>
+        {
+            if (ctx.ShareRoutes.Items.FirstOrDefault() is { } route) route.Prepare(null, path);
+            else shell.OpenSettings("features");
+        }), () => state.IsEmpty && !state.Share.IsActive));
         ctx.Cards.Register(new CardDescriptor("files", "File tray", 80, () => new FileTrayCard(shell) { DataContext = state }));
 
         ctx.Search.Register(new SearchSource("files", "File tray", Glyphs.Folder, 20, q => state.Items

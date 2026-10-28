@@ -19,9 +19,21 @@ final class DevicesModule: NotchModule {
     private var operation: Task<Void, Never>?
     private let views = NSHashTable<DevicesSettingsView>.weakObjects()
     private var stopped = false
+    private var draftText = ""
+    private var draftFile: URL?
+    private var draftVersion = 0
+    private var sync: DeviceSyncRuntime!
     func initialize(_ context: ModuleContext) {
         self.context = context
+        context.registries.shareRoutes.register(ShareRoute(id: "devices", order: 10) { [weak self] text, file in
+            guard let self else { return }
+            self.draftText = text ?? ""; self.draftFile = file; self.draftVersion += 1
+            context.shell?.openSettings(section: "devices")
+            self.update("Choose a paired device, then Send. Enable local sharing first if it is off.")
+        })
         if !Runtime.diagnostics { settings = context.settings.load("devices", default: DevicesSettings()) }
+        sync = DeviceSyncRuntime(context: context, deviceID: settings.id, peers: { [weak self] in self?.settings.peers ?? [] }, node: { [weak self] in self?.node })
+        sync.changed = { [weak self] in self?.refresh() }
         context.registries.settingsSections.register(ViewContribution(id: "devices", title: "Devices", order: 35, symbol: "laptopcomputer.and.iphone", tint: .systemBlue) { [weak self] in
             guard let self else { return NSView() }
             let view = DevicesSettingsView(module: self); self.views.add(view); return view
@@ -29,8 +41,8 @@ final class DevicesModule: NotchModule {
         if !Runtime.diagnostics, settings.enabled { Task { @MainActor [weak self] in await self?.start() } }
     }
     func setVisibility(panel: Bool, activeTab: String) {}
-    func systemDidWake() {}
-    func stop() { stopped = true; operation?.cancel(); node?.stop(); node = nil }
+    func systemDidWake() { sync.configure() }
+    func stop() { stopped = true; operation?.cancel(); node?.stop(); node = nil; sync.stop() }
     private func save() { if !Runtime.diagnostics { context.settings.save("devices", settings) } }
     private func update(_ text: String) { status = text; refresh() }
     private func refresh() { for view in views.allObjects { view.reload() } }
@@ -61,7 +73,8 @@ final class DevicesModule: NotchModule {
             self.settings.peers.removeAll { $0.id == peer.id }; self.settings.peers.append(peer)
             return self.context.settings.save("devices", self.settings)
         }
-        fresh.changed = { [weak self] in self?.invitation = ""; self?.refresh() }
+        fresh.changed = { [weak self] in self?.invitation = ""; self?.sync.configure(); self?.refresh() }
+        fresh.exchange = { [weak sync] id, input in guard let sync else { throw DeviceError.unavailable }; return try await sync.exchange(id, input: input) }
         fresh.received = { [weak self] name, path, _ in
             guard let self else { return }
             self.received.insert((name, path), at: 0); self.received = Array(self.received.prefix(20))
@@ -71,6 +84,7 @@ final class DevicesModule: NotchModule {
             try await fresh.start(port: settings.port)
             guard node === fresh, !stopped else { fresh.stop(); return }
             settings.enabled = true; save(); update("Ready. Add a device or send to a paired device.")
+            sync.configure()
         } catch {
             guard node === fresh else { return }
             fresh.stop(); node = nil; settings.enabled = false; save()
@@ -120,6 +134,12 @@ final class DevicesModule: NotchModule {
         private let addresses = NSPopUpButton()
         private let port = NSTextField()
         private let received = column([])
+        private let selectedFile = label("")
+        private var shownDraft = -1
+        private var noteSyncSwitch: ActionSwitch?
+        private var clipboardSyncSwitch: ActionSwitch?
+        private let syncStatus = label("")
+        private let conflicts = column([])
         private var sharingSwitch: ActionSwitch?
         private var buttons: [NSButton] = []
         init(module: DevicesModule) {
@@ -139,6 +159,9 @@ final class DevicesModule: NotchModule {
             code.placeholderString = "Paste an invitation from another device"; code.setAccessibilityLabel("Invitation from another device")
             text.placeholderString = "Text to send"; text.setAccessibilityLabel("Text to send")
             peers.setAccessibilityLabel("Paired devices")
+            let noteSync = ActionSwitch("Sync notes with this device", value: false) { [weak self] on in self?.setSync(notes: on) }
+            let clipboardSync = ActionSwitch("Automatically share clipboard text", value: false) { [weak self] on in self?.setSync(clips: on) }
+            noteSyncSwitch = noteSync; clipboardSyncSwitch = clipboardSync
             let create = actionButton("Create Invitation") { [weak self] in
                 guard let self, let module = self.module else { return }
                 do { module.invitation = try module.node?.invite(host: self.addresses.titleOfSelectedItem ?? "").code ?? ""
@@ -156,14 +179,14 @@ final class DevicesModule: NotchModule {
             }
             let remove = actionButton("Remove Device") { [weak self] in
                 guard let self, let module = self.module, let peer = self.selected, !Runtime.diagnostics else { return }
-                module.node?.remove(peer.id); module.settings.peers.removeAll { $0.id == peer.id }; module.save(); module.refresh()
+                module.node?.remove(peer.id); module.settings.peers.removeAll { $0.id == peer.id }; module.save(); module.sync.configure(); module.refresh()
                 Task { await module.credentials { Keychain.delete("QNotch/Devices/" + peer.id) } }
             }
             let permission = actionButton("Toggle Receiving") { [weak self] in
                 guard let self, let module = self.module, let peer = self.selected else { return }
                 module.node?.setReceive(peer.id, !peer.receive)
                 if let index = module.settings.peers.firstIndex(where: { $0.id == peer.id }) { module.settings.peers[index].receive = !peer.receive }
-                module.save(); module.refresh()
+                module.save(); module.sync.configure(); module.refresh()
             }
             let sendText = actionButton("Send Text") { [weak self] in
                 guard let self, let module = self.module, let peer = self.selected else { return }
@@ -172,6 +195,9 @@ final class DevicesModule: NotchModule {
             }
             let sendFile = actionButton("Send File") { [weak self] in
                 guard let self, let module = self.module, let peer = self.selected else { return }
+                if let url = module.draftFile {
+                    Task { @MainActor in module.run(success: "File sent.") { try await $0.send(peer.id, file: url) } }; return
+                }
                 let panel = NSOpenPanel(); panel.canChooseDirectories = false; panel.allowsMultipleSelection = false
                 guard panel.runModal() == .OK, let url = panel.url else { return }
                 Task { @MainActor in module.run(success: "File sent.") { node in try await node.send(peer.id, file: url) { [weak module] percent in module?.update("Sending \(percent)%") } } }
@@ -191,12 +217,15 @@ final class DevicesModule: NotchModule {
                     settingsRow("Add another device", detail: "Create an invitation and paste it into Settings, Devices on the other computer.", control: create, width: width)
                 ], width: width),
                 invite, code, add, status,
-                settingsGroup([settingsRow("Paired devices", control: peers, width: width)], width: width),
-                row([check, remove, permission]), text, row([sendText, sendFile, cancel]),
+                settingsGroup([settingsRow("Paired devices", control: peers, width: width),
+                               settingsRow("Sync notes with this device", detail: "Enable separately on both computers. Offline edits and conflicting versions are preserved.", control: noteSync, width: width),
+                               settingsRow("Automatically share clipboard text", detail: "Clipboard text may contain sensitive content. It is never written to the sync journal.", control: clipboardSync, width: width)], width: width),
+                syncStatus, conflicts, row([check, remove, permission]), text, selectedFile, row([sendText, sendFile, cancel]),
                 label("Received items are saved to Downloads/QNotch/Devices. Nothing opens or copies to the clipboard automatically.", size: 11, color: .secondaryLabelColor), received, openInbox
             ])
             for field in [invite, code, text] { field.widthAnchor.constraint(equalToConstant: width).isActive = true }
             status.preferredMaxLayoutWidth = width
+            syncStatus.preferredMaxLayoutWidth = width
             embed(list, in: self, inset: 0, fill: true); reload()
         }
         required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -205,14 +234,45 @@ final class DevicesModule: NotchModule {
             let list = module.node?.devices ?? module.settings.peers
             return list.indices.contains(peers.indexOfSelectedItem) ? list[peers.indexOfSelectedItem] : nil
         }
+        private func setSync(notes: Bool? = nil, clips: Bool? = nil) {
+            guard let module, let peer = selected, !Runtime.diagnostics,
+                  let index = module.settings.peers.firstIndex(where: { $0.id == peer.id }) else { return }
+            if let notes { module.settings.peers[index].syncNotes = notes }
+            if let clips { module.settings.peers[index].syncClipboard = clips }
+            let policy = module.settings.peers[index]
+            module.node?.setSync(peer.id, notes: policy.syncNotes, clipboard: policy.syncClipboard)
+            module.save(); module.sync.configure(); module.refresh()
+        }
         func reload() {
             guard let module else { return }
+            if shownDraft != module.draftVersion { text.stringValue = module.draftText; shownDraft = module.draftVersion }
+            selectedFile.stringValue = module.draftFile.map { "Selected file: " + $0.lastPathComponent } ?? ""
+            selectedFile.isHidden = module.draftFile == nil
             sharingSwitch?.state = (module.node?.port ?? 0) > 0 ? .on : .off
             let selectedID = selected?.id
             status.stringValue = module.status; invite.stringValue = module.invitation
             let list = module.node?.devices ?? module.settings.peers
             peers.removeAllItems(); peers.addItems(withTitles: list.map { $0.name + ($0.receive ? " (receiving on)" : " (receiving off)") })
             if let index = list.firstIndex(where: { $0.id == selectedID }) { peers.selectItem(at: index) }
+            let policy = module.settings.peers.first { $0.id == selected?.id }
+            noteSyncSwitch?.state = policy?.syncNotes == true ? .on : .off
+            clipboardSyncSwitch?.state = policy?.syncClipboard == true ? .on : .off
+            noteSyncSwitch?.isEnabled = selected != nil && !Runtime.diagnostics
+            clipboardSyncSwitch?.isEnabled = selected != nil && !Runtime.diagnostics
+            syncStatus.stringValue = module.sync.status
+            conflicts.arrangedSubviews.forEach { conflicts.removeArrangedSubview($0); $0.removeFromSuperview() }
+            for (index, revision) in module.sync.conflicts.enumerated() {
+                let editor = NSTextView()
+                editor.isEditable = false; editor.isSelectable = true; editor.isRichText = false; editor.drawsBackground = false
+                editor.string = revision.text.isEmpty ? "(Empty note)" : revision.text
+                editor.font = .systemFont(ofSize: 12); editor.textColor = .labelColor
+                editor.isVerticallyResizable = true; editor.autoresizingMask = .width; editor.textContainer?.widthTracksTextView = true
+                editor.setAccessibilityLabel("Conflicting note version \(index + 1)")
+                let scroll = NSScrollView(); scroll.documentView = editor; scroll.hasVerticalScroller = true
+                size(scroll, width: SettingsController.contentWidth, height: 80)
+                let choose = actionButton("Use Version \(index + 1)") { [weak module] in module?.sync.resolve(revision.id) }
+                conflicts.addArrangedSubview(column([scroll, choose]))
+            }
             let ready = (module.node?.port ?? 0) > 0 && module.operation == nil && !Runtime.diagnostics
             for (index, button) in buttons.enumerated() { button.isEnabled = ready && (index < 2 || selected != nil) }
             port.isEnabled = module.node == nil

@@ -160,11 +160,9 @@ private final class CopyRow: FillView {
         setAccessibilityElement(true)
         setAccessibilityRole(.button)
         setAccessibilityLabel("\(entry.line). \(entry.meta). Copies it again.")
-        if compact {
-            let item = ClosureMenuItem(title: "Delete") { [weak module] in module?.remove(entry) }
-            menu = NSMenu()
-            menu?.addItem(item)
-        }
+        menu = NSMenu()
+        if entry.text != nil { menu?.addItem(ClosureMenuItem(title: "Send to Device…") { [weak module] in module?.sendToDevice(entry) }) }
+        menu?.addItem(ClosureMenuItem(title: "Delete") { [weak module] in module?.remove(entry) })
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 

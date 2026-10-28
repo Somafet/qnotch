@@ -33,21 +33,35 @@ retried; this version does not promise exactly-once delivery.
 
 ## Reachability
 
-Computers must be reachable over the local network. Ethernet and Wi-Fi can be mixed. Allow
+Computers must be reachable over the local network or Tailscale. Ethernet and Wi-Fi can be mixed. Allow
 QNotch's listening port (45874 by default) for private networks in your firewall. macOS may also
 ask for local-network permission. Guest Wi-Fi often isolates devices. This version supports
-private/link-local IPv4 addresses, with manual pairing; it does not discover peers, relay over
+private/link-local IPv4 addresses and Tailscale IPv4 addresses, with manual pairing; it does not discover peers, relay over
 the internet, or support IPv6-only networks. Change the listening port while sharing is off if
 another app uses it.
 
 **Check connection** tests the authenticated connection. Saved addresses are fixed; if DHCP
 changes an address, remove that pairing and add it again.
 
-## Scope and checks
+## Optional synchronization
 
-This version provides explicit text/file sending. Automatic clipboard and notes synchronization,
-offline queues, revision conflicts and deletion reconciliation remain follow-up work for
-[issue 98](https://github.com/Somafet/qnotch/issues/98).
+Select a paired device and enable **Sync notes with this device** or **Automatically share
+clipboard text** separately on both computers. These switches start off. Clipboard sync shares
+future captured text and can include sensitive content. Synced clipboard text stays in memory;
+the disk journal stores only its replay-prevention stamp. Images are not synchronized.
+
+Notes keep local edits while the other computer is offline and retry when it reconnects.
+Concurrent edits preserve both versions: inspect them in Devices and choose **Use version**
+to resolve the conflict. Clearing a note is synchronized as an edit, so replaying an older note
+does not restore its text. A mismatch between the note file and sync journal after restart is
+also preserved for resolution. Corrupt journals pause sync without replacing the files.
+
+Sync supports notes up to 100000 UTF-16 code units, eight concurrent versions and 64 causal
+authors. Resolve current conflicts before adding more versions. Disabling incoming transfers
+from a device also stops synchronization with it. Turning local sharing off keeps pending note
+edits locally until sharing is enabled again.
+
+## Checks
 
 Run `dotnet run --project tests/QNotch.DeviceTests -c Release` on Windows or macOS to test
 the exact transport compiled into Windows. Native Mac tests cover shared cryptographic fixtures

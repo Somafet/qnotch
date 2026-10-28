@@ -9,6 +9,7 @@
   <ItemGroup>
     <Compile Include="../../src/QNotch/Modules/Devices/DeviceProtocol.cs" Link="DeviceProtocol.cs" />
     <Compile Include="../../src/QNotch/Modules/Devices/DeviceNode.cs" Link="DeviceNode.cs" />
+    <Compile Include="../../src/QNotch/Modules/Devices/DeviceSync.cs" Link="DeviceSync.cs" />
     <None Include="../fixtures/devices/*.json" Link="fixtures/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>
