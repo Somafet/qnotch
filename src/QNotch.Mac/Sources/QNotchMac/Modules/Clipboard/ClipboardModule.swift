@@ -18,6 +18,7 @@ final class ClipboardModule: NotchModule {
     private let views = NSHashTable<AnyObject>.weakObjects()
     private(set) var denied = false
     private(set) var checks = 0
+    private var sharing: SharedTextSource?
     var filter: ClipKind? { didSet { refresh() } }
     private var historyURL: URL { context.settings.directory.appendingPathComponent("clipboard.json") }
 
@@ -30,6 +31,15 @@ final class ClipboardModule: NotchModule {
 
     func initialize(_ context: ModuleContext) {
         self.context = context
+        let source = SharedTextSource(id: "clipboard", order: 20, read: { nil }, apply: { [weak self] text in
+            guard let self, let entry = ClipText.entry(text) else { return }
+            let board = NSPasteboard.general; board.clearContents()
+            guard board.setString(text, forType: .string) else {
+                throw NSError(domain: "QNotch.Clipboard", code: 1, userInfo: [NSLocalizedDescriptionKey: "The clipboard is unavailable."])
+            }
+            self.ownWrite = board.changeCount; self.lastChange = board.changeCount; self.add(entry)
+        })
+        sharing = source; context.registries.sharedText.register(source)
         settings = context.settings.load("clipboard", default: ClipboardSettings())
         if settings.keepHistory { loadHistory() }
         context.registries.cards.register(ViewContribution(id: "clipboard", title: "Clipboard", order: 30, symbol: "doc.on.clipboard") { [unowned self] in
@@ -119,6 +129,7 @@ final class ClipboardModule: NotchModule {
         if types.contains(.string), let data = pasteboard.data(forType: .string), data.count <= ClipText.maxTextLength * 4,
            let text = String(data: data, encoding: .utf8), let entry = ClipText.entry(text) {
             add(entry)
+            sharing?.changed?(text)
             return
         }
         guard let raw = pasteboard.data(forType: .png) ?? pasteboard.data(forType: .tiff), raw.count <= 34 << 20 else { return }
@@ -143,6 +154,12 @@ final class ClipboardModule: NotchModule {
 
     // MARK: Actions
 
+    func sendToDevice(_ entry: ClipEntry) {
+        guard let text = entry.text else { return }
+        if let route = context.registries.shareRoutes.items.first { route.prepare(text, nil) }
+        else { context.shell?.openSettings(section: "features") }
+    }
+
     func copyAgain(_ entry: ClipEntry) {
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
@@ -154,6 +171,7 @@ final class ClipboardModule: NotchModule {
         ownWrite = pasteboard.changeCount
         lastChange = ownWrite ?? lastChange
         history.add(entry.with(created: Date()))
+        if let text = entry.text { sharing?.changed?(text) }
         changed()
     }
 

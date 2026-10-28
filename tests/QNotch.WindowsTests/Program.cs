@@ -6,9 +6,12 @@ using QNotch.Shell;
 using QNotch.Shell.Onboarding;
 using QNotch.Shell.Settings;
 
+if (args.Contains("--devices-idle")) { DeviceSyncChecks.MeasureIdle(); return 0; }
+
 var tests = new List<(string Name, Action Run)>
 {
     ("Terminal defaults, local opt-in, bounded VT screen and input encoding", TerminalChecks.Deterministic),
+    ("Devices sync coordinator preserves conflicts, suppresses clipboard echoes and restores its journal", DeviceSyncChecks.Run),
     ("Small and Medium bodies fit live, empty, loading and error states", CardRenderingChecks.Run),
     ("Home sizes preserve defaults, reject unsupported choices and survive reload", () =>
     {

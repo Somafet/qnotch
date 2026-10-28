@@ -30,6 +30,7 @@ Use Windows x64 and the .NET 10 SDK. From the repository root:
 dotnet build src/QNotch/QNotch.csproj -c Release -warnaserror
 dotnet run --project tests/QNotch.UpdateTests -c Release
 dotnet run --project tests/QNotch.PhoneShareTests -c Release
+dotnet run --project tests/QNotch.DeviceTests -c Release
 dotnet run --project tests/QNotch.OnboardingTests -c Release
 ```
 

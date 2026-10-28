@@ -45,6 +45,7 @@ public sealed class ClipboardModule : INotchModule, ICadenceAware
     int _pending; // latest clipboard sequence number waiting for the worker (0 = none); bursts coalesce
     uint _selfSeq, _lastSeq;
     bool _fast;
+    SharedTextSource _sharing = null!;
 
     public void Initialize(ModuleContext ctx)
     {
@@ -57,7 +58,14 @@ public sealed class ClipboardModule : INotchModule, ICadenceAware
         ctx.Search.Register(new SearchSource("clipboard", "Clipboard", Glyphs.Clipboard, 10, q => _st.Entries
             .Where(e => e.Text.Contains(q, StringComparison.OrdinalIgnoreCase))
             .Select(e => new SearchHit(SearchHit.Snippet(e.Text, q), $"{e.Meta} · copies it", () => { CopyAgain(e); ctx.Shell.ClosePanel(); }))));
-        ctx.Bus.Subscribe<ClipReady>(e => Add(e.Entry));
+        _sharing = new SharedTextSource("clipboard", 20, () => null, text =>
+        {
+            if (ClipProcessor.FromText(text) is not { } entry) return;
+            if (!ClipboardNative.WriteText(_ctx.Shell.Hwnd, text)) throw new IOException("The clipboard is busy. The incoming revision has not been applied.");
+            _selfSeq = ClipboardNative.GetClipboardSequenceNumber(); Add(entry);
+        });
+        ctx.SharedText.Register(_sharing);
+        ctx.Bus.Subscribe<ClipReady>(e => { Add(e.Entry); if (!e.Entry.IsImage) _sharing.Publish(e.Entry.Text); });
         ctx.Shell.TabChanged += _ => UpdateAgeTimer();
 
         if (ctx.Settings.ReadOnly) { Seed(); return; } // snapshot run: demo data, never touch the real clipboard
@@ -180,6 +188,16 @@ public sealed class ClipboardModule : INotchModule, ICadenceAware
         var delete = new MenuItem { Header = "Delete" };
         delete.Click += (_, _) => Remove(e);
         var menu = new ContextMenu();
+        if (!e.IsImage)
+        {
+            var send = new MenuItem { Header = "Send to device..." };
+            send.Click += (_, _) =>
+            {
+                if (_ctx.ShareRoutes.Items.FirstOrDefault() is { } route) route.Prepare(e.Text, null);
+                else _ctx.Shell.OpenSettings("features");
+            };
+            menu.Items.Add(send);
+        }
         menu.Items.Add(delete);
         menu.Opened += (_, _) => hold ??= _ctx.Shell.HoldOpen();
         menu.Closed += (_, _) => { hold?.Dispose(); hold = null; };
@@ -214,6 +232,7 @@ public sealed class ClipboardModule : INotchModule, ICadenceAware
         _selfSeq = ClipboardNative.GetClipboardSequenceNumber();
         if (!ok) return;
         e.JustCopied = true;
+        if (!e.IsImage) _sharing.Publish(e.Text);
         _st.NotifyFlash();
         Task.Delay(1200).ContinueWith(_ => _ctx.Bus.Run(() => { e.JustCopied = false; _st.NotifyFlash(); }));
     }

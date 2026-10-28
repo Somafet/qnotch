@@ -42,7 +42,7 @@ public enum Onboarding {
     /// The Features step's groups, in order, with every module id either platform has.
     public static let groups: [Group] = [
         Group(title: "At a glance", modules: ["stats", "media", "weather", "capture", "timer", "volume"]),
-        Group(title: "Get things done", modules: ["clipboard", "search", "note", "filetray", "colorpicker", "scheduled"]),
+        Group(title: "Get things done", modules: ["clipboard", "search", "note", "filetray", "devices", "colorpicker", "scheduled"]),
         Group(title: "For developers", modules: ["agents", "ai", "github", "notifications", "terminal"])
     ]
 

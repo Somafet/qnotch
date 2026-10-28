@@ -58,9 +58,12 @@ test('Mac validation builds a real native app, runs regressions and UI smoke, ch
   const mac = yaml('.github/workflows/ci.yml').jobs.macos;
   assert.equal(mac['runs-on'], 'macos-14');
   const runs = mac.steps.filter(step => step.run).map(step => step.run);
-  assert.deepEqual(runs, ['bash scripts/macos/build.sh', 'bash scripts/macos/test.sh', 'bash scripts/macos/smoke.sh',
+  assert.deepEqual(runs, ['dotnet build tests/QNotch.DeviceTests -c Release', 'bash scripts/macos/build.sh', 'bash scripts/macos/test.sh', 'bash scripts/macos/smoke.sh',
     'node scripts/check-snapshots.mjs dist/macos/smoke']);
   assert.ok(mac.steps.some(step => step.uses?.startsWith('actions/setup-node@') && step.with['node-version'] === '24'));
+  assert.ok(mac.steps.some(step => step.uses?.startsWith('actions/setup-dotnet@') && step.with['dotnet-version'] === '10.0.x'));
+  assert.match(mac.steps.find(step => step.run === 'bash scripts/macos/test.sh').env.QNOTCH_DEVICE_TEST_DLL,
+    /tests\/QNotch.DeviceTests\/bin\/Release\/net10\.0\/QNotch.DeviceTests\.dll$/);
   assert.ok(!JSON.stringify(mac).includes('secrets.'));
   assert.ok(!JSON.stringify(mac).includes('publish-release'));
   const artifact = mac.steps.find(step => step.uses?.startsWith('actions/upload-artifact@'));

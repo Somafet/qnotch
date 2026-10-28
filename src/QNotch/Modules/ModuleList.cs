@@ -24,6 +24,7 @@ public static class ModuleList
 {
     public static readonly IReadOnlyList<ModuleInfo> All =
     [
+        new("devices", "Devices", "Share text and files with paired Macs and Windows PCs on your local network.", () => new QNotch.Modules.Devices.DevicesModule(), Glyph: ""),
         new("stats", "System stats", "CPU, memory, network, battery and clock in the pill, the System card and the game bar.", () => new StatsModule(), Early: true,
             Glyph: ""),
         new("media", "Now playing", "Track, artwork and controls for anything that plays media.", () => new MediaModule(), Early: true, Glyph: Glyphs.Music),
@@ -56,7 +57,7 @@ public static class ModuleList
     public static readonly IReadOnlyList<(string Title, string[] Ids)> TourGroups =
     [
         ("At a glance", ["stats", "media", "weather", "capture", "timer", "volume"]),
-        ("Get things done", ["clipboard", "search", "note", "filetray", "colorpicker", "scheduled"]),
+        ("Get things done", ["clipboard", "search", "note", "filetray", "devices", "colorpicker", "scheduled"]),
         ("For developers", ["agents", "ai", "github", "notifications", "terminal"]),
     ];
 

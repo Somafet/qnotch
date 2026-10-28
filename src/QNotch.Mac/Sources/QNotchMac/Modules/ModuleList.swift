@@ -32,6 +32,8 @@ struct ModuleInfo {
 enum ModuleList {
     // The only composition file that names a concrete module. Disabled modules aren't created.
     static let all: [ModuleInfo] = [
+        ModuleInfo(id: "devices", title: "Devices", detail: "Share text and files with paired Macs and Windows PCs on your local network.",
+                   symbol: "laptopcomputer.and.iphone", tint: .systemBlue) { DevicesModule() },
         ModuleInfo(id: "media", title: "Now playing", detail: "Track, artwork and controls for Music and Spotify, beside the notch and on Home.",
                    symbol: "music.note", tint: .systemRed) { MediaModule() },
         ModuleInfo(id: "stats", title: "System stats", detail: "CPU, memory, GPU and network on a System card, with the stats you pick beside the notch.",

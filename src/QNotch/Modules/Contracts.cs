@@ -23,6 +23,21 @@ public interface ICadenceAware
 
 public interface IRegistryItem { string Id { get; } int Order { get; } }
 
+/// <summary>A module's native sharing composer. Preparing never transfers data without an explicit Send.</summary>
+public sealed record ShareRoute(string Id, int Order, Action<string?, string?> Prepare) : IRegistryItem;
+
+/// <summary>Text owned by a feature. Null Read means not loaded/available yet. Apply must throw
+/// if the text could not be applied, so sync cannot acknowledge a failed revision. Main thread only.</summary>
+public sealed class SharedTextSource(string id, int order, Func<string?> read, Action<string> apply) : IRegistryItem
+{
+    public string Id => id;
+    public int Order => order;
+    public Func<string?> Read => read;
+    public Action<string> Apply => apply;
+    public event Action<string>? Changed;
+    public void Publish(string text) => Changed?.Invoke(text);
+}
+
 public enum CardSize { Small = 1, Medium = 2 }
 
 /// <summary>A card on the Home grid. Factory runs once; the body adapts to its arranged width. Every card supports Small.</summary>
@@ -204,4 +219,6 @@ public sealed class ModuleContext
     /// <summary>Snapshot run only: pill states the snapshot shows one at a time, see <see cref="DemoState"/>.</summary>
     public Registry<DemoState> Demos { get; init; } = new();
     public Registry<QuickActionDescriptor> QuickActions { get; init; } = new();
+    public Registry<ShareRoute> ShareRoutes { get; init; } = new();
+    public Registry<SharedTextSource> SharedText { get; init; } = new();
 }

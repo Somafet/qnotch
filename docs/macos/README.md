@@ -33,6 +33,10 @@ Alternatively, launch the executable with `--data-dir /absolute/temporary/direct
 
 ## Behavior and availability
 
+- Settings, **Devices** adds trusted Macs and Windows PCs for encrypted text/file sharing over
+  reachable IPv4 LAN connections. Networking is off by default. See [device sharing](../devices.md)
+  for pairing, permissions, transfer limits and the scope of cross-platform validation.
+
 - Settings, General, **Show menu-bar icon** applies immediately and is saved as `showMenuBarIcon` in `general.json`. New settings and older files without the key default to visible. Hiding it leaves the notch, modules, login launch and accessory/Dock behavior unchanged. To restore it, use the notch’s Settings button or reopen QNotch from Finder or Spotlight. Settings, **About** has Quit, updates and storage/display diagnostics; **Game mode** has the session override (Automatic, On, Off). ⌘, opens Settings and ⌘Q quits while a QNotch window has focus. No disabled shortcut is enabled for recovery. Menu-bar visibility is local and is not carried in setup codes.
 
 - Choose the main display or a specific connected display in Settings. If the selected display disconnects, QNotch falls back to the main display and reports the unavailable selection; reconnecting restores it. With no display, the panel is hidden.
@@ -79,7 +83,7 @@ Alternatively, launch the executable with `--data-dir /absolute/temporary/direct
 
 ## Module and platform boundaries
 
-`Sources/QNotchMac/Shell/` owns AppKit windows, focus, hover, display events, navigation, search hosting, and general settings. `Modules/Contracts.swift` defines five local registries: **cards, tabs, status segments, search sources, and settings sections**. `ModuleList.swift` is the only composition file naming concrete modules. A disabled module is never constructed. Enabled modules can also contribute menu-bar actions through the owner-scoped `menuActions` registry; the shell renders these generically and removes them when their module stops. Each module owns its state, providers, views, and preferences; it receives visibility and active-tab changes rather than inspecting window internals.
+`Sources/QNotchMac/Shell/` owns AppKit windows, focus, hover, display events, navigation, search hosting, and general settings. `Modules/Contracts.swift` defines local registries for **cards, tabs, status segments, search sources, settings sections, sharing routes and shared text sources**. `ModuleList.swift` is the only composition file naming concrete modules. A disabled module is never constructed. Enabled modules can also contribute menu-bar actions through the owner-scoped `menuActions` registry; the shell renders these generically and removes them when their module stops. Each module owns its state, providers, views, and preferences; it receives visibility and active-tab changes rather than inspecting window internals.
 
 `Modules/Timer/` supplies the real countdown module. A visible running countdown refreshes at most once per second; collapsed or hidden content schedules only its completion deadline. A stopped or paused timer has no scheduled work. Its collapsed segments (a progress ring and the time left) show whole minutes, so a running collapsed timer wakes once per minute and once per second only during its final minute, as on Windows. Completion is a justified one-shot background wake. Sleep/wake and clock-change events reconcile the wall-clock deadline; changing the system clock can change the remaining duration.
 

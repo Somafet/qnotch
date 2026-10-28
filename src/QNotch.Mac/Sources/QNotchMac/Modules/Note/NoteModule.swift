@@ -17,9 +17,15 @@ final class NoteModule: NotchModule {
     private var pending: DispatchWorkItem?
     private var revision = 0
     private weak var card: NoteCardView?
+    private var loaded = false
+    private var sharing: SharedTextSource?
 
     func initialize(_ context: ModuleContext) {
         self.context = context
+        let source = SharedTextSource(id: "note", order: 10, read: { [weak self] in
+            guard let self, self.loaded else { return nil }; return self.text
+        }, apply: { [weak self] text in self?.edit(text); self?.card?.reload() })
+        sharing = source; context.registries.sharedText.register(source)
         url = context.settings.directory.appendingPathComponent("note.txt")
         context.registries.cards.register(ViewContribution(id: "note", title: "Note", order: 45, symbol: "note.text") { [unowned self] in
             let card = NoteCardView(module: self)
@@ -41,10 +47,12 @@ final class NoteModule: NotchModule {
             let date = (try? FileManager.default.attributesOfItem(atPath: url.path))?[.modificationDate] as? Date
             DispatchQueue.main.async {
                 // Typing before the load finished wins.
-                guard let self, !self.edited else { return }
-                self.text = String(loaded.prefix(NoteText.maxLength))
+                guard let self else { return }
+                if !self.edited { self.text = String(loaded.prefix(NoteText.maxLength)) }
+                self.loaded = true
                 self.modified = date
                 self.card?.reload()
+                self.sharing?.changed?(self.text)
             }
         }
     }
@@ -64,6 +72,7 @@ final class NoteModule: NotchModule {
         pending = task
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: task)
         card?.refreshFooter()
+        if loaded { sharing?.changed?(text) }
     }
 
     private func flush(wait: Bool = false) {

@@ -142,6 +142,7 @@
                                         </MenuItem.Style>
                                     </MenuItem>
                                     <MenuItem Header="Copy path" Click="OnCopyPath"/>
+                                    <MenuItem Header="Send to device..." Click="OnSendToDevice"/>
                                     <Separator/>
                                     <MenuItem Header="Remove from tray" Click="OnRemove"/>
                                 </ContextMenu>

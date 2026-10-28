@@ -13,15 +13,17 @@ public partial class FileTrayView : UserControl
     readonly FileTrayState _state;
     readonly IShell _shell;
     readonly PhoneShareService _share;
+    readonly Action<string> _sendToDevice;
     IDisposable? _menuHold;
     Point? _dragStart;
 
-    public FileTrayView(FileTrayService svc, FileTrayState state, IShell shell, PhoneShareService share)
+    public FileTrayView(FileTrayService svc, FileTrayState state, IShell shell, PhoneShareService share, Action<string> sendToDevice)
     {
         _svc = svc;
         _state = state;
         _shell = shell;
         _share = share;
+        _sendToDevice = sendToDevice;
         DataContext = state;
         InitializeComponent();
         // The sharing view is built the first time it opens, keeping the tab factory cheap.
@@ -95,6 +97,7 @@ public partial class FileTrayView : UserControl
     void OnReveal(object sender, RoutedEventArgs e) { if (Item(sender) is { IsMissing: false } it) _svc.Reveal(it); }
     void OnExport(object sender, RoutedEventArgs e) { if (Item(sender) is { IsMissing: false } it) ExportTo([it]); }
     void OnShareOne(object sender, RoutedEventArgs e) { if (Item(sender) is { IsMissing: false, IsFolder: false } it) _share.OpenWith(it); }
+    void OnSendToDevice(object sender, RoutedEventArgs e) { if (Item(sender) is { IsMissing: false, IsFolder: false } it) _sendToDevice(it.Path); }
     void OnRemove(object sender, RoutedEventArgs e) { if (Item(sender) is { } it) _svc.Remove(it); }
 
     void OnCopyPath(object sender, RoutedEventArgs e)

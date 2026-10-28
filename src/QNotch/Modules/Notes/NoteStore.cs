@@ -19,11 +19,14 @@ internal sealed class NoteStore
     readonly object _gate = new();
     string? _pending;   // text not yet on disk
     bool _loaded;
+    readonly SharedTextSource _sharing;
 
     public NoteStore(ModuleContext ctx, NoteState state)
     {
         _ctx = ctx;
         _s = state;
+        _sharing = new SharedTextSource("note", 10, () => _loaded ? _s.NoteText : null, text => _s.NoteText = text);
+        ctx.SharedText.Register(_sharing);
         _timer = new Timer(_ => Save(), null, Timeout.Infinite, Timeout.Infinite);
         _s.NoteDateText = DateText(DateTime.Now);
     }
@@ -45,6 +48,7 @@ internal sealed class NoteStore
                 // Typing before the load finished wins: never overwrite what the user already entered.
                 if (_s.NoteText.Length == 0 && text.Length > 0) _s.NoteText = text;
                 else if (_pending is not null) { _s.NoteStatus = NoteStatus.Editing; _timer.Change(DebounceMs, Timeout.Infinite); }
+                if (!_ctx.Settings.ReadOnly) _sharing.Publish(_s.NoteText);
             });
         });
     }
@@ -55,6 +59,7 @@ internal sealed class NoteStore
         var text = _s.NoteText;
         _s.NoteWordsText = WordsText(text);
         if (!_loaded) { _pending = text; return; } // the load callback sets the status
+        if (!_ctx.Settings.ReadOnly) _sharing.Publish(text);
         if (text == _lastSaved) return;
         lock (_gate) _pending = text;
         _s.NoteStatus = NoteStatus.Editing;
