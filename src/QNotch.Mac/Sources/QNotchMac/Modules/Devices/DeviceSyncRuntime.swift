@@ -102,8 +102,8 @@ final class DeviceSyncRuntime {
         if peer.syncClipboard, incoming.clipboardEnabled, source("clipboard") != nil { clip = try candidate.receiveClipboard(incoming.clipboard) }
         applying = true
         defer { applying = false }
-        if let note, let source = source("note"), source.read() != note { source.apply(note); lastNote = note }
-        if let clip { source("clipboard")?.apply(clip) }
+        if let note, let source = source("note"), source.read() != note { try source.apply(note); lastNote = note }
+        if let clip { try source("clipboard")?.apply(clip) }
         state = candidate
         if before != fingerprint() { persist(); schedule(1) }
         status = conflicts.isEmpty ? "Sync is up to date." : "Note conflict: both versions are preserved. Choose a version below to resolve it."
@@ -118,7 +118,7 @@ final class DeviceSyncRuntime {
         guard loaded, !failed, !Runtime.diagnostics, let source = source("note"), let selected = state.journal.notes.first(where: { $0.id == id }) else { return }
         do {
             let candidate = state.clone(); try candidate.editNote(selected.text, resolveAll: true)
-            applying = true; source.apply(selected.text); lastNote = selected.text; applying = false
+            applying = true; try source.apply(selected.text); lastNote = selected.text; applying = false
             state = candidate; persist(); status = "Note conflict resolved. The chosen version will sync."; schedule(1); changed()
         } catch { applying = false; status = "Could not resolve the note conflict."; changed() }
     }

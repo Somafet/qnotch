@@ -61,7 +61,7 @@ public sealed class ClipboardModule : INotchModule, ICadenceAware
         _sharing = new SharedTextSource("clipboard", 20, () => null, text =>
         {
             if (ClipProcessor.FromText(text) is not { } entry) return;
-            if (!ClipboardNative.WriteText(_ctx.Shell.Hwnd, text)) return;
+            if (!ClipboardNative.WriteText(_ctx.Shell.Hwnd, text)) throw new IOException("The clipboard is busy. The incoming revision has not been applied.");
             _selfSeq = ClipboardNative.GetClipboardSequenceNumber(); Add(entry);
         });
         ctx.SharedText.Register(_sharing);

@@ -26,7 +26,8 @@ public interface IRegistryItem { string Id { get; } int Order { get; } }
 /// <summary>A module's native sharing composer. Preparing never transfers data without an explicit Send.</summary>
 public sealed record ShareRoute(string Id, int Order, Action<string?, string?> Prepare) : IRegistryItem;
 
-/// <summary>Text owned by a feature. Null Read means not loaded/available yet. Main thread only.</summary>
+/// <summary>Text owned by a feature. Null Read means not loaded/available yet. Apply must throw
+/// if the text could not be applied, so sync cannot acknowledge a failed revision. Main thread only.</summary>
 public sealed class SharedTextSource(string id, int order, Func<string?> read, Action<string> apply) : IRegistryItem
 {
     public string Id => id;

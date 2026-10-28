@@ -85,10 +85,14 @@ internal static class DeviceSyncChecks
             Bus = new EventBus(dispatcher), Dispatcher = dispatcher, Settings = new SettingsStore(), Cards = new(), Tabs = new(),
             SettingsSections = new(), Segments = new(), Search = new(), Shell = null!, Hotkeys = null!, Shortcuts = null!, Sounds = null!,
         };
-        var localNote = "Existing local note"; var clipboardWrites = 0;
+        var localNote = "Existing local note"; var clipboardWrites = 0; var clipboardBusy = true;
         SharedTextSource? notes = null, clipboard = null;
         notes = new("note", 10, () => localNote, text => { localNote = text; notes!.Publish(text); });
-        clipboard = new("clipboard", 20, () => null, text => { clipboardWrites++; clipboard!.Publish(text); });
+        clipboard = new("clipboard", 20, () => null, text =>
+        {
+            if (clipboardBusy) { clipboardBusy = false; throw new IOException("Clipboard busy"); }
+            clipboardWrites++; clipboard!.Publish(text);
+        });
         ctx.SharedText.Register(notes); ctx.SharedText.Register(clipboard);
         var path = Path.Combine(folder, "sync.json");
         using (var runtime = new DeviceSyncRuntime(ctx, settings, () => null, path))
@@ -96,6 +100,9 @@ internal static class DeviceSyncChecks
             await Ready(runtime);
             var remote = new DeviceSync(remoteId, new()); remote.EditNote("Other computer note");
             var incoming = remote.Bundle(true, true) with { Clipboard = new(5, remoteId, "Private incoming clipboard") };
+            var busyRejected = false;
+            try { await runtime.Exchange(remoteId, DeviceProtocol.Encode(incoming)); } catch (IOException) { busyRejected = true; }
+            Require(busyRejected && clipboardWrites == 0, "a failed clipboard write must leave the revision retryable");
             await runtime.Exchange(remoteId, DeviceProtocol.Encode(incoming));
             Require(runtime.Conflicts.Count == 2 && localNote == "Existing local note", "concurrent incoming note must not replace the editor");
             Require(clipboardWrites == 1, "remote clipboard must be applied once");

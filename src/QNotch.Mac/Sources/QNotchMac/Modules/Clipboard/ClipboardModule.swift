@@ -33,7 +33,10 @@ final class ClipboardModule: NotchModule {
         self.context = context
         let source = SharedTextSource(id: "clipboard", order: 20, read: { nil }, apply: { [weak self] text in
             guard let self, let entry = ClipText.entry(text) else { return }
-            let board = NSPasteboard.general; board.clearContents(); board.setString(text, forType: .string)
+            let board = NSPasteboard.general; board.clearContents()
+            guard board.setString(text, forType: .string) else {
+                throw NSError(domain: "QNotch.Clipboard", code: 1, userInfo: [NSLocalizedDescriptionKey: "The clipboard is unavailable."])
+            }
             self.ownWrite = board.changeCount; self.lastChange = board.changeCount; self.add(entry)
         })
         sharing = source; context.registries.sharedText.register(source)

@@ -11,13 +11,14 @@ struct ShareRoute: Contribution {
 }
 
 /// Main-thread text owned by a feature; nil Read means not available/loaded yet.
+/// Apply throws when it cannot apply the text, leaving the revision eligible for retry.
 final class SharedTextSource: Contribution {
     let id: String
     let order: Int
     let read: () -> String?
-    let apply: (String) -> Void
+    let apply: (String) throws -> Void
     var changed: ((String) -> Void)?
-    init(id: String, order: Int, read: @escaping () -> String?, apply: @escaping (String) -> Void) {
+    init(id: String, order: Int, read: @escaping () -> String?, apply: @escaping (String) throws -> Void) {
         self.id = id; self.order = order; self.read = read; self.apply = apply
     }
 }

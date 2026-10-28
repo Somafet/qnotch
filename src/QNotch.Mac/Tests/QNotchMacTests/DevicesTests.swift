@@ -83,10 +83,13 @@ final class DevicesTests: XCTestCase {
         let localID = "00000000-0000-0000-0000-000000000001", remoteID = "00000000-0000-0000-0000-000000000002"
         let registries = ModuleRegistries(), context = ModuleContext(settings: .init(directory: root), registries: registries, shell: nil)
         let policy = DevicePeer(id: remoteID, name: "Other computer", host: "127.0.0.1", port: 45874, syncNotes: true, syncClipboard: true)
-        var localNote = "Existing local note", clipboardWrites = 0
+        var localNote = "Existing local note", clipboardWrites = 0, clipboardBusy = true
         var noteSource: SharedTextSource!, clipboardSource: SharedTextSource!
         noteSource = SharedTextSource(id: "note", order: 10, read: { localNote }, apply: { text in localNote = text; noteSource.changed?(text) })
-        clipboardSource = SharedTextSource(id: "clipboard", order: 20, read: { nil }, apply: { text in clipboardWrites += 1; clipboardSource.changed?(text) })
+        clipboardSource = SharedTextSource(id: "clipboard", order: 20, read: { nil }, apply: { text in
+            if clipboardBusy { clipboardBusy = false; throw DeviceError.unavailable }
+            clipboardWrites += 1; clipboardSource.changed?(text)
+        })
         registries.sharedText.register(noteSource); registries.sharedText.register(clipboardSource)
         let runtime = DeviceSyncRuntime(context: context, deviceID: localID, peers: { [policy] }, node: { nil })
         for _ in 0..<200 where !runtime.isReady { try await Task.sleep(nanoseconds: 10_000_000) }
@@ -95,6 +98,8 @@ final class DevicesTests: XCTestCase {
         let incoming = SyncBundle(notesEnabled: true, clipboardEnabled: true, notes: remote.journal.notes,
                                   clipboard: ClipboardRevision(counter: 5, author: remoteID, text: "Private incoming clipboard"))
         let payload = try JSONEncoder().encode(incoming)
+        do { _ = try await runtime.exchange(remoteID, input: payload); XCTFail("Failed clipboard write must leave the revision retryable") } catch { }
+        XCTAssertEqual(clipboardWrites, 0)
         _ = try await runtime.exchange(remoteID, input: payload)
         XCTAssertEqual(runtime.conflicts.count, 2); XCTAssertEqual(localNote, "Existing local note"); XCTAssertEqual(clipboardWrites, 1)
         _ = try await runtime.exchange(remoteID, input: payload); XCTAssertEqual(clipboardWrites, 1)
