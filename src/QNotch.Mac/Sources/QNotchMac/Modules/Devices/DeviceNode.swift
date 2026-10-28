@@ -31,7 +31,7 @@ final class DeviceNode {
         self.listener = listener
         let current = generation
         listener.newConnectionHandler = { [weak self] connection in
-            Task { @MainActor in
+            Task { @MainActor [weak self] in
                 guard let self, self.generation == current, self.sockets.count < 4,
                       case let .hostPort(host, _) = connection.endpoint, DeviceWire.localAddress(String(describing: host)) else { connection.cancel(); return }
                 let socket = DeviceSocket(connection), token = UUID()
