@@ -32,9 +32,10 @@ public sealed class DevicesModule : INotchModule
     string? draftFile;
     int draftVersion;
     DeviceSyncRuntime sync = null!;
+    internal static DevicesSettings ReadSettings(SettingsStore store) => store.ReadOnly ? new DevicesSettings() : store.Get<DevicesSettings>("devices");
     public void Initialize(ModuleContext context)
     {
-        ctx = context; settings = ctx.Settings.Get<DevicesSettings>("devices");
+        ctx = context; settings = ReadSettings(ctx.Settings);
         sync = new DeviceSyncRuntime(ctx, settings, () => node); sync.Changed += () => refresh?.Invoke();
         ctx.SettingsSections.Register(new("devices", "Devices", "", 35, MakePage));
         ctx.ShareRoutes.Register(new("devices", 10, (text, path) =>

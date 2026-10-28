@@ -77,6 +77,10 @@ internal static class DeviceSyncChecks
     }
     static async Task Check(Dispatcher dispatcher, string folder)
     {
+        var demoStore = new SettingsStore { ReadOnly = true };
+        demoStore.Save("devices", new DevicesSettings { Enabled = true, Peers = [new(DeviceProtocol.Id(), "PRIVATE-DEVICE-MUST-NOT-APPEAR", "192.168.9.99", 45874)] });
+        var demo = DevicesModule.ReadSettings(demoStore);
+        Require(!demo.Enabled && demo.Peers.Count == 0, "diagnostic Devices settings must not expose saved device metadata");
         var localId = "00000000-0000-0000-0000-000000000001";
         var remoteId = "00000000-0000-0000-0000-000000000002";
         var settings = new DevicesSettings { Id = localId, Peers = [new(remoteId, "Other computer", "127.0.0.1", 45874, SyncNotes: true, SyncClipboard: true)] };
