@@ -28,12 +28,13 @@ Development environment: Windows 11 Pro 25H2, x64, AMD Ryzen 9 5900X (24 logical
 - Fresh framework-dependent executable published to `dist/QNotch.exe`. The executable that
   existed before this work was preserved as `dist/QNotch-before-devices.exe`.
 
-On macOS CI, commit `80042bc` built the native app, passed all 156 XCTest regressions and
+On macOS CI, commit `4dfd727` built the native app, passed all 159 XCTest regressions and
 passed native UI smoke and snapshot checks. Devices tests cover Mac-to-Mac sockets, both
 native Swift/.NET pairing directions, text/files in both directions, shared causal sync fixtures,
-and a multi-frame native-to-.NET note/clipboard sync exchange. All CI jobs passed at that head.
-Subsequent coordinator/restart tests and persistence debounce changes still require latest-head
-native validation. See [PR 99](https://github.com/Somafet/qnotch/pull/99).
+and a multi-frame native-to-.NET note/clipboard sync exchange. Native coordinator/restart,
+pairing-rate, corrupt-journal preservation and shutdown-part cleanup checks also pass.
+All CI jobs, including the required `build` aggregate, passed at that code head.
+See [PR 99](https://github.com/Somafet/qnotch/pull/99).
 
 The user deferred the physical two-computer test to a later manual run. Loopback tests establish
 implementation compatibility, not firewall/overlay ACL permissions or actual Windows/Mac
