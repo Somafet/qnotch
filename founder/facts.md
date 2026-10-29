@@ -1,0 +1,1 @@
+- Founder uses both a Mac and a Windows PC daily. (2026-10-17, validate-idea)

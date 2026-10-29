@@ -5,9 +5,10 @@
     <Grid>
         <Border x:Name="Frame" Background="{DynamicResource ControlHoverBrush}" BorderBrush="{DynamicResource StrokeBrush}" BorderThickness="1">
             <TextBlock Text="&#xE8D6;" FontFamily="{DynamicResource IconFont}" Foreground="{DynamicResource TextTertiaryBrush}"
-                       TextOptions.TextRenderingMode="Grayscale" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed">
+                       TextOptions.TextRenderingMode="Grayscale" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <TextBlock.Style>
                     <Style TargetType="TextBlock">
+                        <Setter Property="Visibility" Value="Collapsed"/>
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding Artwork}" Value="{x:Null}"><Setter Property="Visibility" Value="Visible"/></DataTrigger>
                         </Style.Triggers>
