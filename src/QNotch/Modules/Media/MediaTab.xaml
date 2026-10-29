@@ -65,7 +65,7 @@
                     <Button Style="{StaticResource TransportButton}" Content="&#xE892;" Width="44" Height="44" FontSize="18"
                             Command="{Binding PreviousCommand}" IsEnabled="{Binding CanPrevious}" ToolTip="Previous"/>
                     <Button Style="{StaticResource PlayButton}" Width="56" Height="56" FontSize="22" Margin="8,0"
-                            Command="{Binding PlayPauseCommand}" IsEnabled="{Binding CanPlayPause}" ToolTip="Play or pause"/>
+                            Command="{Binding PlayPauseCommand}" IsEnabled="{Binding CanPlayPause}"/>
                     <Button Style="{StaticResource TransportButton}" Content="&#xE893;" Width="44" Height="44" FontSize="18"
                             Command="{Binding NextCommand}" IsEnabled="{Binding CanNext}" ToolTip="Next"/>
                 </StackPanel>

@@ -21,8 +21,8 @@
             <local:ArtworkTile x:Name="Art" Width="74" Height="74" Radius="10" FontSize="26" VerticalAlignment="Center"/>
 
             <StackPanel x:Name="Track" Grid.Column="1" Margin="12,0,12,0" VerticalAlignment="Center">
-                <TextBlock Text="{Binding Title}" FontSize="13" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
-                <TextBlock Text="{Binding Artist}" FontSize="12" Margin="0,1,0,0" TextTrimming="CharacterEllipsis"
+                <TextBlock Text="{Binding Title}" ToolTip="{Binding Title}" FontSize="13" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                <TextBlock Text="{Binding Artist}" ToolTip="{Binding Artist}" FontSize="12" Margin="0,1,0,0" TextTrimming="CharacterEllipsis"
                            Foreground="{DynamicResource TextSecondaryBrush}"/>
                 <StackPanel x:Name="Timeline" Margin="0,10,0,0" Visibility="{Binding HasTimeline, Converter={StaticResource BoolToVis}}">
                     <local:SeekBar x:Name="Seek" Progress="{Binding Progress}" IsSeekable="{Binding CanSeek}"/>
@@ -41,7 +41,7 @@
                     <Button Style="{StaticResource TransportButton}" Content="&#xE892;" Width="32" Height="32" FontSize="13"
                             Command="{Binding PreviousCommand}" IsEnabled="{Binding CanPrevious}" ToolTip="Previous"/>
                     <Button Style="{StaticResource PlayButton}" Margin="2,0" Command="{Binding PlayPauseCommand}"
-                            IsEnabled="{Binding CanPlayPause}" ToolTip="Play or pause"/>
+                            IsEnabled="{Binding CanPlayPause}"/>
                     <Button Style="{StaticResource TransportButton}" Content="&#xE893;" Width="32" Height="32" FontSize="13"
                             Command="{Binding NextCommand}" IsEnabled="{Binding CanNext}" ToolTip="Next"/>
                 </StackPanel>

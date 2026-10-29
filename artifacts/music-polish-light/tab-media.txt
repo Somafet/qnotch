@@ -1,0 +1,27 @@
+"A"
+"Alex"
+"Thursday, October 29"
+[Tab] "Home" #tab-home
+[Tab] "Search" #tab-search
+[Tab] "Media" #tab-media selected
+[Tab] "Clipboard" #tab-clipboard
+[Tab] "AI" #tab-ai
+[Tab] "Agents" #tab-agents
+[Tab] "Files" #tab-files
+[Tab] "Notifications" #tab-notifications
+[Tab] "Scheduled" #tab-scheduled
+[Tab] "Terminal" #tab-terminal
+[Toggle] "Mute notifications" #panel-notifications-mute
+[Toggle] "Keep panel open" #panel-pin
+[Button] "Settings" #open-settings
+[Item] "Spotify" selected
+[Item] "YouTube Music"
+[Item] "Chrome"
+"Spotify"
+"Midnight City"
+"M83"
+"4:03"
+"1:12"
+[Button] "Previous"
+[Button] "Pause"
+[Button] "Next"

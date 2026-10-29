@@ -1,0 +1,11 @@
+"Now playing"
+"Midnight City"
+"M83"
+"4:03"
+"1:12"
+[Item] "Spotify" selected
+[Item] "YouTube Music"
+[Item] "Chrome"
+[Button] "Previous"
+[Button] "Pause"
+[Button] "Next"
