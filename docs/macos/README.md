@@ -7,7 +7,7 @@ Status: functional development milestone, not a public release. A native Swift/A
 - Apple silicon (arm64), macOS 13 or newer. Intel and universal downloads are not supported by this milestone.
 - Xcode 15 or newer, including its macOS SDK and XCTest; Swift 5.9 or newer. One package dependency, [Sparkle](https://sparkle-project.org) for updates, pinned exactly in `Package.swift` and `Package.resolved`; SwiftPM fetches it on the first build. No Windows tooling.
 - A logged-in graphical macOS session for the native UI smoke test and interactive app. Headless geometry/state/settings tests run through XCTest.
-- The deployment target is macOS 13. CI runs on macOS 14; development evidence also records the local OS. Compatibility on a physical macOS 13 machine still needs validation before a public release.
+- The deployment target is macOS 13. CI runs on macOS 15; development evidence also records the local OS. Compatibility on a physical macOS 13 machine still needs validation before a public release.
 
 From the repository root:
 
