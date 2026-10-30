@@ -69,6 +69,7 @@ private final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenu
             general.onboardingDone = true
             store.save("general", general)
         }
+        if !debugControl { Analytics.configure(directory: dataDirectory, consent: general.shareUsageData) }
         shell = ShellController(store: store, deferModules: tour == .show)
         shell.updater = Updater.makeIfAvailable(isolated: isolated != nil) { [weak shell] in shell?.general.betaUpdates == true }
         installMainMenu()
@@ -97,6 +98,7 @@ private final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenu
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        Analytics.client?.flush()
         menuBar?.removeStatusItem()
         DebugChannel.stop()
         shell?.stop()
@@ -115,8 +117,8 @@ private final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenu
     }
 
     @objc private func openSettings() { shell.openSettings() }
-    @objc private func quit() { NSApp.terminate(nil) }
-    @objc private func checkForUpdates() { shell.updater?.check() }
+    @objc private func quit() { Analytics.record("shell", "quit"); NSApp.terminate(nil) }
+    @objc private func checkForUpdates() { Analytics.record("shell", "check_updates"); shell.updater?.check() }
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
         menuItem.action == #selector(checkForUpdates) ? shell.updater?.canCheck == true : true
     }

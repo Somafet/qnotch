@@ -16,6 +16,7 @@ public struct GeneralSettings: Codable, Equatable {
     public var reduceMotion = false
     /// Local menu-bar visibility; absent keys preserve the visible default.
     public var showMenuBarIcon = true
+    public var shareUsageData = true
     /// Module ids that are off. A module that is off is never constructed.
     public var disabledModules: [String] = []
     /// Explicit opt-in for new, default-off modules; old saved settings never enable a shell.
@@ -87,13 +88,14 @@ public struct GeneralSettings: Codable, Equatable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case displayID, reduceMotion, showMenuBarIcon, disabledModules, enabledOptionalModules, timerEnabled, hoverOpensSegment, hoverDelayMs, closeDelayMs, pinned, accent, profileName, hiddenCards, hiddenTabs, hiddenNotchModules, cardOrder, cardSizes, tabOrder, pillOffsets, betaUpdates, onboardingDone
+        case shareUsageData, displayID, reduceMotion, showMenuBarIcon, disabledModules, enabledOptionalModules, timerEnabled, hoverOpensSegment, hoverDelayMs, closeDelayMs, pinned, accent, profileName, hiddenCards, hiddenTabs, hiddenNotchModules, cardOrder, cardSizes, tabOrder, pillOffsets, betaUpdates, onboardingDone
     }
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         displayID = c.value(.displayID, nil)
         reduceMotion = c.value(.reduceMotion, false)
         showMenuBarIcon = c.value(.showMenuBarIcon, true)
+        shareUsageData = c.value(.shareUsageData, true)
         disabledModules = c.value(.disabledModules, [])
         enabledOptionalModules = c.value(.enabledOptionalModules, [])
         // The first milestone stored one switch for its only module.
@@ -119,6 +121,7 @@ public struct GeneralSettings: Codable, Equatable {
         try c.encodeIfPresent(displayID, forKey: .displayID)
         try c.encode(reduceMotion, forKey: .reduceMotion)
         try c.encode(showMenuBarIcon, forKey: .showMenuBarIcon)
+        try c.encode(shareUsageData, forKey: .shareUsageData)
         try c.encode(disabledModules, forKey: .disabledModules)
         try c.encode(enabledOptionalModules, forKey: .enabledOptionalModules)
         try c.encode(hoverOpensSegment, forKey: .hoverOpensSegment)

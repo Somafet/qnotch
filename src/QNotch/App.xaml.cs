@@ -95,6 +95,8 @@ public partial class App : Application
         _store = new SettingsStore { ReadOnly = snapDir is not null };
         var fresh = !_store.Exists("general");
         var gs = _store.Get<GeneralSettings>("general");
+        Analytics.Start(gs, snapDir is not null || _debugControl);
+        gs.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(GeneralSettings.ShareUsageData) && !gs.ShareUsageData) Analytics.Current?.Clear(); };
         // --measure loads like a normal start (early modules first, the rest and Game mode at idle); snapshot and smoke load everything at once.
         var measure = diag.Mode == DiagnosticMode.Measure;
         if (snapDir is not null) // snapshots load every module, follow the system appearance unless told otherwise and show a demo profile
@@ -215,7 +217,7 @@ public partial class App : Application
                 if (!promptPending || mode == ShellMode.GameBar) return;
                 promptPending = false;
                 shell.ModeChanged -= PromptUpdateChoice;
-                if (updates.State.NeedsPreferenceChoice) shell.OpenSettings("about");
+                if (updates.State.NeedsPreferenceChoice) { using (Analytics.Surface("automatic")) shell.OpenSettings("about"); }
             }
             shell.ModeChanged += PromptUpdateChoice;
             Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ApplicationIdle, () => PromptUpdateChoice(shell.Mode));
@@ -272,6 +274,7 @@ public partial class App : Application
     {
         try
         {
+            Analytics.Current?.Dispose();
             _debug?.Dispose();
             foreach (var resource in _moduleResources)
                 try { resource.Dispose(); } catch (Exception ex) { Log.Warn("Module cleanup failed", ex); }

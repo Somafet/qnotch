@@ -104,7 +104,7 @@ final class ScheduledModule: NotchModule {
     // MARK: Actions
 
     /// Pause unloads the agent and disables it, so it stays off after a restart; Resume reverses both.
-    func setPaused(_ job: LaunchAgentJob, _ pause: Bool) {
+    func setPaused(_ job: LaunchAgentJob, _ pause: Bool) { Analytics.record("scheduled", pause ? "pause" : "resume");
         error = ""
         io.async { [weak self] in
             let service = "\(Self.domain)/\(job.label)"
@@ -126,7 +126,7 @@ final class ScheduledModule: NotchModule {
         }
     }
 
-    func askDelete(_ job: LaunchAgentJob?) {
+    func askDelete(_ job: LaunchAgentJob?) { Analytics.record("scheduled", "remove");
         confirming = job?.label
         refreshViews()
     }
@@ -145,7 +145,7 @@ final class ScheduledModule: NotchModule {
         }
     }
 
-    func reveal(_ job: LaunchAgentJob) { NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: job.path)]) }
+    func reveal(_ job: LaunchAgentJob) { Analytics.record("scheduled", "reveal"); NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: job.path)]) }
 }
 
 // MARK: - Views
@@ -210,7 +210,7 @@ final class ScheduledTabView: NSView, ScheduledDisplay, TabHeaderProviding {
         list.orientation = .vertical
         list.alignment = .leading
         list.spacing = 6
-        let refresh = HoverButton(symbol: "arrow.clockwise", style: .icon, symbolSize: 11, label: "Reload") { [weak module] in module?.reload() }
+        let refresh = HoverButton(symbol: "arrow.clockwise", style: .icon, symbolSize: 11, label: "Reload") { [weak module] in Analytics.record("scheduled", "refresh"); module?.reload() }
         tabHeaderActions = row([showApps, refresh], spacing: 8)
         let header = row([line("Launch agents", size: 13, weight: .semibold, color: Palette.textPrimary), count, spacer()], spacing: 8)
         error.preferredMaxLayoutWidth = 640

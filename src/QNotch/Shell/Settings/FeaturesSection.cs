@@ -32,7 +32,7 @@ public static class FeaturesSection
             var on = info.IsEnabled(gs);
             var toggle = UiKit.Toggle(on, v =>
             {
-                info.SetEnabled(gs, v);
+                QNotch.Core.Analytics.Track("settings", "change_feature", target: id, enabled: v); info.SetEnabled(gs, v);
                 store.Save("general", gs);
                 Sync();
             });
@@ -41,7 +41,7 @@ public static class FeaturesSection
             var rows = new List<FrameworkElement> { FeatureHeader(info, toggle) };
             void Choice(string key, string title, string hint, bool value, Action<bool> set)
             {
-                var control = UiKit.Toggle(value, set);
+                var control = UiKit.Toggle(value, v => { QNotch.Core.Analytics.Track("settings", "change_presentation", target: id, enabled: v); set(v); });
                 AutomationProperties.SetAutomationId(control, "presentation-" + key);
                 AutomationProperties.SetName(control, info.Title + ": " + title);
                 AutomationProperties.SetHelpText(control, hint);
@@ -69,7 +69,7 @@ public static class FeaturesSection
             var apply = new Button { Content = "Restart now", Style = (Style)Application.Current.FindResource("LinkButton") };
             AutomationProperties.SetAutomationId(apply, "feature-restart-" + id);
             AutomationProperties.SetName(apply, "Restart to apply " + info.Title);
-            apply.Click += (_, _) => restart();
+            apply.Click += (_, _) => { QNotch.Core.Analytics.Track("settings", "setup_apply", "ui"); restart(); };
             var pending = UiKit.SettingsRow("", null, apply);
             pending.Margin = new Thickness(4, 8, 4, 0);
             var status = ((StackPanel)pending.Children[0]).Children.OfType<TextBlock>().First();

@@ -83,6 +83,7 @@ internal sealed class WeatherService
     /// <summary>A new place from Settings: drop the old forecast and fetch right away.</summary>
     public void SetPlace(WeatherPlace place)
     {
+        QNotch.Core.Analytics.Track("weather", "select_place", "ui");
         _set.Place = place;
         _ctx.Settings.Save("weather", _set);
         _data = null;
@@ -134,7 +135,7 @@ internal sealed class WeatherService
     }
 
     public void OpenYr()
-    {
+    { QNotch.Core.Analytics.Track("weather", "open_forecast", "ui");
         if (_set.Place is not { } p) return;
         try { Process.Start(new ProcessStartInfo(p.YrUrl()) { UseShellExecute = true }); }
         catch (Exception ex) { Log.Warn("Could not open yr.no", ex); }

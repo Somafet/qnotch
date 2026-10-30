@@ -45,8 +45,8 @@ public sealed class ScheduledModule : INotchModule, ICadenceAware
 
     public void SetCadence(Cadence cadence) { if (cadence == Cadence.Fast) Run(null); }
 
-    internal void SetEnabled(SchedTask t, bool on) => Run(() => SchedulerCom.SetEnabled(t.Name, on));
-    internal void Delete(SchedTask t) => Run(() => SchedulerCom.Delete(t.Name));
+    internal void SetEnabled(SchedTask t, bool on) { if (on) { QNotch.Core.Analytics.Track("scheduled", "resume"); } else { QNotch.Core.Analytics.Track("scheduled", "pause"); }  Run(() => SchedulerCom.SetEnabled(t.Name, on)); }
+    internal void Delete(SchedTask t) { QNotch.Core.Analytics.Track("scheduled", "remove", "ui");  Run(() => SchedulerCom.Delete(t.Name)); }
 
     /// <summary>Runs <paramref name="action"/> (if any) and re-reads the list, all on the thread pool.</summary>
     void Run(Action? action)

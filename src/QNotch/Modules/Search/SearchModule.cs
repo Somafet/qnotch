@@ -157,7 +157,7 @@ public sealed class SearchModule : INotchModule, ICadenceAware
     }
 
     static void Run(SearchHit hit)
-    {
+    { QNotch.Core.Analytics.Track("search", "run_result", "ui");
         try { hit.Run(); }
         catch (Exception ex) { Log.Error("Search action failed", ex); }
     }

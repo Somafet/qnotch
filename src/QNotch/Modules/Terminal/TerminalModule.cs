@@ -73,7 +73,7 @@ public sealed partial class TerminalModule : INotchModule, IDisposable
     internal void TakeKeyboard() => _ctx.Shell.OpenPanelWithKeyboard(Id);
 
     internal async Task Restart()
-    {
+    { QNotch.Core.Analytics.Track("terminal", "restart", "ui");
         if (Demo || _disabled || _disposed || _restarting) return;
         _restarting = true;
         try

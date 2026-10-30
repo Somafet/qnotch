@@ -112,7 +112,7 @@ final class WeatherCardView: NSView, HomeCardSizing {
                 empty.addArrangedSubview(line("Loading the forecast for \(module.settings.place?.name ?? "")…", size: 13, color: Palette.textSecondary))
             default:
                 empty.addArrangedSubview(label(module.message, size: 12, color: Palette.textSecondary))
-                empty.addArrangedSubview(HoverButton("Retry", style: .plain) { [weak module] in module?.refresh() })
+                empty.addArrangedSubview(HoverButton("Retry", style: .plain) { [weak module] in Analytics.record("weather", "refresh"); module?.refresh() })
             }
             return
         }
@@ -172,10 +172,10 @@ extension WeatherModule {
             }
         }
         let units = ActionPopUp("Units", items: ["°C, m/s", "°F, mph"], selected: settings.units == .metric ? 0 : 1) { [weak self] index in
-            self?.set { $0.units = index == 0 ? .metric : .imperial }
+            Analytics.setting("weather_units"); self?.set { $0.units = index == 0 ? .metric : .imperial }
         }
-        let pill = ActionSwitch("Show in the notch", value: settings.showInPill) { [weak self] value in self?.set { $0.showInPill = value } }
-        let refreshButton = actionButton("Refresh Now") { [weak self] in self?.refresh() }
+        let pill = ActionSwitch("Show in the notch", value: settings.showInPill) { [weak self] value in Analytics.setting("weather_show_in_pill", enabled: value); self?.set { $0.showInPill = value } }
+        let refreshButton = actionButton("Refresh Now") { [weak self] in Analytics.record("weather", "refresh"); self?.refresh() }
         let place = settings.place.map { $0.detail.isEmpty ? $0.name : "\($0.name), \($0.detail)" } ?? "No place yet"
         let searchBox = NSView()
         embed(column([note, results], spacing: 4), in: searchBox, inset: NSEdgeInsets(top: 0, left: 14, bottom: 8, right: 14), fill: true)
@@ -237,7 +237,7 @@ final class WeatherSetupView: NSStackView {
         status.stringValue = place.map { $0.detail.isEmpty ? $0.name : "\($0.name), \($0.detail)" } ?? "No place yet. QNotch never asks for your location."
     }
 
-    private func find() {
+    private func find() { Analytics.withSurface("onboarding") { Analytics.record("weather", "search") };
         let query = field.stringValue.trimmingCharacters(in: .whitespaces)
         note.isHidden = false
         guard query.count >= 2 else { note.stringValue = "Type at least two letters."; return }
@@ -265,6 +265,7 @@ final class WeatherSetupView: NSStackView {
         if let running {
             running.choose(place)
         } else {
+            Analytics.withSurface("onboarding") { Analytics.record("weather", "select_place") }
             var settings = context.settings.load("weather", default: WeatherSettings())
             settings.place = place
             context.settings.save("weather", settings)

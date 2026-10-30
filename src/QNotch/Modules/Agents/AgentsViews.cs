@@ -359,6 +359,7 @@ internal static class AgentsSettings
 
             button.Click += async (_, _) =>
             {
+                if (connected) { QNotch.Core.Analytics.Track("agents", "disconnect"); } else { QNotch.Core.Analytics.Track("agents", "connect"); }
                 button.IsEnabled = false;
                 string? error = null;
                 try { await Task.Run(connected ? hooks.Disconnect : hooks.Connect); }
@@ -371,9 +372,9 @@ internal static class AgentsSettings
         }
 
         page.Children.Add(UiKit.Row("Sound when an agent needs you", "Never in Game mode or while an app uses the microphone. Choose the sound in Settings, Sounds.",
-            UiKit.Toggle(cfg.SoundNeedsYou, on => { cfg.SoundNeedsYou = on; m.SaveSettings(); })));
+            UiKit.Toggle(cfg.SoundNeedsYou, on => { QNotch.Core.Analytics.Track("settings", "change", target: "agents_sound_needs_you", enabled: on); cfg.SoundNeedsYou = on; m.SaveSettings(); })));
         page.Children.Add(UiKit.Row("Sound when an agent finishes", "Never in Game mode or while an app uses the microphone. Choose the sound in Settings, Sounds.",
-            UiKit.Toggle(cfg.SoundDone, on => { cfg.SoundDone = on; m.SaveSettings(); })));
+            UiKit.Toggle(cfg.SoundDone, on => { QNotch.Core.Analytics.Track("settings", "change", target: "agents_sound_done", enabled: on); cfg.SoundDone = on; m.SaveSettings(); })));
         return page;
     }
 }

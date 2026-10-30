@@ -85,7 +85,7 @@ final class ShortcutRegistry {
     }
 
     /// `nil` turns the shortcut off.
-    func set(_ id: String, _ combo: KeyCombo?) {
+    func set(_ id: String, _ combo: KeyCombo?) { Analytics.setting("hotkey");
         guard let shortcut = shortcuts[id] else { return }
         settings.keys[id] = combo == shortcut.defaultCombo ? nil : (combo?.text ?? "")
         store.save("hotkeys", settings)
@@ -153,7 +153,7 @@ final class ShortcutRegistry {
 
     private func fire(_ number: UInt32) {
         guard let shortcut = shortcuts.values.first(where: { $0.number == number }), shortcut.enabled, !suspended else { return }
-        shortcut.action()
+        Analytics.withSurface("hotkey") { Analytics.withSurface("hotkey") { shortcut.action() } }
     }
 }
 

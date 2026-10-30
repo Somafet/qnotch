@@ -46,7 +46,7 @@ internal sealed class GithubSignIn
         label.Children.Add(new TextBlock { Text = "Sign in with GitHub", VerticalAlignment = VerticalAlignment.Center });
         Button = new Button { Content = label, Style = (Style)Application.Current.FindResource("AccentButton") };
         AutomationProperties.SetName(Button, "Sign in with GitHub");
-        Button.Click += (_, _) => Start();
+        Button.Click += (_, _) => { QNotch.Core.Analytics.Track("github", "connect", "ui"); Start(); };
 
         _code = new TextBlock
         {
@@ -61,9 +61,9 @@ internal sealed class GithubSignIn
         _open = new Button { Content = "Copy code and open GitHub", Style = (Style)Application.Current.FindResource("AccentButton") };
         _cancel = new Button { Content = "Cancel", Margin = new Thickness(8, 0, 0, 0) };
         _retry = new Button { Content = "Try again", Margin = new Thickness(8, 0, 0, 0) };
-        _open.Click += (_, _) => CopyAndOpen();
-        _cancel.Click += (_, _) => Stop();
-        _retry.Click += (_, _) => Start();
+        _open.Click += (_, _) => { QNotch.Core.Analytics.Track("github", "open_authorization", "ui"); CopyAndOpen(); };
+        _cancel.Click += (_, _) => { QNotch.Core.Analytics.Track("github", "cancel_connect", "ui"); Stop(); };
+        _retry.Click += (_, _) => { QNotch.Core.Analytics.Track("github", "connect", "ui"); Start(); };
 
         var line = new StackPanel { Orientation = Orientation.Horizontal };
         line.Children.Add(_dot);

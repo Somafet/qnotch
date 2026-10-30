@@ -38,9 +38,9 @@ public partial class FileTrayView : UserControl
 
     void EnsureShareView() => ShareHost.Child ??= new PhoneShareView(_share, _state.Share);
 
-    void OnShare(object sender, RoutedEventArgs e) => _share.Open();
-    void OnShareBack(object sender, RoutedEventArgs e) => _share.Close();
-    void OnShareStop(object sender, RoutedEventArgs e) => _share.Stop();
+    void OnShare(object sender, RoutedEventArgs e) { QNotch.Core.Analytics.Track("files", "share_open", "ui");  _share.Open(); }
+    void OnShareBack(object sender, RoutedEventArgs e) { QNotch.Core.Analytics.Track("files", "share_close", "ui");  _share.Close(); }
+    void OnShareStop(object sender, RoutedEventArgs e) { QNotch.Core.Analytics.Track("files", "share_stop", "ui");  _share.Stop(); }
 
     // ---------- drop target (events stay unhandled so the shell keeps its own drop logic) ----------
 
@@ -80,6 +80,7 @@ public partial class FileTrayView : UserControl
 
     void OnAdd(object sender, RoutedEventArgs e)
     {
+        QNotch.Core.Analytics.Track("files", "choose_files");
         var dlg = new OpenFileDialog { Multiselect = true, Title = "Add files to the tray" };
         bool ok;
         using (_shell.HoldOpen()) ok = dlg.ShowDialog() == true;
@@ -94,11 +95,11 @@ public partial class FileTrayView : UserControl
     void OnOpen(object sender, RoutedEventArgs e) { if (Item(sender) is { IsMissing: false } it) _svc.Open(it); }
     void OnReveal(object sender, RoutedEventArgs e) { if (Item(sender) is { IsMissing: false } it) _svc.Reveal(it); }
     void OnExport(object sender, RoutedEventArgs e) { if (Item(sender) is { IsMissing: false } it) ExportTo([it]); }
-    void OnShareOne(object sender, RoutedEventArgs e) { if (Item(sender) is { IsMissing: false, IsFolder: false } it) _share.OpenWith(it); }
+    void OnShareOne(object sender, RoutedEventArgs e) { QNotch.Core.Analytics.Track("files", "share_open", "ui");  if (Item(sender) is { IsMissing: false, IsFolder: false } it) _share.OpenWith(it); }
     void OnRemove(object sender, RoutedEventArgs e) { if (Item(sender) is { } it) _svc.Remove(it); }
 
     void OnCopyPath(object sender, RoutedEventArgs e)
-    {
+    { QNotch.Core.Analytics.Track("files", "copy_path", "ui");
         if (Item(sender) is not { } it) return;
         try { System.Windows.Clipboard.SetText(it.Path); _svc.SetStatus("Path copied"); }
         catch (Exception ex) { Log.Warn("FileTray: copy path failed", ex); _svc.SetStatus("Could not copy the path"); }
@@ -109,6 +110,7 @@ public partial class FileTrayView : UserControl
 
     void ExportTo(IReadOnlyList<TrayItem> items)
     {
+        QNotch.Core.Analytics.Track("files", "export");
         if (items.Count == 0) return;
         var dlg = new OpenFolderDialog { Title = "Export to folder" };
         bool ok;

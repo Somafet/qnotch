@@ -143,7 +143,7 @@ final class ClipboardModule: NotchModule {
 
     // MARK: Actions
 
-    func copyAgain(_ entry: ClipEntry) {
+    func copyAgain(_ entry: ClipEntry) { Analytics.record("clipboard", "copy");
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
         if let text = entry.text { pasteboard.setString(text, forType: .string) }
@@ -157,9 +157,9 @@ final class ClipboardModule: NotchModule {
         changed()
     }
 
-    func remove(_ entry: ClipEntry) { history.remove(entry.id); changed() }
-    func togglePin(_ entry: ClipEntry) { history.togglePin(entry.id); changed() }
-    func clear() { history.clearUnpinned(); changed() }
+    func remove(_ entry: ClipEntry) { Analytics.record("clipboard", "remove"); history.remove(entry.id); changed() }
+    func togglePin(_ entry: ClipEntry) { Analytics.record("clipboard", "pin"); history.togglePin(entry.id); changed() }
+    func clear() { Analytics.record("clipboard", "clear"); history.clearUnpinned(); changed() }
 
     private func changed() {
         refresh()
@@ -197,7 +197,7 @@ final class ClipboardModule: NotchModule {
         history = restored
     }
 
-    private func setKeepHistory(_ value: Bool) {
+    private func setKeepHistory(_ value: Bool) { Analytics.setting("clipboard_history");
         settings.keepHistory = value
         context.settings.save("clipboard", settings)
         if value { saveHistory() } else { io.async { [url = historyURL] in try? FileManager.default.removeItem(at: url) } }

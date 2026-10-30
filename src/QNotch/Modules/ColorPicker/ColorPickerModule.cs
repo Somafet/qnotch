@@ -44,7 +44,7 @@ public sealed class ColorPickerModule : INotchModule
 
     /// <summary>Copies the hex code and moves it to the front of the recent list.</summary>
     void Use(string hex)
-    {
+    { QNotch.Core.Analytics.Track("color_picker", "copy", "ui");
         try { System.Windows.Clipboard.SetText(hex); }
         catch (Exception ex) { Log.Warn("Color copy failed", ex); }
         _s.Recent.Remove(hex);
@@ -63,7 +63,7 @@ public sealed class ColorPickerModule : INotchModule
         label.Children.Add(glyph);
         label.Children.Add(new TextBlock { Text = "Pick a color", FontSize = 12 });
         var pick = new Button { Content = label, ToolTip = "Left click picks, right click or Esc cancels" };
-        pick.Click += (_, _) => Pick();
+        pick.Click += (_, _) => { QNotch.Core.Analytics.Track("color_picker", "pick", "ui"); Pick(); };
 
         var recent = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 12, 0, 0) };
         var empty = UiKit.Text("Picked colors show up here. Click one to copy it again.", "Muted");

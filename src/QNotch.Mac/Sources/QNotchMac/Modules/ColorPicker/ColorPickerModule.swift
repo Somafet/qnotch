@@ -31,7 +31,7 @@ final class ColorPickerModule: NotchModule {
     func stop() { sampler = nil }
 
     /// Closes the panel first, so the area under the notch can be picked too.
-    func pick() {
+    func pick() { Analytics.record("color_picker", "pick");
         guard sampler == nil else { return }
         context.shell?.closePanel()
         let sampler = NSColorSampler()
@@ -46,7 +46,7 @@ final class ColorPickerModule: NotchModule {
         }
     }
 
-    func copy(_ hex: String) {
+    func copy(_ hex: String) { Analytics.record("color_picker", "copy");
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
         pasteboard.setString(hex, forType: .string)

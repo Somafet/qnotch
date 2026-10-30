@@ -44,7 +44,7 @@ public static class GameModeSection
         {
             var m = mode;
             var rb = new RadioButton { Style = Res<Style>("SegmentButton"), Content = label, GroupName = "gm-override", IsChecked = game.Override == m };
-            rb.Checked += (_, _) => game.Override = m;
+            rb.Click += (_, _) => { QNotch.Core.Analytics.Track("shell", "game_mode"); game.Override = m; };
             radios[m] = rb;
             seg.Children.Add(rb);
         }
@@ -58,18 +58,18 @@ public static class GameModeSection
         page.Unloaded += (_, _) => { game.StatusChanged -= onState; game.OverrideChanged -= onOverride; };
 
         page.Children.Add(UiKit.Row("Automatic detection", "Show the bar when a fullscreen or borderless fullscreen app has the foreground, and apply the lists below.",
-            UiKit.Toggle(s.AutoDetect, v => { s.AutoDetect = v; game.SettingsChanged(true); })));
+            UiKit.Toggle(s.AutoDetect, v => { QNotch.Core.Analytics.Track("settings", "change", target: "game_auto_detect", enabled: v); s.AutoDetect = v; game.SettingsChanged(true); })));
 
         // Look
         page.Children.Add(Section("Bar"));
-        page.Children.Add(UiKit.Row("Opacity", null, Slider(30, 100, 5, s.Opacity * 100, v => $"{v:0}%", v => { s.Opacity = v / 100; game.SettingsChanged(); }, out _)));
-        page.Children.Add(UiKit.Row("Height", null, Slider(16, 40, 2, s.Height, v => $"{v:0} px", v => { s.Height = v; game.SettingsChanged(); }, out _)));
+        page.Children.Add(UiKit.Row("Opacity", null, Slider(30, 100, 5, s.Opacity * 100, v => $"{v:0}%", v => { QNotch.Core.Analytics.Track("settings", "change", target: "game_opacity"); s.Opacity = v / 100; game.SettingsChanged(); }, out _)));
+        page.Children.Add(UiKit.Row("Height", null, Slider(16, 40, 2, s.Height, v => $"{v:0} px", v => { QNotch.Core.Analytics.Track("settings", "change", target: "game_height"); s.Height = v; game.SettingsChanged(); }, out _)));
 
         // Position
         bool sync = false;
         Slider sx = null!, sy = null!;
-        var xBox = Slider(-1500, 1500, 10, s.OffsetX, v => Math.Abs(v) >= 1500 ? "Edge" : $"{v:0} px", v => { if (sync) return; s.OffsetX = v; game.SettingsChanged(); }, out sx);
-        var yBox = Slider(0, 400, 4, s.OffsetY, v => $"{v:0} px", v => { if (sync) return; s.OffsetY = v; game.SettingsChanged(); }, out sy);
+        var xBox = Slider(-1500, 1500, 10, s.OffsetX, v => Math.Abs(v) >= 1500 ? "Edge" : $"{v:0} px", v => { if (sync) return; QNotch.Core.Analytics.Track("settings", "change", target: "game_position"); s.OffsetX = v; game.SettingsChanged(); }, out sx);
+        var yBox = Slider(0, 400, 4, s.OffsetY, v => $"{v:0} px", v => { if (sync) return; QNotch.Core.Analytics.Track("settings", "change", target: "game_position"); s.OffsetY = v; game.SettingsChanged(); }, out sy);
         var presets = new StackPanel { Orientation = Orientation.Horizontal };
         foreach (var (label, x) in new[] { ("Left", -10000.0), ("Center", 0.0), ("Right", 10000.0) })
         {
@@ -77,7 +77,7 @@ public static class GameModeSection
             var b = new Button { Content = label, Margin = new Thickness(presets.Children.Count == 0 ? 0 : 8, 0, 0, 0) };
             b.Click += (_, _) =>
             {
-                s.OffsetX = px;
+                QNotch.Core.Analytics.Track("settings", "change", target: "game_position"); s.OffsetX = px;
                 sync = true; sx.Value = Math.Clamp(px, sx.Minimum, sx.Maximum); sync = false;   // offsets beyond the slider range clamp to the screen edge
                 game.SettingsChanged();
             };
@@ -93,7 +93,7 @@ public static class GameModeSection
         foreach (var sd in segments.Items.Where(x => x.Slot == SegmentSlot.GameBar))
         {
             var id = sd.Id;
-            page.Children.Add(UiKit.Row(sd.Title, sd.Hint, UiKit.Toggle(game.IsSegmentOn(id), v => game.SetSegment(id, v))));
+            page.Children.Add(UiKit.Row(sd.Title, sd.Hint, UiKit.Toggle(game.IsSegmentOn(id), v => { QNotch.Core.Analytics.Track("settings", "change", target: "game_segment", enabled: v); game.SetSegment(id, v); })));
         }
 
         // Per-process lists
@@ -149,8 +149,8 @@ public static class GameModeSection
             input.Children.Add(_input); input.Children.Add(add); input.Children.Add(pick);
             _input.ToolTip = "Executable name, for example game.exe";
             _input.KeyDown += (_, e) => { if (e.Key == Key.Enter) Add(_input.Text); };
-            add.Click += (_, _) => Add(_input.Text);
-            pick.Click += (_, _) => ShowRunning(pick);
+            add.Click += (_, _) => { QNotch.Core.Analytics.Track("settings", "add_app", "ui"); Add(_input.Text); };
+            pick.Click += (_, _) => { QNotch.Core.Analytics.Track("settings", "pick", "ui"); ShowRunning(pick); };
             Root.Children.Add(input);
             _rows.Margin = new Thickness(0, 8, 0, 0);
             Root.Children.Add(_rows);
@@ -172,7 +172,7 @@ public static class GameModeSection
             g.Children.Add(new TextBlock { Text = name, VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis });
             var x = new Button { Content = Glyphs.Close, Style = Res<Style>("IconButton"), ToolTip = "Remove", Width = 26, Height = 26 };
             Grid.SetColumn(x, 1);
-            x.Click += (_, _) => { _list.Remove(name); _game.SettingsChanged(true); Rebuild(); };
+            x.Click += (_, _) => { QNotch.Core.Analytics.Track("settings", "x", "ui");  _list.Remove(name); _game.SettingsChanged(true); Rebuild(); };
             g.Children.Add(x);
             var b = new Border { CornerRadius = new CornerRadius(8), Padding = new Thickness(12, 2, 4, 2), Margin = new Thickness(0, 0, 0, 4), Child = g };
             b.SetResourceReference(Border.BackgroundProperty, "ControlBrush");

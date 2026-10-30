@@ -69,7 +69,7 @@ internal static class GithubSetup
             if (ok) { box.Clear(); Connected(message); }
             else Status(message, "DangerBrush");
         }
-        save.Click += (_, _) => SaveBox();
+        save.Click += (_, _) => { QNotch.Core.Analytics.Track("github", "save", "ui"); SaveBox(); };
         box.KeyDown += (_, e) => { if (e.Key == Key.Enter) { e.Handled = true; SaveBox(); } };
 
         if (GithubOAuth.ShowSignIn(GithubOAuth.ClientId, ctx.Demo))
@@ -86,7 +86,7 @@ internal static class GithubSetup
             detail.Children.Add(signIn.Panel);
             detail.Children.Add(tokenRow);
             useToken.Click += (_, _) =>
-            {
+            { QNotch.Core.Analytics.Track("github", "use_token", "ui");
                 useToken.Visibility = Visibility.Collapsed;
                 tokenRow.Visibility = Visibility.Visible;
                 box.Focus();
@@ -96,7 +96,7 @@ internal static class GithubSetup
         {
             var get = new Button { Content = "Get a token", Style = (Style)Application.Current.FindResource("LinkButton"), Margin = new Thickness(0, 0, 12, 0), ToolTip = "Opens GitHub's token page with read:user picked" };
             get.Click += (_, _) =>
-            {
+            { QNotch.Core.Analytics.Track("github", "open_token_page", "ui");
                 try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(TokenPage) { UseShellExecute = true }); }
                 catch (Exception ex) { Core.Log.Warn("Opening GitHub failed", ex); }
             };

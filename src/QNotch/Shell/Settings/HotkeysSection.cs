@@ -51,11 +51,12 @@ public static class HotkeysSection
         }
         void Set(string gesture)
         {
+            QNotch.Core.Analytics.Track("settings", "change_shortcut", "ui");
             clash = keys.Set(s, gesture) is { } other ? $"Used by {other.Title}" : "";
             Update();
         }
 
-        reset.Click += (_, _) => Set(s.Default);
+        reset.Click += (_, _) => { QNotch.Core.Analytics.Track("settings", "reset_shortcut", "ui"); Set(s.Default); };
         box.GotKeyboardFocus += (_, _) => { keys.Suspended = true; clash = ""; box.Text = "Press shortcut"; };
         box.LostKeyboardFocus += (_, _) => { keys.Suspended = false; Update(); }; // re-registers and refreshes the "taken" notes
         box.PreviewKeyDown += (_, e) =>

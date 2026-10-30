@@ -72,6 +72,7 @@ internal sealed class NoteStore
         {
             text = _pending;
             if (text is null || _ctx.Settings.ReadOnly) return;
+            QNotch.Core.Analytics.Track("notes", "save", "ui");
             try
             {
                 var tmp = NoteFile + ".tmp";

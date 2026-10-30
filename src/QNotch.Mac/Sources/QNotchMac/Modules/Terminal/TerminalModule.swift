@@ -205,6 +205,7 @@ final class TerminalCanvas: NSView, NSTextInputClient {
     }
 
     override func keyDown(with event: NSEvent) {
+        if event.keyCode == 36 || event.keyCode == 76 { Analytics.record("terminal", "submit") }
         if event.modifierFlags.contains(.command) { super.keyDown(with: event); return }
         if let bytes = Self.key(event, applicationCursor: module.screen.applicationCursor) { module.send(bytes) }
         else { interpretKeyEvents([event]) }
@@ -222,7 +223,7 @@ final class TerminalCanvas: NSView, NSTextInputClient {
         if event.modifierFlags.contains(.option), let text = event.charactersIgnoringModifiers { return Data(("\u{1B}" + text).utf8) }
         return nil
     }
-    @objc func copy(_ sender: Any?) {
+    @objc func copy(_ sender: Any?) { Analytics.record("terminal", "copy");
         guard let selection else { return }
         let screen = module.screen
         let text = screen.lines.enumerated().compactMap { row, cells -> String? in
@@ -231,7 +232,7 @@ final class TerminalCanvas: NSView, NSTextInputClient {
         }.joined(separator: "\n")
         NSPasteboard.general.clearContents(); NSPasteboard.general.setString(text, forType: .string)
     }
-    @objc func paste(_ sender: Any?) {
+    @objc func paste(_ sender: Any?) { Analytics.record("terminal", "paste");
         guard let text = NSPasteboard.general.string(forType: .string), text.utf8.count <= 64 * 1024 - 12 else { return }
         // Strip embedded control sequences from pasted text. Newlines still submit commands.
         let clean = String(String.UnicodeScalarView(text.unicodeScalars.filter { $0.value >= 32 && $0.value != 127 || $0 == "\n" || $0 == "\r" || $0 == "\t" }))

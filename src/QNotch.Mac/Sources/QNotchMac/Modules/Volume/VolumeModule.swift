@@ -26,15 +26,16 @@ final class VolumeModule: NotchModule {
 
     var level: VolumeLevel? { output.level }
 
-    func set(_ level: VolumeLevel) {
+    func set(_ level: VolumeLevel) { Analytics.record("volume", "set_volume");
         output.set(level)
         refresh()
     }
 
-    func toggleMute() {
+    func toggleMute() { Analytics.record("volume", "toggle_mute");
         guard let level = output.level else { return }
         // Unmuting at 0% would stay silent; bring it back to an audible level instead.
-        set(level.muted || level.percent > 0 ? VolumeLevel(scalar: level.scalar, muted: !level.muted) : level.setting(percent: 25))
+        output.set(level.muted || level.percent > 0 ? VolumeLevel(scalar: level.scalar, muted: !level.muted) : level.setting(percent: 25))
+        refresh()
     }
 
     private func refresh() { cards.allObjects.forEach { $0.update(output) } }

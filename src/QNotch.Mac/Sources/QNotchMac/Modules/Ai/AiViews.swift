@@ -284,7 +284,7 @@ final class AiTabView: NSView, AiDisplay, TabHeaderProviding {
     init(module: AiModule) {
         self.module = module
         apps = AiAppsView(module: module, compact: false)
-        refreshButton = HoverButton(symbol: "arrow.clockwise", style: .icon, symbolSize: 11, label: "Refresh now") { [weak module] in module?.refresh() }
+        refreshButton = HoverButton(symbol: "arrow.clockwise", style: .icon, symbolSize: 11, label: "Refresh now") { [weak module] in Analytics.record("ai", "refresh"); module?.refresh() }
         super.init(frame: .zero)
         usage.orientation = .vertical
         usage.alignment = .leading
@@ -294,7 +294,7 @@ final class AiTabView: NSView, AiDisplay, TabHeaderProviding {
         let header = row([line("Usage", size: 14, weight: .semibold, color: Palette.textPrimary), spacer(), status], spacing: 8)
         let appsHeader = row([line("Apps", size: 14, weight: .semibold, color: Palette.textPrimary), spacer(),
                               line("Numbered apps open with ⌃⌥1 to ⌃⌥6 (Settings, Hotkeys)", size: 11, color: Palette.textTertiary),
-                              HoverButton(symbol: "arrow.clockwise", style: .icon, symbolSize: 11, label: "Scan for AI apps") { [weak module] in module?.scan() }], spacing: 8)
+                              HoverButton(symbol: "arrow.clockwise", style: .icon, symbolSize: 11, label: "Scan for AI apps") { [weak module] in Analytics.record("ai", "scan"); module?.scan() }], spacing: 8)
         let stack = column([header, usage, appsHeader, apps], spacing: 8)
         stack.setCustomSpacing(16, after: usage)
         // Several windows per provider can outgrow the panel: the tab scrolls.
@@ -428,11 +428,11 @@ final class AiTabView: NSView, AiDisplay, TabHeaderProviding {
 extension AiModule {
     func makeSettings() -> NSView {
         let width = SettingsController.contentWidth
-        let claudeSwitch = ActionSwitch("Claude Code", value: settings.claude) { [weak self] value in self?.set { $0.claude = value } }
-        let codexSwitch = ActionSwitch("Codex", value: settings.codex) { [weak self] value in self?.set { $0.codex = value } }
+        let claudeSwitch = ActionSwitch("Claude Code", value: settings.claude) { [weak self] value in Analytics.setting("ai_claude", enabled: value); self?.set { $0.claude = value } }
+        let codexSwitch = ActionSwitch("Codex", value: settings.codex) { [weak self] value in Analytics.setting("ai_codex", enabled: value); self?.set { $0.codex = value } }
         let every = ActionPopUp("Refresh every", items: AiSettings.refreshChoices.map { "\($0) minutes" },
                                 selected: AiSettings.refreshChoices.firstIndex(of: settings.refreshMinutes) ?? 1) { [weak self] index in
-            self?.set { $0.refreshMinutes = AiSettings.refreshChoices[index] }
+            Analytics.setting("ai_refresh_minutes"); self?.set { $0.refreshMinutes = AiSettings.refreshChoices[index] }
         }
         var usageRows = [
             settingsRow("Claude Code", detail: "Asks Claude Code's own command line tool for your plan usage, as T3 Code does. For banked resets, QNotch reads Claude Code's sign-in the way Claude Code does (no macOS prompt) and sends it only to Anthropic. Every signed-in ~/.claude-* folder is an account; pick one on the usage row.", control: claudeSwitch, width: width),

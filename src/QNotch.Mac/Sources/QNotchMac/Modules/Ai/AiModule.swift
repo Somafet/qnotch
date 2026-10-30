@@ -141,18 +141,18 @@ final class AiModule: NotchModule {
 
     func launch(slot: Int) { if let app = app(inSlot: slot) { launch(app) } }
 
-    func launch(_ app: App) {
+    func launch(_ app: App) { Analytics.record("ai", "launch");
         context.shell?.dismissPanel()
         NSWorkspace.shared.openApplication(at: app.url, configuration: NSWorkspace.OpenConfiguration())
     }
 
-    func setSlot(_ slot: Int, _ id: String?) {
+    func setSlot(_ slot: Int, _ id: String?) { Analytics.record("ai", "set_slot");
         settings.slots[slot - 1] = id
         context.settings.save("ai", settings)
         applySlots()
     }
 
-    func addCustom(_ url: URL) {
+    func addCustom(_ url: URL) { Analytics.record("ai", "add_app");
         guard !settings.custom.contains(url.path) else { return }
         settings.custom.append(url.path)
         if let free = settings.slots.firstIndex(where: { $0 == nil }) { settings.slots[free] = "custom:" + url.path }
@@ -160,7 +160,7 @@ final class AiModule: NotchModule {
         scan()
     }
 
-    func removeCustom(_ app: App) {
+    func removeCustom(_ app: App) { Analytics.record("ai", "remove_app");
         settings.custom.removeAll { $0 == app.url.path }
         for index in settings.slots.indices where settings.slots[index] == app.id { settings.slots[index] = nil }
         context.settings.save("ai", settings)
@@ -191,7 +191,7 @@ final class AiModule: NotchModule {
     func name(of account: ClaudeAccount) -> String { settings.name(of: account) }
 
     /// Shows another account's reading on the Claude row (no new request: every account is read on each refresh).
-    func showAccount(_ account: ClaudeAccount) {
+    func showAccount(_ account: ClaudeAccount) { Analytics.record("ai", "select_account");
         guard account.path != shownAccount?.path else { return }
         settings.claudeAccount = account.path
         context.settings.save("ai", settings)
@@ -199,7 +199,7 @@ final class AiModule: NotchModule {
         refreshViews()
     }
 
-    func renameAccount(_ account: ClaudeAccount, to name: String) {
+    func renameAccount(_ account: ClaudeAccount, to name: String) { Analytics.record("ai", "rename_account");
         let before = settings
         settings.rename(account, to: name)
         guard settings != before else { return }

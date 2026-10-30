@@ -131,7 +131,7 @@ final class GithubSignInView: NSStackView {
 
     // MARK: Flow
 
-    func begin() {
+    func begin() { Analytics.record("github", "connect");
         guard GithubOAuth.isAvailable(clientId: clientId), !Runtime.diagnostics else { return }
         stop()
         let current = generation
@@ -151,7 +151,7 @@ final class GithubSignInView: NSStackView {
         }
     }
 
-    func cancel() {
+    func cancel() { Analytics.record("github", "cancel_connect");
         guard isBusy else { return }
         stop()
         state = .idle
@@ -228,7 +228,7 @@ final class GithubSignInView: NSStackView {
         }
     }
 
-    private func copyAndOpen() {
+    private func copyAndOpen() { Analytics.record("github", "open_authorization");
         guard let flow else { return }
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(flow.userCode, forType: .string)
@@ -376,7 +376,7 @@ final class GithubSetupView: NSStackView {
         return !trimmed.isEmpty && Keychain.write(trimmed, service: GithubModule.tokenService)
     }
 
-    private func saveToken() {
+    private func saveToken() { Analytics.record("github", "connect");
         let value = field.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
         note.isHidden = false
         guard !value.isEmpty else { note.stringValue = "Enter a token first."; return }

@@ -9,14 +9,14 @@ extension NotificationsModule {
         let width = SettingsController.contentWidth
         let toastTitles = NotificationSettings.toastChoices.map { $0 == 0 ? "Off" : "\($0) seconds" }
         let toast = ActionPopUp("Show a toast for", items: toastTitles, selected: NotificationSettings.toastChoices.firstIndex(of: settings.toastSeconds) ?? 2) { [weak self] index in
-            self?.set { $0.toastSeconds = NotificationSettings.toastChoices[index] }
+            Analytics.setting("notifications_toast_seconds"); self?.set { $0.toastSeconds = NotificationSettings.toastChoices[index] }
         }
-        let sound = ActionSwitch("Play a sound", value: settings.sound) { [weak self] value in self?.set { $0.sound = value } }
-        let errors = ActionSwitch("Open the panel on errors", value: settings.openOnError) { [weak self] value in self?.set { $0.openOnError = value } }
-        let quiet = ActionSwitch("Quiet during calls", value: settings.quietDuringCalls) { [weak self] value in self?.set { $0.quietDuringCalls = value } }
+        let sound = ActionSwitch("Play a sound", value: settings.sound) { [weak self] value in Analytics.setting("notifications_sound", enabled: value); self?.set { $0.sound = value } }
+        let errors = ActionSwitch("Open the panel on errors", value: settings.openOnError) { [weak self] value in Analytics.setting("notifications_open_on_error", enabled: value); self?.set { $0.openOnError = value } }
+        let quiet = ActionSwitch("Quiet during calls", value: settings.quietDuringCalls) { [weak self] value in Analytics.setting("notifications_quiet_during_calls", enabled: value); self?.set { $0.quietDuringCalls = value } }
         let keep = ActionPopUp("Keep history for", items: NotificationSettings.retentionChoices.map { $0 == 1 ? "1 day" : "\($0) days" },
                                selected: NotificationSettings.retentionChoices.firstIndex(of: settings.retentionDays) ?? 2) { [weak self] index in
-            self?.set { $0.retentionDays = NotificationSettings.retentionChoices[index] }
+            Analytics.setting("notifications_retention_days"); self?.set { $0.retentionDays = NotificationSettings.retentionChoices[index] }
         }
         let test = actionButton("Send Test") { [weak self] in self?.sendTest() }
         var quietDetail = "While an app uses the microphone: no toasts (except notifications waiting for an answer) and no automatic panel. History and the unread count still update."
@@ -46,7 +46,7 @@ extension NotificationsModule {
             settingsRow("Socket", detail: "\(socketStatus). \(socketPath)", width: width)
         ], header: "Command line", width: width)
 
-        let http = ActionSwitch("Accept HTTP requests", value: settings.httpEnabled) { [weak self] value in self?.set { $0.httpEnabled = value } }
+        let http = ActionSwitch("Accept HTTP requests", value: settings.httpEnabled) { [weak self] value in Analytics.setting("notifications_http_enabled", enabled: value); self?.set { $0.httpEnabled = value } }
         let port = NSTextField(string: "\(settings.httpPort)")
         port.alignment = .right
         port.widthAnchor.constraint(equalToConstant: 70).isActive = true
@@ -54,14 +54,16 @@ extension NotificationsModule {
         port.onAction { [weak self, weak port] in
             guard let self, let port else { return }
             guard let value = Int(port.stringValue), (1024...65535).contains(value) else { port.stringValue = "\(self.settings.httpPort)"; NSSound.beep(); return }
-            self.set { $0.httpPort = value }
+            Analytics.setting("notifications_http_port"); self.set { $0.httpPort = value }
         }
         let tokenPreview = line("••••••", size: 12, color: .secondaryLabelColor)
         let show = actionButton("Show") { [weak self, weak tokenPreview] in
+            Analytics.record("notifications", "reveal_token")
             guard let self else { return }
             tokenPreview?.stringValue = String(self.currentToken().prefix(6)) + "…"
         }
         let copyToken = actionButton("Copy") { [weak self] in
+            Analytics.record("notifications", "copy_token")
             guard let self else { return }
             NSPasteboard.general.clearContents()
             NSPasteboard.general.setString(self.currentToken(), forType: .string)

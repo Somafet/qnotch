@@ -171,7 +171,7 @@ public sealed class ClipboardModule : INotchModule, ICadenceAware
 
     void Changed() { _st.Recount(); Persist(); }
 
-    internal void Remove(ClipEntry e) { _st.Entries.Remove(e); Changed(); }
+    internal void Remove(ClipEntry e) { QNotch.Core.Analytics.Track("clipboard", "remove", "ui");  _st.Entries.Remove(e); Changed(); }
 
     /// <summary>Right-click menu for one entry. Keeps the notch open while the menu is showing.</summary>
     internal ContextMenu RowMenu(ClipEntry e)
@@ -188,15 +188,15 @@ public sealed class ClipboardModule : INotchModule, ICadenceAware
 
     /// <summary>Clears everything except pinned entries.</summary>
     internal void Clear()
-    {
+    { QNotch.Core.Analytics.Track("clipboard", "clear", "ui");
         for (int i = _st.Entries.Count - 1; i >= 0; i--) if (!_st.Entries[i].Pinned) _st.Entries.RemoveAt(i);
         Changed();
     }
 
-    internal void TogglePin(ClipEntry e) { e.Pinned = !e.Pinned; Reposition(e); Changed(); }
+    internal void TogglePin(ClipEntry e) { QNotch.Core.Analytics.Track("clipboard", "pin", "ui");  e.Pinned = !e.Pinned; Reposition(e); Changed(); }
 
     internal void CopyAgain(ClipEntry e)
-    {
+    { QNotch.Core.Analytics.Track("clipboard", "copy", "ui");
         if (e.IsImage && e.Png is { } png)
         {
             Task.Run(() =>
@@ -258,7 +258,7 @@ public sealed class ClipboardModule : INotchModule, ICadenceAware
     }
 
     void SetPersist(bool on)
-    {
+    { QNotch.Core.Analytics.Track("clipboard", "change", "ui");
         _cfg.Persist = on;
         if (on) Persist(); else { _cfg.Items = new(); _ctx.Settings.Save("clipboard", _cfg); }
     }

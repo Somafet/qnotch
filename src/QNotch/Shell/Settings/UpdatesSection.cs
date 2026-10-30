@@ -29,12 +29,13 @@ internal static class UpdatesSection
         var turnOff = new Button { Content = "Turn off" };
         AutomationProperties.SetAutomationId(keep, "updates-keep-enabled");
         AutomationProperties.SetAutomationId(turnOff, "updates-turn-off");
-        keep.Click += (_, _) => updates.ChooseAutomaticChecks(true);
-        turnOff.Click += (_, _) => updates.ChooseAutomaticChecks(false);
+        keep.Click += (_, _) => { QNotch.Core.Analytics.Track("settings", "change", target: "automatic_updates", enabled: true); updates.ChooseAutomaticChecks(true); };
+        turnOff.Click += (_, _) => { QNotch.Core.Analytics.Track("settings", "change", target: "automatic_updates", enabled: false); updates.ChooseAutomaticChecks(false); };
         choices.Children.Add(keep); choices.Children.Add(turnOff);
         choice.Children.Add(choices);
 
         var toggle = UiKit.Toggle();
+        toggle.Click += (_, _) => Analytics.Track("settings", "change", target: "automatic_updates", enabled: toggle.IsChecked);
         toggle.SetBinding(System.Windows.Controls.Primitives.ToggleButton.IsCheckedProperty,
             new Binding(nameof(GeneralSettings.CheckForUpdates)) { Source = settings, Mode = BindingMode.TwoWay });
         AutomationProperties.SetName(toggle, "Check for updates automatically");
@@ -45,7 +46,7 @@ internal static class UpdatesSection
         var check = new Button { Content = "Check now", Padding = new Thickness(14, 6, 14, 6) };
         AutomationProperties.SetAutomationId(check, "updates-check");
         UiKit.Bind(check, UIElement.IsEnabledProperty, updates.State, nameof(UpdateState.CanCheck));
-        check.Click += async (_, _) => await updates.CheckAsync();
+        check.Click += async (_, _) => { QNotch.Core.Analytics.Track("shell", "check_updates"); await updates.CheckAsync(); };
         var checkRow = UiKit.SettingsRow("Check for updates", "", check);
 
         var status = (TextBlock)((StackPanel)checkRow.Children[0]).Children[1];
@@ -55,7 +56,7 @@ internal static class UpdatesSection
         var install = new Button { Content = "Update and restart", Style = (Style)Application.Current.FindResource("AccentButton") };
         AutomationProperties.SetAutomationId(install, "updates-install");
         UiKit.Bind(install, UIElement.IsEnabledProperty, updates.State, nameof(UpdateState.CanUpdate));
-        install.Click += async (_, _) => await updates.InstallAsync();
+        install.Click += async (_, _) => { QNotch.Core.Analytics.Track("shell", "install_update"); await updates.InstallAsync(); };
         var row = UiKit.SettingsRow("New version", null, install);
         // Replace the fixed row label with the version text.
         var label = (TextBlock)((StackPanel)row.Children[0]).Children[0];
@@ -68,7 +69,7 @@ internal static class UpdatesSection
 
         var notes = new Button { Content = "Open GitHub" };
         notes.Click += (_, _) =>
-        {
+        { QNotch.Core.Analytics.Track("shell", "open_release_notes");
             try { Process.Start(new ProcessStartInfo(UpdateRelease.Repository + "/releases") { UseShellExecute = true }); }
             catch (Exception ex) { Log.Warn("Opening the QNotch releases page failed", ex); }
         };

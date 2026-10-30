@@ -204,9 +204,9 @@ extension AgentsModule {
             }
             return settingsRow(connection.title, detail: detail, control: row(buttons, spacing: 6), width: width)
         }
-        let needs = ActionSwitch("Sound when an agent needs you", value: settings.soundNeedsYou) { [weak self] value in self?.set { $0.soundNeedsYou = value } }
-        let done = ActionSwitch("Sound when an agent finishes", value: settings.soundDone) { [weak self] value in self?.set { $0.soundDone = value } }
-        let cost = ActionSwitch("Show API cost", value: settings.showCost) { [weak self] value in self?.set { $0.showCost = value } }
+        let needs = ActionSwitch("Sound when an agent needs you", value: settings.soundNeedsYou) { [weak self] value in Analytics.setting("agents_sound_needs_you", enabled: value); self?.set { $0.soundNeedsYou = value } }
+        let done = ActionSwitch("Sound when an agent finishes", value: settings.soundDone) { [weak self] value in Analytics.setting("agents_sound_done", enabled: value); self?.set { $0.soundDone = value } }
+        let cost = ActionSwitch("Show API cost", value: settings.showCost) { [weak self] value in Analytics.setting("agents_show_cost", enabled: value); self?.set { $0.showCost = value } }
         return column([
             settingsGroup(rows.isEmpty ? [settingsRow("No agents found", detail: "Install Claude Code or Codex, then come back here.", width: width)] : rows,
                           header: "Connections",
@@ -222,7 +222,7 @@ extension AgentsModule {
         ], spacing: 22)
     }
 
-    private func toggle(_ connection: Connection, _ on: Bool) {
+    private func toggle(_ connection: Connection, _ on: Bool) { Analytics.record("agents", on ? "connect" : "disconnect");
         Self.change(connection, connect: on)
         contextShell?.openSettings(section: "agents")
     }
@@ -301,7 +301,7 @@ final class AgentsSetupView: NSStackView {
         pops.forEach { Motion.pop($0) }
     }
 
-    private func connect(_ connection: AgentsModule.Connection) {
+    private func connect(_ connection: AgentsModule.Connection) { Analytics.withSurface("onboarding") { Analytics.record("agents", "connect") };
         let done = AgentsModule.change(connection, connect: true)
         reload(connected: done ? connection.title : nil)
     }

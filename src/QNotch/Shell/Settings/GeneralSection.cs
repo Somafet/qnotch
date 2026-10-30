@@ -17,21 +17,25 @@ public static class GeneralSection
         var mons = Monitors.List();
         for (var i = 0; i < mons.Count; i++) combo.Items.Add(mons[i].Label(i));
         combo.SelectedIndex = Math.Clamp(gs.MonitorIndex, 0, Math.Max(0, mons.Count - 1));
-        combo.SelectionChanged += (_, _) => { if (combo.SelectedIndex >= 0) gs.MonitorIndex = combo.SelectedIndex; };
+        combo.SelectionChanged += (_, _) => { if (combo.IsKeyboardFocusWithin) { QNotch.Core.Analytics.Track("settings", "change", target: "display"); }  if (combo.SelectedIndex >= 0) gs.MonitorIndex = combo.SelectedIndex; };
         page.Children.Add(UiKit.Row("Monitor", "The display that hosts the notch. You can also drag the pill onto another display. Follows resolution and DPI changes live.", combo));
 
         var reset = new Button { Content = "Reset positions", Padding = new Thickness(14, 6, 14, 6) };
-        reset.Click += (_, _) => resetSpots();
+        reset.Click += (_, _) => { QNotch.Core.Analytics.Track("settings", "reset_positions", "ui"); resetSpots(); };
         page.Children.Add(UiKit.Row("Notch position", "Drag the pill sideways to move it out of the way, or onto another display. It remembers the spot for each app. Double-click it to center it again.", reset));
 
         page.Children.Add(UiKit.Row("Hover delay", "How long the pointer must rest on the pill before the panel opens.",
-            SliderBox(0, 600, 10, gs.HoverDwellMs, v => gs.HoverDwellMs = v, "ms")));
+            SliderBox(0, 600, 10, gs.HoverDwellMs, v => { Analytics.Track("settings", "change", target: "hover_delay"); gs.HoverDwellMs = v; }, "ms")));
         page.Children.Add(UiKit.Row("Close delay", "Grace period after the pointer leaves before the panel closes.",
-            SliderBox(100, 1500, 50, gs.LeaveDelayMs, v => gs.LeaveDelayMs = v, "ms")));
+            SliderBox(100, 1500, 50, gs.LeaveDelayMs, v => { Analytics.Track("settings", "change", target: "close_delay"); gs.LeaveDelayMs = v; }, "ms")));
 
         page.Children.Add(UiKit.Row("Keep panel open", "Pinned: the panel stays open when the pointer leaves.", BoundToggle(gs, nameof(GeneralSettings.Pinned))));
         page.Children.Add(UiKit.Row("Start with Windows", "Adds QNotch to your sign-in items.", BoundToggle(gs, nameof(GeneralSettings.StartWithWindows))));
         Share(page, store, share, restart);
+        var usage = BoundToggle(gs, nameof(GeneralSettings.ShareUsageData));
+        usage.IsEnabled = Analytics.EnvironmentAllows;
+        if (!Analytics.EnvironmentAllows) { usage.ClearValue(System.Windows.Controls.Primitives.ToggleButton.IsCheckedProperty); usage.IsChecked = false; }
+        page.Children.Add(UiKit.Row("Share usage data", "Usage actions. No personal content." + (Analytics.EnvironmentAllows ? "" : " Disabled by QNOTCH_TELEMETRY_ENABLED."), usage));
         return page;
     }
 
@@ -45,7 +49,7 @@ public static class GeneralSection
         copied.Visibility = Visibility.Collapsed;
         var copy = new Button { Content = "Copy code", Padding = new Thickness(14, 6, 14, 6) };
         copy.Click += (_, _) =>
-        {
+        { QNotch.Core.Analytics.Track("settings", "setup_export", "ui");
             try { System.Windows.Clipboard.SetText(SetupCode.Export(store, share)); copied.Text = "Copied. Paste it on another PC, or into an issue."; }
             catch (Exception ex) { Log.Warn("Copying the setup code failed", ex); copied.Text = "Could not reach the clipboard. Try again."; }
             copied.Visibility = Visibility.Visible;
@@ -74,6 +78,7 @@ public static class GeneralSection
         SetupCode.Plan? plan = null;
         void Check()
         {
+            QNotch.Core.Analytics.Track("settings", "setup_check");
             plan = SetupCode.Read(box.Text, store, share, out var error);
             status.Text = plan is null ? error : $"Replaces your settings for {string.Join(", ", plan.Titles)}."
                 + (plan.TurnsOn.Count > 0 ? $" Turns on {string.Join(", ", plan.TurnsOn)}." : "") + " QNotch restarts to apply them.";
@@ -81,11 +86,11 @@ public static class GeneralSection
             apply.Visibility = plan is null ? Visibility.Collapsed : Visibility.Visible;
             result.Visibility = Visibility.Visible;
         }
-        check.Click += (_, _) => Check();
+        check.Click += (_, _) => {  Check(); };
         box.KeyDown += (_, e) => { if (e.Key == Key.Enter) Check(); };
         box.TextChanged += (_, _) => { plan = null; result.Visibility = Visibility.Collapsed; };
         apply.Click += (_, _) =>
-        {
+        { QNotch.Core.Analytics.Track("settings", "setup_apply", "ui");
             // Read again: a setting changed since Check (the pin, a hotkey) must not be written back with its old value.
             if (plan is null || SetupCode.Read(box.Text, store, share, out _) is not { } fresh) { Check(); return; }
             apply.Visibility = Visibility.Collapsed;
@@ -101,6 +106,7 @@ public static class GeneralSection
     static CheckBox BoundToggle(GeneralSettings gs, string prop)
     {
         var t = UiKit.Toggle();
+        t.Click += (_, _) => { Analytics.Track("settings", "change", target: prop switch { nameof(GeneralSettings.Pinned) => "pinned", nameof(GeneralSettings.StartWithWindows) => "login", _ => "telemetry" }, enabled: t.IsChecked); };
         t.SetBinding(System.Windows.Controls.Primitives.ToggleButton.IsCheckedProperty, new Binding(prop) { Source = gs, Mode = BindingMode.TwoWay });
         return t;
     }

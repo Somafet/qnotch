@@ -53,6 +53,7 @@ internal static class WeatherSetup
 
         async void Search()
         {
+            QNotch.Core.Analytics.Track("weather", "search");
             var q = box.Text.Trim();
             if (q.Length < 2) { Status("Type at least two letters.", "WarningBrush"); return; }
             if (ctx.Demo) return;
@@ -70,7 +71,7 @@ internal static class WeatherSetup
             catch (WeatherException ex) { Status(ex.Message, "DangerBrush"); }
             finally { search.IsEnabled = true; }
         }
-        search.Click += (_, _) => Search();
+        search.Click += (_, _) => {  Search(); };
         box.KeyDown += (_, e) => { if (e.Key == Key.Enter) { e.Handled = true; Search(); } };
 
         ListBoxItem Row(WeatherPlace p)

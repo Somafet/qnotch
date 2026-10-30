@@ -60,6 +60,7 @@ public sealed class VolumeModule : INotchModule, ICadenceAware
     {
         level = Math.Clamp(Math.Round(level), 0, 100);
         if (level == _st.Level) return;
+        QNotch.Core.Analytics.Track("volume", "set_volume", "ui");
         _st.Level = level;
         _com.SetLevel((float)(level / 100));
         if (_st.Muted && level > 0) SetMute(false);
@@ -74,7 +75,7 @@ public sealed class VolumeModule : INotchModule, ICadenceAware
     FrameworkElement Card()
     {
         var mute = new Button { Style = (Style)Application.Current.FindResource("IconButton"), ToolTip = "Mute or unmute", Margin = new Thickness(-6, 0, 4, 0) };
-        mute.Click += (_, _) => SetMute(!_st.Muted);
+        mute.Click += (_, _) => { QNotch.Core.Analytics.Track("volume", "toggle_mute", "ui"); SetMute(!_st.Muted); };
         var text = new TextBlock { FontSize = 22, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center };
         UiKit.Bind(text, TextBlock.TextProperty, _st, nameof(VolumeState.Text));
         var top = new StackPanel { Orientation = Orientation.Horizontal };

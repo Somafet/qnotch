@@ -20,13 +20,13 @@ internal static class NotificationsSettingsSection
         behavior.Add(UiKit.SettingsRow("Mute notifications", "Until you unmute, including after a restart. Saved on this PC.", NotificationMuteViews.Button(m, st)));
 
         behavior.Add(UiKit.SettingsRow("Show a toast for", "How long an alert stays under the pill. A sender can set its own time.",
-            Choice(ToastSeconds, cfg.ToastSeconds, s => s == 0 ? "Off" : $"{s} seconds", v => { cfg.ToastSeconds = v; m.SaveSettings(); })));
+            Choice(ToastSeconds, cfg.ToastSeconds, s => s == 0 ? "Off" : $"{s} seconds", v => { QNotch.Core.Analytics.Track("settings", "change", target: "notifications_toast_seconds"); cfg.ToastSeconds = v; m.SaveSettings(); })));
         behavior.Add(UiKit.SettingsRow("Play a sound", "Choose the sound in Settings, Sounds.",
-            UiKit.Toggle(cfg.Sound, on => { cfg.Sound = on; m.SaveSettings(); })));
+            UiKit.Toggle(cfg.Sound, on => { QNotch.Core.Analytics.Track("settings", "change", target: "notifications_sound", enabled: on); cfg.Sound = on; m.SaveSettings(); })));
         behavior.Add(UiKit.SettingsRow("Open the panel on errors", "Open Notifications automatically. Never while a game is running.",
-            UiKit.Toggle(cfg.OpenOnError, on => { cfg.OpenOnError = on; m.SaveSettings(); })));
+            UiKit.Toggle(cfg.OpenOnError, on => { QNotch.Core.Analytics.Track("settings", "change", target: "notifications_open_on_error", enabled: on); cfg.OpenOnError = on; m.SaveSettings(); })));
         behavior.Add(UiKit.SettingsRow("Quiet during calls", "While the microphone is in use, only questions awaiting a reply can show a toast. The panel stays closed.",
-            UiKit.Toggle(cfg.QuietDuringCalls, on => { cfg.QuietDuringCalls = on; m.SaveSettings(); m.ApplyQuiet(); })));
+            UiKit.Toggle(cfg.QuietDuringCalls, on => { QNotch.Core.Analytics.Track("settings", "change", target: "notifications_quiet_during_calls", enabled: on); cfg.QuietDuringCalls = on; m.SaveSettings(); m.ApplyQuiet(); })));
         var alerts = UiKit.SettingsGroup(behavior, "Alerts");
         var quietStatus = UiKit.BindVisible(Status(st, nameof(NotificationsState.QuietStatus)), st, nameof(NotificationsState.IsQuiet));
         quietStatus.Margin = new Thickness(4, 8, 4, 0);
@@ -35,7 +35,7 @@ internal static class NotificationsSettingsSection
 
         var history = new List<FrameworkElement>();
         history.Add(UiKit.SettingsRow("Keep history for", "Keep up to 500 notifications. Older entries are removed.",
-            Choice(RetentionDays, cfg.RetentionDays, d => d == 1 ? "1 day" : $"{d} days", v => { cfg.RetentionDays = v; m.SaveSettings(); })));
+            Choice(RetentionDays, cfg.RetentionDays, d => d == 1 ? "1 day" : $"{d} days", v => { QNotch.Core.Analytics.Track("settings", "change", target: "notifications_retention_days"); cfg.RetentionDays = v; m.SaveSettings(); })));
         var test = new Button { Content = "Send test", Padding = new Thickness(14, 6, 14, 6) };
         test.Click += (_, _) => m.SendTest();
         history.Add(UiKit.SettingsRow("Try it", "Send a sample notification using your current alert settings.", test));
@@ -51,12 +51,12 @@ internal static class NotificationsSettingsSection
 
         var http = new List<FrameworkElement>();
         http.Add(UiKit.SettingsRow("Accept HTTP requests", "On this computer only. Requires the token below; web pages are refused.",
-            UiKit.Toggle(cfg.HttpEnabled, on => { cfg.HttpEnabled = on; m.ApplyHttp(); })));
+            UiKit.Toggle(cfg.HttpEnabled, on => { QNotch.Core.Analytics.Track("settings", "change", target: "notifications_http_enabled", enabled: on); cfg.HttpEnabled = on; m.ApplyHttp(); })));
         var port = new TextBox { Text = cfg.HttpPort.ToString(), Width = 80, MaxLength = 5 };
         void ApplyPort()
         {
             if (!int.TryParse(port.Text, out var p) || p == cfg.HttpPort) { port.Text = cfg.HttpPort.ToString(); return; }
-            cfg.HttpPort = p;
+            QNotch.Core.Analytics.Track("settings", "change", target: "notifications_http_port"); cfg.HttpPort = p;
             m.ApplyHttp();
         }
         port.LostFocus += (_, _) => ApplyPort();
@@ -67,7 +67,7 @@ internal static class NotificationsSettingsSection
         void ShowToken() => shown.Text = m.Token.Length > 6 ? m.Token[..6] + "..." : "not ready";
         ShowToken();
         var copy = new Button { Content = "Copy", Padding = new Thickness(14, 6, 14, 6) };
-        copy.Click += (_, _) => { if (m.Token.Length > 0) System.Windows.Clipboard.SetText(m.Token); };
+        copy.Click += (_, _) => { QNotch.Core.Analytics.Track("notifications", "copy_token"); if (m.Token.Length > 0) System.Windows.Clipboard.SetText(m.Token); };
         var renew = new Button { Content = "New token", Padding = new Thickness(14, 6, 14, 6), Margin = new Thickness(8, 0, 0, 0), ToolTip = "Replaces the token: senders using the old one are refused" };
         renew.Click += (_, _) => { m.RenewToken(); ShowToken(); };
         var tokenRow = new StackPanel { Orientation = Orientation.Horizontal };
@@ -87,7 +87,7 @@ internal static class NotificationsSettingsSection
         if (apps.Count == 0) appRows.Add(new Border { Padding = new Thickness(16, 12, 16, 12), Child = Note("Apps appear here after their first notification.") });
         foreach (var app in apps)
             appRows.Add(UiKit.SettingsRow(app, null, UiKit.Toggle(!cfg.MutedApps.Contains(app, StringComparer.OrdinalIgnoreCase), on =>
-            {
+            { QNotch.Core.Analytics.Track("notifications", "mute_app", enabled: !on);
                 cfg.MutedApps.RemoveAll(a => string.Equals(a, app, StringComparison.OrdinalIgnoreCase));
                 if (!on) cfg.MutedApps.Add(app);
                 m.SaveSettings();
@@ -102,7 +102,7 @@ internal static class NotificationsSettingsSection
         foreach (var v in values) c.Items.Add(label(v));
         // A hand-edited value that is not in the list shows as the nearest choice until the user picks one.
         c.SelectedIndex = Array.IndexOf(values, values.MinBy(v => Math.Abs(v - current)));
-        c.SelectionChanged += (_, _) => { if (c.SelectedIndex >= 0) set(values[c.SelectedIndex]); };
+        c.SelectionChanged += (_, _) => {   if (c.SelectedIndex >= 0) set(values[c.SelectedIndex]); };
         return c;
     }
 

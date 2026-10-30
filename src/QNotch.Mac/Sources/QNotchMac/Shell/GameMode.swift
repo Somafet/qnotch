@@ -31,14 +31,14 @@ final class GameModeController {
 
     deinit { observers.forEach { $0.0.removeObserver($0.1) } }
 
-    func set(_ change: (inout GameModeSettings) -> Void) {
+    func set(_ change: (inout GameModeSettings) -> Void) { Analytics.setting("game_mode");
         change(&settings)
         store.save("gamemode", settings)
         evaluate(now: true)
         changed?()
     }
 
-    func cycle() { override = GameClassifier.next(override) }
+    func cycle() { Analytics.record("shell", "game_mode"); Analytics.record("shell", "game_mode"); override = GameClassifier.next(override) }
 
     func schedule() { evaluate(now: false) }
 

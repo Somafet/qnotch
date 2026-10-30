@@ -80,9 +80,9 @@ final class TimerModule: NotchModule {
     func stop() { wake?.invalidate(); wake = nil; visible = false }
     deinit { wake?.invalidate() }
 
-    func toggle() { completionUnseen = false; countdown.toggle(at: Date()); refresh(animated: true) }
-    func reset() { completionUnseen = false; countdown.reset(); refresh(animated: true) }
-    func choose(minutes: Int) {
+    func toggle() { Analytics.record("pomodoro", countdown.isRunning ? "pause" : "start"); completionUnseen = false; countdown.toggle(at: Date()); refresh(animated: true) }
+    func reset() { Analytics.record("pomodoro", "reset"); completionUnseen = false; countdown.reset(); refresh(animated: true) }
+    func choose(minutes: Int) { Analytics.record("pomodoro", "set_duration");
         preferences.minutes = min(180, max(1, minutes))
         completionUnseen = false
         countdown.reset(duration: TimeInterval(preferences.minutes * 60))
@@ -157,7 +157,7 @@ final class TimerModule: NotchModule {
         let width = SettingsController.contentWidth
         let sound = ActionSwitch("Play a sound when time is up", value: preferences.playSound) { [weak self] value in
             guard let self else { return }
-            self.preferences.playSound = value
+            Analytics.setting("timer_sound", enabled: value); self.preferences.playSound = value
             self.context.settings.save("timer", self.preferences)
         }
         var titles = Self.presets.map { "\($0) minutes" }
@@ -168,7 +168,7 @@ final class TimerModule: NotchModule {
         }
         let open = ActionSwitch("Open the panel when time is up", value: preferences.openWhenDone) { [weak self] value in
             guard let self else { return }
-            self.preferences.openWhenDone = value
+            Analytics.setting("timer_open_when_done", enabled: value); self.preferences.openWhenDone = value
             self.context.settings.save("timer", self.preferences)
         }
         return settingsGroup([

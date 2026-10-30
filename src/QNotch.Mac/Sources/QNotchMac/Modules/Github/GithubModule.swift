@@ -154,7 +154,7 @@ final class GithubModule: NotchModule {
 
     // MARK: Token
 
-    func test(_ candidate: String?, done: @escaping (Bool, String) -> Void) {
+    func test(_ candidate: String?, done: @escaping (Bool, String) -> Void) { Analytics.record("github", "test_connection");
         guard let token = candidate.flatMap({ $0.isEmpty ? nil : $0 }) ?? self.token else { return done(false, "Enter a token first.") }
         Self.login(token: token, session: session) { result in
             switch result {
@@ -174,7 +174,7 @@ final class GithubModule: NotchModule {
         return true
     }
 
-    func removeToken() {
+    func removeToken() { Analytics.record("github", "disconnect");
         timer?.invalidate()
         Keychain.delete(Self.tokenService)
         try? FileManager.default.removeItem(at: cacheURL)
@@ -201,7 +201,7 @@ final class GithubCardView: NSView, HomeCardSizing {
 
     init(module: GithubModule) {
         self.module = module
-        let refresh = HoverButton(symbol: "arrow.clockwise", style: .icon, symbolSize: 11, label: "Refresh") { [weak module] in module?.refresh() }
+        let refresh = HoverButton(symbol: "arrow.clockwise", style: .icon, symbolSize: 11, label: "Refresh") { [weak module] in Analytics.record("github", "refresh"); module?.refresh() }
         legend = row([line("Less", size: 10, color: Palette.textTertiary)] + (0...4).map { level -> NSView in
             let cell = FillView(fill: ContributionGraph.color(level), radius: 2)
             size(cell, width: 8, height: 8)
@@ -244,7 +244,7 @@ final class GithubCardView: NSView, HomeCardSizing {
                 empty.addArrangedSubview(line("Loading your contributions…", size: 13, color: Palette.textSecondary))
             default:
                 empty.addArrangedSubview(label(module.message, size: 12, color: Palette.textSecondary))
-                empty.addArrangedSubview(HoverButton("Retry", style: .plain) { [weak module] in module?.refresh() })
+                empty.addArrangedSubview(HoverButton("Retry", style: .plain) { [weak module] in Analytics.record("github", "refresh"); module?.refresh() })
             }
             return
         }
@@ -337,6 +337,7 @@ extension GithubModule {
         let note = label(message, size: 11, color: .secondaryLabelColor)
         note.preferredMaxLayoutWidth = width - 30
         let save = actionButton("Save") { [weak self, weak field, weak note] in
+            Analytics.record("github", "connect")
             guard let self, let field else { return }
             note?.stringValue = self.save(field.stringValue) ? "Saved. Loading your contributions…" : "Enter a token first, or the Keychain refused it."
             field.stringValue = ""
@@ -350,7 +351,7 @@ extension GithubModule {
             self?.contextShell?.openSettings(section: "github")
         }
         remove.isEnabled = hasToken
-        let refresh = actionButton("Refresh Now") { [weak self] in self?.refresh() }
+        let refresh = actionButton("Refresh Now") { [weak self] in Analytics.record("github", "refresh"); self?.refresh() }
         refresh.isEnabled = hasToken
         let box = NSView()
         embed(note, in: box, inset: NSEdgeInsets(top: 0, left: 14, bottom: 8, right: 14), fill: true)

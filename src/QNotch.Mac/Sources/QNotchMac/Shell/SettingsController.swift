@@ -217,24 +217,29 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
             ids.append(selected)
         }
         let picker = ActionPopUp("Display for QNotch", items: titles, selected: ids.firstIndex(where: { $0 == shell.general.displayID }) ?? 0) { [weak self] index in
-            self?.shell.updateGeneral { $0.displayID = ids[index] }
+            Analytics.setting("display"); self?.shell.updateGeneral { $0.displayID = ids[index] }
             self?.refreshIssue()
         }
         let hover = SettingsSlider("Hover delay", value: shell.general.hoverDelayMs, range: GeneralSettings.hoverRange, step: 10) { [weak self] value in
-            self?.shell.updateGeneral { $0.hoverDelayMs = value }
+            Analytics.setting("hover_delay"); self?.shell.updateGeneral { $0.hoverDelayMs = value }
         }
         let leave = SettingsSlider("Close delay", value: shell.general.closeDelayMs, range: GeneralSettings.closeRange, step: 50) { [weak self] value in
-            self?.shell.updateGeneral { $0.closeDelayMs = value }
+            Analytics.setting("close_delay"); self?.shell.updateGeneral { $0.closeDelayMs = value }
         }
         let segmentHover = ActionSwitch("Open hovered feature", value: shell.general.hoverOpensSegment) { [weak self] value in
-            self?.shell.updateGeneral { $0.hoverOpensSegment = value }
+            Analytics.setting("hover_opens_segment", enabled: value); self?.shell.updateGeneral { $0.hoverOpensSegment = value }
         }
         segmentHover.identifier = NSUserInterfaceItemIdentifier("hover-opens-segment")
         let pin = ActionSwitch("Keep panel open", value: shell.general.pinned) { [weak self] _ in self?.shell.togglePin() }
         let menuBar = ActionSwitch("Show menu-bar icon", value: shell.general.showMenuBarIcon) { [weak self] value in
-            self?.shell.updateGeneral { $0.showMenuBarIcon = value }
+            Analytics.setting("menu_bar_icon", enabled: value); self?.shell.updateGeneral { $0.showMenuBarIcon = value }
         }
         menuBar.identifier = NSUserInterfaceItemIdentifier("show-menu-bar-icon")
+        let usage = ActionSwitch("Share usage data", value: shell.general.shareUsageData && !Analytics.forcedOff) { [weak self] value in
+            self?.shell.updateGeneral { $0.shareUsageData = value }
+        }
+        usage.isEnabled = !Analytics.forcedOff
+        usage.identifier = NSUserInterfaceItemIdentifier("share-usage-data")
         return page("General", [
             banner(),
             settingsGroup([
@@ -248,7 +253,8 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
                 settingsRow("Keep panel open", detail: "The panel stays open until you close it with Escape, the pin, or the toggle hotkey. Also the pin in the panel header.", control: pin, width: width)
             ], header: "Panel", width: width),
             settingsGroup([loginRow(width: width)], width: width),
-            setupGroup(width: width)
+            setupGroup(width: width),
+            settingsGroup([settingsRow("Share usage data", control: usage, width: width)], width: width)
         ])
     }
 
@@ -267,6 +273,7 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
         let note = label("", size: 11, color: .secondaryLabelColor)
         note.preferredMaxLayoutWidth = width - 30
         let copy = actionButton("Copy Code") { [weak self, weak note] in
+            Analytics.record("settings", "setup_export")
             guard let self else { return }
             NSPasteboard.general.clearContents()
             NSPasteboard.general.setString(SetupCode.export(self.setupSnapshot), forType: .string)
@@ -279,6 +286,7 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
         let apply = actionButton("Apply and Restart") { [weak self] in self?.applySetup() }
         apply.isEnabled = false
         let check = actionButton("Check") { [weak self, weak field, weak note, weak apply] in
+            Analytics.record("settings", "setup_check")
             guard let self, let field else { return }
             do {
                 let plan = try SetupCode.read(field.stringValue, current: self.setupSnapshot, modules: ModuleList.all.map(\.id))
@@ -304,7 +312,7 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
         ], width: width)
     }
 
-    private func applySetup() {
+    private func applySetup() { Analytics.record("settings", "setup_apply");
         guard let plan = setupPlan else { return }
         let store = shell.store, s = plan.result
         store.save("general", s.general)
@@ -320,7 +328,7 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
     /// Starts a new copy once this one has quit (one instance per data folder). The helper waits
     /// for this process to exit, which releases instance.lock, rather than for a fixed time;
     /// a slow teardown must not leave the new copy exiting as "already running".
-    static func relaunch() {
+    static func relaunch() { Analytics.record("shell", "restart");
         let bundle = Bundle.main.bundlePath
         var command = "i=0; while kill -0 \"$1\" 2>/dev/null && [ $i -lt 300 ]; do sleep 0.1; i=$((i+1)); done; /usr/bin/open -n \"$0\""
         var arguments = [bundle, String(ProcessInfo.processInfo.processIdentifier)]
@@ -342,6 +350,7 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
         let service = SMAppService.mainApp
         let status = service.status
         let toggle = ActionSwitch("Open at login", value: status == .enabled || status == .requiresApproval) { [weak self] value in
+            Analytics.setting("login", enabled: value)
             do {
                 if value { try service.register() } else { try service.unregister() }
             } catch {
@@ -365,16 +374,16 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
         return settingsRow("Open at login", detail: detail, control: control, width: width)
     }
 
-    @objc private func openLoginItems() { SMAppService.openSystemSettingsLoginItems() }
+    @objc private func openLoginItems() { Analytics.record("settings", "open_login_items"); SMAppService.openSystemSettingsLoginItems() }
 
     private func appearancePage() -> NSView {
         let width = Self.contentWidth
         let accent = AccentPicker(selected: shell.general.accent) { [weak self] value in
-            self?.shell.updateGeneral { $0.accent = value }
+            Analytics.setting("accent"); self?.shell.updateGeneral { $0.accent = value }
             self?.select("appearance", animated: false)
         }
         let motion = ActionSwitch("Reduce motion", value: shell.general.reduceMotion) { [weak self] value in
-            self?.shell.updateGeneral { $0.reduceMotion = value }
+            Analytics.setting("reduce_motion", enabled: value); self?.shell.updateGeneral { $0.reduceMotion = value }
         }
         let name = NSTextField(string: shell.general.profileName ?? "")
         name.placeholderString = GeneralSettings.displayName(chosen: nil, fullUserName: NSFullUserName())
@@ -399,7 +408,7 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
         }
         var cards: [NSView] = shell.registries.cards.items.map { card in
             let toggle = ActionSwitch(card.title, value: shell.general.isCardVisible(card.id)) { [weak self] value in
-                self?.shell.updateGeneral { $0.setCardVisible(card.id, value) }
+                Analytics.setting("card_visibility", enabled: value); self?.shell.updateGeneral { $0.setCardVisible(card.id, value) }
             }
             return settingsRow(card.title, control: toggle, width: width)
         }
@@ -421,10 +430,10 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
         let value = sender.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
         let next: String? = value.isEmpty ? nil : String(value.prefix(40))
         guard next != shell.general.profileName else { return }
-        shell.updateGeneral { $0.profileName = next }
+        Analytics.setting("profile_name"); shell.updateGeneral { $0.profileName = next }
     }
 
-    @objc private func chooseProfileImage() {
+    @objc private func chooseProfileImage() { Analytics.record("settings", "choose_photo");
         let panel = NSOpenPanel()
         panel.allowedContentTypes = [.png, .jpeg, .heic, .tiff, .bmp, .webP].compactMap { $0 }
         panel.allowsMultipleSelection = false
@@ -441,7 +450,7 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
         }
     }
 
-    @objc private func removeProfileImage() {
+    @objc private func removeProfileImage() { Analytics.record("settings", "remove_photo");
         _ = shell.setProfileImage(from: nil)
         select("appearance", animated: false)
     }
@@ -462,7 +471,7 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
         let groups = ModuleList.all.map { info -> NSView in
             let toggle = ActionSwitch("Enable " + info.title, value: shell.general.isEnabled(info.id)) { [weak self] value in
                 guard let self else { return }
-                self.shell.updateGeneral { $0.setEnabled(info.id, value) }
+                Analytics.record("settings", "change_feature", target: Analytics.canonical(info.id), enabled: value); self.shell.updateGeneral { $0.setEnabled(info.id, value) }
                 self.rebuildNavigation()
                 let origin = self.scroll.contentView.bounds.origin
                 self.select("features", animated: false)
@@ -477,7 +486,7 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
             for card in cards {
                 let title = cards.count == 1 ? "Show on Home" : "Show \(card.title) on Home"
                 let show = ActionSwitch(info.title + ": " + title, value: shell.general.isCardVisible(card.id)) { [weak self] value in
-                    self?.shell.updateGeneral { $0.setCardVisible(card.id, value) }
+                    Analytics.setting("card_visibility", enabled: value); self?.shell.updateGeneral { $0.setCardVisible(card.id, value) }
                 }
                 show.identifier = NSUserInterfaceItemIdentifier("feature-home-" + card.id)
                 rows.append(settingsRow(title, control: show, width: width))
@@ -486,14 +495,14 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
             for tab in tabs {
                 let title = tabs.count == 1 ? "Show as a tab" : "Show \(tab.title) as a tab"
                 let show = ActionSwitch(info.title + ": " + title, value: shell.general.isTabVisible(tab.id)) { [weak self] value in
-                    self?.shell.updateGeneral { $0.setTabVisible(tab.id, value) }
+                    Analytics.setting("tab_visibility", enabled: value); self?.shell.updateGeneral { $0.setTabVisible(tab.id, value) }
                 }
                 show.identifier = NSUserInterfaceItemIdentifier("feature-tab-" + tab.id)
                 rows.append(settingsRow(title, control: show, width: width))
             }
             if !shell.registries.segments.ids(owner: info.id).isEmpty {
                 let show = ActionSwitch(info.title + ": Show beside the notch", value: shell.general.isNotchVisible(info.id)) { [weak self] value in
-                    self?.shell.updateGeneral { $0.setNotchVisible(info.id, value) }
+                    Analytics.setting("notch_visibility", enabled: value); self?.shell.updateGeneral { $0.setNotchVisible(info.id, value) }
                 }
                 show.identifier = NSUserInterfaceItemIdentifier("feature-notch-" + info.id)
                 rows.append(settingsRow("Show beside the notch", control: show, width: width))
@@ -540,15 +549,15 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
             let popUp = ActionPopUp(sound.title, items: titles, selected: values.firstIndex(of: current) ?? names.firstIndex(of: sound.defaultName) ?? 0) { [weak self] index in
                 guard let self else { return }
                 if index < values.count {
-                    self.shell.sounds.choose(sound.id, values[index])
+                    Analytics.setting("sound"); self.shell.sounds.choose(sound.id, values[index])
                     self.shell.sounds.play(sound.id)
                 } else { self.chooseSoundFile(sound.id) }
                 self.select("sounds", animated: false)
             }
-            let play = HoverButton(symbol: "play.fill", style: .icon, symbolSize: 11, label: "Play \(sound.title)") { [weak self] in self?.shell.sounds.play(sound.id) }
+            let play = HoverButton(symbol: "play.fill", style: .icon, symbolSize: 11, label: "Play \(sound.title)") { [weak self] in Analytics.record("settings", "preview_sound"); self?.shell.sounds.play(sound.id) }
             play.tint = .secondaryLabelColor
             let reset = HoverButton(symbol: "arrow.uturn.backward", style: .icon, symbolSize: 12, label: "Reset \(sound.title) to \(sound.defaultName)") { [weak self] in
-                self?.shell.sounds.choose(sound.id, nil)
+                Analytics.setting("sound"); self?.shell.sounds.choose(sound.id, nil)
                 self?.select("sounds", animated: false)
             }
             reset.tint = .secondaryLabelColor
@@ -567,16 +576,16 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
         let game = shell.gameMode!
         let modes: [GameOverride] = [.auto, .on, .off]
         let mode = ActionPopUp("Mode", items: ["Automatic", "On", "Off"], selected: modes.firstIndex(of: game.override) ?? 0) { [weak self] index in
-            self?.shell.gameMode.override = modes[index]
+            Analytics.record("shell", "game_mode"); self?.shell.gameMode.override = modes[index]
         }
-        let auto = ActionSwitch("Automatic detection", value: game.settings.autoDetect) { value in game.set { $0.autoDetect = value } }
-        let any = ActionSwitch("Any full-screen app", value: game.settings.anyFullScreen) { value in game.set { $0.anyFullScreen = value } }
+        let auto = ActionSwitch("Automatic detection", value: game.settings.autoDetect) { value in Analytics.setting("game_auto_detect", enabled: value); game.set { $0.autoDetect = value } }
+        let any = ActionSwitch("Any full-screen app", value: game.settings.anyFullScreen) { value in Analytics.setting("game_any_fullscreen", enabled: value); game.set { $0.anyFullScreen = value } }
         let opacity = NSSlider(value: Double(game.settings.opacity), minValue: 30, maxValue: 100, target: nil, action: nil)
         opacity.controlSize = .small
         opacity.widthAnchor.constraint(equalToConstant: 140).isActive = true
         opacity.onAction { [weak opacity] in
             guard let opacity, NSApp.currentEvent?.type != .leftMouseDragged else { return }
-            game.set { $0.opacity = Int(opacity.doubleValue.rounded()) }
+            Analytics.setting("game_opacity"); game.set { $0.opacity = Int(opacity.doubleValue.rounded()) }
         }
         opacity.isContinuous = true
         opacity.setAccessibilityLabel("Opacity")
@@ -585,6 +594,7 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
         let features = ModuleList.all.filter { owners.contains($0.id) }
         let segmentRows = features.map { info -> NSView in
             let toggle = ActionSwitch(info.title, value: !game.settings.hiddenModules.contains(info.id)) { value in
+                Analytics.setting("game_segment", enabled: value)
                 game.set { settings in
                     settings.hiddenModules.removeAll { $0 == info.id }
                     if !value { settings.hiddenModules.append(info.id) }
@@ -597,6 +607,7 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
                 .sorted { ($0.localizedName ?? "") < ($1.localizedName ?? "") }
             let add = ActionPopUp("Add an app", items: ["Add a running app…"] + running.map { $0.localizedName ?? $0.bundleIdentifier! }, selected: 0) { [weak self] index in
                 guard index > 0, let id = running[index - 1].bundleIdentifier else { return }
+                Analytics.setting(key == \.always ? "game_always" : "game_never", enabled: true)
                 game.set { settings in
                     settings.always.removeAll { $0 == id }; settings.never.removeAll { $0 == id }
                     settings[keyPath: key].append(id)
@@ -607,6 +618,7 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
             for id in game.settings[keyPath: key] {
                 let name = NSWorkspace.shared.urlForApplication(withBundleIdentifier: id).map { FileManager.default.displayName(atPath: $0.path).replacingOccurrences(of: ".app", with: "") } ?? id
                 let remove = ActionSwitch(name, value: true) { [weak self] _ in
+                    Analytics.setting(key == \.always ? "game_always" : "game_never", enabled: false)
                     game.set { $0[keyPath: key].removeAll { $0 == id } }
                     self?.select("gamemode", animated: false)
                 }
@@ -627,7 +639,7 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
         ])
     }
 
-    private func chooseSoundFile(_ id: String) {
+    private func chooseSoundFile(_ id: String) { Analytics.record("settings", "choose_sound");
         let panel = NSOpenPanel()
         panel.allowedContentTypes = SoundRegistry.fileTypes.compactMap { UTType(filenameExtension: $0) }
         panel.allowsMultipleSelection = false
@@ -653,7 +665,7 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
         let identity = row([tile, column([label("QNotch", size: 20, weight: .bold),
                                           label("Version \(version)\(build)", size: 12, color: .secondaryLabelColor)], spacing: 2)], spacing: 14)
         let tour = actionButton("Show Welcome Tour") { [weak self] in _ = self?.shell.showOnboarding() }
-        let quit = actionButton("Quit QNotch") { NSApp.terminate(nil) }
+        let quit = actionButton("Quit QNotch") { Analytics.record("shell", "quit"); NSApp.terminate(nil) }
         quit.identifier = NSUserInterfaceItemIdentifier("quit-qnotch")
         let stack = column([
             identity,
@@ -682,19 +694,19 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
             ], width: width)
         }
         let sparkle = updates.updater
-        let check = actionButton("Check Now") { updates.check() }
+        let check = actionButton("Check Now") { Analytics.record("shell", "check_updates"); updates.check() }
         check.isEnabled = updates.canCheck
         let last = sparkle.lastUpdateCheckDate.map { "Last checked \($0.formatted(date: .abbreviated, time: .shortened))." } ?? "Not checked yet."
         let automatic = ActionSwitch("Check for updates automatically", value: sparkle.automaticallyChecksForUpdates) { [weak self] value in
-            sparkle.automaticallyChecksForUpdates = value
+            Analytics.setting("automatic_updates", enabled: value); sparkle.automaticallyChecksForUpdates = value
             self?.select("about", animated: false)
         }
         let install = ActionSwitch("Download and install automatically", value: sparkle.automaticallyDownloadsUpdates) { value in
-            sparkle.automaticallyDownloadsUpdates = value
+            Analytics.setting("automatic_install", enabled: value); sparkle.automaticallyDownloadsUpdates = value
         }
         install.isEnabled = sparkle.automaticallyChecksForUpdates
         let beta = ActionSwitch("Beta versions", value: shell.general.betaUpdates) { [weak self] value in
-            self?.shell.updateGeneral { $0.betaUpdates = value }
+            Analytics.setting("beta_updates", enabled: value); self?.shell.updateGeneral { $0.betaUpdates = value }
         }
         return settingsGroup([
             settingsRow("Check for updates", detail: last, control: check, width: width),

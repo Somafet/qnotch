@@ -35,7 +35,7 @@ public sealed class FileTrayService
 
     /// <summary>Adds references (newest first). Existing entries move to the front.</summary>
     public void Add(IEnumerable<string> paths)
-    {
+    { QNotch.Core.Analytics.Track("files", "add", "ui");
         var added = new List<TrayItem>();
         var seen = 0;
         foreach (var raw in paths)
@@ -56,12 +56,12 @@ public sealed class FileTrayService
     }
 
     public void Remove(TrayItem item)
-    {
+    { QNotch.Core.Analytics.Track("files", "remove", "ui");
         if (_s.Items.Remove(item)) Commit();
     }
 
     public void Clear()
-    {
+    { QNotch.Core.Analytics.Track("files", "clear", "ui");
         if (_s.Items.Count == 0) return;
         _s.Items.Clear();
         Commit();
@@ -168,10 +168,10 @@ public sealed class FileTrayService
 
     // ---------- actions (file work off the UI thread) ----------
 
-    public void Open(TrayItem it) => Launch(new ProcessStartInfo(it.Path) { UseShellExecute = true }, $"open {it.Name}");
+    public void Open(TrayItem it) { QNotch.Core.Analytics.Track("files", "open", "ui");  Launch(new ProcessStartInfo(it.Path) { UseShellExecute = true }, $"open {it.Name}"); }
 
-    public void Reveal(TrayItem it) =>
-        Launch(new ProcessStartInfo("explorer.exe") { Arguments = $"/select,\"{it.Path}\"" }, $"show {it.Name}");
+    public void Reveal(TrayItem it) { QNotch.Core.Analytics.Track("files", "reveal", "ui");
+        Launch(new ProcessStartInfo("explorer.exe") { Arguments = $"/select,\"{it.Path}\"" }, $"show {it.Name}"); }
 
     void Launch(ProcessStartInfo psi, string what) => Task.Run(() =>
     {

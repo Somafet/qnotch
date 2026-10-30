@@ -27,14 +27,14 @@ internal sealed class GithubCard : Grid
         _svc = service;
         _total.SetResourceReference(TextBlock.ForegroundProperty, "TextPrimaryBrush");
         _streak.SetResourceReference(TextBlock.ForegroundProperty, "AccentBrush");
-        _refresh.Click += (_, _) => _ = _svc.RefreshAsync();
+        _refresh.Click += (_, _) => { QNotch.Core.Analytics.Track("github", "refresh", "ui"); _ = _svc.RefreshAsync(); };
 
         _ready = BuildReady();
         _noToken = Centered(Glyphs.Github, "Connect GitHub", "Add a personal access token to see your contribution graph.",
             Action("Add token", () => shell.OpenSettings("github")));
         _loading = Centered(Glyphs.Github, "Loading activity", "Fetching your contributions from GitHub.", null);
         _errorText.TextAlignment = TextAlignment.Left;
-        _error = Centered(Glyphs.Warning, "Could not load activity", "", Action("Retry", () => _ = _svc.RefreshAsync()), _errorText);
+        _error = Centered(Glyphs.Warning, "Could not load activity", "", Action("Retry", () => { QNotch.Core.Analytics.Track("github", "refresh", "ui"); _ = _svc.RefreshAsync(); }), _errorText);
 
         foreach (var e in new[] { _ready, _noToken, _loading, _error }) Children.Add(e);
         _s.PropertyChanged += OnChanged;
