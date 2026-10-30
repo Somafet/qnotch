@@ -1,0 +1,8 @@
+{
+  "method": "Matched isolated normal instance, Ai/Agents only, providers disabled, synthetic 120-token transcript and needs-you hook, 10 seconds settle after last hook, 30 seconds idle. No consumer queries during interval.",
+  "interval_seconds": 30.01,
+  "idle_cpu_percent_one_core": 0.0512,
+  "resident_bytes_start": 31543296,
+  "resident_bytes_end": 35127296,
+  "idle_state": "collapsed"
+}

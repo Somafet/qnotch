@@ -8,7 +8,7 @@ namespace QNotch.Modules.Ai;
 public enum UsageStatus { Pending, Ok, Unavailable }
 
 /// <summary>One usage window as reported by a provider (for example the 5-hour window).</summary>
-public sealed record UsageWindow(string Label, double UsedPercent, DateTime? ResetsAt);
+public sealed record UsageWindow(string Label, double UsedPercent, DateTime? ResetsAt, string? Id = null, int? DurationSeconds = null);
 
 /// <summary>Usage resets banked on a Claude subscription: how many are usable now, and when the next one (named by Label) expires.</summary>
 public sealed record BankedResets(int Count, DateTime? ExpiresAt, string? Label);
@@ -16,8 +16,12 @@ public sealed record BankedResets(int Count, DateTime? ExpiresAt, string? Label)
 /// <summary>Provider outcome. Unavailable never carries numbers, so it can never render as 0%.</summary>
 public sealed record UsageResult(UsageStatus Status, IReadOnlyList<UsageWindow> Windows, string? Plan, DateTime AsOf, string? Reason, BankedResets? Banked = null)
 {
+    public string? ErrorCode { get; init; }
+    public DateTime? CheckedAt { get; init; }
+    public string BankedStatus { get; init; } = "unknown";
+    public DateTime? BankedCheckedAt { get; init; }
     public static UsageResult Ok(IReadOnlyList<UsageWindow> windows, string? plan, DateTime asOf, BankedResets? banked = null) => new(UsageStatus.Ok, windows, plan, asOf, null, banked);
-    public static UsageResult Unavailable(string reason) => new(UsageStatus.Unavailable, [], null, DateTime.Now, reason);
+    public static UsageResult Unavailable(string reason, string code = "unavailable") => new(UsageStatus.Unavailable, [], null, DateTime.Now, reason) { ErrorCode = code };
 }
 
 /// <summary>A usage source. Each one is isolated: own timeout, own try/catch, never affects the others.</summary>

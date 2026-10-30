@@ -204,4 +204,6 @@ public sealed class ModuleContext
     /// <summary>Snapshot run only: pill states the snapshot shows one at a time, see <see cref="DemoState"/>.</summary>
     public Registry<DemoState> Demos { get; init; } = new();
     public Registry<QuickActionDescriptor> QuickActions { get; init; } = new();
+    /// <summary>Read-only local consumer snapshots. Register module-owned projections during Initialize.</summary>
+    public Core.Consumers.ConsumerRegistry Consumers { get; init; } = new();
 }

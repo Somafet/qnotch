@@ -72,7 +72,7 @@ internal sealed class ClaudeCodeProvider : IUsageProvider
     public async Task<UsageResult> FetchAsync(CancellationToken ct)
     {
         var file = Path.Combine(_dir, ".credentials.json");
-        if (!File.Exists(file)) return UsageResult.Unavailable("Not signed in. Sign in to Claude Code to see usage.");
+        if (!File.Exists(file)) return UsageResult.Unavailable("Not signed in. Sign in to Claude Code to see usage.", "not_signed_in");
 
         string token, plan;
         try
@@ -81,13 +81,13 @@ internal sealed class ClaudeCodeProvider : IUsageProvider
             using var doc = await JsonDocument.ParseAsync(fs, cancellationToken: ct);
             if (!doc.RootElement.TryGetProperty("claudeAiOauth", out var oauth) || oauth.ValueKind != JsonValueKind.Object
                 || oauth.GetStringOrNull("accessToken") is not { Length: > 0 } t)
-                return UsageResult.Unavailable("Signed in without a subscription. Usage needs a Claude Pro or Max login.");
+                return UsageResult.Unavailable("Signed in without a subscription. Usage needs a Claude Pro or Max login.", "subscription_required");
             token = t;
             plan = PlanName(oauth.GetStringOrNull("subscriptionType"), oauth.GetStringOrNull("rateLimitTier"));
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            return UsageResult.Unavailable("Claude Code credentials could not be read.");
+            return UsageResult.Unavailable("Claude Code credentials could not be read.", "credentials_unreadable");
         }
 
         using var req = new HttpRequestMessage(HttpMethod.Get, Url);
@@ -98,25 +98,40 @@ internal sealed class ClaudeCodeProvider : IUsageProvider
         using var resp = await Http.Value.SendAsync(req, HttpCompletionOption.ResponseContentRead, ct);
 
         if (resp.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
-            return UsageResult.Unavailable("Sign-in expired. Open Claude Code once to renew it.");
+            return UsageResult.Unavailable("Sign-in expired. Open Claude Code once to renew it.", "sign_in_expired");
         if (resp.StatusCode == HttpStatusCode.TooManyRequests)
-            return UsageResult.Unavailable("Rate limited by Anthropic. Will retry on the next refresh.");
+            return UsageResult.Unavailable("Rate limited by Anthropic. Will retry on the next refresh.", "rate_limited");
         if (!resp.IsSuccessStatusCode)
         {
             Log.Warn($"Claude usage endpoint returned {(int)resp.StatusCode}");
-            return UsageResult.Unavailable($"Usage endpoint returned HTTP {(int)resp.StatusCode}.");
+            return UsageResult.Unavailable($"Usage endpoint returned HTTP {(int)resp.StatusCode}.", "provider_error");
         }
 
         using var body = JsonDocument.Parse(await resp.Content.ReadAsStringAsync(ct));
+        return ParseUsage(body.RootElement, plan, DateTime.UtcNow);
+    }
+
+    internal static UsageResult ParseUsage(JsonElement root, string? plan, DateTime checkedAt)
+    {
         var list = new List<UsageWindow>();
         foreach (var (key, label) in Windows)
         {
-            if (!body.RootElement.TryGetProperty(key, out var w) || w.ValueKind != JsonValueKind.Object) continue;
+            if (!root.TryGetProperty(key, out var w) || w.ValueKind != JsonValueKind.Object) continue;
             if (!w.TryGetProperty("utilization", out var u) || u.ValueKind != JsonValueKind.Number) continue;
             DateTime? resets = DateTimeOffset.TryParse(w.GetStringOrNull("resets_at"), out var r) ? r.LocalDateTime : null;
-            list.Add(new UsageWindow(label, Math.Clamp(u.GetDouble(), 0, 100), resets));
+            if (!double.IsFinite(u.GetDouble())) continue;
+            list.Add(new UsageWindow(label, Math.Clamp(u.GetDouble(), 0, 100), resets, key, key == "five_hour" ? 18000 : 604800));
         }
-        return list.Count > 0 ? UsageResult.Ok(list, plan, DateTime.Now, Banked(body.RootElement)) : UsageResult.Unavailable("Unexpected response from the usage endpoint.");
+        var banked = Banked(root);
+        var bankedStatus = "unknown";
+        if (root.TryGetProperty("cedar_ember", out var ce) && ce.ValueKind == JsonValueKind.Object && ce.TryGetProperty("eligible", out var eligible))
+        {
+            if (eligible.ValueKind == JsonValueKind.False) bankedStatus = "unsupported";
+            else if (eligible.ValueKind == JsonValueKind.True && ce.TryGetProperty("grants", out var grants) && grants.ValueKind == JsonValueKind.Array)
+                bankedStatus = grants.GetArrayLength() == 0 ? "none" : banked is { Count: > 0 } ? "available" : "unknown";
+        }
+        return (list.Count > 0 ? UsageResult.Ok(list, plan, checkedAt, banked) : UsageResult.Unavailable("Unexpected response from the usage endpoint.", "invalid_response"))
+            with { CheckedAt = checkedAt, BankedStatus = bankedStatus, BankedCheckedAt = checkedAt };
     }
 
     /// <summary>Counts the grants usable right now; the expiry is that of the next grant, the one a reset would spend. Null when nothing is usable.</summary>

@@ -52,6 +52,9 @@ internal sealed class AgentSession(string id)
 /// <summary>A session's usage per local day. Kept after its row goes, so Today does not shrink when a terminal closes.</summary>
 internal sealed record SessionUsage(string Cwd, Dictionary<DateOnly, Usage> Days)
 {
+    public DateTime? CheckedAt { get; init; }
+    public bool ReadComplete { get; init; }
+    public string Agent { get; init; } = "claude";
     public Usage Total => Days.Values.Aggregate(default(Usage), (a, b) => a + b);
     public Usage Today => Days.GetValueOrDefault(DateOnly.FromDateTime(DateTime.Now));
 }
@@ -153,6 +156,8 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
     {
         _ctx = ctx;
         _cfg = ctx.Settings.Get<AgentsConfig>(TabId);
+        _consumerIdentity = new Core.Consumers.ConsumerIdentity(ctx.Settings);
+        ctx.Consumers.Register("agents", CaptureAgents);
         ctx.Tabs.Register(new TabDescriptor(TabId, "Agents", Icon, 35, () => new AgentsTab(this, _st), () => _st.Sessions.Count == 0 && !_st.Groups.Any(g => g.LeftRunning)));
         ctx.SettingsSections.Register(new SettingsSectionDescriptor(TabId, "Agents", Icon, 45, () => AgentsSettings.Create(this, _cfg, ctx.Settings.ReadOnly)));
         ctx.Segments.Register(new SegmentDescriptor("agents.pill", SegmentSlot.PillRight, 6, () => AgentsViews.Segment(_st)));
@@ -272,6 +277,7 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
             {
                 s = new NamedPipeServerStream(AgentWire.PipeName, PipeDirection.In, NamedPipeServerStream.MaxAllowedServerInstances,
                     PipeTransmissionMode.Byte, PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
+                Volatile.Write(ref _hookHealth, "listening");
                 await s.WaitForConnectionAsync();
                 var client = s;
                 s = null;
@@ -280,6 +286,7 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
             }
             catch (Exception ex)
             {
+                Volatile.Write(ref _hookHealth, "unavailable");
                 s?.Dispose();
                 failures++;
                 Log.Warn("Agents pipe failed", ex);
@@ -433,7 +440,7 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
     /// </summary>
     void ReadUsage(AgentSession s)
     {
-        if (s.Transcript.Length == 0) return;
+        if (s.Agent != "claude" || s.Transcript.Length == 0) return;
         if (s.UsagePending) { s.UsageStale = true; return; }
         (s.UsagePending, s.UsageStale) = (true, false);
         var (path, reader) = (s.Transcript, s.Reader ??= new UsageReader());
@@ -448,10 +455,14 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
             {
                 s.UsagePending = false;
                 if (s.UsageStale && _st.Sessions.Contains(s)) ReadUsage(s);
-                if (days is null) return;
+                if (days is null)
+                {
+                    _st.Usage[s.Id] = new SessionUsage(s.Cwd, []) { CheckedAt = DateTime.UtcNow, Agent = s.Agent };
+                    return;
+                }
                 if (title is not null && s.T3Thread is null && !_appTitles.ContainsKey(s.Id)) s.Title = title;
                 if (reader.BytesRead > 1_000_000) MemoryTrim.AfterActivity();
-                _st.Usage[s.Id] = new SessionUsage(s.Cwd, days);
+                _st.Usage[s.Id] = new SessionUsage(s.Cwd, days) { CheckedAt = DateTime.UtcNow, ReadComplete = !reader.HadReadError, Agent = s.Agent };
                 _st.Raise();
             });
         });
