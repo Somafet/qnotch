@@ -15,6 +15,7 @@ final class T3Watch {
     private var stream: FSEventStreamRef?
     private var observers: [NSObjectProtocol] = []
     private var pending = false
+    private(set) var health = "initializing"
     private let changed: ([T3Session], [String: String]) -> Void
 
     init(changed: @escaping ([T3Session], [String: String]) -> Void) {
@@ -75,15 +76,17 @@ final class T3Watch {
             let database = Self.folder.appendingPathComponent("statev2.sqlite").path
             var sessions: [T3Session] = []
             var titles: [String: String] = [:]
+            var health = running ? "unavailable" : "inactive"
             if running, FileManager.default.fileExists(atPath: database) {
                 let environment = (try? String(contentsOf: Self.folder.appendingPathComponent("environment-id"), encoding: .utf8))?
                     .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-                if let rows = Self.rows(database, T3Session.query) { sessions = rows.compactMap { T3Session.from(row: $0, environment: environment) } }
+                if let rows = Self.rows(database, T3Session.query) { sessions = rows.compactMap { T3Session.from(row: $0, environment: environment) }; health = "ready" }
                 for row in Self.rows(database, T3Session.titlesQuery) ?? [] where row.count == 2 && !row[0].isEmpty {
                     titles[row[0]] = row[1].trimmingCharacters(in: .whitespacesAndNewlines)
                 }
             }
             DispatchQueue.main.async {
+                self.health = health
                 self.pending = false
                 self.changed(sessions, titles)
             }

@@ -16,6 +16,7 @@ private final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenu
     private var shell: ShellController!
     private var menuBar: MenuBarController?
     private var instance: ApplicationInstance?
+    private var consumer: ConsumerService?
     private var pendingReopen = false
     private let launched = ProcessInfo.processInfo.systemUptime
     private var dataDirectory: URL!
@@ -79,6 +80,16 @@ private final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenu
         if tour == .show { shell.showOnboarding(firstRun: true, isolated: isolated != nil) } else { shell.start() }
         do { try instance?.startRecovery { [weak self] in self?.reopenSettings() } }
         catch { fputs("Settings reopen recovery did not open: \(error)\n", stderr) }
+        if options.mode == nil {
+            shell.registries.consumers.status = { [weak shell] command in
+                guard let shell, let module = ModuleList.consumerModules[command] else { return "unavailable" }
+                if !shell.general.isEnabled(module) { return "disabled" }
+                if shell.modulesDeferred { return "initializing" }
+                return shell.registries.consumers.capture[command] == nil ? "unavailable" : "ready"
+            }
+            do { consumer = try ConsumerService(path: ConsumerWire.path(directory: dataDirectory), registry: shell.registries.consumers) }
+            catch { fputs("Consumer service unavailable.\n", stderr) }
+        }
         if pendingReopen { pendingReopen = false; reopenSettings() }
         // The debug channel opens only on request, and never in a diagnostic run (spec/diagnostics.md, Debug channel).
         if debugControl && options.mode == nil {
@@ -98,6 +109,7 @@ private final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenu
 
     func applicationWillTerminate(_ notification: Notification) {
         menuBar?.removeStatusItem()
+        consumer?.close(); consumer = nil
         DebugChannel.stop()
         shell?.stop()
         // Keep the lock through provider teardown as well as startup.
