@@ -217,7 +217,8 @@ final class SearchView: NSView, NSTextFieldDelegate {
         case #selector(NSResponder.moveUp(_:)):
             select(offset: -1)
         case #selector(NSResponder.insertNewline(_:)):
-            if let selectedIndex, hits.indices.contains(selectedIndex) { hits[selectedIndex].run() }
+            Analytics.record("search", "submit")
+            if let selectedIndex, hits.indices.contains(selectedIndex) { Analytics.record("search", "run_result"); hits[selectedIndex].run() }
         default:
             return false
         }
@@ -237,7 +238,7 @@ final class SearchView: NSView, NSTextFieldDelegate {
         } else {
             for (index, hit) in hits.enumerated() {
                 let background = FillView(fill: nil, radius: 8)
-                let button = HoverButton("", style: .row, label: hit.title) { hit.run() }
+                let button = HoverButton("", style: .row, label: hit.title) { Analytics.record("search", "run_result"); hit.run() }
                 button.identifier = NSUserInterfaceItemIdentifier("search-result-\(index)")
                 button.refusesFirstResponder = true
                 embed(button, in: background, inset: 0, fill: true)

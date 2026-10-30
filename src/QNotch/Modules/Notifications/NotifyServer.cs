@@ -91,6 +91,7 @@ internal sealed class NotifyServer(Func<NotifyRequest, Func<Task>, Task<Reply>> 
     async Task<Reply> Dispatch(NotifyRequest? req, Stream connection)
     {
         if (req is null) return Reply.Fail(400, "Invalid JSON");
+        QNotch.Core.Analytics.Track("notifications", "cli_notify", "cli");
         try { return await handle(req, () => Gone(connection)); }
         catch (NotifyException ex) { return Reply.Fail(400, ex.Message); }
     }

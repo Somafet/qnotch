@@ -50,21 +50,21 @@ public sealed class CardLayout
     }
 
     public void SetSize(string id, CardSize size)
-    {
+    { QNotch.Core.Analytics.Track("shell", "resize_card", "ui");
         if (_cards.Find(id) is not { } card || !card.SupportedSizes.Contains(size) || SizeOf(id) == size) return;
         _gs.CardSizes[id] = size.ToString();
         Save();
     }
 
     public void SetVisible(string id, bool visible)
-    {
+    { QNotch.Core.Analytics.Track("shell", "change_card_visibility", target: id switch { "system" => "stats", "ai-usage" or "ai-apps" => "ai", _ => id }, enabled: visible);
         _gs.CardVisible[id] = visible;
         Save();
     }
 
     /// <summary>Move card <paramref name="id"/> into the slot currently held by <paramref name="targetId"/>.</summary>
     public void Move(string id, string targetId)
-    {
+    { QNotch.Core.Analytics.Track("shell", "reorder_cards", "ui");
         var order = FullOrder();
         var from = order.IndexOf(id);
         var to = order.IndexOf(targetId);

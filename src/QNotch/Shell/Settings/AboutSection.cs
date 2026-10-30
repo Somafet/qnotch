@@ -23,14 +23,14 @@ internal static class AboutSection
 
         var exit = new Button { Content = "Quit QNotch" };
         AutomationProperties.SetAutomationId(exit, "quit-qnotch");
-        exit.Click += (_, _) => quit();
+        exit.Click += (_, _) => { QNotch.Core.Analytics.Track("shell", "quit"); quit(); };
         page.Children.Add(UiKit.SettingsGroup([
             UiKit.SettingsRow("Quit QNotch", "Stops QNotch and its running features.", exit)
         ]));
 
         var tour = new Button { Content = "Show welcome tour" };
         AutomationProperties.SetAutomationId(tour, "about-welcome-tour");
-        tour.Click += (_, _) => showTour();
+        tour.Click += (_, _) => { QNotch.Core.Analytics.Track("settings", "tour", "ui"); showTour(); };
         page.Children.Add(UiKit.SettingsGroup([
             UiKit.SettingsRow("Welcome tour", "What QNotch does, your features and accounts, in a few steps.", tour),
             UiKit.SettingsRow("Hover the notch", "Opens the panel without taking the keyboard.", new TextBlock()),

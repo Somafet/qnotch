@@ -114,7 +114,7 @@ final class MediaModule: NotchModule {
         } else if !needed { tick?.invalidate(); tick = nil }
     }
 
-    func select(_ source: NowPlaying.Source) {
+    func select(_ source: NowPlaying.Source) { Analytics.record("media", "select_session");
         selected = source
         changed()
     }
@@ -184,7 +184,7 @@ final class MediaModule: NotchModule {
         }
     }
 
-    func playPause() {
+    func playPause() { Analytics.record("media", "play_pause");
         guard let session = current else { return }
         sessions[session.source]?.playing.toggle()
         sessions[session.source]?.position = session.position(at: Date())
@@ -193,10 +193,10 @@ final class MediaModule: NotchModule {
         run(session.source, "playpause")
     }
 
-    func next() { if let session = current { run(session.source, "next track") } }
-    func previous() { if let session = current { run(session.source, "previous track") } }
+    func next() { Analytics.record("media", "next"); if let session = current { run(session.source, "next track") } }
+    func previous() { Analytics.record("media", "previous"); if let session = current { run(session.source, "previous track") } }
 
-    func seek(to seconds: Double) {
+    func seek(to seconds: Double) { Analytics.record("media", "seek");
         guard let session = current else { return }
         sessions[session.source]?.position = seconds
         sessions[session.source]?.positionAt = Date()

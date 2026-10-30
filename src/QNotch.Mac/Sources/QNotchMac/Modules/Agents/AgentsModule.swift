@@ -109,7 +109,7 @@ final class AgentsModule: NotchModule {
         else if event.event == "PostToolUse" { burstUntil = .distantPast; walk() }
     }
 
-    func stopGroup(_ group: AgentProcessGroup) {
+    func stopGroup(_ group: AgentProcessGroup) { Analytics.record("agents", "stop_process");
         let members = group.group.members
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             ProcessNative.stop(members)
@@ -305,7 +305,7 @@ final class AgentsModule: NotchModule {
     // MARK: Commands
 
     /// Brings the terminal or app the agent runs in forward, then opens the session link if any.
-    func show(_ session: AgentSession) {
+    func show(_ session: AgentSession) { Analytics.record("agents", "show");
         if session.t3Thread != nil, let app = NSRunningApplication.runningApplications(withBundleIdentifier: T3Watch.bundleID).first {
             app.activate(options: [.activateAllWindows])
         } else if let pid = session.pid, let app = NotificationsModule.appOwning(pid) { app.activate(options: [.activateAllWindows]) }
@@ -314,7 +314,7 @@ final class AgentsModule: NotchModule {
         context.shell?.dismissPanel()
     }
 
-    func dismiss(_ session: AgentSession) {
+    func dismiss(_ session: AgentSession) { Analytics.record("agents", "dismiss");
         board.remove(session.id)
         if (usage[session.id]?.today.tokens ?? 0) == 0 { usage[session.id] = nil }
         changed()

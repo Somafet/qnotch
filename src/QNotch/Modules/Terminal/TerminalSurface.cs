@@ -56,6 +56,7 @@ internal sealed class TerminalSurface : FrameworkElement, IExclusiveKeyboardInpu
         var mods = Keyboard.Modifiers;
         if (mods.HasFlag(ModifierKeys.Control) && !mods.HasFlag(ModifierKeys.Alt) && mods.HasFlag(ModifierKeys.Shift) && key == Key.C)
         {
+            QNotch.Core.Analytics.Track("terminal", "copy", "ui");
             try { System.Windows.Clipboard.SetText(string.Join(Environment.NewLine, _buffer.Capture(_scroll).Lines.Select(l => string.Concat(l.Select(c => c.Text)).TrimEnd()))); }
             catch (Exception ex) { _status("Copy unavailable: " + ex.Message); }
             e.Handled = true; return;
@@ -64,6 +65,7 @@ internal sealed class TerminalSurface : FrameworkElement, IExclusiveKeyboardInpu
         {
             try
             {
+                QNotch.Core.Analytics.Track("terminal", "paste", "ui");
                 if (System.Windows.Clipboard.ContainsText())
                 {
                     var text = System.Windows.Clipboard.GetText();
@@ -83,6 +85,7 @@ internal sealed class TerminalSurface : FrameworkElement, IExclusiveKeyboardInpu
             _scroll = Math.Clamp(_scroll + (key == Key.PageUp ? _buffer.Rows : -_buffer.Rows), 0, _buffer.Capture().HistoryCount);
             InvalidateVisual(); e.Handled = true; return;
         }
+        if (key == Key.Enter) { QNotch.Core.Analytics.Track("terminal", "submit", "ui"); }
         if (TerminalInput.KeyText(key, mods, _buffer.ApplicationCursor) is { } input) { Send(input); e.Handled = true; }
         // Printable keys reach TextInput, including the current Windows keyboard layout and composed Unicode text.
     }

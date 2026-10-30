@@ -79,13 +79,13 @@ public sealed class MediaModule : INotchModule, ICadenceAware
 
     // ---------- transport commands, called by MediaState (UI thread) ----------
 
-    public void PlayPause() { _m.IsPlaying = !_m.IsPlaying; _provider.PlayPause(); } // optimistic, corrected by the next playback event
-    public void Next() => _provider.Next();
-    public void Previous() => _provider.Previous();
-    public void SelectSession(string sessionId) => _provider.Select(sessionId);
+    public void PlayPause() { QNotch.Core.Analytics.Track("media", "play_pause", "ui");  _m.IsPlaying = !_m.IsPlaying; _provider.PlayPause(); } // optimistic, corrected by the next playback event
+    public void Next() { QNotch.Core.Analytics.Track("media", "next", "ui");  _provider.Next(); }
+    public void Previous() { QNotch.Core.Analytics.Track("media", "previous", "ui");  _provider.Previous(); }
+    public void SelectSession(string sessionId) { QNotch.Core.Analytics.Track("media", "select_session", "ui");  _provider.Select(sessionId); }
 
     public void Seek(TimeSpan position)
-    {
+    { QNotch.Core.Analytics.Track("media", "seek", "ui");
         _m.Position = position;
         _m.LastTimelineUpdate = DateTimeOffset.Now;
         RefreshProgress();

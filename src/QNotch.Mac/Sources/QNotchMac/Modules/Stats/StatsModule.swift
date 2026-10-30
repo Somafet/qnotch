@@ -193,17 +193,17 @@ final class StatsModule: NotchModule {
 
     private func makeSettings() -> NSView {
         let width = SettingsController.contentWidth
-        func toggle(_ title: String, _ detail: String, _ key: WritableKeyPath<StatsSettings, Bool>) -> NSView {
-            let control = ActionSwitch(title, value: settings[keyPath: key]) { [weak self] value in self?.set { $0[keyPath: key] = value } }
+        func toggle(_ title: String, _ detail: String, _ target: String, _ key: WritableKeyPath<StatsSettings, Bool>) -> NSView {
+            let control = ActionSwitch(title, value: settings[keyPath: key]) { [weak self] value in Analytics.setting(target, enabled: value); self?.set { $0[keyPath: key] = value } }
             return settingsRow(title, detail: detail, control: control, width: width)
         }
         return settingsGroup([
-            toggle("CPU", "Share of all cores in use.", \.wingCPU),
-            toggle("Memory", "Memory used, as in Activity Monitor.", \.wingMemory),
-            toggle("GPU", "Busiest graphics processor. Hidden when macOS does not report it.", \.wingGPU),
-            toggle("Network", "Download and upload speed of your Wi-Fi and Ethernet connections.", \.wingNetwork),
-            toggle("Battery", "Also in the menu bar. Hidden on Macs without a battery.", \.wingBattery),
-            toggle("Clock", "Also in the menu bar.", \.wingClock)
+            toggle("CPU", "Share of all cores in use.", "stats_cpu", \.wingCPU),
+            toggle("Memory", "Memory used, as in Activity Monitor.", "stats_memory", \.wingMemory),
+            toggle("GPU", "Busiest graphics processor. Hidden when macOS does not report it.", "stats_gpu", \.wingGPU),
+            toggle("Network", "Download and upload speed of your Wi-Fi and Ethernet connections.", "stats_network", \.wingNetwork),
+            toggle("Battery", "Also in the menu bar. Hidden on Macs without a battery.", "stats_battery", \.wingBattery),
+            toggle("Clock", "Also in the menu bar.", "stats_clock", \.wingClock)
         ], header: "Beside the notch",
         footer: "While the panel is closed, stats shown here are sampled every 5 seconds; with none shown, nothing is sampled. The System card on Home updates every second while you look at it. GPU temperature is not available: macOS has no public sensor API.", width: width)
     }

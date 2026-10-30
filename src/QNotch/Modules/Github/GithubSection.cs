@@ -81,14 +81,14 @@ internal static class GithubSection
         Sync();
 
         save.Click += async (_, _) =>
-        {
+        { QNotch.Core.Analytics.Track("github", "save", "ui");
             var t = box.Password.Trim();
             if (t.Length == 0) { Show("Paste a token first.", "WarningBrush"); return; }
             if (await svc.SaveTokenAsync(t)) { box.Clear(); Show("Token saved to Credential Manager.", "SuccessBrush"); }
             else Show("Windows refused to store the token.", "DangerBrush");
         };
         test.Click += async (_, _) =>
-        {
+        { QNotch.Core.Analytics.Track("github", "test_connection", "ui");
             test.IsEnabled = false;
             Show("Testing", "TextSecondaryBrush");
             var t = box.Password.Trim();
@@ -99,12 +99,12 @@ internal static class GithubSection
             test.IsEnabled = true;
         };
         clear.Click += async (_, _) =>
-        {
+        { QNotch.Core.Analytics.Track("github", "disconnect", "ui");
             await svc.ClearTokenAsync();
             box.Clear();
             Show("Token and cached activity removed.", "TextSecondaryBrush");
         };
-        refresh.Click += (_, _) => _ = svc.RefreshAsync();
+        refresh.Click += (_, _) => { QNotch.Core.Analytics.Track("github", "refresh", "ui"); _ = svc.RefreshAsync(); };
         return page;
     }
 }

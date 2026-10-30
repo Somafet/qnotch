@@ -56,19 +56,19 @@ final class MenuBarController: NSObject, NSMenuDelegate, NSMenuItemValidation {
 
     @objc private func openPanel() {
         // During the first-run tour there is no panel content yet: bring the tour forward.
-        if shell.modulesDeferred, let tour = shell.onboarding { tour.show() } else { shell.open(keyboard: true) }
+        if shell.modulesDeferred, let tour = shell.onboarding { tour.show() } else { Analytics.withSurface("tray") { Analytics.withSurface("tray") { shell.open(keyboard: true) } } }
     }
     @objc private func setGameMode(_ sender: NSMenuItem) {
-        if let raw = sender.representedObject as? String, let mode = GameOverride(rawValue: raw) { shell.gameMode.override = mode }
+        if let raw = sender.representedObject as? String, let mode = GameOverride(rawValue: raw) { Analytics.withSurface("tray") { Analytics.record("shell", "game_mode") }; Analytics.withSurface("tray") { Analytics.record("shell", "game_mode") }; shell.gameMode.override = mode }
     }
     @objc private func runModuleAction(_ sender: NSMenuItem) {
         guard let id = sender.representedObject as? String,
               let action = shell.registries.menuActions.items.first(where: { $0.id == id }) else { return }
-        action.run()
+        Analytics.withSurface("tray") { Analytics.withSurface("tray") { action.run() } }
     }
-    @objc private func openSettings() { shell.openSettings() }
-    @objc private func quit() { NSApp.terminate(nil) }
-    @objc private func checkForUpdates() { shell.updater?.check() }
+    @objc private func openSettings() { Analytics.withSurface("tray") { Analytics.withSurface("tray") { shell.openSettings() } } }
+    @objc private func quit() { Analytics.withSurface("tray") { Analytics.record("shell", "quit") }; Analytics.withSurface("tray") { Analytics.record("shell", "quit") }; NSApp.terminate(nil) }
+    @objc private func checkForUpdates() { Analytics.withSurface("tray") { Analytics.record("shell", "check_updates") }; Analytics.withSurface("tray") { Analytics.record("shell", "check_updates") }; shell.updater?.check() }
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
         menuItem.action == #selector(checkForUpdates) ? shell.updater?.canCheck == true : true
     }

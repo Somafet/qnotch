@@ -85,6 +85,7 @@ internal static class AgentsSetup
             button.Click += async (_, _) =>
             {
                 if (ctx.Demo) return;
+                QNotch.Core.Analytics.Track("agents", "connect");
                 button.IsEnabled = false;
                 string? error = null;
                 try { await Task.Run(hook.Connect); }

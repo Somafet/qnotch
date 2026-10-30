@@ -338,7 +338,8 @@ public sealed class ShellController : IShell
     internal void ToggleFromUser()
     {
         if (!_started || _mode == ShellMode.GameBar) return;
-        if (_mode == ShellMode.Expanded) { ClosePanel(); return; }
+        QNotch.Core.Analytics.Track("shell", "open_panel", "ui");
+        if (_mode == ShellMode.Expanded) { QNotch.Core.Analytics.Track("shell", "close_panel", "ui"); ClosePanel(); return; }
         OpenPanel();
         _w.EnableKeyboard();
         FocusActiveInput();
@@ -352,7 +353,7 @@ public sealed class ShellController : IShell
 
     public void RequestKeyboardFocus() => _w.EnableKeyboard();
 
-    public void OpenSettings(string? sectionId = null) => SettingsWindow.Show(_sections, _general, sectionId);
+    public void OpenSettings(string? sectionId = null) { QNotch.Core.Analytics.Track("shell", "open_settings", target: sectionId == "updates" ? "about" : sectionId ?? "general");  SettingsWindow.Show(_sections, _general, sectionId); }
 
     public IDisposable HoldOpen()
     {
@@ -381,7 +382,7 @@ public sealed class ShellController : IShell
     {
         _hovering = true;
         _leave?.Stop();
-        if (_mode == ShellMode.Collapsed && !_hoverQuiet) Start(ref _dwell, _general.HoverDwellMs, OpenPanel);
+        if (_mode == ShellMode.Collapsed && !_hoverQuiet) Start(ref _dwell, _general.HoverDwellMs, () => { QNotch.Core.Analytics.Track("shell", "open_panel", "ui"); OpenPanel(); });
     }
 
     /// <summary>While the pill is pressed or sliding (NotchNudge), the pointer being over it does not open the panel.</summary>
@@ -406,7 +407,7 @@ public sealed class ShellController : IShell
         if (FilesDropped is null || _mode == ShellMode.GameBar) return false;
         _hovering = true;
         _leave?.Stop();
-        if (_mode == ShellMode.Collapsed && _dwell?.IsEnabled != true) Start(ref _dwell, _general.HoverDwellMs, OpenPanel);
+        if (_mode == ShellMode.Collapsed && _dwell?.IsEnabled != true) Start(ref _dwell, _general.HoverDwellMs, () => { QNotch.Core.Analytics.Track("shell", "open_panel", "ui"); OpenPanel(); });
         if (!_fileDrag)
         {
             _fileDrag = true;
@@ -488,6 +489,7 @@ public sealed class ShellController : IShell
             var id = t.Id;
             var rb = new RadioButton { Style = (Style)Application.Current.FindResource("TabButton"), Content = t.Glyph, ToolTip = t.Title, GroupName = "tabs", Tag = id };
             System.Windows.Automation.AutomationProperties.SetAutomationId(rb, $"tab-{id}");
+            rb.Click += (_, _) => { QNotch.Core.Analytics.Track("shell", "select_tab", target: id); SelectTab(id); };
             rb.Checked += (_, _) => SelectTab(id);
             strip.Children.Add(rb);
             _tabButtons[id] = rb;
@@ -582,7 +584,7 @@ public sealed class ShellController : IShell
     /// <summary>Edit mode: moves tab <paramref name="id"/> into the slot held by <paramref name="targetId"/> and saves the order
     /// (ids of tabs that are gone, module off, keep their slot).</summary>
     internal void MoveTab(string id, string targetId)
-    {
+    { QNotch.Core.Analytics.Track("shell", "reorder_tabs", "ui");
         var order = _general.TabOrder.ToList();
         foreach (var t in OrderedTabs()) if (!order.Contains(t.Id)) order.Add(t.Id);
         var from = order.IndexOf(id);

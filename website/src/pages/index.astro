@@ -73,13 +73,13 @@ const privacy = {
     { icon: 'shield', t: 'Local settings and notes', d: 'Settings, notes and logs live in %APPDATA%\\QNotch on your PC. You do not need an account.' },
     { icon: 'bolt', t: 'Tokens in Credential Manager', d: 'QNotch stores tokens in Windows Credential Manager, never in a file.' },
     { icon: 'copy', t: 'Clipboard history in memory', d: 'QNotch keeps clipboard history in memory unless you choose to save it.' },
-    { icon: 'link', t: 'Two optional online requests', d: 'QNotch fetches your GitHub contribution graph and Claude Code usage limits. You can turn off both in Settings.' },
+    { icon: 'link', t: 'Online features and usage data', d: 'Online integrations are optional. Usage events include hashed account or installation identifiers, never notes, clipboard text or file contents.' },
   ],
   mac: [
     { icon: 'shield', t: 'Local settings and notes', d: 'Settings, notes and logs live in ~/Library/Application Support/QNotch.Mac. You do not need an account.' },
     { icon: 'bolt', t: 'Tokens in the Keychain', d: 'QNotch stores your GitHub and notification tokens in the macOS Keychain, never in a file.' },
     { icon: 'copy', t: 'Clipboard history in memory', d: 'QNotch keeps clipboard history in memory unless you choose to save it, and skips what password managers mark as concealed.' },
-    { icon: 'link', t: 'Online only for what you turn on', d: 'The forecast, your GitHub graph, Claude Code usage limits and update checks. Each one is a switch in Settings.' },
+    { icon: 'link', t: 'Online features and usage data', d: 'Online integrations are optional. Usage events include hashed account or installation identifiers, never notes, clipboard text or file contents.' },
   ],
 } as const;
 
@@ -240,10 +240,8 @@ const jsonLd = {
       <div class="wrap">
         <div class="section-head center">
           <span class="eyebrow">Privacy</span>
-          <h2 class="os-win">Your data stays on your PC.</h2>
-          <h2 class="os-mac">Your data stays on your Mac.</h2>
-          <p class="lead os-win">Everything's stored locally. QNotch only goes online for two things, your GitHub graph and Claude Code usage limits, and you can switch both off. Don't take my word for it, the source is on GitHub.</p>
-          <p class="lead os-mac">Everything's stored locally. No analytics, and no Accessibility or Screen Recording permission. Don't take my word for it, the source is on GitHub.</p>
+          <h2>Your content stays on your device.</h2>
+          <p class="lead">Your content stays local. QNotch shares usage actions with PostHog by default, without your content. Turn off Share usage data in Settings, General or set QNOTCH_TELEMETRY_ENABLED=false. The source is on GitHub.</p>
         </div>
         {(['win', 'mac'] as const).map(os => (
           <ul class={`priv os-${os}`}>

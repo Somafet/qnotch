@@ -25,6 +25,11 @@ mkdir -p "$frameworks"
 ditto "$binary_dir/Sparkle.framework" "$frameworks/Sparkle.framework"
 rm -rf "$frameworks/Sparkle.framework/Versions/B/XPCServices" "$frameworks/Sparkle.framework/XPCServices"
 cp "$package/Info.plist" "$app/Contents/Info.plist"
+# SwiftPM resources must live inside the app for Finder launches and signed releases.
+analytics_bundle="$binary_dir/QNotchMac_QNotchMac.bundle"
+[[ -f "$analytics_bundle/analytics-config.json" ]] || { echo 'The analytics resource bundle is missing from the Swift build.' >&2; exit 1; }
+mkdir -p "$app/Contents/Resources"
+ditto "$analytics_bundle" "$app/Contents/Resources/QNotchMac_QNotchMac.bundle"
 # The release workflow passes the tag's version and a monotonic build number.
 if [[ -n "${QNOTCH_VERSION:-}" ]]; then
     /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $QNOTCH_VERSION" "$app/Contents/Info.plist"

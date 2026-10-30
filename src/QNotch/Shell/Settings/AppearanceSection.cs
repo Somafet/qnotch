@@ -22,6 +22,7 @@ public static class AppearanceSection
         {
             var m = mode;
             var rb = new RadioButton { Style = (Style)Application.Current.FindResource("SegmentButton"), Content = m.ToString(), GroupName = "theme", IsChecked = gs.Theme == m };
+            rb.Click += (_, _) => QNotch.Core.Analytics.Track("settings", "change", target: "theme");
             rb.Checked += (_, _) => gs.Theme = m;
             seg.Children.Add(rb);
         }
@@ -44,28 +45,30 @@ public static class AppearanceSection
             };
             ring.MouseEnter += (_, _) => { if (!string.Equals(h, gs.AccentColor, StringComparison.OrdinalIgnoreCase)) ring.SetResourceReference(Border.BorderBrushProperty, "StrokeStrongBrush"); };
             ring.MouseLeave += (_, _) => Mark();
-            ring.MouseLeftButtonUp += (_, _) => { gs.AccentColor = h; Mark(); };
+            ring.MouseLeftButtonUp += (_, _) => { Analytics.Track("settings", "change", target: "accent"); gs.AccentColor = h; Mark(); };
             rings.Add((ring, h));
             sw.Children.Add(ring);
         }
         Mark();
         page.Children.Add(UiKit.Row("Accent color", null, sw));
 
-        page.Children.Add(UiKit.Row("Reduce motion", "Skips animations. Always on when Windows animation effects are off.", UiKit.Toggle(gs.ReduceMotion, v => gs.ReduceMotion = v)));
+        page.Children.Add(UiKit.Row("Reduce motion", "Skips animations. Always on when Windows animation effects are off.", UiKit.Toggle(gs.ReduceMotion, v => { QNotch.Core.Analytics.Track("settings", "change", target: "reduce_motion", enabled: v); gs.ReduceMotion = v; })));
 
         // Profile
         var name = new TextBox { Width = 200, Text = gs.ProfileName };
+        var committedName = gs.ProfileName;
         name.TextChanged += (_, _) => gs.ProfileName = name.Text;
+        name.LostKeyboardFocus += (_, _) => { if (committedName == name.Text) return; Analytics.Track("settings", "change", target: "profile_name"); committedName = name.Text; };
         page.Children.Add(UiKit.Row("Display name", "Shown in the panel header.", name));
 
         var pick = new Button { Content = "Choose image" };
         var clear = new Button { Content = "Remove", Margin = new Thickness(8, 0, 0, 0) };
         pick.Click += (_, _) =>
-        {
+        { QNotch.Core.Analytics.Track("settings", "choose_photo", "ui");
             var dlg = new OpenFileDialog { Filter = "Images|*.png;*.jpg;*.jpeg;*.bmp;*.webp|All files|*.*" };
             if (dlg.ShowDialog() == true) gs.ProfileImagePath = dlg.FileName;
         };
-        clear.Click += (_, _) => gs.ProfileImagePath = "";
+        clear.Click += (_, _) => { QNotch.Core.Analytics.Track("settings", "remove_photo", "ui"); gs.ProfileImagePath = ""; };
         var pp = new StackPanel { Orientation = Orientation.Horizontal };
         pp.Children.Add(pick);
         pp.Children.Add(clear);
@@ -78,7 +81,7 @@ public static class AppearanceSection
         foreach (var c in layout.Ordered)
         {
             var id = c.Id;
-            cards.Children.Add(UiKit.Row(c.Title, null, UiKit.Toggle(layout.IsVisible(id), v => layout.SetVisible(id, v))));
+            cards.Children.Add(UiKit.Row(c.Title, null, UiKit.Toggle(layout.IsVisible(id), v => { QNotch.Core.Analytics.Track("settings", "change", target: "card_visibility", enabled: v); layout.SetVisible(id, v); })));
         }
         page.Children.Add(cards);
         return page;

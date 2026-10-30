@@ -195,7 +195,7 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
     // ---------- commands (UI thread) ----------
 
     internal void Show(AgentSession s)
-    {
+    { QNotch.Core.Analytics.Track("agents", "show", "ui");
         if (s.Window != 0) AgentNative.Focus(s.Window);
         if (s.Link.Length == 0) return;
         // The app is already up front; the link makes it switch to this session.
@@ -212,7 +212,7 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
     }
 
     internal void Dismiss(AgentSession s)
-    {
+    { QNotch.Core.Analytics.Track("agents", "dismiss", "ui");
         if (s.T3Thread is { } thread && s.T3Run is { } run)
         {
             _t3Dismissed[thread] = run;
@@ -224,6 +224,7 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
 
     internal void Stop(ProcGroup g) => Task.Run(() =>
     {
+        QNotch.Core.Analytics.Track("agents", "stop_process", "ui");
         try { _procs.Stop(g.Root); }
         catch (Exception ex) { Log.Warn("Stopping an agent's process failed", ex); }
         _ctx.Bus.Run(() => Later(300));
@@ -298,7 +299,7 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
                 using var reader = new StreamReader(s);
                 var line = await reader.ReadLineAsync(cts.Token);
                 var e = line is null ? null : JsonSerializer.Deserialize<AgentEvent>(line, Json);
-                if (e is { Session.Length: > 0 }) _ctx.Bus.Run(() => Apply(e));
+                if (e is { Session.Length: > 0 }) { QNotch.Core.Analytics.Track("agents", "cli_hook", "cli"); _ctx.Bus.Run(() => Apply(e)); }
             }
             catch (Exception ex) when (ex is JsonException or OperationCanceledException or IOException) { /* one bad or slow client */ }
             catch (Exception ex) { Log.Warn("Agents event failed", ex); }

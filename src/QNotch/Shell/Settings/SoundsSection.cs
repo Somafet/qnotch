@@ -42,17 +42,18 @@ public static class SoundsSection
         }
         void Use(string file)
         {
+            QNotch.Core.Analytics.Track("settings", "change_sound", "ui");
             sounds.Set(s, file);
             Update();
             if (file.Length > 0) sounds.Play(s);
         }
-        play.Click += (_, _) => sounds.Play(s);
+        play.Click += (_, _) => { QNotch.Core.Analytics.Track("settings", "preview_sound", "ui"); sounds.Play(s); };
         choose.Click += (_, _) =>
-        {
+        { QNotch.Core.Analytics.Track("settings", "choose_sound", "ui");
             var dlg = new OpenFileDialog { Title = $"Choose a sound: {s.Title}", Filter = Sounds.Filter };
             if (dlg.ShowDialog(Window.GetWindow(choose)) == true) Use(dlg.FileName);
         };
-        reset.Click += (_, _) => Use("");
+        reset.Click += (_, _) => { QNotch.Core.Analytics.Track("settings", "reset_sound", "ui"); Use(""); };
 
         var p = new StackPanel { Orientation = Orientation.Horizontal };
         p.Children.Add(name);

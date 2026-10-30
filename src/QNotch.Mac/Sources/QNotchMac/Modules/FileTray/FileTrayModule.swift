@@ -82,7 +82,7 @@ final class FileTrayModule: NSObject, NotchModule {
 
     // MARK: List
 
-    func add(_ urls: [URL]) {
+    func add(_ urls: [URL]) { Analytics.record("files", "add");
         let fresh = urls.map(\.standardizedFileURL)
         let paths = FileTrayList.adding(fresh.map(\.path), to: items.map(\.url.path))
         let known = Dictionary(items.map { ($0.url.path, $0) }, uniquingKeysWith: { first, _ in first })
@@ -96,13 +96,13 @@ final class FileTrayModule: NSObject, NotchModule {
         refresh()
     }
 
-    func remove(_ item: Item) {
+    func remove(_ item: Item) { Analytics.record("files", "remove");
         items.removeAll { $0.url == item.url }
         save()
         refresh()
     }
 
-    func clear() {
+    func clear() { Analytics.record("files", "clear");
         items.removeAll()
         save()
         show("Tray cleared. Your files were not touched.")
@@ -127,17 +127,17 @@ final class FileTrayModule: NSObject, NotchModule {
 
     // MARK: Actions
 
-    func open(_ url: URL) { NSWorkspace.shared.open(url) }
-    func reveal(_ urls: [URL]) { NSWorkspace.shared.activateFileViewerSelecting(urls) }
+    func open(_ url: URL) { Analytics.record("files", "open"); NSWorkspace.shared.open(url) }
+    func reveal(_ urls: [URL]) { Analytics.record("files", "reveal"); NSWorkspace.shared.activateFileViewerSelecting(urls) }
 
-    func copyPath(_ url: URL) {
+    func copyPath(_ url: URL) { Analytics.record("files", "copy_path");
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(url.path, forType: .string)
         show("Path copied")
     }
 
     /// The system share picker: AirDrop, Messages, Mail and the user's share extensions.
-    func share(_ urls: [URL], from view: NSView) {
+    func share(_ urls: [URL], from view: NSView) { Analytics.record("files", "share_start");
         guard !urls.isEmpty else { return }
         let hold = context.shell?.holdOpen()
         let picker = NSSharingServicePicker(items: urls)
@@ -148,7 +148,7 @@ final class FileTrayModule: NSObject, NotchModule {
     private var pickerHold: AnyObject?
 
     /// Copies into a folder the user picks; names never overwrite ("name (2).ext").
-    func export(_ urls: [URL]) {
+    func export(_ urls: [URL]) { Analytics.record("files", "export");
         guard !urls.isEmpty else { return }
         let hold = context.shell?.holdOpen()
         let panel = NSOpenPanel()
@@ -175,7 +175,7 @@ final class FileTrayModule: NSObject, NotchModule {
         }
     }
 
-    func addWithPanel() {
+    func addWithPanel() { Analytics.record("files", "choose_files");
         let hold = context.shell?.holdOpen()
         let panel = NSOpenPanel()
         panel.allowsMultipleSelection = true
@@ -188,7 +188,7 @@ final class FileTrayModule: NSObject, NotchModule {
         }
     }
 
-    func quickLook(_ url: URL) {
+    func quickLook(_ url: URL) { Analytics.record("files", "quick_look");
         guard let panel = QLPreviewPanel.shared() else { return }
         quickLookURL = url
         quickLookHold = context.shell?.holdOpen()

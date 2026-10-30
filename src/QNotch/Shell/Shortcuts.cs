@@ -113,7 +113,7 @@ public sealed class Shortcuts(HotkeyService hotkeys, SettingsStore store)
         s.Taken = false;
         if (_suspended || (_inputCaptured && !s.AllowDuringInput) || !s.Enabled || s.Gesture.Length == 0 || store.ReadOnly) return;
         // Two shortcuts with the same default: the first one keeps the key.
-        if (!_items.Any(x => x != s && x.Registered is { } r && Same(r, s.Gesture)) && hotkeys.Register(s.Gesture, s.Action)) s.Registered = s.Gesture;
+        if (!_items.Any(x => x != s && x.Registered is { } r && Same(r, s.Gesture)) && hotkeys.Register(s.Gesture, () => { using (Analytics.Surface("hotkey")) { s.Action(); } })) s.Registered = s.Gesture;
         else s.Taken = true;
     }
 

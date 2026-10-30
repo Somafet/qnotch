@@ -168,7 +168,7 @@ internal sealed class NotchNudge
     double Spot(string app) => _gs.NotchSpots.TryGetValue(app, out var x) ? x : 0;
 
     void Remember(double x)
-    {
+    { QNotch.Core.Analytics.Track("shell", "move_notch", "ui");
         if (_app.Length == 0) return;
         if (x == 0) _gs.NotchSpots.Remove(_app);
         else _gs.NotchSpots[_app] = x;

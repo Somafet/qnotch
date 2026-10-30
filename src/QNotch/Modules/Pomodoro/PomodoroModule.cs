@@ -82,7 +82,7 @@ public sealed partial class PomodoroModule : INotchModule, ICadenceAware
     // ---------- commands (UI thread) ----------
 
     void Toggle()
-    {
+    { if (_st.IsRunning) { QNotch.Core.Analytics.Track("pomodoro", "pause", "ui"); } else { QNotch.Core.Analytics.Track("pomodoro", "start", "ui"); }
         if (_st.IsRunning) { _left = _end - DateTime.UtcNow; _tick.Stop(); _st.IsRunning = false; _st.Status = "Paused"; }
         else
         {
@@ -96,7 +96,7 @@ public sealed partial class PomodoroModule : INotchModule, ICadenceAware
     }
 
     void SetMinutes(int minutes, bool save = true)
-    {
+    { if (save) QNotch.Core.Analytics.Track("pomodoro", "set_duration", "ui");
         _tick.Stop();
         _done = false;
         _st.Minutes = minutes;

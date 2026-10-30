@@ -40,9 +40,9 @@ public sealed class AiModule : INotchModule, ICadenceAware
         _s = ctx.Settings.Get<AiSettings>("ai");
         _s.Normalize();
 
-        St.RefreshCommand = new RelayCommand(RefreshUsage);
+        St.RefreshCommand = new RelayCommand(() => { QNotch.Core.Analytics.Track("ai", "refresh"); RefreshUsage(); });
         St.LaunchCommand = new RelayCommand<AiAppItem>(Launch);
-        St.RescanCommand = new RelayCommand(Rescan);
+        St.RescanCommand = new RelayCommand(() => { QNotch.Core.Analytics.Track("ai", "scan"); Rescan(); });
         St.OpenSettingsCommand = new RelayCommand(() => ctx.Shell.OpenSettings("ai"));
 
         // Every Claude account is fetched, but they share one row: the dropdown picks which reading it shows.
@@ -109,7 +109,7 @@ public sealed class AiModule : INotchModule, ICadenceAware
 
     /// <summary>An empty name goes back to the folder's own name.</summary>
     internal void RenameAccount(AiAccount a, string name)
-    {
+    { QNotch.Core.Analytics.Track("ai", "rename_account");
         name = name.Trim();
         if (name.Length == 0) { _s.AccountNames.Remove(a.Id); name = _providers.OfType<ClaudeCodeProvider>().First(p => p.Id == a.Id).Account; }
         else _s.AccountNames[a.Id] = name;
@@ -136,7 +136,7 @@ public sealed class AiModule : INotchModule, ICadenceAware
     }
 
     internal void SetSlot(int index, string appId)
-    {
+    { QNotch.Core.Analytics.Track("ai", "set_slot", "ui");
         for (var j = 0; j < _s.Slots.Count; j++) if (appId.Length > 0 && _s.Slots[j] == appId) _s.Slots[j] = "";
         _s.Slots[index] = appId;
         if (appId.Length > 0 && !_s.AutoPlaced.Contains(appId)) _s.AutoPlaced.Add(appId);
@@ -167,7 +167,7 @@ public sealed class AiModule : INotchModule, ICadenceAware
     }
 
     internal void RemoveCustom(string id)
-    {
+    { QNotch.Core.Analytics.Track("ai", "remove_app", "ui");
         _s.Custom.RemoveAll(c => c.Id == id);
         for (var j = 0; j < _s.Slots.Count; j++) if (_s.Slots[j] == id) _s.Slots[j] = "";
         if (St.Apps.FirstOrDefault(a => a.Id == id) is { } a) St.Apps.Remove(a);
@@ -261,7 +261,7 @@ public sealed class AiModule : INotchModule, ICadenceAware
     void LaunchSlot(int slot) => Launch(St.Apps.FirstOrDefault(a => a.Slot == slot));
 
     void Launch(AiAppItem? app)
-    {
+    { QNotch.Core.Analytics.Track("ai", "launch", "ui");
         if (app is null) return;
         app.Error = "";
         var target = app.Target;
@@ -288,7 +288,7 @@ public sealed class AiModule : INotchModule, ICadenceAware
     static string Group(IUsageProvider p) => p is ClaudeCodeProvider ? "claude" : p.Id;
 
     void ShowClaudeAccount(AiAccount a)
-    {
+    { QNotch.Core.Analytics.Track("ai", "select_account");
         if (a.Id == _claudeId) return;
         _claudeId = _s.ClaudeAccount = a.Id;
         Save();

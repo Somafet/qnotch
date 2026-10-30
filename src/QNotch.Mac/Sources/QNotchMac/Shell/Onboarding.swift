@@ -150,6 +150,7 @@ final class OnboardingController: NSObject, NSWindowDelegate {
 
     func advance() {
         guard !ending else { return }
+        Analytics.withSurface("onboarding") { Analytics.record("onboarding", step == .finish ? "finish" : "next") }
         if step == .finish { return end(finished: true, closeWindow: true) }
         computeSteps()
         guard index + 1 < steps.count else { return }
@@ -157,7 +158,7 @@ final class OnboardingController: NSObject, NSWindowDelegate {
         install(animated: true, direction: 1)
     }
 
-    func goBack() {
+    func goBack() { Analytics.record("onboarding", "back");
         guard !ending, index > 0 else { return }
         computeSteps()
         index = max(0, index - 1)
@@ -165,7 +166,7 @@ final class OnboardingController: NSObject, NSWindowDelegate {
     }
 
     /// Ends the tour with what was chosen so far plus the defaults.
-    func skipTour() { end(finished: false, closeWindow: true) }
+    func skipTour() { Analytics.record("onboarding", "skip"); end(finished: false, closeWindow: true) }
 
     private func computeSteps() {
         let current = steps.isEmpty ? nil : step
@@ -811,7 +812,7 @@ final class OnboardingController: NSObject, NSWindowDelegate {
         Motion.change(item.chip?.layer, "backgroundColor", from: oldColor, delay: delay, duration: 0.15)
     }
 
-    private func setFeature(_ id: String, _ enabled: Bool) {
+    private func setFeature(_ id: String, _ enabled: Bool) { Analytics.record("onboarding", "change_feature", target: Analytics.canonical(id), enabled: enabled);
         shell.updateGeneral { $0.setEnabled(id, enabled) }
         refreshFeatures()
         setTileLook(id, on: enabled, delay: 0, animated: true)
@@ -922,7 +923,7 @@ final class OnboardingController: NSObject, NSWindowDelegate {
         let updatesAvailable = shell.updater != nil
         let updates = ActionSwitch("Check for updates automatically", value: updatesAvailable && updatesChoice) { [weak self] value in
             guard let self else { return }
-            self.updatesChoice = value
+            Analytics.withSurface("onboarding") { Analytics.setting("automatic_updates", enabled: value) }; self.updatesChoice = value
             if !self.firstRun, !Runtime.diagnostics { self.shell.updater?.checksAutomatically = value }
         }
         updates.isEnabled = updatesAvailable
@@ -933,7 +934,7 @@ final class OnboardingController: NSObject, NSWindowDelegate {
                     login, line("Open at login", size: 13, color: Palette.textPrimary)], spacing: 8)
     }
 
-    private func setLogin(_ value: Bool) {
+    private func setLogin(_ value: Bool) { Analytics.record("onboarding", "change_login", target: "login", enabled: value);
         loginChoice = value
         guard !firstRun, !Runtime.diagnostics else { return }
         let service = SMAppService.mainApp

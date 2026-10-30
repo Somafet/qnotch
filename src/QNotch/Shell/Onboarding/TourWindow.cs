@@ -154,7 +154,7 @@ internal sealed class TourWindow : Window
         AutomationProperties.SetAutomationId(_back, "onboarding-back");
         AutomationProperties.SetAutomationId(_primary, "onboarding-primary");
         _skip.Click += (_, _) => End(TourEnd.Skipped);
-        _back.Click += (_, _) => Go(_index - 1, false);
+        _back.Click += (_, _) => { QNotch.Core.Analytics.Track("onboarding", "back", "onboarding"); Go(_index - 1, false); };
         _primary.Click += (_, _) => Primary();
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
         buttons.Children.Add(_skip);
@@ -328,6 +328,7 @@ internal sealed class TourWindow : Window
     void Primary()
     {
         if (_recording) { StopRecording(); return; }
+        QNotch.Core.Analytics.Track("onboarding", "next", "onboarding");
         if (_index < _steps.Count - 1)
         {
             if (StepId == "features") _steps = ComputeSteps(); // the Connect step follows the feature choices
@@ -339,6 +340,7 @@ internal sealed class TourWindow : Window
     void End(TourEnd end)
     {
         if (_ended) return;
+        if (end == TourEnd.Finished) { QNotch.Core.Analytics.Track("onboarding", "finish", "onboarding"); } else { QNotch.Core.Analytics.Track("onboarding", "skip", "onboarding"); }
         _ended = true;
         StopRecording();
         StopLoops();
@@ -850,7 +852,7 @@ internal sealed class TourWindow : Window
             AutomationProperties.SetAutomationId(toggle, "feature-" + m.Id);
             void Set(bool v)
             {
-                _c.SetOn(m.Id, v);
+                QNotch.Core.Analytics.Track("onboarding", "change_feature", target: m.Id, enabled: v); _c.SetOn(m.Id, v);
                 Fade(glyphOn, v ? 1 : 0);
                 Fade(glyphOff, v ? 0 : 1);
                 Fade(body, v ? 1 : 0.55);

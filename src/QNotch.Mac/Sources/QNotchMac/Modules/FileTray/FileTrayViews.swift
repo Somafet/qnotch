@@ -135,7 +135,7 @@ final class FileTrayTabView: NSView, FileTrayDisplay, TabHeaderProviding {
         while index < items.count {
             let tiles = items[index..<min(index + 4, items.count)].map { item -> NSView in
                 FileTile(module: module, item: item, image: module.thumbnail(for: item, size: 56), selected: item.url == selected) { [weak self] url in
-                    self?.selected = self?.selected == url ? nil : url
+                    Analytics.record("files", "select"); self?.selected = self?.selected == url ? nil : url
                     self?.reload()
                 }
             }

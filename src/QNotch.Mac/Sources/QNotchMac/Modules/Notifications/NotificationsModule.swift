@@ -193,7 +193,7 @@ final class NotificationsModule: NotchModule {
         return value
     }
 
-    func renewToken() {
+    func renewToken() { Analytics.record("notifications", "renew_token");
         let fresh = Keychain.randomToken()
         Keychain.write(fresh, service: Self.tokenService)
         token = fresh
@@ -351,7 +351,7 @@ final class NotificationsModule: NotchModule {
         updateToast()
     }
 
-    func invoke(_ action: Action, on note: Note) {
+    func invoke(_ action: Action, on note: Note) { Analytics.record("notifications", "invoke");
         if let url = action.url { NSWorkspace.shared.open(url) }
         else if let app = action.app, !app.isTerminated { app.activate(options: [.activateAllWindows]) }
         close(note, status: "Answered: \(action.label)", result: "clicked", action: action.id)
@@ -362,7 +362,7 @@ final class NotificationsModule: NotchModule {
         if !action.answersOnly { context.shell?.closePanel() }
     }
 
-    func dismiss(_ note: Note) {
+    func dismiss(_ note: Note) { Analytics.record("notifications", "dismiss");
         close(note, status: "", result: "dismissed")
         items.removeAll { $0 === note }
         if transient === note { transient = nil }
@@ -371,7 +371,7 @@ final class NotificationsModule: NotchModule {
     }
 
     /// Clears the history; notifications still waiting for an answer stay.
-    func clear() {
+    func clear() { Analytics.record("notifications", "clear");
         items.removeAll { !$0.pending }
         transient = nil
         changed()
@@ -385,7 +385,7 @@ final class NotificationsModule: NotchModule {
         changed()
     }
 
-    func sendTest() {
+    func sendTest() { Analytics.record("notifications", "send_test");
         post(Note(id: "qnotch-test", app: "QNotch", title: "Test notification", body: "This is what a notification looks like.", level: .info, iconSpec: "bell"), ttl: nil)
     }
 
@@ -409,7 +409,7 @@ final class NotificationsModule: NotchModule {
         for button in settingsMuteButtons.allObjects { updateSettingsMuteButton(button) }
     }
 
-    func toggleMute() { set { $0.manuallyMuted.toggle() } }
+    func toggleMute() { Analytics.record("notifications", "toggle_mute"); set { $0.manuallyMuted.toggle() } }
 
     func makeSettingsMuteButton() -> NSButton {
         let button = actionButton("") { [weak self] in self?.toggleMute() }

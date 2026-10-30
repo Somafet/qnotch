@@ -88,7 +88,7 @@ public sealed unsafe class TrayIcon : IDisposable
         var m = new ContextMenu { Placement = PlacementMode.MousePoint };
         if (_shell.Mode != ShellMode.GameBar)
         {
-            var open = Item("Open QNotch", () => _shell.OpenPanel());
+            var open = Item("Open QNotch", () => { QNotch.Core.Analytics.Track("shell", "open_panel"); _shell.OpenPanel(); });
             open.InputGestureText = _shortcuts.Find("toggle")?.Gesture ?? "";
             m.Items.Add(open);
         }
@@ -105,12 +105,12 @@ public sealed unsafe class TrayIcon : IDisposable
         foreach (var o in Enum.GetValues<GameModeOverride>())
         {
             var mode = o;
-            var it = Item(Label(o), () => _shell.GameMode.Override = mode);
+            var it = Item(Label(o), () => { QNotch.Core.Analytics.Track("shell", "game_mode"); _shell.GameMode.Override = mode; });
             it.IsChecked = _shell.GameMode.Override == o;
             m.Items.Add(it);
         }
         m.Items.Add(new Separator());
-        m.Items.Add(Item("Quit QNotch", _exit));
+        m.Items.Add(Item("Quit QNotch", () => { QNotch.Core.Analytics.Track("shell", "quit", "tray"); _exit(); }));
         // Keep keyboard focus if "Open panel" was chosen, so Esc and an outside click dismiss the panel.
         m.Closed += (_, _) => { if (_shell.Mode != ShellMode.Expanded) _w.DisableKeyboard(); };
         m.IsOpen = true;
@@ -121,7 +121,7 @@ public sealed unsafe class TrayIcon : IDisposable
     static MenuItem Item(string header, Action click)
     {
         var i = new MenuItem { Header = header };
-        i.Click += (_, _) => click();
+        i.Click += (_, _) => { using (Analytics.Surface("tray")) click(); };
         return i;
     }
 

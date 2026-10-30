@@ -66,6 +66,9 @@ public partial class NotchWindow : Window
         };
     }
 
+    void OnEditAction(object sender, RoutedEventArgs e) => Analytics.Track("shell", "toggle_edit", enabled: ((System.Windows.Controls.Primitives.ToggleButton)sender).IsChecked);
+    void OnPinAction(object sender, RoutedEventArgs e) => Analytics.Track("shell", "toggle_pin", enabled: ((System.Windows.Controls.Primitives.ToggleButton)sender).IsChecked);
+
     public nint Hwnd => _hwnd;
     public HwndSource Source => _src;
     public bool IsGameBar => _gameBar;

@@ -73,6 +73,7 @@ final class NoteModule: NotchModule {
     }
 
     private func save(wait: Bool = false) {
+        Analytics.record("notes", "save")
         pending = nil
         revision += 1
         let snapshot = text, revision = revision, url = url!, directory = context.settings.directory

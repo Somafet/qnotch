@@ -194,7 +194,7 @@ final class WeatherModule: NotchModule {
 
     // MARK: Settings actions
 
-    func choose(_ place: WeatherPlace) {
+    func choose(_ place: WeatherPlace) { Analytics.record("weather", "select_place");
         settings.place = place
         context.settings.save("weather", settings)
         forecast = nil
@@ -210,7 +210,7 @@ final class WeatherModule: NotchModule {
         show()
     }
 
-    func search(_ query: String, done: @escaping (Result<[WeatherPlace], SearchError>) -> Void) {
+    func search(_ query: String, done: @escaping (Result<[WeatherPlace], SearchError>) -> Void) { Analytics.record("weather", "search");
         Self.search(query, session: session, done: done)
     }
 
@@ -234,7 +234,7 @@ final class WeatherModule: NotchModule {
         }.resume()
     }
 
-    func openYr() { if let url = settings.place?.yrURL { NSWorkspace.shared.open(url) } }
+    func openYr() { Analytics.record("weather", "open_forecast"); if let url = settings.place?.yrURL { NSWorkspace.shared.open(url) } }
 
     /// Diagnostic runs: a made-up forecast, nothing fetched.
     private func seedDemo() {

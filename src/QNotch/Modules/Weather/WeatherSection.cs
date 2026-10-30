@@ -30,7 +30,7 @@ internal static class WeatherSection
 
         var metric = new RadioButton { Style = (Style)Application.Current.FindResource("SegmentButton"), Content = "°C, m/s", GroupName = "weather-units", FontSize = 12, IsChecked = set.Units == WeatherUnits.Metric };
         var imperial = new RadioButton { Style = (Style)Application.Current.FindResource("SegmentButton"), Content = "°F, mph", GroupName = "weather-units", FontSize = 12, IsChecked = set.Units == WeatherUnits.Imperial };
-        void Units(WeatherUnits u) { set.Units = u; ctx.Settings.Save("weather", set); svc.Reformat(); }
+        void Units(WeatherUnits u) { QNotch.Core.Analytics.Track("settings", "change", target: "weather_units"); set.Units = u; ctx.Settings.Save("weather", set); svc.Reformat(); }
         metric.Checked += (_, _) => Units(WeatherUnits.Metric);
         imperial.Checked += (_, _) => Units(WeatherUnits.Imperial);
         var units = new StackPanel { Orientation = Orientation.Horizontal };
@@ -39,10 +39,10 @@ internal static class WeatherSection
         page.Children.Add(UiKit.Row("Units", null, units));
 
         page.Children.Add(UiKit.Row("Show in the pill", "The temperature and sky next to the system stats.",
-            UiKit.Toggle(set.ShowInPill, v => { set.ShowInPill = v; ctx.Settings.Save("weather", set); svc.Reformat(); })));
+            UiKit.Toggle(set.ShowInPill, v => { QNotch.Core.Analytics.Track("settings", "change", target: "weather_show_in_pill", enabled: v);  set.ShowInPill = v; ctx.Settings.Save("weather", set); svc.Reformat(); })));
 
         var refresh = new Button { Content = "Refresh now" };
-        refresh.Click += (_, _) => svc.Refresh();
+        refresh.Click += (_, _) => { QNotch.Core.Analytics.Track("weather", "refresh", "ui"); svc.Refresh(); };
         page.Children.Add(UiKit.Row("Forecast", "Refreshed about every 30 minutes, when MET Norway publishes a new run. The last one is kept on disk for offline use.", refresh));
 
         var credit = UiKit.Text("Forecasts from yr.no, made by the Norwegian Meteorological Institute (MET Norway) and NRK. Weather data under CC BY 4.0, symbols by yr.no under MIT.", "Muted");
@@ -78,6 +78,7 @@ internal static class WeatherSection
 
         async void Search()
         {
+            QNotch.Core.Analytics.Track("weather", "search");
             var q = box.Text.Trim();
             if (q.Length < 2) { Show("Type at least two letters.", "WarningBrush"); return; }
             if (ctx.Settings.ReadOnly) return; // snapshot run: no requests
@@ -95,7 +96,7 @@ internal static class WeatherSection
             catch (WeatherException ex) { Show(ex.Message, "DangerBrush"); }
             finally { search.IsEnabled = true; }
         }
-        search.Click += (_, _) => Search();
+        search.Click += (_, _) => {  Search(); };
         box.KeyDown += (_, e) => { if (e.Key == Key.Enter) { e.Handled = true; Search(); } };
 
         ListBoxItem Row(WeatherPlace p)

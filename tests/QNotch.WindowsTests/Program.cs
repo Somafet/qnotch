@@ -6,8 +6,11 @@ using QNotch.Shell;
 using QNotch.Shell.Onboarding;
 using QNotch.Shell.Settings;
 
+if (args.Contains("--analytics-idle-measure")) { AnalyticsChecks.Measure(); return 0; }
+
 var tests = new List<(string Name, Action Run)>
 {
+    ("Analytics privacy, consent, bounded delivery, retries and identity", AnalyticsChecks.Run),
     ("Terminal defaults, local opt-in, bounded VT screen and input encoding", TerminalChecks.Deterministic),
     ("Small and Medium bodies fit live, empty, loading and error states", CardRenderingChecks.Run),
     ("Home sizes preserve defaults, reject unsupported choices and survive reload", () =>

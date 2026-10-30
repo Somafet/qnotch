@@ -112,7 +112,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
             if let target { self.routeSegment(target) }
             return opening
         }
-        panel.escaped = { [weak self] in self?.close() }
+        panel.escaped = { [weak self] in self?.closePanel() }
         panel.canNudge = { [weak self] in
             guard let self, let layout = self.layout else { return false }
             return !layout.integratesCameraHousing && !self.state.expanded && !self.gameActive
@@ -189,7 +189,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     func start() {
         guard screen != nil else { return }
         panel.orderFrontRegardless()
-        if general.pinned { DispatchQueue.main.async { [weak self] in self?.open(keyboard: false) } }
+        if general.pinned { DispatchQueue.main.async { [weak self] in self?.open(keyboard: false, recordAction: false) } }
     }
 
     /// A pinned panel stays open; it only gives the keyboard back.
@@ -205,7 +205,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         panel.resignKey()
     }
 
-    func togglePin() {
+    func togglePin() { Analytics.record("shell", "toggle_pin");
         updateGeneral { $0.pinned.toggle() }
         panelView?.setPinned(general.pinned)
         if !general.pinned, state.presentation == .hover, !panel.frame.containsPointer(NSEvent.mouseLocation) { pointerLeft() }
@@ -266,6 +266,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         let previous = general
         let disabled = general.disabledModules
         change(&general)
+        Analytics.consent(general.shareUsageData)
         // Materialize the full order before anything disappears, including never-dragged defaults.
         // Later drags replace only shown slots, so hidden/off contributions keep their place.
         if previous.hiddenCards != general.hiddenCards || previous.disabledModules != general.disabledModules {
@@ -356,8 +357,8 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         if activeTab != "home" { selectTab("home") }
     }
 
-    func closePanel() { close() }
-    func dismissPanel() { close(restoreFocus: false) }
+    func closePanel() { Analytics.record("shell", "close_panel"); close() }
+    func dismissPanel() { Analytics.record("shell", "close_panel"); close(restoreFocus: false) }
 
     private var lingerTask: DispatchWorkItem?
 
@@ -398,6 +399,8 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     }
     @discardableResult
     func tryOpenPanel(tab: String, linger: TimeInterval) -> Bool {
+        let previousSuppression = Analytics.suppressed; Analytics.suppressed = true
+        defer { Analytics.suppressed = previousSuppression }
         guard screen != nil, !gameActive else { return false }
         guard !state.expanded else { return true }
         selectTab(tab)
@@ -416,7 +419,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     func openSettings() { openSettings(page: nil) }
     func openSettings(section: String) { openSettings(page: "module." + section) }
 
-    func openSettings(page: String?) {
+    func openSettings(page: String?) { Analytics.record("shell", "open_settings");
         close(restoreFocus: false)
         if settingsController == nil { settingsController = SettingsController(shell: self) }
         settingsController?.show(page: page)
@@ -632,7 +635,8 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(general.closeDelayMs), execute: task)
     }
 
-    func open(keyboard: Bool) {
+    func open(keyboard: Bool, recordAction: Bool = true) {
+        if recordAction { Analytics.record("shell", "open_panel") }
         // During the first-run tour there is nothing to show yet.
         guard screen != nil, !gameActive, !modulesDeferred else { return }
         hoverTask?.cancel(); leaveTask?.cancel()
@@ -697,7 +701,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     private weak var homeView: HomeView?
 
     /// Jiggle and drag cards and tabs (Windows EditMode). The panel never auto-closes meanwhile.
-    func toggleEditing() { setEditing(!editing) }
+    func toggleEditing() { Analytics.record("shell", "toggle_edit"); setEditing(!editing) }
 
     func setEditing(_ value: Bool) {
         guard editing != value else { return }
@@ -707,7 +711,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         panelView?.setEditing(value, onHome: activeTab == "home")
     }
 
-    func selectTab(_ id: String) {
+    func selectTab(_ id: String) { Analytics.record("shell", "select_tab", target: Analytics.canonical(id));
         let hadDetail = transientDetail != nil
         clearSegmentDetail()
         if hadDetail { showBody(); updateVisibility() }
@@ -785,13 +789,13 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
 
     /// ⌃⌥N: opens the panel for typing, or closes it when it already has the keyboard.
     func toggleFromKeyboard() {
-        if state.acceptsKeyboard { close() } else { open(keyboard: true) }
+        if state.acceptsKeyboard { Analytics.record("shell", "close_panel"); close() } else { open(keyboard: true) }
     }
 
     /// ⌃⌥F: opens Search with the cursor in the box; pressed again there, it closes the panel.
     func summonSearch() {
         guard searchAvailable else { return }
-        if state.acceptsKeyboard, activeTab == "search" { close(); return }
+        if state.acceptsKeyboard, activeTab == "search" { Analytics.record("shell", "close_panel"); close(); return }
         open(keyboard: true)
         selectTab("search")
         searchView?.focus(appending: "")
@@ -839,8 +843,8 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         let order = LayoutOrder.apply(saved: general.cardOrder, defaults: cards.map(\.id))
         let ordered = order.compactMap { id in cards.first { $0.id == id } }
         let home = HomeView(cards: ordered.map { ($0, cached("card." + $0.id, $0.makeView)) }, sizes: general.cardSizes)
-        home.resized = { [weak self] id, size in self?.updateGeneral { $0.cardSizes[id] = size.rawValue } }
-        home.reordered = { [weak self] ids in self?.updateGeneral { $0.cardOrder = LayoutOrder.reorder(ids, saved: $0.cardOrder) } }
+        home.resized = { [weak self] id, size in Analytics.record("shell", "resize_card"); self?.updateGeneral { $0.cardSizes[id] = size.rawValue } }
+        home.reordered = { [weak self] ids in Analytics.record("shell", "reorder_cards"); self?.updateGeneral { $0.cardOrder = LayoutOrder.reorder(ids, saved: $0.cardOrder) } }
         home.editing = editing
         homeView = home
         return home
@@ -1049,7 +1053,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
 
     /// Settles the pill at the center or an edge when it would coast close to one, and remembers
     /// the spot per display. A flick throws it and the spring carries on at the pointer's `velocity`.
-    private func endNudge(center: Bool, velocity: CGFloat) {
+    private func endNudge(center: Bool, velocity: CGFloat) { Analytics.record("shell", "move_notch");
         guard let screen, let layout else { return }
         let width = layout.surface(expanded: false, wing: wing).width
         let current = layout.offset
@@ -1159,7 +1163,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
                                      togglePin: { [weak self] in self?.togglePin() },
                                      openSettings: { [weak self] in self?.openSettings() },
                                      toggleEdit: { [weak self] in self?.toggleEditing() },
-                                     reorderTabs: { [weak self] ids in self?.updateGeneral { $0.tabOrder = LayoutOrder.reorder(ids, saved: $0.tabOrder) } })
+                                     reorderTabs: { [weak self] ids in Analytics.record("shell", "reorder_tabs"); self?.updateGeneral { $0.tabOrder = LayoutOrder.reorder(ids, saved: $0.tabOrder) } })
                 panelView = view
                 surface.place(view, at: layout.panelBody)
                 view.layoutSubtreeIfNeeded()

@@ -262,7 +262,7 @@ public sealed partial class NotificationsModule : INotchModule, ICadenceAware
     void UpdateToast() => _st.Toast = _st.Muted ? null : _transient ?? _st.Items.FirstOrDefault(n => n.Pending && !n.AlertSuppressed && !IsMuted(n.App));
 
     internal void SetMuted(bool muted)
-    {
+    { QNotch.Core.Analytics.Track("notifications", "toggle_mute", "ui");
         if (_st.Muted == muted) return;
         _st.Muted = _local.Muted = muted;
         if (muted)
@@ -316,7 +316,7 @@ public sealed partial class NotificationsModule : INotchModule, ICadenceAware
     }
 
     internal void Invoke(NoteAction a)
-    {
+    { QNotch.Core.Analytics.Track("notifications", "invoke", "ui");
         var n = a.Owner;
         if (a.Url is { } url)
             Task.Run(() =>
@@ -334,7 +334,7 @@ public sealed partial class NotificationsModule : INotchModule, ICadenceAware
     }
 
     internal void Dismiss(Note n)
-    {
+    { QNotch.Core.Analytics.Track("notifications", "dismiss", "ui");
         Close(n, "", new WaitResult("dismissed"));
         _st.Items.Remove(n);
         if (_transient == n) _transient = null;
@@ -344,7 +344,7 @@ public sealed partial class NotificationsModule : INotchModule, ICadenceAware
 
     /// <summary>Clears the history. Notifications that still wait for an answer stay.</summary>
     internal void Clear()
-    {
+    { QNotch.Core.Analytics.Track("notifications", "clear", "ui");
         for (var i = _st.Items.Count - 1; i >= 0; i--) if (!_st.Items[i].Pending) _st.Items.RemoveAt(i);
         _transient = null;
         Changed();
@@ -443,9 +443,9 @@ public sealed partial class NotificationsModule : INotchModule, ICadenceAware
     }
 
     /// <summary>A new token: everything that posts over HTTP needs it from now on.</summary>
-    internal void RenewToken() { if (!_ctx.Settings.ReadOnly) _token = NotifyToken.Get(renew: true); } // snapshot run: never the credential store
+    internal void RenewToken() { QNotch.Core.Analytics.Track("notifications", "renew_token", "ui");  if (!_ctx.Settings.ReadOnly) _token = NotifyToken.Get(renew: true); } // snapshot run: never the credential store
 
-    internal void SendTest() => Post(new Note { Id = "qnotch-test", App = "QNotch", Title = "Test notification", Body = "This is what a notification looks like.", Glyph = NotifyIcons.Bell }, null);
+    internal void SendTest() { QNotch.Core.Analytics.Track("notifications", "send_test", "ui");  Post(new Note { Id = "qnotch-test", App = "QNotch", Title = "Test notification", Body = "This is what a notification looks like.", Glyph = NotifyIcons.Bell }, null); }
 
     // ---------- snapshot demo data ----------
 

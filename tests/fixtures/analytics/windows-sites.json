@@ -1,0 +1,986 @@
+[
+  {
+    "file": "src/QNotch/Modules/Agents/AgentsModule.cs",
+    "line": 198,
+    "module": "agents",
+    "action": "show"
+  },
+  {
+    "file": "src/QNotch/Modules/Agents/AgentsModule.cs",
+    "line": 215,
+    "module": "agents",
+    "action": "dismiss"
+  },
+  {
+    "file": "src/QNotch/Modules/Agents/AgentsModule.cs",
+    "line": 227,
+    "module": "agents",
+    "action": "stop_process"
+  },
+  {
+    "file": "src/QNotch/Modules/Agents/AgentsModule.cs",
+    "line": 302,
+    "module": "agents",
+    "action": "cli_hook"
+  },
+  {
+    "file": "src/QNotch/Modules/Agents/AgentsSetup.cs",
+    "line": 88,
+    "module": "agents",
+    "action": "connect"
+  },
+  {
+    "file": "src/QNotch/Modules/Agents/AgentsViews.cs",
+    "line": 362,
+    "module": "agents",
+    "action": "disconnect"
+  },
+  {
+    "file": "src/QNotch/Modules/Agents/AgentsViews.cs",
+    "line": 362,
+    "module": "agents",
+    "action": "connect"
+  },
+  {
+    "file": "src/QNotch/Modules/Agents/AgentsViews.cs",
+    "line": 375,
+    "module": "settings",
+    "action": "change"
+  },
+  {
+    "file": "src/QNotch/Modules/Agents/AgentsViews.cs",
+    "line": 377,
+    "module": "settings",
+    "action": "change"
+  },
+  {
+    "file": "src/QNotch/Modules/Ai/AiModule.cs",
+    "line": 43,
+    "module": "ai",
+    "action": "refresh"
+  },
+  {
+    "file": "src/QNotch/Modules/Ai/AiModule.cs",
+    "line": 45,
+    "module": "ai",
+    "action": "scan"
+  },
+  {
+    "file": "src/QNotch/Modules/Ai/AiModule.cs",
+    "line": 112,
+    "module": "ai",
+    "action": "rename_account"
+  },
+  {
+    "file": "src/QNotch/Modules/Ai/AiModule.cs",
+    "line": 139,
+    "module": "ai",
+    "action": "set_slot"
+  },
+  {
+    "file": "src/QNotch/Modules/Ai/AiModule.cs",
+    "line": 170,
+    "module": "ai",
+    "action": "remove_app"
+  },
+  {
+    "file": "src/QNotch/Modules/Ai/AiModule.cs",
+    "line": 264,
+    "module": "ai",
+    "action": "launch"
+  },
+  {
+    "file": "src/QNotch/Modules/Ai/AiModule.cs",
+    "line": 291,
+    "module": "ai",
+    "action": "select_account"
+  },
+  {
+    "file": "src/QNotch/Modules/Ai/AiSettingsSection.cs",
+    "line": 25,
+    "module": "settings",
+    "action": "change"
+  },
+  {
+    "file": "src/QNotch/Modules/Ai/AiSettingsSection.cs",
+    "line": 41,
+    "module": "settings",
+    "action": "change"
+  },
+  {
+    "file": "src/QNotch/Modules/Ai/AiSettingsSection.cs",
+    "line": 60,
+    "module": "ai",
+    "action": "add_app"
+  },
+  {
+    "file": "src/QNotch/Modules/Clipboard/ClipboardModule.cs",
+    "line": 174,
+    "module": "clipboard",
+    "action": "remove"
+  },
+  {
+    "file": "src/QNotch/Modules/Clipboard/ClipboardModule.cs",
+    "line": 191,
+    "module": "clipboard",
+    "action": "clear"
+  },
+  {
+    "file": "src/QNotch/Modules/Clipboard/ClipboardModule.cs",
+    "line": 196,
+    "module": "clipboard",
+    "action": "pin"
+  },
+  {
+    "file": "src/QNotch/Modules/Clipboard/ClipboardModule.cs",
+    "line": 199,
+    "module": "clipboard",
+    "action": "copy"
+  },
+  {
+    "file": "src/QNotch/Modules/Clipboard/ClipboardModule.cs",
+    "line": 261,
+    "module": "clipboard",
+    "action": "change"
+  },
+  {
+    "file": "src/QNotch/Modules/ColorPicker/ColorPickerModule.cs",
+    "line": 47,
+    "module": "color_picker",
+    "action": "copy"
+  },
+  {
+    "file": "src/QNotch/Modules/ColorPicker/ColorPickerModule.cs",
+    "line": 66,
+    "module": "color_picker",
+    "action": "pick"
+  },
+  {
+    "file": "src/QNotch/Modules/FileTray/FileTrayService.cs",
+    "line": 38,
+    "module": "files",
+    "action": "add"
+  },
+  {
+    "file": "src/QNotch/Modules/FileTray/FileTrayService.cs",
+    "line": 59,
+    "module": "files",
+    "action": "remove"
+  },
+  {
+    "file": "src/QNotch/Modules/FileTray/FileTrayService.cs",
+    "line": 64,
+    "module": "files",
+    "action": "clear"
+  },
+  {
+    "file": "src/QNotch/Modules/FileTray/FileTrayService.cs",
+    "line": 171,
+    "module": "files",
+    "action": "open"
+  },
+  {
+    "file": "src/QNotch/Modules/FileTray/FileTrayService.cs",
+    "line": 173,
+    "module": "files",
+    "action": "reveal"
+  },
+  {
+    "file": "src/QNotch/Modules/FileTray/FileTrayView.xaml.cs",
+    "line": 41,
+    "module": "files",
+    "action": "share_open"
+  },
+  {
+    "file": "src/QNotch/Modules/FileTray/FileTrayView.xaml.cs",
+    "line": 42,
+    "module": "files",
+    "action": "share_close"
+  },
+  {
+    "file": "src/QNotch/Modules/FileTray/FileTrayView.xaml.cs",
+    "line": 43,
+    "module": "files",
+    "action": "share_stop"
+  },
+  {
+    "file": "src/QNotch/Modules/FileTray/FileTrayView.xaml.cs",
+    "line": 83,
+    "module": "files",
+    "action": "choose_files"
+  },
+  {
+    "file": "src/QNotch/Modules/FileTray/FileTrayView.xaml.cs",
+    "line": 98,
+    "module": "files",
+    "action": "share_open"
+  },
+  {
+    "file": "src/QNotch/Modules/FileTray/FileTrayView.xaml.cs",
+    "line": 102,
+    "module": "files",
+    "action": "copy_path"
+  },
+  {
+    "file": "src/QNotch/Modules/FileTray/FileTrayView.xaml.cs",
+    "line": 113,
+    "module": "files",
+    "action": "export"
+  },
+  {
+    "file": "src/QNotch/Modules/FileTray/PhoneShare/PhoneShareView.xaml.cs",
+    "line": 20,
+    "module": "files",
+    "action": "select_all"
+  },
+  {
+    "file": "src/QNotch/Modules/FileTray/PhoneShare/PhoneShareView.xaml.cs",
+    "line": 21,
+    "module": "files",
+    "action": "select_none"
+  },
+  {
+    "file": "src/QNotch/Modules/FileTray/PhoneShare/PhoneShareView.xaml.cs",
+    "line": 22,
+    "module": "files",
+    "action": "share_start"
+  },
+  {
+    "file": "src/QNotch/Modules/FileTray/PhoneShare/PhoneShareView.xaml.cs",
+    "line": 23,
+    "module": "files",
+    "action": "share_extend"
+  },
+  {
+    "file": "src/QNotch/Modules/FileTray/PhoneShare/PhoneShareView.xaml.cs",
+    "line": 26,
+    "module": "files",
+    "action": "reveal_received"
+  },
+  {
+    "file": "src/QNotch/Modules/FileTray/PhoneShare/PhoneShareView.xaml.cs",
+    "line": 31,
+    "module": "files",
+    "action": "share_copy_link"
+  },
+  {
+    "file": "src/QNotch/Modules/Github/GithubCard.cs",
+    "line": 30,
+    "module": "github",
+    "action": "refresh"
+  },
+  {
+    "file": "src/QNotch/Modules/Github/GithubCard.cs",
+    "line": 37,
+    "module": "github",
+    "action": "refresh"
+  },
+  {
+    "file": "src/QNotch/Modules/Github/GithubSection.cs",
+    "line": 84,
+    "module": "github",
+    "action": "save"
+  },
+  {
+    "file": "src/QNotch/Modules/Github/GithubSection.cs",
+    "line": 91,
+    "module": "github",
+    "action": "test_connection"
+  },
+  {
+    "file": "src/QNotch/Modules/Github/GithubSection.cs",
+    "line": 102,
+    "module": "github",
+    "action": "disconnect"
+  },
+  {
+    "file": "src/QNotch/Modules/Github/GithubSection.cs",
+    "line": 107,
+    "module": "github",
+    "action": "refresh"
+  },
+  {
+    "file": "src/QNotch/Modules/Github/GithubSetup.cs",
+    "line": 72,
+    "module": "github",
+    "action": "save"
+  },
+  {
+    "file": "src/QNotch/Modules/Github/GithubSetup.cs",
+    "line": 89,
+    "module": "github",
+    "action": "use_token"
+  },
+  {
+    "file": "src/QNotch/Modules/Github/GithubSetup.cs",
+    "line": 99,
+    "module": "github",
+    "action": "open_token_page"
+  },
+  {
+    "file": "src/QNotch/Modules/Github/GithubSignIn.cs",
+    "line": 49,
+    "module": "github",
+    "action": "connect"
+  },
+  {
+    "file": "src/QNotch/Modules/Github/GithubSignIn.cs",
+    "line": 64,
+    "module": "github",
+    "action": "open_authorization"
+  },
+  {
+    "file": "src/QNotch/Modules/Github/GithubSignIn.cs",
+    "line": 65,
+    "module": "github",
+    "action": "cancel_connect"
+  },
+  {
+    "file": "src/QNotch/Modules/Github/GithubSignIn.cs",
+    "line": 66,
+    "module": "github",
+    "action": "connect"
+  },
+  {
+    "file": "src/QNotch/Modules/Media/MediaModule.cs",
+    "line": 82,
+    "module": "media",
+    "action": "play_pause"
+  },
+  {
+    "file": "src/QNotch/Modules/Media/MediaModule.cs",
+    "line": 83,
+    "module": "media",
+    "action": "next"
+  },
+  {
+    "file": "src/QNotch/Modules/Media/MediaModule.cs",
+    "line": 84,
+    "module": "media",
+    "action": "previous"
+  },
+  {
+    "file": "src/QNotch/Modules/Media/MediaModule.cs",
+    "line": 85,
+    "module": "media",
+    "action": "select_session"
+  },
+  {
+    "file": "src/QNotch/Modules/Media/MediaModule.cs",
+    "line": 88,
+    "module": "media",
+    "action": "seek"
+  },
+  {
+    "file": "src/QNotch/Modules/Notes/NoteStore.cs",
+    "line": 75,
+    "module": "notes",
+    "action": "save"
+  },
+  {
+    "file": "src/QNotch/Modules/Notifications/NotificationsModule.cs",
+    "line": 265,
+    "module": "notifications",
+    "action": "toggle_mute"
+  },
+  {
+    "file": "src/QNotch/Modules/Notifications/NotificationsModule.cs",
+    "line": 319,
+    "module": "notifications",
+    "action": "invoke"
+  },
+  {
+    "file": "src/QNotch/Modules/Notifications/NotificationsModule.cs",
+    "line": 337,
+    "module": "notifications",
+    "action": "dismiss"
+  },
+  {
+    "file": "src/QNotch/Modules/Notifications/NotificationsModule.cs",
+    "line": 347,
+    "module": "notifications",
+    "action": "clear"
+  },
+  {
+    "file": "src/QNotch/Modules/Notifications/NotificationsModule.cs",
+    "line": 446,
+    "module": "notifications",
+    "action": "renew_token"
+  },
+  {
+    "file": "src/QNotch/Modules/Notifications/NotificationsModule.cs",
+    "line": 448,
+    "module": "notifications",
+    "action": "send_test"
+  },
+  {
+    "file": "src/QNotch/Modules/Notifications/NotificationsSettingsSection.cs",
+    "line": 23,
+    "module": "settings",
+    "action": "change"
+  },
+  {
+    "file": "src/QNotch/Modules/Notifications/NotificationsSettingsSection.cs",
+    "line": 25,
+    "module": "settings",
+    "action": "change"
+  },
+  {
+    "file": "src/QNotch/Modules/Notifications/NotificationsSettingsSection.cs",
+    "line": 27,
+    "module": "settings",
+    "action": "change"
+  },
+  {
+    "file": "src/QNotch/Modules/Notifications/NotificationsSettingsSection.cs",
+    "line": 29,
+    "module": "settings",
+    "action": "change"
+  },
+  {
+    "file": "src/QNotch/Modules/Notifications/NotificationsSettingsSection.cs",
+    "line": 38,
+    "module": "settings",
+    "action": "change"
+  },
+  {
+    "file": "src/QNotch/Modules/Notifications/NotificationsSettingsSection.cs",
+    "line": 54,
+    "module": "settings",
+    "action": "change"
+  },
+  {
+    "file": "src/QNotch/Modules/Notifications/NotificationsSettingsSection.cs",
+    "line": 59,
+    "module": "settings",
+    "action": "change"
+  },
+  {
+    "file": "src/QNotch/Modules/Notifications/NotificationsSettingsSection.cs",
+    "line": 70,
+    "module": "notifications",
+    "action": "copy_token"
+  },
+  {
+    "file": "src/QNotch/Modules/Notifications/NotificationsSettingsSection.cs",
+    "line": 90,
+    "module": "notifications",
+    "action": "mute_app"
+  },
+  {
+    "file": "src/QNotch/Modules/Notifications/NotifyServer.cs",
+    "line": 94,
+    "module": "notifications",
+    "action": "cli_notify"
+  },
+  {
+    "file": "src/QNotch/Modules/Pomodoro/PomodoroModule.cs",
+    "line": 85,
+    "module": "pomodoro",
+    "action": "pause"
+  },
+  {
+    "file": "src/QNotch/Modules/Pomodoro/PomodoroModule.cs",
+    "line": 85,
+    "module": "pomodoro",
+    "action": "start"
+  },
+  {
+    "file": "src/QNotch/Modules/Pomodoro/PomodoroModule.cs",
+    "line": 99,
+    "module": "pomodoro",
+    "action": "set_duration"
+  },
+  {
+    "file": "src/QNotch/Modules/Scheduled/ScheduledModule.cs",
+    "line": 48,
+    "module": "scheduled",
+    "action": "resume"
+  },
+  {
+    "file": "src/QNotch/Modules/Scheduled/ScheduledModule.cs",
+    "line": 48,
+    "module": "scheduled",
+    "action": "pause"
+  },
+  {
+    "file": "src/QNotch/Modules/Scheduled/ScheduledModule.cs",
+    "line": 49,
+    "module": "scheduled",
+    "action": "remove"
+  },
+  {
+    "file": "src/QNotch/Modules/Search/SearchModule.cs",
+    "line": 160,
+    "module": "search",
+    "action": "run_result"
+  },
+  {
+    "file": "src/QNotch/Modules/Terminal/TerminalModule.cs",
+    "line": 76,
+    "module": "terminal",
+    "action": "restart"
+  },
+  {
+    "file": "src/QNotch/Modules/Terminal/TerminalSurface.cs",
+    "line": 59,
+    "module": "terminal",
+    "action": "copy"
+  },
+  {
+    "file": "src/QNotch/Modules/Terminal/TerminalSurface.cs",
+    "line": 68,
+    "module": "terminal",
+    "action": "paste"
+  },
+  {
+    "file": "src/QNotch/Modules/Terminal/TerminalSurface.cs",
+    "line": 88,
+    "module": "terminal",
+    "action": "submit"
+  },
+  {
+    "file": "src/QNotch/Modules/Volume/VolumeModule.cs",
+    "line": 63,
+    "module": "volume",
+    "action": "set_volume"
+  },
+  {
+    "file": "src/QNotch/Modules/Volume/VolumeModule.cs",
+    "line": 78,
+    "module": "volume",
+    "action": "toggle_mute"
+  },
+  {
+    "file": "src/QNotch/Modules/Weather/WeatherSection.cs",
+    "line": 33,
+    "module": "settings",
+    "action": "change"
+  },
+  {
+    "file": "src/QNotch/Modules/Weather/WeatherSection.cs",
+    "line": 42,
+    "module": "settings",
+    "action": "change"
+  },
+  {
+    "file": "src/QNotch/Modules/Weather/WeatherSection.cs",
+    "line": 45,
+    "module": "weather",
+    "action": "refresh"
+  },
+  {
+    "file": "src/QNotch/Modules/Weather/WeatherSection.cs",
+    "line": 81,
+    "module": "weather",
+    "action": "search"
+  },
+  {
+    "file": "src/QNotch/Modules/Weather/WeatherService.cs",
+    "line": 86,
+    "module": "weather",
+    "action": "select_place"
+  },
+  {
+    "file": "src/QNotch/Modules/Weather/WeatherService.cs",
+    "line": 138,
+    "module": "weather",
+    "action": "open_forecast"
+  },
+  {
+    "file": "src/QNotch/Modules/Weather/WeatherSetup.cs",
+    "line": 56,
+    "module": "weather",
+    "action": "search"
+  },
+  {
+    "file": "src/QNotch/Shell/CardLayout.cs",
+    "line": 53,
+    "module": "shell",
+    "action": "resize_card"
+  },
+  {
+    "file": "src/QNotch/Shell/CardLayout.cs",
+    "line": 60,
+    "module": "shell",
+    "action": "change_card_visibility"
+  },
+  {
+    "file": "src/QNotch/Shell/CardLayout.cs",
+    "line": 67,
+    "module": "shell",
+    "action": "reorder_cards"
+  },
+  {
+    "file": "src/QNotch/Shell/GameMode/GameModeSection.cs",
+    "line": 47,
+    "module": "shell",
+    "action": "game_mode"
+  },
+  {
+    "file": "src/QNotch/Shell/GameMode/GameModeSection.cs",
+    "line": 61,
+    "module": "settings",
+    "action": "change"
+  },
+  {
+    "file": "src/QNotch/Shell/GameMode/GameModeSection.cs",
+    "line": 65,
+    "module": "settings",
+    "action": "change"
+  },
+  {
+    "file": "src/QNotch/Shell/GameMode/GameModeSection.cs",
+    "line": 66,
+    "module": "settings",
+    "action": "change"
+  },
+  {
+    "file": "src/QNotch/Shell/GameMode/GameModeSection.cs",
+    "line": 71,
+    "module": "settings",
+    "action": "change"
+  },
+  {
+    "file": "src/QNotch/Shell/GameMode/GameModeSection.cs",
+    "line": 72,
+    "module": "settings",
+    "action": "change"
+  },
+  {
+    "file": "src/QNotch/Shell/GameMode/GameModeSection.cs",
+    "line": 80,
+    "module": "settings",
+    "action": "change"
+  },
+  {
+    "file": "src/QNotch/Shell/GameMode/GameModeSection.cs",
+    "line": 96,
+    "module": "settings",
+    "action": "change"
+  },
+  {
+    "file": "src/QNotch/Shell/GameMode/GameModeSection.cs",
+    "line": 152,
+    "module": "settings",
+    "action": "add_app"
+  },
+  {
+    "file": "src/QNotch/Shell/GameMode/GameModeSection.cs",
+    "line": 153,
+    "module": "settings",
+    "action": "pick"
+  },
+  {
+    "file": "src/QNotch/Shell/GameMode/GameModeSection.cs",
+    "line": 175,
+    "module": "settings",
+    "action": "x"
+  },
+  {
+    "file": "src/QNotch/Shell/NotchNudge.cs",
+    "line": 171,
+    "module": "shell",
+    "action": "move_notch"
+  },
+  {
+    "file": "src/QNotch/Shell/NotchWindow.xaml.cs",
+    "line": 69,
+    "module": "shell",
+    "action": "toggle_edit"
+  },
+  {
+    "file": "src/QNotch/Shell/NotchWindow.xaml.cs",
+    "line": 70,
+    "module": "shell",
+    "action": "toggle_pin"
+  },
+  {
+    "file": "src/QNotch/Shell/Onboarding/TourWindow.cs",
+    "line": 157,
+    "module": "onboarding",
+    "action": "back"
+  },
+  {
+    "file": "src/QNotch/Shell/Onboarding/TourWindow.cs",
+    "line": 331,
+    "module": "onboarding",
+    "action": "next"
+  },
+  {
+    "file": "src/QNotch/Shell/Onboarding/TourWindow.cs",
+    "line": 343,
+    "module": "onboarding",
+    "action": "finish"
+  },
+  {
+    "file": "src/QNotch/Shell/Onboarding/TourWindow.cs",
+    "line": 343,
+    "module": "onboarding",
+    "action": "skip"
+  },
+  {
+    "file": "src/QNotch/Shell/Onboarding/TourWindow.cs",
+    "line": 855,
+    "module": "onboarding",
+    "action": "change_feature"
+  },
+  {
+    "file": "src/QNotch/Shell/Settings/AboutSection.cs",
+    "line": 26,
+    "module": "shell",
+    "action": "quit"
+  },
+  {
+    "file": "src/QNotch/Shell/Settings/AboutSection.cs",
+    "line": 33,
+    "module": "settings",
+    "action": "tour"
+  },
+  {
+    "file": "src/QNotch/Shell/Settings/AppearanceSection.cs",
+    "line": 25,
+    "module": "settings",
+    "action": "change"
+  },
+  {
+    "file": "src/QNotch/Shell/Settings/AppearanceSection.cs",
+    "line": 48,
+    "module": "settings",
+    "action": "change"
+  },
+  {
+    "file": "src/QNotch/Shell/Settings/AppearanceSection.cs",
+    "line": 55,
+    "module": "settings",
+    "action": "change"
+  },
+  {
+    "file": "src/QNotch/Shell/Settings/AppearanceSection.cs",
+    "line": 61,
+    "module": "settings",
+    "action": "change"
+  },
+  {
+    "file": "src/QNotch/Shell/Settings/AppearanceSection.cs",
+    "line": 67,
+    "module": "settings",
+    "action": "choose_photo"
+  },
+  {
+    "file": "src/QNotch/Shell/Settings/AppearanceSection.cs",
+    "line": 71,
+    "module": "settings",
+    "action": "remove_photo"
+  },
+  {
+    "file": "src/QNotch/Shell/Settings/AppearanceSection.cs",
+    "line": 84,
+    "module": "settings",
+    "action": "change"
+  },
+  {
+    "file": "src/QNotch/Shell/Settings/FeaturesSection.cs",
+    "line": 35,
+    "module": "settings",
+    "action": "change_feature"
+  },
+  {
+    "file": "src/QNotch/Shell/Settings/FeaturesSection.cs",
+    "line": 44,
+    "module": "settings",
+    "action": "change_presentation"
+  },
+  {
+    "file": "src/QNotch/Shell/Settings/FeaturesSection.cs",
+    "line": 72,
+    "module": "settings",
+    "action": "setup_apply"
+  },
+  {
+    "file": "src/QNotch/Shell/Settings/GeneralSection.cs",
+    "line": 20,
+    "module": "settings",
+    "action": "change"
+  },
+  {
+    "file": "src/QNotch/Shell/Settings/GeneralSection.cs",
+    "line": 24,
+    "module": "settings",
+    "action": "reset_positions"
+  },
+  {
+    "file": "src/QNotch/Shell/Settings/GeneralSection.cs",
+    "line": 28,
+    "module": "settings",
+    "action": "change"
+  },
+  {
+    "file": "src/QNotch/Shell/Settings/GeneralSection.cs",
+    "line": 30,
+    "module": "settings",
+    "action": "change"
+  },
+  {
+    "file": "src/QNotch/Shell/Settings/GeneralSection.cs",
+    "line": 52,
+    "module": "settings",
+    "action": "setup_export"
+  },
+  {
+    "file": "src/QNotch/Shell/Settings/GeneralSection.cs",
+    "line": 81,
+    "module": "settings",
+    "action": "setup_check"
+  },
+  {
+    "file": "src/QNotch/Shell/Settings/GeneralSection.cs",
+    "line": 93,
+    "module": "settings",
+    "action": "setup_apply"
+  },
+  {
+    "file": "src/QNotch/Shell/Settings/GeneralSection.cs",
+    "line": 109,
+    "module": "settings",
+    "action": "change"
+  },
+  {
+    "file": "src/QNotch/Shell/Settings/HotkeysSection.cs",
+    "line": 54,
+    "module": "settings",
+    "action": "change_shortcut"
+  },
+  {
+    "file": "src/QNotch/Shell/Settings/HotkeysSection.cs",
+    "line": 59,
+    "module": "settings",
+    "action": "reset_shortcut"
+  },
+  {
+    "file": "src/QNotch/Shell/Settings/SoundsSection.cs",
+    "line": 45,
+    "module": "settings",
+    "action": "change_sound"
+  },
+  {
+    "file": "src/QNotch/Shell/Settings/SoundsSection.cs",
+    "line": 50,
+    "module": "settings",
+    "action": "preview_sound"
+  },
+  {
+    "file": "src/QNotch/Shell/Settings/SoundsSection.cs",
+    "line": 52,
+    "module": "settings",
+    "action": "choose_sound"
+  },
+  {
+    "file": "src/QNotch/Shell/Settings/SoundsSection.cs",
+    "line": 56,
+    "module": "settings",
+    "action": "reset_sound"
+  },
+  {
+    "file": "src/QNotch/Shell/Settings/UpdatesSection.cs",
+    "line": 32,
+    "module": "settings",
+    "action": "change"
+  },
+  {
+    "file": "src/QNotch/Shell/Settings/UpdatesSection.cs",
+    "line": 33,
+    "module": "settings",
+    "action": "change"
+  },
+  {
+    "file": "src/QNotch/Shell/Settings/UpdatesSection.cs",
+    "line": 38,
+    "module": "settings",
+    "action": "change"
+  },
+  {
+    "file": "src/QNotch/Shell/Settings/UpdatesSection.cs",
+    "line": 49,
+    "module": "shell",
+    "action": "check_updates"
+  },
+  {
+    "file": "src/QNotch/Shell/Settings/UpdatesSection.cs",
+    "line": 59,
+    "module": "shell",
+    "action": "install_update"
+  },
+  {
+    "file": "src/QNotch/Shell/Settings/UpdatesSection.cs",
+    "line": 72,
+    "module": "shell",
+    "action": "open_release_notes"
+  },
+  {
+    "file": "src/QNotch/Shell/SettingsWindow.xaml.cs",
+    "line": 48,
+    "module": "settings",
+    "action": "select_section"
+  },
+  {
+    "file": "src/QNotch/Shell/ShellController.cs",
+    "line": 341,
+    "module": "shell",
+    "action": "open_panel"
+  },
+  {
+    "file": "src/QNotch/Shell/ShellController.cs",
+    "line": 342,
+    "module": "shell",
+    "action": "close_panel"
+  },
+  {
+    "file": "src/QNotch/Shell/ShellController.cs",
+    "line": 356,
+    "module": "shell",
+    "action": "open_settings"
+  },
+  {
+    "file": "src/QNotch/Shell/ShellController.cs",
+    "line": 385,
+    "module": "shell",
+    "action": "open_panel"
+  },
+  {
+    "file": "src/QNotch/Shell/ShellController.cs",
+    "line": 410,
+    "module": "shell",
+    "action": "open_panel"
+  },
+  {
+    "file": "src/QNotch/Shell/ShellController.cs",
+    "line": 492,
+    "module": "shell",
+    "action": "select_tab"
+  },
+  {
+    "file": "src/QNotch/Shell/ShellController.cs",
+    "line": 587,
+    "module": "shell",
+    "action": "reorder_tabs"
+  },
+  {
+    "file": "src/QNotch/Shell/TrayIcon.cs",
+    "line": 91,
+    "module": "shell",
+    "action": "open_panel"
+  },
+  {
+    "file": "src/QNotch/Shell/TrayIcon.cs",
+    "line": 108,
+    "module": "shell",
+    "action": "game_mode"
+  },
+  {
+    "file": "src/QNotch/Shell/TrayIcon.cs",
+    "line": 113,
+    "module": "shell",
+    "action": "quit"
+  }
+]
