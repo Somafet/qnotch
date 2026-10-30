@@ -1,0 +1,4 @@
+hotkey parse Ctrl+Alt+N: Alt, Control+N
+hotkey parse Ctrl+Alt+G: Alt, Control+G
+hotkey parse Alt+1: Alt+D1
+hotkey parse Alt+6: Alt+D6

@@ -1,0 +1,45 @@
+"QNotch"
+[Item] "General" #settings-nav-general selected
+[Item] "Features" #settings-nav-features
+[Item] "Hotkeys" #settings-nav-hotkeys
+[Item] "Sounds" #settings-nav-sounds
+[Item] "Appearance" #settings-nav-appearance
+[Item] "Game mode" #settings-nav-gamemode
+[Item] "Clipboard" #settings-nav-clipboard
+[Item] "AI" #settings-nav-ai
+[Item] "Agents" #settings-nav-agents
+[Item] "GitHub" #settings-nav-github
+[Item] "Weather" #settings-nav-weather
+[Item] "Notifications" #settings-nav-notifications
+[Item] "About" #settings-nav-about
+"General"
+"Monitor"
+"The display that hosts the notch. You can also drag the pill onto another display. Follows resolution and DPI changes live."
+[PopUp] "Monitor" value="Display 1  (2560 x 1440)  primary"
+"Notch position"
+"Drag the pill sideways to move it out of the way, or onto another display. It remembers the spot for each app. Double-click it to center it again."
+[Button] "Notch position"
+  "Reset positions"
+"Hover delay"
+"How long the pointer must rest on the pill before the panel opens."
+[Slider] "Hover delay" 120 of 600
+"120 ms"
+"Close delay"
+"Grace period after the pointer leaves before the panel closes."
+[Slider] "Close delay" 400 of 1500
+"400 ms"
+"Keep panel open"
+"Pinned: the panel stays open when the pointer leaves."
+[Toggle] "Keep panel open"
+"Start with Windows"
+"Adds QNotch to your sign-in items."
+[Toggle] "Start with Windows"
+"Share your setup"
+"Copy setup code"
+"Your look, features, card layout, hotkeys, Game mode and a few feature preferences as one line of text. Leaves out your name, monitor, game lists, history, app paths and tokens."
+[Button] "Copy setup code"
+  "Copy code"
+"Apply a setup code"
+"Paste a code to see what it changes before anything is applied."
+[Field] "Apply a setup code" value=""
+[Button] "Check"

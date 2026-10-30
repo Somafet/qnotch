@@ -1,0 +1,17 @@
+"Midnight City"
+"14°"
+"12%"
+"09:41"
+"or press"
+"Ctrl"
+"Alt"
+"N"
+"Open it from anywhere"
+"Hover the notch, or press your shortcut."
+"Try it now: press Ctrl+Alt+N."
+[Button] "Change the shortcut"
+  "Change"
+[Button] "Close"
+[Button] "Skip" #onboarding-skip
+[Button] "Back" #onboarding-back
+[Button] "Continue" #onboarding-primary

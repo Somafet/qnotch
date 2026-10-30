@@ -1,0 +1,63 @@
+"AT A GLANCE"
+[Button] "Turn all off"
+"System stats"
+"CPU, memory, network, battery and clock in the pill, the System card and the game bar."
+[Toggle] "System stats" #feature-stats checked
+"Now playing"
+"Track, artwork and controls for anything that plays media."
+[Toggle] "Now playing" #feature-media checked
+"Weather"
+"The yr.no forecast for a place you pick, on a Home card, in the pill and in the game bar."
+[Toggle] "Weather" #feature-weather checked
+"Mic and camera"
+"A glyph in the pill and the game bar while an app uses your microphone or camera."
+[Toggle] "Mic and camera" #feature-capture checked
+"Timer"
+"Countdown with Pomodoro presets on a Home card, in the pill and in the game bar."
+[Toggle] "Timer" #feature-timer checked
+"Volume"
+"System volume and mute on a Home card."
+[Toggle] "Volume" #feature-volume checked
+"GET THINGS DONE"
+[Button] "Turn all off"
+"Clipboard history"
+"Text and images you copy, kept in memory."
+[Toggle] "Clipboard history" #feature-clipboard checked
+"Search"
+"One search box for clipboard history, files, notes, notifications, tasks, tabs and settings, with its own hotkey."
+[Toggle] "Search" #feature-search checked
+"Note"
+"A quick note on a Home card, saved as you type."
+[Toggle] "Note" #feature-note checked
+"File tray"
+"Drop files on the notch to keep them within reach."
+[Toggle] "File tray" #feature-filetray checked
+"Color picker"
+"Pick a color anywhere on screen and copy its hex code."
+[Toggle] "Color picker" #feature-colorpicker checked
+"Scheduled tasks"
+"Your Windows scheduled tasks (scripts and agents on a timer), with pause and delete."
+[Toggle] "Scheduled tasks" #feature-scheduled checked
+"FOR DEVELOPERS"
+[Button] "Turn all off"
+"Agents"
+"Live Claude Code sessions: working, needs you or done, in the pill and the Agents tab."
+[Toggle] "Agents" #feature-agents checked
+"AI apps and usage"
+"Alt+1 to Alt+6 shortcuts and usage limits for Claude Code and Codex."
+[Toggle] "AI apps and usage" #feature-ai checked
+"GitHub"
+"Your GitHub contribution graph, with a token you add in Settings."
+[Toggle] "GitHub" #feature-github checked
+"Notifications"
+"Lets apps and scripts post notifications to the notch: QNotch.exe notify, a named pipe or local HTTP."
+[Toggle] "Notifications" #feature-notifications checked
+"Terminal"
+"An interactive Windows shell in your home folder. Sessions stay open when the panel closes. Local opt-in; off by default."
+[Toggle] "Terminal" #feature-terminal
+"Pick your features"
+"You can change these any time in Settings, Features."
+[Button] "Close"
+[Button] "Skip" #onboarding-skip
+[Button] "Back" #onboarding-back
+[Button] "Continue" #onboarding-primary

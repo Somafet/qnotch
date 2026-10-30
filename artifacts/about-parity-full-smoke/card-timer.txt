@@ -1,0 +1,9 @@
+"Timer"
+[Button] "Start or pause"
+[Button] "Reset"
+"18:42"
+"Paused"
+[Toggle] "5"
+[Toggle] "15"
+[Toggle] "25" checked
+[Toggle] "50"

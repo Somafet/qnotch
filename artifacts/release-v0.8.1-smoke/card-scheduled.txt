@@ -1,0 +1,7 @@
+"Scheduled tasks"
+"Paused"
+"Nightly backup"
+"9:50 AM"
+"PR review check"
+"10:00 AM"
+"Sync dotfiles"

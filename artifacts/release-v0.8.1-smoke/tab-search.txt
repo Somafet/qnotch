@@ -1,0 +1,23 @@
+"A"
+"Alex"
+"Thursday, October 29"
+[Tab] "Home" #tab-home
+[Tab] "Search" #tab-search selected
+[Tab] "Media" #tab-media
+[Tab] "Clipboard" #tab-clipboard
+[Tab] "AI" #tab-ai
+[Tab] "Agents" #tab-agents
+[Tab] "Files" #tab-files
+[Tab] "Notifications" #tab-notifications
+[Tab] "Scheduled" #tab-scheduled
+[Tab] "Terminal" #tab-terminal
+[Toggle] "Mute notifications" #panel-notifications-mute
+[Toggle] "Keep panel open" #panel-pin
+[Button] "Settings" #open-settings
+[Field] "Search" #search-field value="clip"
+[Item] "Meeting notes: ship the clipboard module, then polish the settings page and run the idle C…" selected
+  "Clipboard · Text · 120 chars · copies it"
+[Item] "Clipboard"
+  "Tabs"
+[Item] "Clipboard"
+  "Settings"

@@ -1,0 +1,30 @@
+"QNotch"
+[Item] "General" #settings-nav-general
+[Item] "Features" #settings-nav-features
+[Item] "Updates" #settings-nav-updates
+[Item] "Hotkeys" #settings-nav-hotkeys
+[Item] "Sounds" #settings-nav-sounds
+[Item] "Appearance" #settings-nav-appearance
+[Item] "Game mode" #settings-nav-gamemode
+[Item] "Clipboard" #settings-nav-clipboard
+[Item] "AI" #settings-nav-ai
+[Item] "Agents" #settings-nav-agents selected
+[Item] "GitHub" #settings-nav-github
+[Item] "Weather" #settings-nav-weather
+[Item] "Notifications" #settings-nav-notifications
+"Agents"
+"T3 Code sessions appear automatically while the app is running. Claude Code and Codex outside T3 use hooks in their settings. Everything stays on this PC."
+"Claude Code"
+"Connected. Sessions that were already open show up after you restart them."
+[Button] "Claude Code" disabled
+  "Disconnect"
+"Codex"
+"Adds hooks to ~\\.codex\\hooks.json and keeps a backup next to it."
+[Button] "Codex" disabled
+  "Connect"
+"Sound when an agent needs you"
+"Never in Game mode or while an app uses the microphone. Choose the sound in Settings, Sounds."
+[Toggle] "Sound when an agent needs you" checked
+"Sound when an agent finishes"
+"Never in Game mode or while an app uses the microphone. Choose the sound in Settings, Sounds."
+[Toggle] "Sound when an agent finishes" checked

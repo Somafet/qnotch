@@ -1,0 +1,54 @@
+"QNotch"
+[Item] "General" #settings-nav-general
+[Item] "Features" #settings-nav-features
+[Item] "Updates" #settings-nav-updates
+[Item] "Hotkeys" #settings-nav-hotkeys
+[Item] "Sounds" #settings-nav-sounds
+[Item] "Appearance" #settings-nav-appearance
+[Item] "Game mode" #settings-nav-gamemode selected
+[Item] "Clipboard" #settings-nav-clipboard
+[Item] "AI" #settings-nav-ai
+[Item] "Agents" #settings-nav-agents
+[Item] "GitHub" #settings-nav-github
+[Item] "Weather" #settings-nav-weather
+[Item] "Notifications" #settings-nav-notifications
+"Game mode"
+"Game bar not showing. Normal notch is active."
+"Mode"
+"Auto follows the detection below. Cycle with Ctrl+Alt+G or the tray icon."
+[Toggle] "Auto" checked
+[Toggle] "Force on"
+[Toggle] "Force off"
+"Automatic detection"
+"Show the bar when a fullscreen or borderless fullscreen app has the foreground, and apply the lists below."
+[Toggle] "Automatic detection" checked
+"Bar"
+"Opacity"
+[Slider] "Opacity" 70 of 100
+"70%"
+"Height"
+[Slider] "Height" 22 of 40
+"22 px"
+"Position"
+"Anchor along the top edge, then fine tune. Keep the bar clear of a game's HUD."
+[Button] "Left"
+[Button] "Center"
+[Button] "Right"
+"Horizontal offset"
+[Slider] "Horizontal offset" 1500 of 3000
+"0 px"
+"Vertical offset"
+"Above 0 the bar floats free of the top edge as a capsule."
+[Slider] "Vertical offset" 0 of 400
+"0 px"
+"Segments"
+"Segments without data stay hidden. A frame rate slot is reserved for a later version."
+"Now playing"
+"Title and artist, only while something plays."
+[Toggle] "Now playing" checked
+"Mic and camera"
+"Only while an app uses the microphone or camera."
+[Toggle] "Mic and camera" checked
+"Agents"
+"Working agents, and which one needs you."
+[Toggle] "Agents" checked

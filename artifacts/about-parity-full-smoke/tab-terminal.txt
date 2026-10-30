@@ -1,0 +1,19 @@
+"A"
+"Alex"
+"Friday, October 30"
+[Tab] "Home" #tab-home
+[Tab] "Search" #tab-search
+[Tab] "Media" #tab-media
+[Tab] "Clipboard" #tab-clipboard
+[Tab] "AI" #tab-ai
+[Tab] "Agents" #tab-agents
+[Tab] "Files" #tab-files
+[Tab] "Notifications" #tab-notifications
+[Tab] "Scheduled" #tab-scheduled
+[Tab] "Terminal" #tab-terminal selected
+[Toggle] "Mute notifications" #panel-notifications-mute
+[Toggle] "Keep panel open" #panel-pin
+[Button] "Settings" #open-settings
+[Button] "New session"
+"Demo session · no commands run"
+[Field] "Terminal input and output" #terminal-input value="PS C:\\Users\\Alex> Get-Date\nThursday, October 22, 2026 09:41:00\n\nPS C:\\Users\\Alex>\n\n\n\n\n\n\n\n\n\n\n\n"

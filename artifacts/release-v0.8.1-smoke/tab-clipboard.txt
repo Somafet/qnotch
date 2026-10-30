@@ -1,0 +1,29 @@
+"A"
+"Alex"
+"Thursday, October 29"
+[Tab] "Home" #tab-home
+[Tab] "Search" #tab-search
+[Tab] "Media" #tab-media
+[Tab] "Clipboard" #tab-clipboard selected
+[Tab] "AI" #tab-ai
+[Tab] "Agents" #tab-agents
+[Tab] "Files" #tab-files
+[Tab] "Notifications" #tab-notifications
+[Tab] "Scheduled" #tab-scheduled
+[Tab] "Terminal" #tab-terminal
+[Toggle] "Mute notifications" #panel-notifications-mute
+[Toggle] "Keep panel open" #panel-pin
+[Button] "Settings" #open-settings
+[Button] "Clear all"
+"5 items"
+[Toggle] "All" checked
+[Toggle] "Text"
+[Toggle] "Code"
+[Toggle] "Images"
+"https://github.com/dotnet/wpf/issues/1234"
+"Link · github.com · 3m ago"
+"public static int Fib(int n)\nreturn n < 2 ? n : Fib(n - 1) + Fib(n - 2);"
+"Code · 4 lines · 6m ago"
+"Image · 320 x 180 · 2 KB · 9m ago"
+"Meeting notes: ship the clipboard module, then polish the settings page and run the idle CPU check on the build machine."
+"Text · 120 chars · 9m ago"

@@ -1,0 +1,22 @@
+"QNotch"
+[Item] "General" #settings-nav-general
+[Item] "Features" #settings-nav-features
+[Item] "Updates" #settings-nav-updates
+[Item] "Hotkeys" #settings-nav-hotkeys
+[Item] "Sounds" #settings-nav-sounds
+[Item] "Appearance" #settings-nav-appearance
+[Item] "Game mode" #settings-nav-gamemode
+[Item] "Clipboard" #settings-nav-clipboard selected
+[Item] "AI" #settings-nav-ai
+[Item] "Agents" #settings-nav-agents
+[Item] "GitHub" #settings-nav-github
+[Item] "Weather" #settings-nav-weather
+[Item] "Notifications" #settings-nav-notifications
+"Clipboard"
+"Keep history between sessions"
+"Saves text entries (and pins) to clipboard.json as plain text. Images are never saved. Off by default, so secrets stay in memory only."
+[Toggle] "Keep history between sessions"
+"Clear history"
+"Removes every entry that is not pinned. History holds the last 40 entries."
+[Button] "Clear history"
+"Content that password managers flag as sensitive, and anything you copy again from QNotch, is never captured."

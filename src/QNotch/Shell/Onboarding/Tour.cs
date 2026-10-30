@@ -37,7 +37,7 @@ public static class Tour
         }
     }
 
-    /// <summary>Settings, General, Show welcome tour: runs while the app runs, with the Features step read-only.</summary>
+    /// <summary>Settings, About, Show welcome tour: runs while the app runs, with the Features step read-only.</summary>
     public static void ShowOnDemand(GeneralSettings gs, SettingsStore store, Shortcuts shortcuts, IReadOnlyList<ModuleInfo> modules,
         Action<string> openSettings, Action openPanel)
     {

@@ -31,6 +31,12 @@ public partial class SettingsWindow : Window
         foreach (var s in sections.Items)
         {
             var id = s.Id;
+            if (id == "about")
+            {
+                var separator = new Border { Height = 1, Margin = new Thickness(12, 12, 12, 12) };
+                separator.SetResourceReference(Border.BackgroundProperty, "StrokeBrush");
+                Nav.Children.Add(separator);
+            }
             var row = new StackPanel { Orientation = Orientation.Horizontal };
             var glyph = UiKit.Glyph(s.Glyph, 15, "TextSecondaryBrush");
             glyph.Margin = new Thickness(0, 0, 12, 0);
@@ -49,6 +55,7 @@ public partial class SettingsWindow : Window
     /// <summary>Shows the single settings window (creating it on first use) and optionally jumps to a section.</summary>
     public static void Show(Registry<SettingsSectionDescriptor> sections, GeneralSettings gs, string? sectionId)
     {
+        if (sectionId == "updates") sectionId = "about"; // Older diagnostic links still reach update controls.
         if (_instance is null)
         {
             var w = new SettingsWindow(sections);

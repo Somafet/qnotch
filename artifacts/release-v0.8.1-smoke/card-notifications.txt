@@ -1,0 +1,4 @@
+"Notifications"
+"Permission needed"
+"Build finished"
+"Deploy to production failed"

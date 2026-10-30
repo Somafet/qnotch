@@ -1,0 +1,47 @@
+"QNotch"
+[Item] "General" #settings-nav-general
+[Item] "Features" #settings-nav-features
+[Item] "Hotkeys" #settings-nav-hotkeys
+[Item] "Sounds" #settings-nav-sounds
+[Item] "Appearance" #settings-nav-appearance
+[Item] "Game mode" #settings-nav-gamemode selected
+[Item] "Clipboard" #settings-nav-clipboard
+[Item] "AI" #settings-nav-ai
+[Item] "Agents" #settings-nav-agents
+[Item] "GitHub" #settings-nav-github
+[Item] "Weather" #settings-nav-weather
+[Item] "Notifications" #settings-nav-notifications
+[Item] "About" #settings-nav-about
+"CPU"
+[Toggle] "CPU" checked
+"GPU"
+"Usage and temperature. Only when the system reports GPU usage."
+[Toggle] "GPU" checked
+"Memory"
+[Toggle] "Memory" checked
+"Network"
+[Toggle] "Network" checked
+"Battery"
+"Only on devices with a battery."
+[Toggle] "Battery" checked
+"Timer"
+"Time left, only while a timer runs."
+[Toggle] "Timer" checked
+"Weather"
+"Temperature and sky at your place."
+[Toggle] "Weather" checked
+"Clock"
+[Toggle] "Clock" checked
+"Apps"
+"Always use game mode"
+"Process names that get the bar whenever they are in the foreground, even windowed."
+[Field] "Executable name, for example game.exe" value=""
+[Button] "Add"
+[Button] "Running apps"
+"No apps added."
+"Never use game mode"
+"Exempt apps, for example a borderless video player you still want to click. Wins over the list above."
+[Field] "Executable name, for example game.exe" value=""
+[Button] "Add"
+[Button] "Running apps"
+"No apps added."

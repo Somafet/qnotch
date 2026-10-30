@@ -1,0 +1,63 @@
+"A"
+"Alex"
+"Friday, October 30"
+[Tab] "Home" #tab-home selected
+[Tab] "Search" #tab-search
+[Tab] "Media" #tab-media
+[Tab] "Clipboard" #tab-clipboard
+[Tab] "AI" #tab-ai
+[Tab] "Agents" #tab-agents
+[Tab] "Files" #tab-files
+[Tab] "Notifications" #tab-notifications
+[Tab] "Scheduled" #tab-scheduled
+[Tab] "Terminal" #tab-terminal
+[Toggle] "Mute notifications" #panel-notifications-mute
+[Toggle] "Edit layout" #panel-edit checked
+[Toggle] "Keep panel open" #panel-pin
+[Button] "Settings" #open-settings
+"1"
+"System"
+"11%"
+"CPU"
+[Progress] 11 of 100
+"25.5/31.9 GB"
+"RAM"
+[Progress] 79 of 100
+"18%"
+"GPU"
+"↓ "
+"44 KB/s"
+"   ↑ "
+"23 KB/s"
+"NET"
+"2"
+"Weather"
+[Button] "Open on yr.no"
+"9°"
+"Partly cloudy"
+"Oslo · Feels 7° · 4 m/s"
+"Today"
+"Sat"
+"Sun"
+"Mon"
+[Slider] "Resize Weather, left edge" #card-resize-weather-left 2 of 2
+[Slider] "Resize Weather, right edge" #card-resize-weather-right 2 of 2
+"3"
+"Now playing"
+"Midnight City"
+"M83"
+"4:03"
+"1:12"
+[Item] "Spotify" selected
+[Item] "YouTube Music"
+[Item] "Chrome"
+[Button] "Previous"
+[Button] "Pause"
+[Button] "Next"
+[Slider] "Resize Now playing, left edge" #card-resize-media-left 2 of 2
+[Slider] "Resize Now playing, right edge" #card-resize-media-right 2 of 2
+"4"
+"Volume"
+[Button] "Mute or unmute"
+"62%"
+[Slider] "Volume" 62 of 100

@@ -2,7 +2,7 @@ using QNotch.Core;
 
 namespace QNotch.Shell.Onboarding;
 
-/// <summary>FirstRun: shown automatically on a fresh install, before any module exists. OnDemand: Settings, General, Show welcome tour.</summary>
+/// <summary>FirstRun: shown automatically on a fresh install, before any module exists. OnDemand: Settings, About, Show welcome tour.</summary>
 public enum TourMode { FirstRun, OnDemand }
 
 /// <summary>Finished: the primary button of the last step. Skipped: Skip, Esc or closing the window.</summary>
@@ -70,7 +70,7 @@ public sealed class TourChoices
     /// <summary>
     /// Writes the result into <paramref name="gs"/> (the caller saves it). Finished: everything as shown. Skipped: features as toggled so far,
     /// updates on unless the user turned them off (on demand: unchanged unless touched), Start with Windows only if touched. A first run always
-    /// records the update choice, because the tour showed it, so Settings, Updates does not ask again.
+    /// records the update choice, because the tour showed it, so Settings, About does not ask again.
     /// </summary>
     public void Apply(GeneralSettings gs, TourEnd end)
     {

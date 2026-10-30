@@ -1,0 +1,7 @@
+version: 0.8.1.0
+self-contained: false
+only: card-media,tab-home,tab-media
+tab-home: ok
+tab-media: ok
+card-media: ok
+done

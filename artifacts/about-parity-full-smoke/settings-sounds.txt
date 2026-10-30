@@ -1,0 +1,36 @@
+"QNotch"
+[Item] "General" #settings-nav-general
+[Item] "Features" #settings-nav-features
+[Item] "Hotkeys" #settings-nav-hotkeys
+[Item] "Sounds" #settings-nav-sounds selected
+[Item] "Appearance" #settings-nav-appearance
+[Item] "Game mode" #settings-nav-gamemode
+[Item] "Clipboard" #settings-nav-clipboard
+[Item] "AI" #settings-nav-ai
+[Item] "Agents" #settings-nav-agents
+[Item] "GitHub" #settings-nav-github
+[Item] "Weather" #settings-nav-weather
+[Item] "Notifications" #settings-nav-notifications
+[Item] "About" #settings-nav-about
+"Sounds"
+"Each sound is one of your Windows sounds until you choose a file or drop one on its row. Turn sounds on or off on each feature's page."
+"New notification"
+"A notification shows a toast. Turn it on in Settings, Notifications."
+"Windows sound"
+[Button] "Play"
+[Button] "Choose..."
+"Agent needs you"
+"An agent waits for your answer."
+"Windows sound"
+[Button] "Play"
+[Button] "Choose..."
+"Agent finished"
+"An agent finished its turn."
+"Windows sound"
+[Button] "Play"
+[Button] "Choose..."
+"Timer is up"
+"A timer reached zero."
+"Windows sound"
+[Button] "Play"
+[Button] "Choose..."

@@ -1,0 +1,180 @@
+foreground at start: MozillaWindowClass; fullscreen app in front: False
+
+[placement]
+monitor Display 1  (2560 x 1440)  primary, scale 1, 2560 x 1440 DIPs
+window 900,0 760 x 430 DIPs; surface 911,0 738 x 38 DIPs; on that monitor: True
+ok
+
+[placement-displays]
+display 0: bounds (0,0) 2560x1440, scale 1; full-top attachment and +/-10000 DIP nudge clamping passed collapsed/expanded
+display 1: bounds (2560,-731) 5120x2880, scale 2; full-top attachment and +/-10000 DIP nudge clamping passed collapsed/expanded
+ok
+
+[presentation]
+All module tabs: selected/last tab fallback, direct/keyboard/search blocking, Search shortcut release/restore; empty Home recovery; module identities retained.
+ok
+
+[card-sizes]
+stats: Small, 218 x 148, body reused, saved size restored
+stats: Small, 218 x 148, body reused, saved size restored
+stats: Small, 218 x 148, body reused, saved size restored
+stats: Small, 218 x 148, body reused, saved size restored
+weather: Small, 218 x 148, body reused, saved size restored
+weather: Medium, 446 x 148, body reused, saved size restored
+weather: Medium, 446 x 148, body reused, saved size restored
+weather: Small, 218 x 148, body reused, saved size restored
+weather: Small, 218 x 148, body reused, saved size restored
+weather: Medium, 446 x 148, body reused, saved size restored
+weather: Medium, 446 x 148, body reused, saved size restored
+weather: Small, 218 x 148, body reused, saved size restored
+media: Small, 218 x 148, body reused, saved size restored
+media: Medium, 446 x 148, body reused, saved size restored
+media: Medium, 446 x 148, body reused, saved size restored
+media: Small, 218 x 148, body reused, saved size restored
+media: Small, 218 x 148, body reused, saved size restored
+media: Medium, 446 x 148, body reused, saved size restored
+media: Medium, 446 x 148, body reused, saved size restored
+media: Small, 218 x 148, body reused, saved size restored
+volume: Small, 218 x 148, body reused, saved size restored
+volume: Small, 218 x 148, body reused, saved size restored
+volume: Small, 218 x 148, body reused, saved size restored
+volume: Small, 218 x 148, body reused, saved size restored
+timer: Small, 218 x 148, body reused, saved size restored
+timer: Small, 218 x 148, body reused, saved size restored
+timer: Small, 218 x 148, body reused, saved size restored
+timer: Small, 218 x 148, body reused, saved size restored
+colorpicker: Small, 218 x 148, body reused, saved size restored
+colorpicker: Small, 218 x 148, body reused, saved size restored
+colorpicker: Small, 218 x 148, body reused, saved size restored
+colorpicker: Small, 218 x 148, body reused, saved size restored
+clipboard: Small, 218 x 148, body reused, saved size restored
+clipboard: Small, 218 x 148, body reused, saved size restored
+clipboard: Small, 218 x 148, body reused, saved size restored
+clipboard: Small, 218 x 148, body reused, saved size restored
+ai-usage: Small, 218 x 148, body reused, saved size restored
+ai-usage: Small, 218 x 148, body reused, saved size restored
+ai-usage: Small, 218 x 148, body reused, saved size restored
+ai-usage: Small, 218 x 148, body reused, saved size restored
+note: Small, 218 x 148, body reused, saved size restored
+note: Small, 218 x 148, body reused, saved size restored
+note: Small, 218 x 148, body reused, saved size restored
+note: Small, 218 x 148, body reused, saved size restored
+github: Small, 218 x 148, body reused, saved size restored
+github: Medium, 446 x 148, body reused, saved size restored
+github: Medium, 446 x 148, body reused, saved size restored
+github: Small, 218 x 148, body reused, saved size restored
+github: Small, 218 x 148, body reused, saved size restored
+github: Medium, 446 x 148, body reused, saved size restored
+github: Medium, 446 x 148, body reused, saved size restored
+github: Small, 218 x 148, body reused, saved size restored
+notifications: Small, 218 x 148, body reused, saved size restored
+notifications: Small, 218 x 148, body reused, saved size restored
+notifications: Small, 218 x 148, body reused, saved size restored
+notifications: Small, 218 x 148, body reused, saved size restored
+ai-apps: Small, 218 x 148, body reused, saved size restored
+ai-apps: Small, 218 x 148, body reused, saved size restored
+ai-apps: Small, 218 x 148, body reused, saved size restored
+ai-apps: Small, 218 x 148, body reused, saved size restored
+files: Small, 218 x 148, body reused, saved size restored
+files: Small, 218 x 148, body reused, saved size restored
+files: Small, 218 x 148, body reused, saved size restored
+files: Small, 218 x 148, body reused, saved size restored
+scheduled: Small, 218 x 148, body reused, saved size restored
+scheduled: Small, 218 x 148, body reused, saved size restored
+scheduled: Small, 218 x 148, body reused, saved size restored
+scheduled: Small, 218 x 148, body reused, saved size restored
+ok
+
+[hover-keeps-focus]
+foreground before MozillaWindowClass, after MozillaWindowClass; window keyboard False, active True
+ok
+
+[hotkey-toggle]
+open True, asked for the keyboard True, foreground MozillaWindowClass, active True; pressed again: closed True, foreground MozillaWindowClass
+skip: Windows kept the foreground with MozillaWindowClass: this process may not take it without input (the real hotkey may); the panel opened and closed again
+
+[hotkey-search]
+open True, tab search, search-field keyboard focus True, focus within the window True, foreground MozillaWindowClass
+skip: Windows kept the foreground with MozillaWindowClass: this process may not take it without input; Search opened with search-field focused within the window
+
+[escape-collapses]
+Escape to NotchWindow: handled True, closed True, keyboard released True
+ok
+
+[module-disabled]
+probe with notifications off: 16 modules, 9 tabs, 13 cards, 12 sections, 19 segments, 30 element ids
+ok
+
+[module-toggle]
+skip: modules apply on restart on Windows (Settings, Features asks for one)
+
+[edit-mode]
+moved stats onto weather: shown weather, stats, media, volume; saved general.json CardOrder weather, stats, media, volume
+ok
+
+[pin]
+pinned: open after the pointer left True; unpinned: closed True (pointer really over the notch: False)
+ok
+
+[notify-cli]
+pipe \\.\pipe\QNotch.Notify.smoke-11104
+posted: Smoke test, actions approve, deny, toast shown
+notify exit 0, stdout 'approve', stderr ''
+ok
+
+[notify-transport]
+-> {"title":"Smoke transport","app":"QNotch smoke","id":"smoke-pipe","ttl":0}
+<- {"ok":true,"id":"smoke-pipe"}
+-> {"op":"dismiss","id":"smoke-pipe"}
+<- {"ok":true,"id":"smoke-pipe"}
+ok
+
+[agents-hook]
+pipe \\.\pipe\QNotch.Agents.smoke-11104, hook exit 0, session smoke-73041b86
+board: qnotch-smoke-project Working, pill 'api needs you'
+ok
+
+[game-mode]
+forced on: game bar True, bar shown True (758 DIPs wide), TryOpenPanel False, OpenPanelWithKeyboard False, after toggle and hover still the bar True
+back to Auto: left the bar True, detection active False (Off)
+ok
+
+[accessible-names]
+58 outlines
+ok
+
+[onboarding]
+fresh data root (no general.json): True; tour windows open before asking: 0
+steps: welcome, open, features, connect, finish
+Return on the last step: closed True, open the panel True
+Esc on open: closed True, open the panel False
+ok
+
+[debug-channel]
+<- {"id":1,"ok":true,"result":{"platform":"Windows","app_version":"0.4.0","pid":11104,"data_dir":"C:\\Users\\somaf\\AppData\\Local\\Temp\\qnotch-smoketest-42db227f153e4f56a8afc20e9c33e14d"}}
+<- {"id":2,"ok":true,"result":{"panel":"collapsed","tab":"home","keyboard":false,"edit_mode":false,"pinned":false,"game_mode":"off","game_bar":false,"modules":[{"id":"stats","enabled":true,"running":true},{"id":"media","enabled":true,"running"...
+<- {"id":3,"ok":true,"result":{}}
+<- {"id":4,"ok":true,"result":{"panel":"open","tab":"search","keyboard":true,"edit_mode":false,"pinned":false,"game_mode":"off","game_bar":false,"modules":[{"id":"stats","enabled":true,"running":true},{"id":"media","enabled":true,"running":tru...
+<- {"id":5,"ok":true,"result":{"text":"\"A\"\n\"Alex\"\n\"Friday, October 30\"\n[Tab] \"Home\" #tab-home\n[Tab] \"Search\" #tab-search selected\n[Tab] \"Media\" #tab-media\n[Tab] \"Clipboard\" #tab-clipboard\n[Tab] \"AI\" #tab-ai\n[Tab] \"Agen...
+<- {"ok":false,"error":"unknown command nope"}
+<- {"id":7,"ok":true,"result":{}}
+ok
+
+[notify-manual-mute]
+pipe \\.\pipe\QNotch.Notify.smoke-11104
+posted: Smoke test, actions approve, deny, toast not shown
+notify exit 0, stdout 'approve', stderr ''
+-> {"title":"Smoke transport","app":"QNotch smoke","id":"smoke-pipe","ttl":0}
+<- {"ok":true,"id":"smoke-pipe"}
+-> {"op":"dismiss","id":"smoke-pipe"}
+<- {"ok":true,"id":"smoke-pipe"}
+Accessible quick toggle, existing/waiting peek cancellation, muted unread error/history, no replay, answer/dismiss replies and quiet-call pending exception passed.
+ok
+
+[timer-presentation]
+Active timer kept its instance and exact wall-clock deadline while its indicator was hidden/shown; time continued advancing.
+ok
+
+[terminal-fixture]
+Deterministic VT fixture, accessibility value, retained input focus after global summon, Escape ownership and module-shortcut capture/restoration; zero shell creations.
+ok

@@ -1,0 +1,36 @@
+"QNotch"
+[Item] "General" #settings-nav-general
+[Item] "Features" #settings-nav-features
+[Item] "Updates" #settings-nav-updates
+[Item] "Hotkeys" #settings-nav-hotkeys
+[Item] "Sounds" #settings-nav-sounds
+[Item] "Appearance" #settings-nav-appearance
+[Item] "Game mode" #settings-nav-gamemode
+[Item] "Clipboard" #settings-nav-clipboard
+[Item] "AI" #settings-nav-ai
+[Item] "Agents" #settings-nav-agents
+[Item] "GitHub" #settings-nav-github selected
+[Item] "Weather" #settings-nav-weather
+[Item] "Notifications" #settings-nav-notifications
+"GitHub"
+"Status"
+"Connected as @octocat. Updated 7 min ago."
+"Sign in with GitHub"
+"Opens GitHub in your browser, where you approve QNotch. Asks only to read your public profile and activity (read:user)."
+[Button] "Sign in with GitHub"
+"WDJB-MJHT"
+"Waiting for you to approve QNotch on GitHub…"
+[Button] "Copy code and open GitHub"
+[Button] "Cancel"
+"Or use a token"
+"Stored in Windows Credential Manager, never in a settings file. A classic token with read:user works; add repo to count private activity."
+[SecureField] "Or use a token"
+[Button] "Save"
+"Connection"
+"Tests the token in the box, or the saved one if the box is empty."
+[Button] "Test"
+[Button] "Remove token"
+"Activity"
+"Refreshes every hour. The last result is kept on disk so the card works offline."
+[Button] "Activity"
+  "Refresh now"

@@ -381,7 +381,7 @@ internal sealed partial class SmokeTest
         Log($"fresh data root (no general.json): {!_h.Store.Exists("general")}; tour windows open before asking: {open.Count}");
         if (open.Count > 0) return "the welcome tour opened by itself";
 
-        // As Settings, General, Show welcome tour opens it, but off screen, never activated, settled, and on a copy of the settings.
+        // As Settings, About, Show welcome tour opens it, but off screen, never activated, settled, and on a copy of the settings.
         var gs = JsonSerializer.Deserialize<GeneralSettings>(JsonSerializer.Serialize(_h.Settings, SettingsStore.Json), SettingsStore.Json)!;
         var store = new SettingsStore { ReadOnly = true };
         TourWindow Show()

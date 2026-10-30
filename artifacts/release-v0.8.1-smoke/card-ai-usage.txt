@@ -1,0 +1,7 @@
+"AI usage"
+"42%"
+"Claude Code"
+"Weekly 18%  ·  resets in 2h 23m"
+"12%"
+"Codex"
+"Weekly 31%  ·  resets in 4h 5m"

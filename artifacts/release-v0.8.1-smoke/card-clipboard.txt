@@ -1,0 +1,4 @@
+"Clipboard"
+"https://github.com/dotnet/wpf/issues/1234"
+"public static int Fib(int n) return n < 2 ? n : Fib(n - 1) +…"
+"Image · 320 x 180"

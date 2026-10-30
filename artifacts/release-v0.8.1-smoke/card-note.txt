@@ -1,0 +1,5 @@
+"Note"
+[Field] "Note" value=""
+"Jot something down"
+"Saved"
+"Thu, Oct 29 · 0 words"

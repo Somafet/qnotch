@@ -1,0 +1,32 @@
+"QNotch"
+[Item] "General" #settings-nav-general
+[Item] "Features" #settings-nav-features
+[Item] "Updates" #settings-nav-updates
+[Item] "Hotkeys" #settings-nav-hotkeys
+[Item] "Sounds" #settings-nav-sounds
+[Item] "Appearance" #settings-nav-appearance
+[Item] "Game mode" #settings-nav-gamemode
+[Item] "Clipboard" #settings-nav-clipboard
+[Item] "AI" #settings-nav-ai
+[Item] "Agents" #settings-nav-agents
+[Item] "GitHub" #settings-nav-github
+[Item] "Weather" #settings-nav-weather selected
+[Item] "Notifications" #settings-nav-notifications
+"Weather"
+"Place"
+"Oslo, Norway. Updated just now."
+"Find a place"
+"Searches the places yr.no knows. Pick one from the list."
+[Field] "Find a place" value=""
+[Button] "Search"
+"Units"
+[Toggle] "°C, m/s" checked
+[Toggle] "°F, mph"
+"Show in the pill"
+"The temperature and sky next to the system stats."
+[Toggle] "Show in the pill" checked
+"Forecast"
+"Refreshed about every 30 minutes, when MET Norway publishes a new run. The last one is kept on disk for offline use."
+[Button] "Forecast"
+  "Refresh now"
+"Forecasts from yr.no, made by the Norwegian Meteorological Institute (MET Norway) and NRK. Weather data under CC BY 4.0, symbols by yr.no under MIT."
