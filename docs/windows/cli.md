@@ -99,7 +99,7 @@ if ($LASTEXITCODE -eq 0 -and $agents.module_status -eq 'ready') {
 
 ## Local transport and testing
 
-The normal app hosts `QNotch.Consumer`, suffixed with `.QNOTCH_INSTANCE` when that environment variable is set. It is a separate read-only pipe with a current-user-only DACL and Windows remote-client rejection. The CLI verifies the server owner. No HTTP listener or debug-control access is needed. Same-user processes share this local interface; it is not a separate user authentication boundary.
+The normal app hosts `QNotch.Consumer`, suffixed with `.QNOTCH_INSTANCE` when that environment variable is set. It is a separate read-only pipe with a current-user-only DACL and Windows remote-client rejection. The server explicitly sets its owner to the token user SID; the CLI verifies that exact SID before sending a request. This also works with elevated tokens whose default object owner is Administrators. No HTTP listener or debug-control access is needed. Same-user processes share this local interface; it is not a separate user authentication boundary.
 
 Each connection handles one schema-v1 request. Limits: 4 connected workers, 4 KiB request, 1 MiB response, and a two-second exchange deadline. Oversized snapshots return `size_limit` without silent truncation. There is no export timer or disk snapshot cache. Snapshot/demo/measurement modes do not start the production consumer service.
 

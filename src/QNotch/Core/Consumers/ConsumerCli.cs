@@ -70,9 +70,10 @@ internal static class ConsumerCli
     internal static async Task<byte[]> Exchange(ConsumerRequest request, string? pipeName = null)
     {
         using var ct = new CancellationTokenSource(ConsumerProtocol.DeadlineMs);
-        using var pipe = new NamedPipeClientStream(".", pipeName ?? ConsumerProtocol.PipeName, PipeDirection.InOut, PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
+        using var pipe = new NamedPipeClientStream(".", pipeName ?? ConsumerProtocol.PipeName, PipeDirection.InOut, PipeOptions.Asynchronous);
         try { await pipe.ConnectAsync(ConsumerProtocol.DeadlineMs, ct.Token); }
         catch (Exception ex) when (ex is TimeoutException or OperationCanceledException) { throw new ConsumerException("not_running", "No QNotch consumer service is running for this instance."); }
+        ConsumerPipeIdentity.Verify(pipe);
         await ConsumerProtocol.WriteLine(pipe, JsonSerializer.SerializeToUtf8Bytes(request, ConsumerProtocol.Json), ct.Token);
         return await ConsumerProtocol.ReadLine(pipe, ConsumerProtocol.MaxResponse, ct.Token);
     }

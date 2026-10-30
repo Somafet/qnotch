@@ -97,8 +97,8 @@ internal sealed class ConsumerHost : IDisposable
     {
         using var identity = WindowsIdentity.GetCurrent();
         var sid = identity.User?.Value ?? throw new InvalidOperationException("Current user has no SID.");
-        // Elevated tokens may default object ownership to Administrators. CurrentUserOnly clients verify
-        // the owner as well as access, so explicitly retain the token user's ownership on elevated runners.
+        // Elevated tokens may default object ownership to Administrators. Set the actual user owner
+        // explicitly so the client can verify that exact SID, independently of the default token owner.
         if (!ConvertStringSecurityDescriptorToSecurityDescriptor($"O:{sid}D:P(A;;GA;;;{sid})", 1, out var descriptor, out _)) throw new Win32Exception();
         try
         {

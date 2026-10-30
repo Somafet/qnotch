@@ -193,6 +193,8 @@ internal static class ConsumerChecks
             var security = new RawSecurityDescriptor(bytes, 0);
             using var identity = WindowsIdentity.GetCurrent();
             Check(security.Owner == identity.User, "pipe owner is current token user, including elevated runners");
+            Check(ConsumerPipeIdentity.HasOwner(pipe, identity.User!), "client accepts actual token user owner");
+            Check(!ConsumerPipeIdentity.HasOwner(pipe, new SecurityIdentifier(WellKnownSidType.WorldSid, null)), "client rejects a different owner SID");
             Check(security.DiscretionaryAcl?.Count == 1 &&
                 security.DiscretionaryAcl[0] is CommonAce ace && ace.SecurityIdentifier == identity.User && ace.AceQualifier == AceQualifier.AccessAllowed &&
                 security.ControlFlags.HasFlag(ControlFlags.DiscretionaryAclProtected), "protected pipe ACL grants only current user");
