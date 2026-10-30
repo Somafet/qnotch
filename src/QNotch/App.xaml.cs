@@ -3,6 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using QNotch.Core;
+using QNotch.Core.Consumers;
 using QNotch.Core.Updates;
 using QNotch.Modules;
 using QNotch.Shell;
@@ -52,6 +53,7 @@ public partial class App : Application
     // --debug-control: the debug channel (Shell/Diagnostics/DebugChannel.cs) opens once the shell and every module are up.
     bool _debugControl;
     IDisposable? _debug;
+    ConsumerHost? _consumers;
     readonly HashSet<string> _running = new(StringComparer.OrdinalIgnoreCase);
     readonly List<IDisposable> _moduleResources = new();
 
@@ -143,6 +145,8 @@ public partial class App : Application
         var bootDisabled = (snapDir is not null ? DiagnosticRun.BootDisabled(diag) : ModuleList.All.Where(i => !i.IsEnabled(gs)).Select(i => i.Id))
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
         var enabled = ModuleList.All.Where(i => !bootDisabled.Contains(i.Id)).ToList();
+        var consumers = new ConsumerRegistry();
+        foreach (var (command, endpoint) in ModuleList.ConsumerModules) consumers.Define(command, endpoint.Module, bootDisabled.Contains(endpoint.Module), endpoint.Validate);
         Log.Info($"Modules: {string.Join(", ", enabled.Select(i => i.Id))} (off: {(bootDisabled.Count == 0 ? "none" : string.Join(", ", bootDisabled))})");
 
         // Built-in tab and settings sections (modules add theirs in Initialize).
@@ -159,6 +163,7 @@ public partial class App : Application
         {
             Bus = bus, Settings = _store, Hotkeys = _hotkeys, Shell = shell, Dispatcher = Dispatcher,
             Cards = cards, Tabs = tabs, SettingsSections = sections, Segments = segments, Search = new(), Shortcuts = shortcuts, Sounds = sounds, Demos = demos, QuickActions = quickActions,
+            Consumers = consumers,
         };
         var built = new List<(string Id, INotchModule Module)>();
         List<INotchModule> Init(IEnumerable<ModuleInfo> list)
@@ -168,13 +173,13 @@ public partial class App : Application
             {
                 INotchModule m;
                 try { m = info.Create(); }
-                catch (Exception ex) { Log.Error($"Module '{info.Id}' failed to create", ex); continue; }
+                catch (Exception ex) { consumers.Complete(info.Id, false); Log.Error($"Module '{info.Id}' failed to create", ex); continue; }
                 done.Add(m);
                 built.Add((info.Id, m));
                 if (m is IDisposable resource) _moduleResources.Add(resource);
                 cards.RegistrationOwner = tabs.RegistrationOwner = segments.RegistrationOwner = info.Id;
-                try { m.Initialize(ctx); _running.Add(info.Id); }
-                catch (Exception ex) { Log.Error($"Module '{info.Id}' failed to initialize", ex); }
+                try { m.Initialize(ctx); _running.Add(info.Id); consumers.Complete(info.Id, true); }
+                catch (Exception ex) { consumers.Complete(info.Id, false); Log.Error($"Module '{info.Id}' failed to initialize", ex); }
                 finally { cards.RegistrationOwner = tabs.RegistrationOwner = segments.RegistrationOwner = ""; }
             }
             return done;
@@ -208,6 +213,12 @@ public partial class App : Application
             return;
         }
         _tray = new TrayIcon(window, shell, shortcuts, () => Shutdown(), updates);
+        try
+        {
+            _consumers = new ConsumerHost((request, ct) => Dispatcher.InvokeAsync(() => consumers.Capture(request),
+                System.Windows.Threading.DispatcherPriority.Background, ct).Task);
+        }
+        catch (Exception ex) { Log.Error("Consumer service failed to start", ex); }
         updates.Start();
         if (updates.State.NeedsPreferenceChoice)
         {
@@ -276,6 +287,7 @@ public partial class App : Application
         {
             Analytics.Current?.Dispose();
             _debug?.Dispose();
+            _consumers?.Dispose();
             foreach (var resource in _moduleResources)
                 try { resource.Dispose(); } catch (Exception ex) { Log.Warn("Module cleanup failed", ex); }
             _updates?.Dispose();

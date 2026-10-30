@@ -46,6 +46,10 @@ jobs:
         shell: pwsh
         run: ./tests/QNotch.WindowsTests/Test-TerminalLifecycle.ps1 -Executable ./src/QNotch/bin/Release/net10.0-windows10.0.22621.0/win-x64/QNotch.exe
 
+      - name: Consumer CLI lifecycle
+        shell: pwsh
+        run: ./tests/QNotch.WindowsTests/Test-ConsumerCli.ps1 -Executable ./src/QNotch/bin/Release/net10.0-windows10.0.22621.0/win-x64/QNotch.exe
+
       # Renders every view (pill states, tabs, cards, settings, welcome tour) off-screen in a clean data folder. Fails if a view throws or it hangs.
       - name: Snapshot smoke test
         shell: pwsh

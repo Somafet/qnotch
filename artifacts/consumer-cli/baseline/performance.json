@@ -1,0 +1,41 @@
+{
+  "platform": "Windows",
+  "app_version": "0.4.0",
+  "source_revision": "6d675eb758ee03fb0652710165e8ff77cb55c7ad",
+  "source_dirty": false,
+  "os": "Windows 11 Pro 25H2 (10.0.26200.9711)",
+  "architecture": "x64",
+  "hardware_model": "System manufacturer System Product Name",
+  "cpu_model": "AMD Ryzen 9 5900X 12-Core Processor",
+  "logical_processors": 24,
+  "physical_memory_bytes": 34260328448,
+  "method": "In-process, read at both ends of the interval. CPU: QueryProcessCycleTime (exact cycles of every thread, user and kernel) divided by the cycle rate calibrated on a 100 ms spin of one thread (3.695 GHz); CPU percent of one core = CPU seconds / wall seconds * 100. cpu_percent_one_core_ticks is the same from Process.TotalProcessorTime, which Windows samples on the 15.6 ms clock tick. Memory: Process.WorkingSet64 (resident) and PrivateMemorySize64 after Refresh. Release build, tiered JIT off. Every module the normal app loads (17, none turned off: fresh temporary settings), early modules before the first frame and the rest at startup idle, Game mode on Auto, demo data: settings are read-only, so modules that honor it start no providers (media sessions, clipboard listener, mic and camera watchers, weather, GitHub, AI usage, phone share, notification and agent pipes) while the System stats sampler, timers and the clock run as usual. No tray icon, no global hotkeys, no network. The window is off screen (WPF still renders it; no pointer can hover it). Startup: process start to the dispatcher after Show and the first render pass. Interval: starts 15 s after startup idle, after the post-startup MemoryTrim.",
+  "startup_seconds": 1.84,
+  "warmup_seconds": 15,
+  "interval_seconds": 30.012,
+  "state": "collapsed",
+  "cpu_percent_one_core": 0.112,
+  "cpu_seconds": 0.0338,
+  "cpu_percent_one_core_ticks": 0.156,
+  "resident_bytes_start": 24576000,
+  "resident_bytes_end": 30580736,
+  "private_bytes_start": 60116992,
+  "private_bytes_end": 59539456,
+  "gc_heap_bytes_end": 9963056,
+  "busiest_threads": "ui 47 ms, thread 37600 16 ms",
+  "modules": "stats,media,agents,notifications,capture,timer,weather,clipboard,ai,note,github,filetray,scheduled,volume,colorpicker,search,terminal",
+  "limits": [
+    {
+      "name": "idle_cpu_percent_one_core",
+      "limit": 0.1,
+      "measured": 0.112,
+      "ok": false
+    },
+    {
+      "name": "resident_bytes",
+      "limit": 83886080,
+      "measured": 30580736,
+      "ok": true
+    }
+  ]
+}

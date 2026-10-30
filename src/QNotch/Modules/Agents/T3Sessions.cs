@@ -66,6 +66,8 @@ internal sealed class T3SessionWatch
     FileSystemWatcher? _watcher;
     Process? _app;
     bool _scheduled, _reading, _dirty, _failed;
+    string _health = "initializing";
+    public string Health => Volatile.Read(ref _health);
 
     public T3SessionWatch(Action<List<T3Session>, nint> changed)
     {
@@ -142,11 +144,13 @@ internal sealed class T3SessionWatch
             WatchFiles();
             var window = AppWindow();
             var sessions = window == 0 ? [] : T3Sessions.Read(Path.Combine(T3Titles.DataDir, "statev2.sqlite"));
+            Volatile.Write(ref _health, window == 0 ? "inactive" : File.Exists(Path.Combine(T3Titles.DataDir, "statev2.sqlite")) ? "ready" : "unavailable");
             _changed(sessions, window);
             _failed = false;
         }
         catch (Exception ex)
         {
+            Volatile.Write(ref _health, "unavailable");
             if (!_failed) Log.Warn("Reading T3 Code sessions failed", ex);
             _failed = true;
         }

@@ -20,7 +20,10 @@ internal sealed class CodexProvider : IUsageProvider
     public async Task<UsageResult> FetchAsync(CancellationToken ct)
     {
         var r = await Task.Run(() => Read(ct), ct);
-        return r.Status == UsageStatus.Ok ? r with { Banked = await ResetCreditsAsync(ct) } : r;
+        if (r.Status != UsageStatus.Ok) return r with { CheckedAt = DateTime.UtcNow };
+        var quotaChecked = DateTime.UtcNow;
+        var credits = await ResetCreditsAsync(ct);
+        return r with { CheckedAt = quotaChecked, Banked = credits.Banked, BankedStatus = credits.Status, BankedCheckedAt = credits.CheckedAt };
     }
 
     /// <summary>codex.exe on PATH, or where the Windows installer puts it. Null when Codex CLI is not installed.</summary>
@@ -36,9 +39,12 @@ internal sealed class CodexProvider : IUsageProvider
     });
 
     /// <summary>One short-lived `codex app-server`: initialize, then account/rateLimits/read. Null on any failure, so the windows still show.</summary>
-    static async Task<BankedResets?> ResetCreditsAsync(CancellationToken ct)
+    internal sealed record CreditReading(string Status, BankedResets? Banked, DateTime CheckedAt);
+    static CreditReading UnknownCredits() => new("unknown", null, DateTime.UtcNow);
+
+    static async Task<CreditReading> ResetCreditsAsync(CancellationToken ct)
     {
-        if (CodexExe.Value is not { } exe) return null;
+        if (CodexExe.Value is not { } exe) return UnknownCredits();
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
         cts.CancelAfter(TimeSpan.FromSeconds(15));
         try
@@ -49,7 +55,7 @@ internal sealed class CodexProvider : IUsageProvider
                 RedirectStandardInput = true, RedirectStandardOutput = true, RedirectStandardError = true,
                 StandardInputEncoding = new UTF8Encoding(false), StandardOutputEncoding = Encoding.UTF8,
             });
-            if (p is null) return null;
+            if (p is null) return UnknownCredits();
             p.ErrorDataReceived += (_, _) => { }; // drained so a chatty stderr never blocks it
             p.BeginErrorReadLine();
             try
@@ -63,22 +69,22 @@ internal sealed class CodexProvider : IUsageProvider
                 await p.StandardInput.FlushAsync(cts.Token);
                 while (await p.StandardOutput.ReadLineAsync(cts.Token) is { } line)
                 {
-                    if (!line.Contains("\"id\":2")) continue;
                     using var doc = JsonDocument.Parse(line);
-                    return doc.RootElement.TryGetProperty("result", out var res) && res.TryGetProperty("rateLimitResetCredits", out var rc) ? ParseCredits(rc) : null;
+                    if (!doc.RootElement.TryGetProperty("id", out var id) || !id.TryGetInt32(out var number) || number != 2) continue;
+                    return doc.RootElement.TryGetProperty("result", out var res) && res.TryGetProperty("rateLimitResetCredits", out var rc) ? ParseCredits(rc) : UnknownCredits();
                 }
-                return null;
+                return UnknownCredits();
             }
             finally { try { p.Kill(true); } catch { } }
         }
-        catch (OperationCanceledException) when (!ct.IsCancellationRequested) { return null; }
-        catch (Exception ex) when (ex is not OperationCanceledException) { Log.Warn("Reading Codex reset credits failed", ex); return null; }
+        catch (OperationCanceledException) { return UnknownCredits(); }
+        catch (Exception ex) { Log.Warn("Reading Codex reset credits failed", ex); return UnknownCredits(); }
     }
 
     /// <summary>Available credits only; the expiry and title are those of the one that expires first.</summary>
-    static BankedResets? ParseCredits(JsonElement rc)
+    internal static CreditReading ParseCredits(JsonElement rc)
     {
-        if (rc.ValueKind != JsonValueKind.Object || !rc.TryGetProperty("credits", out var list) || list.ValueKind != JsonValueKind.Array) return null;
+        if (rc.ValueKind != JsonValueKind.Object || !rc.TryGetProperty("credits", out var list) || list.ValueKind != JsonValueKind.Array) return UnknownCredits();
         var count = 0;
         DateTime? first = null;
         string? title = null;
@@ -91,7 +97,7 @@ internal sealed class CodexProvider : IUsageProvider
         }
         // The list may be capped below the real count.
         if (rc.TryGetProperty("availableCount", out var n) && n.ValueKind == JsonValueKind.Number && n.TryGetInt32(out var total)) count = Math.Max(count, total);
-        return count > 0 ? new BankedResets(count, first, title) : null;
+        return new(count > 0 ? "available" : "none", count > 0 ? new BankedResets(count, first, title) : null, DateTime.UtcNow);
     }
 
     static UsageResult Read(CancellationToken ct)
@@ -99,18 +105,18 @@ internal sealed class CodexProvider : IUsageProvider
         var home = Environment.GetEnvironmentVariable("CODEX_HOME");
         if (string.IsNullOrWhiteSpace(home)) home = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".codex");
         var auth = Path.Combine(home, "auth.json");
-        if (!File.Exists(auth)) return UsageResult.Unavailable("Not signed in. Sign in to Codex to see usage.");
+        if (!File.Exists(auth)) return UsageResult.Unavailable("Not signed in. Sign in to Codex to see usage.", "not_signed_in");
 
         try
         {
             using var doc = JsonDocument.Parse(File.ReadAllBytes(auth));
             if (!doc.RootElement.TryGetProperty("tokens", out var t) || t.ValueKind != JsonValueKind.Object)
-                return UsageResult.Unavailable("Signed in with an API key. Plan usage needs a ChatGPT login.");
+                return UsageResult.Unavailable("Signed in with an API key. Plan usage needs a ChatGPT login.", "subscription_required");
         }
-        catch { return UsageResult.Unavailable("Codex sign-in file could not be read."); }
+        catch { return UsageResult.Unavailable("Codex sign-in file could not be read.", "credentials_unreadable"); }
 
         var sessions = Path.Combine(home, "sessions");
-        if (!Directory.Exists(sessions)) return UsageResult.Unavailable("No Codex sessions yet. Run a task to get a reading.");
+        if (!Directory.Exists(sessions)) return UsageResult.Unavailable("No Codex sessions yet. Run a task to get a reading.", "no_reading");
 
         var now = DateTime.Now;
         var checkedFiles = 0;
@@ -121,7 +127,7 @@ internal sealed class CodexProvider : IUsageProvider
             var r = ReadFile(file, now);
             if (r is not null) return r;
         }
-        return UsageResult.Unavailable("No recent rate limit reading. Run a Codex task to refresh it.");
+        return UsageResult.Unavailable("No recent rate limit reading. Run a Codex task to refresh it.", "no_reading");
     }
 
     /// <summary>Sessions live in YYYY/MM/DD folders, so walk them newest first instead of enumerating everything.</summary>
@@ -147,7 +153,7 @@ internal sealed class CodexProvider : IUsageProvider
         }
     }
 
-    static UsageResult? ReadFile(string file, DateTime now)
+    internal static UsageResult? ReadFile(string file, DateTime now)
     {
         string text;
         try
@@ -172,11 +178,12 @@ internal sealed class CodexProvider : IUsageProvider
                 using var doc = JsonDocument.Parse(line);
                 var root = doc.RootElement;
                 if (!root.TryGetProperty("payload", out var p) || !p.TryGetProperty("rate_limits", out var rl) || rl.ValueKind != JsonValueKind.Object) continue;
-                var at = DateTimeOffset.TryParse(root.GetStringOrNull("timestamp"), out var ts) ? ts.LocalDateTime : now;
+                if (!DateTimeOffset.TryParse(root.GetStringOrNull("timestamp"), out var ts)) continue;
+                var at = ts.LocalDateTime;
                 var windows = new List<UsageWindow>();
                 foreach (var key in new[] { "primary", "secondary" })
                     if (rl.TryGetProperty(key, out var w) && ParseWindow(w, at) is { } uw && (uw.ResetsAt is null || uw.ResetsAt > now))
-                        windows.Add(uw);
+                        windows.Add(uw with { Id = key });
                 if (windows.Count > 0) return UsageResult.Ok(windows, PlanName(rl.GetStringOrNull("plan_type")), at);
             }
             catch (JsonException) { /* truncated or foreign line */ }
@@ -193,7 +200,8 @@ internal sealed class CodexProvider : IUsageProvider
         else if (w.TryGetProperty("resets_in_seconds", out var rs) && rs.ValueKind == JsonValueKind.Number)
             resets = readAt.AddSeconds(rs.GetDouble());
         var minutes = w.TryGetProperty("window_minutes", out var wm) && wm.ValueKind == JsonValueKind.Number ? wm.GetInt32() : 0;
-        return new UsageWindow(Label(minutes), Math.Clamp(u.GetDouble(), 0, 100), resets);
+        if (!double.IsFinite(u.GetDouble())) return null;
+        return new UsageWindow(Label(minutes), Math.Clamp(u.GetDouble(), 0, 100), resets, DurationSeconds: minutes > 0 && minutes <= int.MaxValue / 60 ? minutes * 60 : null);
     }
 
     static string Label(int minutes) => minutes switch

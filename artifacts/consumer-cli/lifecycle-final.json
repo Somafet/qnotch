@@ -1,0 +1,22 @@
+{
+  "platform": "Windows",
+  "app_version": "0.4.0",
+  "build": "Release",
+  "state": "collapsed",
+  "samples": 30,
+  "method": "Isolated normal startup in debug-control mode; only Ai/Agents enabled, providers disabled, synthetic hook/transcript. Timed CLI process startup, pipe exchange and ConvertFrom-Json.",
+  "latency_min_ms": 122.49,
+  "latency_p50_ms": 130.01,
+  "latency_p95_ms": 141.38,
+  "latency_max_ms": 154.86,
+  "writes_from_queries": false,
+  "synthetic_tokens": 120,
+  "idle_interval_seconds": 30.014,
+  "idle_cpu_percent_one_core": 0.2422,
+  "resident_bytes_start": 26013696,
+  "resident_bytes_end": 29327360,
+  "cpu_model": "AMD Ryzen 9 5900X 12-Core Processor            ",
+  "logical_processors": 24,
+  "os": "Microsoft Windows NT 10.0.26200.0",
+  "idle_state": "collapsed"
+}

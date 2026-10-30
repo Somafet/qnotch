@@ -71,5 +71,12 @@ public static class ModuleList
     {
         ["notify"] = NotifyCli.Run,
         ["agent"] = AgentHook.Run,
+        ["usage"] = UsageCli.Run,
+        ["agents"] = AgentsCli.Run,
+    };
+
+    public static readonly IReadOnlyDictionary<string, (string Module, Action<Core.Consumers.ConsumerRequest> Validate)> ConsumerModules = new Dictionary<string, (string, Action<Core.Consumers.ConsumerRequest>)>
+    {
+        ["usage"] = ("ai", UsageCli.Validate), ["agents"] = ("agents", AgentsCli.Validate),
     };
 }

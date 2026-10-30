@@ -12,7 +12,7 @@ namespace QNotch.Modules.Ai;
 /// AI apps (detect, icons, Alt+1..6 launch) and AI usage (per-provider readings).
 /// Idle cost while collapsed: one 10 minute one-shot timer. All I/O runs on the thread pool or a short-lived STA thread and is posted back through the bus.
 /// </summary>
-public sealed class AiModule : INotchModule, ICadenceAware
+public sealed partial class AiModule : INotchModule, ICadenceAware
 {
     sealed record AppsScanned(List<DetectedApp> Apps);
     sealed record ProviderResult(string Id, UsageResult Result);
@@ -39,6 +39,8 @@ public sealed class AiModule : INotchModule, ICadenceAware
         _ctx = ctx;
         _s = ctx.Settings.Get<AiSettings>("ai");
         _s.Normalize();
+        _consumerIdentity = new Core.Consumers.ConsumerIdentity(ctx.Settings);
+        ctx.Consumers.Register("usage", CaptureUsage);
 
         St.RefreshCommand = new RelayCommand(() => { QNotch.Core.Analytics.Track("ai", "refresh"); RefreshUsage(); });
         St.LaunchCommand = new RelayCommand<AiAppItem>(Launch);
@@ -326,10 +328,10 @@ public sealed class AiModule : INotchModule, ICadenceAware
                     using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(25));
                     r = await p.FetchAsync(cts.Token).WaitAsync(cts.Token);
                 }
-                catch (OperationCanceledException) { r = UsageResult.Unavailable("Timed out. Will retry on the next refresh."); }
-                catch (HttpRequestException) { r = UsageResult.Unavailable("Network unavailable. Will retry on the next refresh."); }
-                catch (Exception ex) { Log.Warn($"Usage provider {p.Id} failed", ex); r = UsageResult.Unavailable("Unexpected error. See the log for details."); }
-                bus.Post(new ProviderResult(p.Id, r));
+                catch (OperationCanceledException) { r = UsageResult.Unavailable("Timed out. Will retry on the next refresh.", "timeout"); }
+                catch (HttpRequestException) { r = UsageResult.Unavailable("Network unavailable. Will retry on the next refresh.", "network_unavailable"); }
+                catch (Exception ex) { Log.Warn($"Usage provider {p.Id} failed", ex); r = UsageResult.Unavailable("Unexpected error. See the log for details.", "internal_error"); }
+                bus.Post(new ProviderResult(p.Id, r with { CheckedAt = r.CheckedAt ?? DateTime.UtcNow }));
             }));
             bus.Post(new RefreshDone(DateTime.Now));
         });

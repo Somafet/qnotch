@@ -10,6 +10,7 @@ if (args.Contains("--analytics-idle-measure")) { AnalyticsChecks.Measure(); retu
 
 var tests = new List<(string Name, Action Run)>
 {
+    ("Consumer CLI contracts, synthetic quota/transcripts, bounded pipes and WPF-free clients", ConsumerChecks.Run),
     ("Analytics privacy, consent, bounded delivery, retries and identity", AnalyticsChecks.Run),
     ("Terminal defaults, local opt-in, bounded VT screen and input encoding", TerminalChecks.Deterministic),
     ("Small and Medium bodies fit live, empty, loading and error states", CardRenderingChecks.Run),

@@ -1,0 +1,14 @@
+{
+  "platform": "Windows",
+  "app_version": "0.4.0",
+  "build": "Release",
+  "state": "collapsed",
+  "samples": 30,
+  "method": "Isolated normal startup in debug-control mode; only Ai/Agents enabled, providers disabled, synthetic hook/transcript. Timed CLI process startup, pipe exchange and ConvertFrom-Json.",
+  "latency_min_ms": 109.21,
+  "latency_p50_ms": 112.98,
+  "latency_p95_ms": 131.74,
+  "latency_max_ms": 143.73,
+  "writes_from_queries": false,
+  "synthetic_tokens": 120
+}

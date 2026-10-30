@@ -87,11 +87,13 @@ internal sealed class UsageReader
 
     /// <summary>Bytes the last <see cref="Read"/> went through: the first read of a long session can be megabytes.</summary>
     public long BytesRead { get; private set; }
+    public bool HadReadError { get; private set; }
 
     /// <summary>Usage per local day, a copy the UI thread may keep.</summary>
     public Dictionary<DateOnly, Usage> Read(string transcript)
     {
         BytesRead = 0;
+        HadReadError = false;
         ReadFile(transcript, main: true);
         var subagents = Path.Combine(Path.ChangeExtension(transcript, null), "subagents");
         if (Directory.Exists(subagents))
@@ -105,7 +107,7 @@ internal sealed class UsageReader
         {
             using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
             var state = _files.GetValueOrDefault(path);
-            if (fs.Length < state.Offset) return; // rewritten: leave the counts alone rather than count it twice
+            if (fs.Length < state.Offset) { HadReadError = true; return; } // rewritten: leave the counts alone rather than count it twice
             fs.Position = state.Offset;
             var buf = new byte[Math.Min(Chunk, fs.Length - state.Offset)];
             for (int carry = 0, n; buf.Length > 0 && (n = fs.Read(buf, carry, buf.Length - carry)) > 0;)
@@ -127,7 +129,7 @@ internal sealed class UsageReader
             }
             _files[path] = state;
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { /* gone or locked: try again on the next change */ }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { HadReadError = true; }
     }
 
     static string? TitleOf(ReadOnlySpan<byte> line, string name)

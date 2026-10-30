@@ -17,6 +17,12 @@ The updater suite covers release selection, variant selection, checksums, execut
 
 The Windows suite covers Home size persistence and unsupported-size fallback, plus WPF layout bounds for Small and Medium Weather, Media and GitHub cards in live, empty, loading and error states in both themes. In Home, choose **Edit layout**, then drag a card's visible left or right edge anchor. Widths snap to supported sizes. Focus an anchor and use Left/Right or Home/End to resize with the keyboard. All cards offer Small (one column); Weather, Now playing and GitHub also offer Medium (two columns). Editing remains available with Reduce motion enabled.
 
+The Windows suite also checks the [consumer CLI](cli.md), synthetic quota/transcript fixtures, pipe limits and WPF-free clients. CI runs the isolated normal-app lifecycle script too:
+
+```powershell
+./tests/QNotch.WindowsTests/Test-ConsumerCli.ps1 -Executable ./src/QNotch/bin/Release/net10.0-windows10.0.22621.0/win-x64/QNotch.exe
+```
+
 ## Snapshots
 
 `--snapshot` follows [the shared diagnostics contract](../../spec/diagnostics.md). It does not open the interactive app or take the single-instance lock, so it runs next to a normal instance:
