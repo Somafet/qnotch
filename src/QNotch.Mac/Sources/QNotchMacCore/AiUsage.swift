@@ -2,10 +2,12 @@ import Foundation
 
 /// Plan usage for Claude Code and Codex (Windows AiModels, ClaudeCodeProvider, CodexProvider).
 public struct UsageWindow: Equatable {
+    public var id: String?
+    public var durationSeconds: Int?
     public var label: String
     public var usedPercent: Double
     public var resetsAt: Date?
-    public init(label: String, usedPercent: Double, resetsAt: Date?) { self.label = label; self.usedPercent = usedPercent; self.resetsAt = resetsAt }
+    public init(label: String, usedPercent: Double, resetsAt: Date?, id: String? = nil, durationSeconds: Int? = nil) { self.id = id; self.durationSeconds = durationSeconds; self.label = label; self.usedPercent = usedPercent; self.resetsAt = resetsAt }
     public var usedText: String { "\(Int(usedPercent.rounded()))%" }
     public var leftText: String { "\(Int((100 - usedPercent).rounded()))% left" }
 
@@ -190,7 +192,7 @@ public enum ClaudeUsage {
         }
         let list = windows.compactMap { key, label -> UsageWindow? in
             guard let window = limits[key] as? [String: Any], let used = (window["utilization"] as? NSNumber)?.doubleValue else { return nil }
-            return UsageWindow(label: label, usedPercent: min(100, max(0, used)), resetsAt: AiFormat.date(window["resets_at"] as? String))
+            return UsageWindow(label: label, usedPercent: min(100, max(0, used)), resetsAt: AiFormat.date(window["resets_at"] as? String), id: key, durationSeconds: key == "five_hour" ? 18000 : 604800)
         }
         guard !list.isEmpty else { return .unavailable("Claude Code reported no usage windows.") }
         return .ok(windows: list, plan: planName(usage["subscription_type"] as? String, tier), asOf: now,
@@ -209,7 +211,7 @@ public enum ClaudeUsage {
             if let left = grant["resets_left"] as? Int, left > 0 { count += left }
             if grant["id"] as? String == next { hasNext = true; expires = ends; label = grant["label"] as? String }
         }
-        return hasNext && count > 0 ? BankedResets(count: count, expiresAt: expires, label: label) : nil
+        return grants.isEmpty ? BankedResets(count: 0, expiresAt: nil, label: nil) : hasNext && count > 0 ? BankedResets(count: count, expiresAt: expires, label: label) : nil
     }
 }
 
@@ -219,13 +221,13 @@ public enum CodexUsage {
         for line in text.split(separator: "\n").reversed() where line.contains("\"rate_limits\":{") {
             guard let root = (try? JSONSerialization.jsonObject(with: Data(line.utf8))) as? [String: Any],
                   let limits = (root["payload"] as? [String: Any])?["rate_limits"] as? [String: Any] else { continue }
-            let at = AiFormat.date(root["timestamp"] as? String) ?? now
+            let at = AiFormat.date(root["timestamp"] as? String) ?? Date.distantPast
             let windows = ["primary", "secondary"].compactMap { key -> UsageWindow? in
                 guard let window = limits[key] as? [String: Any], let used = window["used_percent"] as? Double else { return nil }
                 var resets: Date?
                 if let seconds = window["resets_at"] as? Double { resets = Date(timeIntervalSince1970: seconds) }
                 else if let seconds = window["resets_in_seconds"] as? Double { resets = at.addingTimeInterval(seconds) }
-                let item = UsageWindow(label: label(minutes: window["window_minutes"] as? Int ?? 0), usedPercent: min(100, max(0, used)), resetsAt: resets)
+                let item = UsageWindow(label: label(minutes: window["window_minutes"] as? Int ?? 0), usedPercent: min(100, max(0, used)), resetsAt: resets, id: key, durationSeconds: (window["window_minutes"] as? Int).map { $0 * 60 })
                 return resets.map { $0 > now } ?? true ? item : nil
             }
             if !windows.isEmpty { return .ok(windows: windows, plan: planName(limits["plan_type"] as? String), asOf: at, banked: nil) }

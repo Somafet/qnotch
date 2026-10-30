@@ -33,19 +33,31 @@ final class AiModule: NotchModule {
     private(set) var claude = Provider(id: "claude", name: "Claude Code")
     /// Claude Code accounts found at the last refresh, and the latest reading of each by folder path.
     private(set) var accounts: [ClaudeAccount] = []
-    private var claudeResults: [String: UsageResult] = [:]
+    var claudeResults: [String: UsageResult] = [:]
     private(set) var codex = Provider(id: "codex", name: "Codex")
     private(set) var checked: Date?
     private(set) var refreshing = false
+    var consumerIdentity: ConsumerIdentity?
+    var quotaChecked: [String: Date] = [:]
+    var bankedChecked: [String: Date] = [:]
     private var timer: Timer?
     private var clock: Timer?
     private let io = DispatchQueue(label: "qnotch.ai", qos: .utility)
     private let views = NSHashTable<AnyObject>.weakObjects()
     var contextShell: ModuleShell? { context.shell }
 
+    init(accounts: [ClaudeAccount] = []) { self.accounts = accounts }
+
     func initialize(_ context: ModuleContext) {
         self.context = context
         settings = context.settings.load("ai", default: AiSettings())
+        if !Runtime.diagnostics {
+            consumerIdentity = try? ConsumerIdentity(directory: context.settings.directory)
+            context.registries.consumers.capture["usage"] = { [weak self] request in
+                guard let self, let identity = self.consumerIdentity else { throw ConsumerFailure("identity_unavailable") }
+                return try self.consumerUsage(request, identity: identity)
+            }
+        }
         let registry = context.registries
         registry.cards.register(ViewContribution(id: "ai.usage", title: "AI usage", order: 40, symbol: "gauge.with.dots.needle.33percent") { [unowned self] in
             self.track(AiUsageCardView(module: self))
@@ -226,9 +238,11 @@ final class AiModule: NotchModule {
                 // Each account has its own request, timeout and failure; one never affects another.
                 for account in accounts {
                     group.enter()
-                    self.fetchClaude(account) { [weak self] result in
+                    self.fetchClaude(account) { [weak self] result, quotaAt, bankedAt in
                         guard let self else { return group.leave() }
                         self.claudeResults[account.path] = result
+                        self.quotaChecked[account.path] = quotaAt
+                        self.bankedChecked[account.path] = bankedAt
                         if account.path == self.shownAccount?.path { self.claude.result = result }
                         group.leave()
                     }
@@ -240,7 +254,7 @@ final class AiModule: NotchModule {
             group.enter()
             io.async { [weak self] in
                 let result = Self.readCodex()
-                DispatchQueue.main.async { self?.codex.result = result; group.leave() }
+                DispatchQueue.main.async { self?.codex.result = result; self?.quotaChecked["codex"] = Date(); group.leave() }
             }
         }
         group.notify(queue: .main) { [weak self] in
@@ -252,11 +266,13 @@ final class AiModule: NotchModule {
         }
     }
 
-    private func fetchClaude(_ account: ClaudeAccount, done: @escaping (UsageResult) -> Void) {
+    private func fetchClaude(_ account: ClaudeAccount, done: @escaping (UsageResult, Date, Date?) -> Void) {
         io.async {
             var result = Self.readClaude(account)
-            if case .ok = result { result = ClaudeUsage.adding(Self.readClaudeBanked(account), to: result) }
-            DispatchQueue.main.async { done(result) }
+            let quotaAt = Date()
+            var bankedAt: Date?
+            if case .ok = result { result = ClaudeUsage.adding(Self.readClaudeBanked(account), to: result); bankedAt = Date() }
+            DispatchQueue.main.async { done(result, quotaAt, bankedAt) }
         }
     }
 

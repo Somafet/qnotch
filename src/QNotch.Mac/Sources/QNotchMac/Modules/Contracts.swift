@@ -91,6 +91,7 @@ final class ModuleRegistries {
     let searchSources = Registry<SearchSource>()
     let settingsSections = Registry<ViewContribution>()
     let menuActions = Registry<MenuActionContribution>()
+    let consumers = ConsumerRegistry()
     /// Set by the shell around each module's `initialize`.
     var owner: String? {
         didSet {

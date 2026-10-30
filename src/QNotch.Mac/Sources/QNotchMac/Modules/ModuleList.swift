@@ -68,6 +68,8 @@ enum ModuleList {
                    symbol: "clock.arrow.2.circlepath", tint: .systemBrown) { ScheduledModule() }
     ]
 
+    static let consumerModules = ["usage": "ai", "agents": "agents"]
+
     static func make(disabled: [String], enabledOptional: [String] = []) -> [NotchModule] {
         all.filter { !disabled.contains($0.id) && (!GeneralSettings.defaultOffModules.contains($0.id) || enabledOptional.contains($0.id)) }.map { $0.make() }
     }

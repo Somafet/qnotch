@@ -7,7 +7,7 @@ Status: functional development milestone, not a public release. A native Swift/A
 - Apple silicon (arm64), macOS 13 or newer. Intel and universal downloads are not supported by this milestone.
 - Xcode 15 or newer, including its macOS SDK and XCTest; Swift 5.9 or newer. One package dependency, [Sparkle](https://sparkle-project.org) for updates, pinned exactly in `Package.swift` and `Package.resolved`; SwiftPM fetches it on the first build. No Windows tooling.
 - A logged-in graphical macOS session for the native UI smoke test and interactive app. Headless geometry/state/settings tests run through XCTest.
-- The deployment target is macOS 13. CI runs on macOS 14; development evidence also records the local OS. Compatibility on a physical macOS 13 machine still needs validation before a public release.
+- The deployment target is macOS 13. CI runs on macOS 15; development evidence also records the local OS. Compatibility on a physical macOS 13 machine still needs validation before a public release.
 
 From the repository root:
 
@@ -136,3 +136,7 @@ The Mac update channel is `QNotchMacCore/UpdateChannel.swift`: the Sparkle appca
 Mac releases are signed with Developer ID under the hardened runtime, notarized, stapled, and published as `QNotch-macos-arm64.dmg` by the `macos-v*` tag workflow; see [Releases](../releases.md#mac-channel) for the workflow, its credentials, and a local signed build. Windows tags, updater endpoint, filenames, ZIP layout, and publish profiles remain unchanged.
 
 Before the first public download, verify installation of the published disk image on a clean Mac and on macOS 13.
+
+## Read-only consumer CLI
+
+The native development app supports cached `usage --json` and `agents --json` queries. See [Mac CLI usage](cli.md) and [validation evidence](cli-validation.md). Queries require an existing normal instance and never launch the GUI or refresh providers.

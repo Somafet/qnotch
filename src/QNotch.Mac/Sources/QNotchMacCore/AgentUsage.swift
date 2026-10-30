@@ -64,17 +64,19 @@ public enum AgentPrices {
 /// a file that shrank was rewritten.
 public final class LineTail {
     public private(set) var offset: UInt64 = 0
+    public private(set) var readSucceeded = false
     public init() {}
 
     /// Returns nil when the file shrank (the caller decides whether to start over).
     public func read(_ url: URL, maxBytes: Int = 64 << 20) -> [Data]? {
+        readSucceeded = false
         guard let handle = try? FileHandle(forReadingFrom: url) else { return [] }
         defer { try? handle.close() }
-        let end = (try? handle.seekToEnd()) ?? 0
+        guard let end = try? handle.seekToEnd() else { return [] }
+        readSucceeded = end >= offset && end - offset <= UInt64(maxBytes)
         if end < offset { return nil }
         guard end > offset else { return [] }
-        try? handle.seek(toOffset: offset)
-        let data = (try? handle.read(upToCount: min(Int(end - offset), maxBytes))) ?? Data()
+        guard (try? handle.seek(toOffset: offset)) != nil, let data = try? handle.read(upToCount: min(Int(end - offset), maxBytes)) else { readSucceeded = false; return [] }
         guard let last = data.lastIndex(of: 0x0A) else { return [] }
         offset += UInt64(last - data.startIndex + 1)
         return data[data.startIndex..<last].split(separator: 0x0A, omittingEmptySubsequences: true).map { Data($0) }
@@ -94,6 +96,7 @@ public final class TranscriptUsage {
     private var aiTitle: String?
     private var customTitle: String?
     public private(set) var bytesRead = 0
+    public private(set) var readComplete = false
 
     public init() {}
 
@@ -108,6 +111,7 @@ public final class TranscriptUsage {
 
     public func read(_ transcript: URL) {
         bytesRead = 0
+        readComplete = true
         readFile(transcript, main: true)
         let subagents = transcript.deletingPathExtension().appendingPathComponent("subagents")
         for name in ((try? FileManager.default.contentsOfDirectory(atPath: subagents.path)) ?? []).sorted() where name.hasSuffix(".jsonl") {
@@ -126,7 +130,8 @@ public final class TranscriptUsage {
         tails[url.path] = tail
         let before = tail.offset
         // Rewritten: leave the counts alone rather than count it twice.
-        guard let lines = tail.read(url) else { return }
+        guard let lines = tail.read(url) else { readComplete = false; return }
+        if !tail.readSucceeded { readComplete = false }
         bytesRead += Int(tail.offset - before)
         for line in lines {
             if line.range(of: Data(#""type":"assistant""#.utf8)) != nil { add(line, file: url.path) }
@@ -156,13 +161,14 @@ public final class TranscriptUsage {
         let entry = AgentUsage(tokens: tokens, cost: cost ?? 0, unpriced: cost == nil)
         let id = message["id"] as? String
         var day: String
-        if let previous = last[file], id != nil, id == previous.id {
+        let key = file + ":" + (id ?? UUID().uuidString)
+        if let previous = last[key], id != nil, id == previous.id {
             day = previous.day
             days[day] = (days[day] ?? AgentUsage()) - previous.usage // a later line of the same reply replaces it
         } else {
             day = (root["timestamp"] as? String).flatMap { Self.iso.date(from: $0) ?? ISO8601DateFormatter().date(from: $0) }.map(Self.dayKey) ?? Self.dayKey(Date())
         }
-        last[file] = (id, day, entry)
+        last[key] = (id, day, entry)
         days[day] = (days[day] ?? AgentUsage()) + entry
     }
 }

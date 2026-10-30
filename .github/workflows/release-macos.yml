@@ -17,7 +17,7 @@ concurrency:
 jobs:
   release:
     if: github.repository == 'Somafet/qnotch'
-    runs-on: macos-14
+    runs-on: macos-15
     timeout-minutes: 60
     permissions:
       contents: write
@@ -123,7 +123,7 @@ jobs:
   appcast:
     needs: release
     if: github.repository == 'Somafet/qnotch'
-    runs-on: macos-14
+    runs-on: macos-15
     timeout-minutes: 15
     permissions:
       contents: write

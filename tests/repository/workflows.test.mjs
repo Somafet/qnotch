@@ -56,7 +56,7 @@ test('Windows release workflow validates tags and both packages before guarded p
 
 test('Mac validation builds a real native app, runs regressions and UI smoke, checks its snapshots, without signing secrets or publishing', () => {
   const mac = yaml('.github/workflows/ci.yml').jobs.macos;
-  assert.equal(mac['runs-on'], 'macos-14');
+  assert.equal(mac['runs-on'], 'macos-15');
   const runs = mac.steps.filter(step => step.run).map(step => step.run);
   assert.deepEqual(runs, ['bash scripts/macos/build.sh', 'bash scripts/macos/test.sh', 'bash scripts/macos/smoke.sh',
     'node scripts/check-snapshots.mjs dist/macos/smoke']);
@@ -81,6 +81,8 @@ test('Mac release workflow tests, signs, notarizes and publishes only through th
   assert.equal(release.concurrency['cancel-in-progress'], false);
   assert.equal(release.permissions.contents, 'read');
   const job = release.jobs.release;
+  assert.equal(job['runs-on'], 'macos-15');
+  assert.equal(release.jobs.appcast['runs-on'], 'macos-15');
   assert.equal(job.if, "github.repository == 'Somafet/qnotch'");
   assert.equal(job.permissions.contents, 'write');
   const runs = job.steps.filter(step => step.run).map(step => step.run);

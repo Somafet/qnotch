@@ -238,6 +238,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
                 surface.filesDropped = nil
                 surface.acceptFiles(false)
             }
+            for (command, owner) in ModuleList.consumerModules where owner == id { registries.consumers.capture[command] = nil }
             registries.removeAll(owner: id)
             sounds.removeAll(owner: id)
             shortcuts.remove { $0.owner == id }
