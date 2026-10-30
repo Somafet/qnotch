@@ -32,9 +32,12 @@ final class AgentsModule: NotchModule {
     private let pills = NSHashTable<AgentPillView>.weakObjects()
     var contextShell: ModuleShell? { context.shell }
     private var t3: T3Watch?
+    var consumerT3Health: String { t3?.health ?? "initializing" }
     private let io = DispatchQueue(label: "qnotch.agents.usage", qos: .utility)
     /// Usage readers by session id (touched on `io` only), and today's usage per session on main.
     private var readers: [String: TranscriptUsage] = [:]
+    var consumerIdentity: ConsumerIdentity?
+    var consumerUsageCache: [String: (days: [String: AgentUsage], checked: Date, available: Bool)] = [:]
     private var reading: Set<String> = []
     private var stale: Set<String> = []
     private(set) var usage: [String: (cwd: String, today: AgentUsage)] = [:]
@@ -124,6 +127,13 @@ final class AgentsModule: NotchModule {
         settings = context.settings.load("agents", default: AgentsSettings())
         context.sounds.add("agents.needsyou", title: "Agent needs you", hint: "An agent waits for your answer.", defaultName: "Tink", order: 20)
         context.sounds.add("agents.done", title: "Agent finished", hint: "An agent finished its turn.", defaultName: "Hero", order: 21)
+        if !Runtime.diagnostics {
+            consumerIdentity = try? ConsumerIdentity(directory: context.settings.directory)
+            context.registries.consumers.capture["agents"] = { [weak self] request in
+                guard let self, let identity = self.consumerIdentity else { throw ConsumerFailure("identity_unavailable") }
+                return try self.consumerAgents(request, identity: identity)
+            }
+        }
         let registry = context.registries
         registry.tabs.register(ViewContribution(id: "agents", title: "Agents", order: 35, symbol: "sparkles") { [unowned self] in
             let view = AgentsTabView(module: self)
@@ -229,7 +239,7 @@ final class AgentsModule: NotchModule {
 
     /// Every event means the transcript grew: read the new lines 3 s later, so a burst costs one read.
     private func readUsage(_ session: AgentSession) {
-        guard let path = session.transcript, !path.isEmpty else { return }
+        guard session.agent == "claude", let path = session.transcript, !path.isEmpty else { return }
         let id = session.id, cwd = session.cwd
         if reading.contains(id) { stale.insert(id); return }
         reading.insert(id)
@@ -240,7 +250,10 @@ final class AgentsModule: NotchModule {
             self.readers[id] = reader
             reader.read(URL(fileURLWithPath: path))
             let today = reader.today, title = reader.title
+            let days = reader.days, available = reader.readComplete
+            let checked = Date()
             DispatchQueue.main.async {
+                self.consumerUsageCache[id] = (days, checked, available)
                 self.reading.remove(id)
                 if self.stale.contains(id), let session = self.board.sessions.first(where: { $0.id == id }) { self.readUsage(session) }
                 // Past midnight the reader's "today" starts at zero; keeping yesterday's total would show it as today.

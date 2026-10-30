@@ -1,0 +1,27 @@
+{
+  "platform": "macOS-26.3-arm64-arm-64bit-Mach-O",
+  "machine": "arm64",
+  "idle": {
+    "seconds": 10.010270332975779,
+    "cpu_percent_one_core": 0.0011868410746973526,
+    "resident_bytes_start": 66420736,
+    "resident_bytes_end": 66289664,
+    "method": "proc_pid_rusage v2; two endpoints; collapsed, AI providers disabled, Agents enabled, T3 may observe this active conversation"
+  },
+  "sample_count": 40,
+  "latency_ms": {
+    "median": 7.893520989455283,
+    "p95": 12.132333009503782,
+    "max": 31.868499994743615
+  },
+  "checks": "passed",
+  "limitations": "Synthetic disabled-provider configuration; no live quota accuracy or matched pre-change idle baseline.",
+  "date": "2026-10-30",
+  "hardware_model": "Mac14,2",
+  "physical_memory_bytes": 8589934592,
+  "os_build": "25D125",
+  "base_commit": "22564f53e7a005abb279f07084b8b8a4f407d16a",
+  "build": "release arm64; development working tree includes preserved unrelated analytics edits",
+  "independent_validation": "exported staged sources: 156 XCTest cases passed without analytics",
+  "baseline": "No matched pre-change run; historical Mac measurements use different module configurations."
+}

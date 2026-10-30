@@ -136,3 +136,7 @@ The Mac update channel is `QNotchMacCore/UpdateChannel.swift`: the Sparkle appca
 Mac releases are signed with Developer ID under the hardened runtime, notarized, stapled, and published as `QNotch-macos-arm64.dmg` by the `macos-v*` tag workflow; see [Releases](../releases.md#mac-channel) for the workflow, its credentials, and a local signed build. Windows tags, updater endpoint, filenames, ZIP layout, and publish profiles remain unchanged.
 
 Before the first public download, verify installation of the published disk image on a clean Mac and on macOS 13.
+
+## Read-only consumer CLI
+
+The native development app supports cached `usage --json` and `agents --json` queries. See [Mac CLI usage](cli.md) and [validation evidence](cli-validation.md). Queries require an existing normal instance and never launch the GUI or refresh providers.

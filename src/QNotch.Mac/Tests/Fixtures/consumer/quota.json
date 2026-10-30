@@ -1,0 +1,1 @@
+{"rate_limits_available":true,"subscription_type":"max","rate_limits":{"five_hour":{"utilization":42,"resets_at":"2099-10-30T20:00:00Z"},"seven_day_sonnet":{"utilization":17,"resets_at":"2099-11-02T20:00:00Z"}}}
