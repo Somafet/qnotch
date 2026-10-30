@@ -192,7 +192,8 @@ internal static class ConsumerChecks
             Marshal.Copy(descriptor, bytes, 0, bytes.Length);
             var security = new RawSecurityDescriptor(bytes, 0);
             using var identity = WindowsIdentity.GetCurrent();
-            Check(security.Owner == identity.User && security.DiscretionaryAcl?.Count == 1 &&
+            Check(security.Owner == identity.User, "pipe owner is current token user, including elevated runners");
+            Check(security.DiscretionaryAcl?.Count == 1 &&
                 security.DiscretionaryAcl[0] is CommonAce ace && ace.SecurityIdentifier == identity.User && ace.AceQualifier == AceQualifier.AccessAllowed &&
                 security.ControlFlags.HasFlag(ControlFlags.DiscretionaryAclProtected), "protected pipe ACL grants only current user");
         }
