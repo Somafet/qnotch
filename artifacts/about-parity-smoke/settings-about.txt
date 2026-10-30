@@ -1,0 +1,43 @@
+"QNotch"
+[Item] "General" #settings-nav-general
+[Item] "Features" #settings-nav-features
+[Item] "Hotkeys" #settings-nav-hotkeys
+[Item] "Sounds" #settings-nav-sounds
+[Item] "Appearance" #settings-nav-appearance
+[Item] "Game mode" #settings-nav-gamemode
+[Item] "Clipboard" #settings-nav-clipboard
+[Item] "AI" #settings-nav-ai
+[Item] "Agents" #settings-nav-agents
+[Item] "GitHub" #settings-nav-github
+[Item] "Weather" #settings-nav-weather
+[Item] "Notifications" #settings-nav-notifications
+[Item] "About" #settings-nav-about selected
+"About"
+"QNotch"
+"Version 0.4.0"
+"Updates"
+"Keep automatic update checks enabled?"
+"QNotch checks GitHub for new versions automatically. You decide when to install each update. You can change this preference below at any time."
+[Button] "Keep enabled" #updates-keep-enabled
+[Button] "Turn off" #updates-turn-off
+"Check for updates"
+"A new version is ready. QNotch will restart after you choose Update and restart."
+[Button] "Check for updates" #updates-check
+  "Check now"
+"Check for updates automatically"
+"Checks GitHub after startup and every six hours. Updates install only when you choose Update and restart."
+[Toggle] "Check for updates automatically" #updates-auto-check checked
+"Release notes"
+[Button] "Release notes"
+  "Open GitHub"
+"QNotch 0.5.0 is available"
+[Button] "New version" #updates-install
+  "Update and restart"
+"Quit QNotch"
+"Stops QNotch and its running features."
+[Button] "Quit QNotch" #quit-qnotch
+"Using QNotch"
+"Welcome tour"
+"What QNotch does, your features and accounts, in a few steps."
+[Button] "Welcome tour" #about-welcome-tour
+  "Show welcome tour"

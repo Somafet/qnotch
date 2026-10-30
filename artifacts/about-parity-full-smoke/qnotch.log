@@ -1,0 +1,8 @@
+2026-10-30 10:15:27.989 INFO Modules: stats, media, clipboard, ai, agents, note, github, filetray, notifications, capture, scheduled, volume, timer, colorpicker, weather, search, terminal (off: none)
+2026-10-30 10:15:39.253 INFO Game bar on (Forced on)
+2026-10-30 10:15:40.106 INFO Game bar off
+2026-10-30 10:15:57.851 INFO Game bar on (Forced on)
+2026-10-30 10:15:58.573 INFO Game bar off
+2026-10-30 10:15:59.541 INFO Welcome tour finished (OnDemand); features off: none
+2026-10-30 10:15:59.680 INFO Welcome tour skipped at open (OnDemand); features off: none
+2026-10-30 10:15:59.942 INFO Debug channel listening on \\.\pipe\QNotch.Debug.smoke-96d83f2f28c44eac8cad563ee0e0b805

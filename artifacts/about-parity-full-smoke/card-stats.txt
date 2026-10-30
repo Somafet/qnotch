@@ -1,0 +1,14 @@
+"System"
+"11%"
+"CPU"
+[Progress] 11 of 100
+"25.5/31.9 GB"
+"RAM"
+[Progress] 79 of 100
+"18%"
+"GPU"
+"↓ "
+"44 KB/s"
+"   ↑ "
+"23 KB/s"
+"NET"

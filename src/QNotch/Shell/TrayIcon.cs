@@ -75,7 +75,7 @@ public sealed unsafe class TrayIcon : IDisposable
             var ev = (int)(lParam & 0xFFFF);
             if (ev == Native.WM_LBUTTONUP) _shell.ToggleFromUser();
             else if (ev == Native.WM_RBUTTONUP) ShowMenu();
-            else if (ev == BalloonUserClick) _shell.OpenSettings("updates");
+            else if (ev == BalloonUserClick) _shell.OpenSettings("about");
         }
         else if ((uint)msg == _taskbarCreated) Add();
         return 0;
@@ -99,7 +99,7 @@ public sealed unsafe class TrayIcon : IDisposable
             catch (Exception ex) { Log.Warn($"Tray action '{action.Id}' failed", ex); }
         }
         m.Items.Add(Item(_updates.State.HasUpdate ? $"Update to {_updates.State.AvailableVersion}…" : "Updates…",
-            () => _shell.OpenSettings("updates")));
+            () => _shell.OpenSettings("about")));
         m.Items.Add(new Separator());
         m.Items.Add(new MenuItem { Header = "Game mode", Style = (Style)Application.Current.FindResource("MenuHeader") });
         foreach (var o in Enum.GetValues<GameModeOverride>())

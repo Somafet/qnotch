@@ -1,0 +1,28 @@
+"A"
+"Alex"
+"Thursday, October 29"
+[Tab] "Home" #tab-home
+[Tab] "Search" #tab-search
+[Tab] "Media" #tab-media
+[Tab] "Clipboard" #tab-clipboard
+[Tab] "AI" #tab-ai
+[Tab] "Agents" #tab-agents
+[Tab] "Files" #tab-files
+[Tab] "Notifications" #tab-notifications
+[Tab] "Scheduled" #tab-scheduled selected
+[Tab] "Terminal" #tab-terminal
+[Toggle] "Mute notifications" #panel-notifications-mute
+[Toggle] "Keep panel open" #panel-pin
+[Button] "Settings" #open-settings
+"Nightly backup"
+"Paused · last run 2:00 AM"
+[Button] "Resume"
+[Button] "Delete"
+"PR review check"
+"Every 10 min · next 9:50 AM · last run 9:40 AM"
+[Button] "Pause"
+[Button] "Delete"
+"Sync dotfiles"
+"Every 1 h · next 10:00 AM · failed 9:00 AM"
+[Button] "Pause"
+[Button] "Delete"

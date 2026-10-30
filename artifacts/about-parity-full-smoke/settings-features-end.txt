@@ -1,0 +1,38 @@
+"QNotch"
+[Item] "General" #settings-nav-general
+[Item] "Features" #settings-nav-features selected
+[Item] "Hotkeys" #settings-nav-hotkeys
+[Item] "Sounds" #settings-nav-sounds
+[Item] "Appearance" #settings-nav-appearance
+[Item] "Game mode" #settings-nav-gamemode
+[Item] "Clipboard" #settings-nav-clipboard
+[Item] "AI" #settings-nav-ai
+[Item] "Agents" #settings-nav-agents
+[Item] "GitHub" #settings-nav-github
+[Item] "Weather" #settings-nav-weather
+[Item] "Notifications" #settings-nav-notifications
+[Item] "About" #settings-nav-about
+"Show in the notch"
+[Toggle] "Timer: Show in the notch" #presentation-notch-timer checked
+"Color picker"
+"Pick a color anywhere on screen and copy its hex code."
+[Toggle] "Enable Color picker" #feature-colorpicker checked
+"Show on Home"
+[Toggle] "Color picker: Show on Home" #presentation-card-colorpicker checked
+"Weather"
+"The yr.no forecast for a place you pick, on a Home card, in the pill and in the game bar."
+[Toggle] "Enable Weather" #feature-weather checked
+"Show on Home"
+[Toggle] "Weather: Show on Home" #presentation-card-weather checked
+"Show in the notch"
+[Toggle] "Weather: Show in the notch" #presentation-notch-weather checked
+"Search"
+"One search box for clipboard history, files, notes, notifications, tasks, tabs and settings, with its own hotkey."
+[Toggle] "Enable Search" #feature-search checked
+"Show as a tab"
+[Toggle] "Search: Show as a tab" #presentation-tab-search checked
+"Terminal"
+"An interactive Windows shell in your home folder. Sessions stay open when the panel closes. Local opt-in; off by default."
+[Toggle] "Enable Terminal" #feature-terminal checked
+"Show as a tab"
+[Toggle] "Terminal: Show as a tab" #presentation-tab-terminal checked

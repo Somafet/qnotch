@@ -1,0 +1,47 @@
+"QNotch"
+[Item] "General" #settings-nav-general
+[Item] "Features" #settings-nav-features
+[Item] "Updates" #settings-nav-updates
+[Item] "Hotkeys" #settings-nav-hotkeys
+[Item] "Sounds" #settings-nav-sounds
+[Item] "Appearance" #settings-nav-appearance selected
+[Item] "Game mode" #settings-nav-gamemode
+[Item] "Clipboard" #settings-nav-clipboard
+[Item] "AI" #settings-nav-ai
+[Item] "Agents" #settings-nav-agents
+[Item] "GitHub" #settings-nav-github
+[Item] "Weather" #settings-nav-weather
+[Item] "Notifications" #settings-nav-notifications
+"Appearance"
+"Theme"
+"Follow Windows, or force dark or light."
+[Toggle] "System"
+[Toggle] "Dark" checked
+[Toggle] "Light"
+"Accent color"
+"Reduce motion"
+"Skips animations. Always on when Windows animation effects are off."
+[Toggle] "Reduce motion"
+"Display name"
+"Shown in the panel header."
+[Field] "Display name" value="Alex"
+"Profile image"
+"A square image works best."
+[Button] "Choose image"
+[Button] "Remove"
+"Home cards"
+"Hidden cards keep their slot and return to it when shown again."
+"System"
+[Toggle] "System" checked
+"Weather"
+[Toggle] "Weather" checked
+"Now playing"
+[Toggle] "Now playing" checked
+"Volume"
+[Toggle] "Volume" checked
+"Timer"
+[Toggle] "Timer" checked
+"Color picker"
+[Toggle] "Color picker" checked
+"Clipboard"
+[Toggle] "Clipboard" checked

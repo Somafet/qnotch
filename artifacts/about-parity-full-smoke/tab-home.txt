@@ -1,0 +1,55 @@
+"A"
+"Alex"
+"Friday, October 30"
+[Tab] "Home" #tab-home selected
+[Tab] "Search" #tab-search
+[Tab] "Media" #tab-media
+[Tab] "Clipboard" #tab-clipboard
+[Tab] "AI" #tab-ai
+[Tab] "Agents" #tab-agents
+[Tab] "Files" #tab-files
+[Tab] "Notifications" #tab-notifications
+[Tab] "Scheduled" #tab-scheduled
+[Tab] "Terminal" #tab-terminal
+[Toggle] "Mute notifications" #panel-notifications-mute
+[Toggle] "Edit layout" #panel-edit
+[Toggle] "Keep panel open" #panel-pin
+[Button] "Settings" #open-settings
+"System"
+"14%"
+"CPU"
+[Progress] 14 of 100
+"25.6/31.9 GB"
+"RAM"
+[Progress] 80 of 100
+"3%"
+"GPU"
+"↓ "
+"1.1 MB/s"
+"   ↑ "
+"90 KB/s"
+"NET"
+"Weather"
+[Button] "Open on yr.no"
+"9°"
+"Partly cloudy"
+"Oslo · Feels 7° · 4 m/s"
+"Today"
+"Sat"
+"Sun"
+"Mon"
+"Now playing"
+"Midnight City"
+"M83"
+"4:03"
+"1:12"
+[Item] "Spotify" selected
+[Item] "YouTube Music"
+[Item] "Chrome"
+[Button] "Previous"
+[Button] "Pause"
+[Button] "Next"
+"Volume"
+[Button] "Mute or unmute"
+"62%"
+[Slider] "Volume" 62 of 100

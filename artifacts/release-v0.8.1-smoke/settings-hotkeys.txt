@@ -1,0 +1,43 @@
+"QNotch"
+[Item] "General" #settings-nav-general
+[Item] "Features" #settings-nav-features
+[Item] "Updates" #settings-nav-updates
+[Item] "Hotkeys" #settings-nav-hotkeys selected
+[Item] "Sounds" #settings-nav-sounds
+[Item] "Appearance" #settings-nav-appearance
+[Item] "Game mode" #settings-nav-gamemode
+[Item] "Clipboard" #settings-nav-clipboard
+[Item] "AI" #settings-nav-ai
+[Item] "Agents" #settings-nav-agents
+[Item] "GitHub" #settings-nav-github
+[Item] "Weather" #settings-nav-weather
+[Item] "Notifications" #settings-nav-notifications
+"Hotkeys"
+"Click a box, then press the new shortcut. Esc cancels, Backspace turns the shortcut off."
+"Toggle panel"
+"Opens or closes the panel and takes the keyboard."
+"Ctrl+Alt+N"
+"Cycle Game mode"
+"Auto, Force on, Force off."
+"Ctrl+Alt+G"
+"Open search"
+"Opens the Search tab with the cursor in the box."
+"Ctrl+Alt+F"
+"Launch AI app 1"
+"The app in that slot (Settings, AI)."
+"Alt+1"
+"Launch AI app 2"
+"The app in that slot (Settings, AI)."
+"Alt+2"
+"Launch AI app 3"
+"The app in that slot (Settings, AI)."
+"Alt+3"
+"Launch AI app 4"
+"The app in that slot (Settings, AI)."
+"Alt+4"
+"Launch AI app 5"
+"The app in that slot (Settings, AI)."
+"Alt+5"
+"Launch AI app 6"
+"The app in that slot (Settings, AI)."
+"Alt+6"

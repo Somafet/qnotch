@@ -1,0 +1,4 @@
+"Volume"
+[Button] "Mute or unmute"
+"62%"
+[Slider] "Volume" 62 of 100

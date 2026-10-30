@@ -1,0 +1,42 @@
+"QNotch"
+[Item] "General" #settings-nav-general
+[Item] "Features" #settings-nav-features
+[Item] "Hotkeys" #settings-nav-hotkeys
+[Item] "Sounds" #settings-nav-sounds
+[Item] "Appearance" #settings-nav-appearance
+[Item] "Game mode" #settings-nav-gamemode
+[Item] "Clipboard" #settings-nav-clipboard
+[Item] "AI" #settings-nav-ai
+[Item] "Agents" #settings-nav-agents
+[Item] "GitHub" #settings-nav-github
+[Item] "Weather" #settings-nav-weather
+[Item] "Notifications" #settings-nav-notifications selected
+[Item] "About" #settings-nav-about
+"Try it"
+"Send a sample notification using your current alert settings."
+[Button] "Try it"
+  "Send test"
+"Command line and pipe"
+"Run QNotch.exe notify \"Title\" \"Text\" from a script. Use QNotch.exe notify --help for options. Apps can also send JSON to the current-user named pipe."
+"Listening on \\\\.\\pipe\\QNotch.Notify.smoke-11104"
+"Local HTTP"
+"Accept HTTP requests"
+"On this computer only. Requires the token below; web pages are refused."
+[Toggle] "Accept HTTP requests" checked
+"Port"
+"1024 to 65535. Press Enter to apply."
+[Field] "Port" value="47821"
+"Token"
+"Authorization: Bearer <token>. Stored in Windows Credential Manager."
+"012345..."
+[Button] "Copy"
+[Button] "New token"
+"Listening on http://127.0.0.1:47821"
+"Apps"
+"Build"
+[Toggle] "Build" checked
+"Claude Code"
+[Toggle] "Claude Code" checked
+"Deploy"
+[Toggle] "Deploy" checked
+"Turn an app off to silence its alerts and unread count. Its notifications still go into history."

@@ -1,0 +1,18 @@
+"QNotch is ready"
+"Midnight City"
+"Final touches"
+"A few last choices. Settings has everything else."
+"Check for updates automatically"
+"Looks for a new release on GitHub every six hours."
+[Toggle] "Check for updates automatically" #finish-updates checked
+"Start with Windows"
+"Opens QNotch when you sign in."
+[Toggle] "Start with Windows" #finish-autostart checked
+"Tips"
+"Right-click the tray icon for Settings and Game mode."
+"Drag files onto the notch to keep them within reach."
+"Press Ctrl+Alt+F to search clipboard, files, notes and settings."
+[Button] "Close"
+[Button] "Skip" #onboarding-skip
+[Button] "Back" #onboarding-back
+[Button] "Open QNotch" #onboarding-primary

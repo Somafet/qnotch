@@ -9,13 +9,9 @@ namespace QNotch.Shell.Settings;
 
 public static class GeneralSection
 {
-    public static FrameworkElement Create(GeneralSettings gs, SettingsStore store, IReadOnlyList<SetupCode.Section> share, Action restart, Action resetSpots, Action showTour)
+    public static FrameworkElement Create(GeneralSettings gs, SettingsStore store, IReadOnlyList<SetupCode.Section> share, Action restart, Action resetSpots)
     {
         var page = UiKit.Page("General");
-
-        var tour = new Button { Content = "Show welcome tour", Padding = new Thickness(14, 6, 14, 6) };
-        tour.Click += (_, _) => showTour();
-        page.Children.Add(UiKit.Row("Welcome tour", "What QNotch does, your shortcut and your accounts again. Turn features on or off in Features.", tour));
 
         var combo = new ComboBox { Width = 260 };
         var mons = Monitors.List();

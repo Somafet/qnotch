@@ -133,7 +133,7 @@ public partial class App : Application
         _updates = new UpdateService(gs, Dispatcher, _store, () => Shutdown());
         var updates = _updates;
         segments.Register(new SegmentDescriptor("updates.pill", SegmentSlot.PillRight, 2,
-            () => UpdatesSection.Indicator(updates, () => shell.OpenSettings("updates"))));
+            () => UpdatesSection.Indicator(updates, () => shell.OpenSettings("about"))));
 
         // Modules the user turned off are never created. A change in Settings, Features applies on the next start.
         foreach (var (old, ids) in ModuleList.Renamed)
@@ -146,9 +146,8 @@ public partial class App : Application
         // Built-in tab and settings sections (modules add theirs in Initialize).
         tabs.Register(new TabDescriptor("home", "Home", Glyphs.Home, 0, () => new HomeView(layout, shell)));
         sections.Register(new SettingsSectionDescriptor("features", "Features", Glyphs.Apps, 5, () => FeaturesSection.Create(gs, _store!, ModuleList.All, bootDisabled, Restart, layout, tabs, segments)));
-        sections.Register(new SettingsSectionDescriptor("general", "General", Glyphs.Settings, 0, () => GeneralSection.Create(gs, _store!, SetupCode.All(ModuleList.All), Restart, shell.Nudge.ResetAll,
-            () => ShowTour(gs, _store!, shortcuts, shell))));
-        sections.Register(new SettingsSectionDescriptor("updates", "Updates", UpdatesSection.UpdateGlyph, 6, () => UpdatesSection.Create(gs, updates)));
+        sections.Register(new SettingsSectionDescriptor("general", "General", Glyphs.Settings, 0, () => GeneralSection.Create(gs, _store!, SetupCode.All(ModuleList.All), Restart, shell.Nudge.ResetAll)));
+        sections.Register(new SettingsSectionDescriptor("about", "About", "\uE946", 1000, () => AboutSection.Create(gs, updates, () => ShowTour(gs, _store!, shortcuts, shell), () => Shutdown())));
         sections.Register(new SettingsSectionDescriptor("appearance", "Appearance", Glyphs.Color, 10, () => AppearanceSection.Create(gs, layout)));
         sections.Register(new SettingsSectionDescriptor("hotkeys", "Hotkeys", "", 7, () => HotkeysSection.Create(shortcuts)));
         sections.Register(new SettingsSectionDescriptor("sounds", "Sounds", Glyphs.Volume, 8, () => SoundsSection.Create(sounds)));
@@ -216,7 +215,7 @@ public partial class App : Application
                 if (!promptPending || mode == ShellMode.GameBar) return;
                 promptPending = false;
                 shell.ModeChanged -= PromptUpdateChoice;
-                if (updates.State.NeedsPreferenceChoice) shell.OpenSettings("updates");
+                if (updates.State.NeedsPreferenceChoice) shell.OpenSettings("about");
             }
             shell.ModeChanged += PromptUpdateChoice;
             Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ApplicationIdle, () => PromptUpdateChoice(shell.Mode));

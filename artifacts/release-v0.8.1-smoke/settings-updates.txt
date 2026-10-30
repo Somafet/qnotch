@@ -1,0 +1,32 @@
+"QNotch"
+[Item] "General" #settings-nav-general
+[Item] "Features" #settings-nav-features
+[Item] "Updates" #settings-nav-updates selected
+[Item] "Hotkeys" #settings-nav-hotkeys
+[Item] "Sounds" #settings-nav-sounds
+[Item] "Appearance" #settings-nav-appearance
+[Item] "Game mode" #settings-nav-gamemode
+[Item] "Clipboard" #settings-nav-clipboard
+[Item] "AI" #settings-nav-ai
+[Item] "Agents" #settings-nav-agents
+[Item] "GitHub" #settings-nav-github
+[Item] "Weather" #settings-nav-weather
+[Item] "Notifications" #settings-nav-notifications
+"Updates"
+"Keep automatic update checks enabled?"
+"QNotch checks GitHub for new versions automatically. You decide when to install each update. You can change this preference below at any time."
+[Button] "Keep enabled" #updates-keep-enabled
+[Button] "Turn off" #updates-turn-off
+"Check for updates automatically"
+"Checks GitHub after startup and every six hours. Updates install only when you choose Update and restart."
+[Toggle] "Check for updates automatically" #updates-auto-check checked
+"Current version"
+"QNotch 0.8.1"
+[Button] "Current version" #updates-check
+  "Check now"
+"A new version is ready. QNotch will restart after you choose Update and restart."
+"QNotch 0.5.0 is available"
+[Button] "New version" #updates-install
+  "Update and restart"
+"Your settings and saved history stay in place. The previous executable is kept as a backup."
+[Button] "Release notes on GitHub"

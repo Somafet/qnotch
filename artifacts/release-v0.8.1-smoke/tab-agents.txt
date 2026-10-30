@@ -1,0 +1,42 @@
+"A"
+"Alex"
+"Thursday, October 29"
+[Tab] "Home" #tab-home
+[Tab] "Search" #tab-search
+[Tab] "Media" #tab-media
+[Tab] "Clipboard" #tab-clipboard
+[Tab] "AI" #tab-ai
+[Tab] "Agents" #tab-agents selected
+[Tab] "Files" #tab-files
+[Tab] "Notifications" #tab-notifications
+[Tab] "Scheduled" #tab-scheduled
+[Tab] "Terminal" #tab-terminal
+[Toggle] "Mute notifications" #panel-notifications-mute
+[Toggle] "Keep panel open" #panel-pin
+[Button] "Settings" #open-settings
+"Today"
+"2.6M tokens · $2.94"
+"Rate limit the login endpoint"
+"api · Claude needs your permission to use Bash"
+[Button] "Show its terminal"
+"$2.14"
+"1.9M tokens"
+"Upgrade the Terraform providers"
+"T3 Code · Codex · infra · Working for 3m"
+[Button] "Show T3 Code"
+"Dark mode for the settings page"
+"web · Working for 6m"
+[Button] "Show its terminal"
+"$0.71"
+"612K tokens"
+[Button] "Show processes"
+  "4 processes · 484 MB · :3000"
+"ledge"
+"Done 12m ago"
+[Button] "Show its terminal"
+[Button] "Clear"
+"$0.09"
+"88K tokens"
+"Left running"
+"Started by agents whose shell or session has ended. Nothing will stop these for you."
+"node astro.mjs dev"

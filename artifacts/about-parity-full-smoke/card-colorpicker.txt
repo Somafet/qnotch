@@ -1,0 +1,2 @@
+"Color picker"
+[Button] "Pick a color"

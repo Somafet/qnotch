@@ -1,0 +1,30 @@
+"A"
+"Alex"
+"Thursday, October 29"
+[Tab] "Home" #tab-home
+[Tab] "Search" #tab-search
+[Tab] "Media" #tab-media
+[Tab] "Clipboard" #tab-clipboard
+[Tab] "AI" #tab-ai
+[Tab] "Agents" #tab-agents
+[Tab] "Files" #tab-files
+[Tab] "Notifications" #tab-notifications selected
+[Tab] "Scheduled" #tab-scheduled
+[Tab] "Terminal" #tab-terminal
+[Toggle] "Mute notifications" #panel-notifications-mute
+[Toggle] "Keep panel open" #panel-pin
+[Button] "Settings" #open-settings
+[Button] "Clear all"
+"3 notifications"
+"Permission needed"
+"Run the test suite in F:\\Code\\app?"
+[Button] "Approve"
+[Button] "Deny"
+"Claude Code · 09:41 · Waiting for your answer"
+"Build finished"
+"142 tests passed in 38 s."
+[Button] "Open report"
+"Build · 09:35"
+"Deploy to production failed"
+"Health check timed out after 60 s."
+"Deploy · 09:12"

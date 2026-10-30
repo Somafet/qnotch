@@ -1,0 +1,39 @@
+"A"
+"Alex"
+"Thursday, October 29"
+[Tab] "Home" #tab-home
+[Tab] "Search" #tab-search
+[Tab] "Media" #tab-media
+[Tab] "Clipboard" #tab-clipboard
+[Tab] "AI" #tab-ai
+[Tab] "Agents" #tab-agents
+[Tab] "Files" #tab-files selected
+[Tab] "Notifications" #tab-notifications
+[Tab] "Scheduled" #tab-scheduled
+[Tab] "Terminal" #tab-terminal
+[Toggle] "Mute notifications" #panel-notifications-mute
+[Toggle] "Keep panel open" #panel-pin
+[Button] "Settings" #open-settings
+[Button] "Stop sharing"
+[Button] "Back to tray"
+"Share with phone"
+"over Wi-Fi, no app needed"
+"Sharing 2 files"
+"Quarterly report.pdf"
+"2.4 MB"
+"Boarding pass.png"
+"312 KB"
+"http://192.168.1.24:51327/s/q7LmZ2xV0cRj8sPwK4nYtA/"
+[Button] "Copy link"
+[Button] "+15 min"
+"Ends in 14 min"
+"Phone connected."
+"Not connecting? Use the same network (no guest Wi-Fi) and allow QNotch in the Windows firewall. Plain HTTP: not encrypted."
+"Quarterly report.pdf"
+"64% of 2.4 MB"
+[Progress] 64 of 100
+"IMG_2041.HEIC"
+[Button] "Show in folder"
+"Saved as IMG_2041.HEIC"
+"IMG_2040.HEIC"
+"Cancelled on the phone"

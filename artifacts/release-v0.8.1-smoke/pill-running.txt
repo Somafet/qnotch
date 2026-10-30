@@ -1,0 +1,12 @@
+"Midnight City"
+"M83"
+[Button] "QNotch 0.5.0 is available" #updates-available
+"2"
+"19m"
+"10°"
+"CPU 17%"
+"GPU 0%"
+"RAM 22.2/31.9 GB"
+"11:25"
+"Midnight City  ·  M83"
+"Claude Code: Permission needed"

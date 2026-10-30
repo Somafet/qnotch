@@ -1,0 +1,44 @@
+"QNotch"
+[Item] "General" #settings-nav-general
+[Item] "Features" #settings-nav-features
+[Item] "Updates" #settings-nav-updates
+[Item] "Hotkeys" #settings-nav-hotkeys
+[Item] "Sounds" #settings-nav-sounds
+[Item] "Appearance" #settings-nav-appearance
+[Item] "Game mode" #settings-nav-gamemode
+[Item] "Clipboard" #settings-nav-clipboard
+[Item] "AI" #settings-nav-ai selected
+[Item] "Agents" #settings-nav-agents
+[Item] "GitHub" #settings-nav-github
+[Item] "Weather" #settings-nav-weather
+[Item] "Notifications" #settings-nav-notifications
+"AI"
+"Usage providers"
+"Claude Code"
+"Reads your Claude Code sign-in and asks Anthropic for your plan limits."
+[Toggle] "Claude Code" checked
+"Codex"
+"Reads the newest rate limit reading Codex stored locally. Nothing is sent anywhere."
+[Toggle] "Codex" checked
+"Refresh every"
+"How often usage is read in the background."
+[PopUp] "Refresh every" value="10 minutes"
+"Usage readings"
+"Last check and per-tool status are on the AI tab."
+[Button] "Usage readings"
+  "Refresh now"
+"App shortcuts"
+"Bind up to six apps to a slot. Each slot has a hotkey that works from anywhere; change the keys in Hotkeys."
+"Slot 1: Alt+1"
+[PopUp] "Slot 1: Alt+1" value="Claude"
+"Slot 2: Alt+2"
+[PopUp] "Slot 2: Alt+2" value="Codex"
+"Slot 3: Alt+3"
+[PopUp] "Slot 3: Alt+3" value="None"
+"Slot 4: Alt+4"
+[PopUp] "Slot 4: Alt+4" value="None"
+"Slot 5: Alt+5"
+[PopUp] "Slot 5: Alt+5" value="None"
+"Slot 6: Alt+6"
+[PopUp] "Slot 6: Alt+6" value="None"
+"Custom apps"

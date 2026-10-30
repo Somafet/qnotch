@@ -1,0 +1,6 @@
+version: 0.4.0.0
+self-contained: false
+only: settings-about*
+settings-about: ok
+settings-about-end: ok
+done

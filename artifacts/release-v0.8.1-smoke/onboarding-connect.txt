@@ -1,0 +1,28 @@
+"GitHub"
+"1,284 contributions"
+"Weather"
+"14°"
+"Berlin, partly cloudy"
+"Agents"
+"api"
+"Needs you"
+"website"
+"Working"
+"Connect your accounts"
+"Optional. Everything else works without them."
+"Weather"
+"Berlin, Germany"
+[Field] "Find a place" value=""
+"Find a place"
+[Button] "Search"
+"Agents"
+"Claude Code connected"
+[Button] "Connect Claude Code" disabled
+  "Claude Code"
+[Button] "Connect Codex"
+"GitHub"
+"Connected as @octocat"
+[Button] "Close"
+[Button] "Skip" #onboarding-skip
+[Button] "Back" #onboarding-back
+[Button] "Continue" #onboarding-primary

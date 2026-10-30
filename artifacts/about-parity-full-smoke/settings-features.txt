@@ -1,0 +1,41 @@
+"QNotch"
+[Item] "General" #settings-nav-general
+[Item] "Features" #settings-nav-features selected
+[Item] "Hotkeys" #settings-nav-hotkeys
+[Item] "Sounds" #settings-nav-sounds
+[Item] "Appearance" #settings-nav-appearance
+[Item] "Game mode" #settings-nav-gamemode
+[Item] "Clipboard" #settings-nav-clipboard
+[Item] "AI" #settings-nav-ai
+[Item] "Agents" #settings-nav-agents
+[Item] "GitHub" #settings-nav-github
+[Item] "Weather" #settings-nav-weather
+[Item] "Notifications" #settings-nav-notifications
+[Item] "About" #settings-nav-about
+"Features"
+"Choose what runs and where it appears. Placement applies immediately. Turning a feature on or off requires a restart."
+"System stats"
+"CPU, memory, network, battery and clock in the pill, the System card and the game bar."
+[Toggle] "Enable System stats" #feature-stats checked
+"Show on Home"
+[Toggle] "System stats: Show on Home" #presentation-card-stats checked
+"Show in the notch"
+[Toggle] "System stats: Show in the notch" #presentation-notch-stats checked
+"Now playing"
+"Track, artwork and controls for anything that plays media."
+[Toggle] "Enable Now playing" #feature-media checked
+"Show on Home"
+[Toggle] "Now playing: Show on Home" #presentation-card-media checked
+"Show as a tab"
+[Toggle] "Now playing: Show as a tab" #presentation-tab-media checked
+"Show in the notch"
+[Toggle] "Now playing: Show in the notch" #presentation-notch-media checked
+"Clipboard history"
+"Text and images you copy, kept in memory."
+[Toggle] "Enable Clipboard history" #feature-clipboard checked
+"Show on Home"
+[Toggle] "Clipboard history: Show on Home" #presentation-card-clipboard checked
+"Show as a tab"
+[Toggle] "Clipboard history: Show as a tab" #presentation-tab-clipboard checked
+"AI apps and usage"
+[Toggle] "Enable AI apps and usage" #feature-ai checked
