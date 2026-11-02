@@ -84,23 +84,29 @@ enum NotchShape {
         return path
     }
 
-    /// Hairline just inside the sides and bottom, starting below the camera band (never beside the menu bar).
-    static func outline(_ rect: CGRect, integrated: Bool, top: CGFloat, bottom: CGFloat, band: CGFloat) -> CGPath {
+    /// Hairline just inside the silhouette: up the sides and bottom, and (with a camera housing) around
+    /// each top shoulder flare to where the shape meets the top edge. A floating pill's outline is the
+    /// closed rounded rectangle.
+    static func outline(_ rect: CGRect, integrated: Bool, top: CGFloat, bottom: CGFloat) -> CGPath {
         let inner = integrated ? CGRect(x: rect.minX + 0.5, y: rect.minY + 0.5, width: rect.width - 1, height: rect.height - 0.5)
                                : rect.insetBy(dx: 0.5, dy: 0.5)
         let flare = integrated ? DisplayLayout.flare : 0
         let x0 = inner.minX + flare, x1 = inner.maxX - flare
         let width = max(0, x1 - x0)
         let b = max(0, min(bottom - 0.5, width / 2, inner.height / 2))
-        let k = max(0, min(integrated ? max(flare, band) : top - 0.5, inner.height - b))
+        let k = max(0, min(integrated ? flare : top - 0.5, inner.height - b))
         let path = CGMutablePath()
-        path.move(to: CGPoint(x: x0, y: inner.maxY - k))
+        if integrated { path.move(to: CGPoint(x: inner.minX, y: inner.maxY)) }
+        else { path.move(to: CGPoint(x: x0, y: inner.maxY - k)) }
+        if integrated { path.addQuadCurve(to: CGPoint(x: x0, y: inner.maxY - k), control: CGPoint(x: x0, y: inner.maxY)) }
         path.addLine(to: CGPoint(x: x0, y: inner.minY + b))
         path.addQuadCurve(to: CGPoint(x: x0 + b, y: inner.minY), control: CGPoint(x: x0, y: inner.minY))
         path.addLine(to: CGPoint(x: x1 - b, y: inner.minY))
         path.addQuadCurve(to: CGPoint(x: x1, y: inner.minY + b), control: CGPoint(x: x1, y: inner.minY))
         path.addLine(to: CGPoint(x: x1, y: inner.maxY - k))
-        if !integrated {
+        if integrated {
+            path.addQuadCurve(to: CGPoint(x: inner.maxX, y: inner.maxY), control: CGPoint(x: x1, y: inner.maxY))
+        } else {
             path.addQuadCurve(to: CGPoint(x: x1 - k, y: inner.maxY), control: CGPoint(x: x1, y: inner.maxY))
             path.addLine(to: CGPoint(x: x0 + k, y: inner.maxY))
             path.addQuadCurve(to: CGPoint(x: x0, y: inner.maxY - k), control: CGPoint(x: x0, y: inner.maxY))
@@ -262,7 +268,7 @@ final class NotchSurfaceView: NSView {
         shapeRect = rect
         let target = local(rect)
         let shapePath = NotchShape.path(target, integrated: integrated, top: top, bottom: bottom)
-        let edgePath = NotchShape.outline(target, integrated: integrated, top: top, bottom: bottom, band: band)
+        let edgePath = NotchShape.outline(target, integrated: integrated, top: top, bottom: bottom)
         let fromShape = backdrop.shape.presentation()?.path ?? backdrop.shape.path
         let fromEdge = outline.shape.presentation()?.path ?? outline.shape.path
         let fromOpacity = outline.shape.presentation()?.opacity ?? outline.shape.opacity
