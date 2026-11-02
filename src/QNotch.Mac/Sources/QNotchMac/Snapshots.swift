@@ -168,8 +168,7 @@ enum SnapshotViews {
             tray.dropActive = false
             addSampleFiles(shell, to: tray)
         }
-        var headerFrames: [String] = ["Native AppKit points; page/header/body use bottom-left origins; title/actions are relative to header."]
-        var headerBaseline: CGFloat?
+        var headerFrames: [String] = ["Native AppKit points; page/header/body use bottom-left origins; actions are relative to header."]
         for tab in shell.registries.tabs.items {
             shell.selectTab(tab.id)
             run.notch("tab-" + tab.id)
@@ -178,14 +177,14 @@ enum SnapshotViews {
                     run.fail("tab-headers", "Search must retain its labeled field landmark")
                 }
             } else {
-                headerFrames += TabHeaderDiagnostics.check(run, id: tab.id, title: tab.title, baseline: &headerBaseline)
+                headerFrames += TabHeaderDiagnostics.check(run, id: tab.id, title: tab.title)
             }
         }
         if let media = shell.module(MediaModule.self) {
             media.clearForSmoke()
             shell.selectTab("media")
             run.notch("media-empty")
-            headerFrames += TabHeaderDiagnostics.check(run, id: "media-empty", title: "Media", baseline: &headerBaseline)
+            headerFrames += TabHeaderDiagnostics.check(run, id: "media-empty", title: "Media")
             shell.selectTab("home")
             run.write("media-empty-card", cardViews(shell)["media"], missing: "the card is not on Home")
         }
