@@ -622,7 +622,12 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         traceHover("left; cancelling dwell")
         hoverTask?.cancel()
         leaveTask?.cancel()
-        hoverSuppressed = false
+        // The window shrinks to the pill when a close settles, and AppKit's tracking area may then
+        // report an exit and entry with the pointer never having left. Only a pointer outside the
+        // settled pill ends the suppression after an explicit close.
+        if !(hoverSuppressed && !state.expanded && expectedFrame?.containsPointer(NSEvent.mouseLocation) == true) {
+            hoverSuppressed = false
+        }
         if !panel.frame.containsPointer(NSEvent.mouseLocation) { setHovering(false) }
         guard state.presentation == .hover, !general.pinned, holds == 0 else { return }
         let task = DispatchWorkItem { [weak self] in

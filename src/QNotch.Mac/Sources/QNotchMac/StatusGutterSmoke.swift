@@ -72,9 +72,12 @@ enum StatusGutterSmoke {
                 records.append("  \(id): actual=\(frame) fitting=\(view.fittingSize)")
                 if let wings = layout.wings(expanded: false, wing: shell.wing) {
                     let left = id == "notch-left-wing"
-                    let area = left ? wings.left : wings.right
+                    // A virtual notch hides no camera: each cluster spans the whole pill and may
+                    // pass its middle, so only the outer gutter and the other cluster apply.
+                    let housed = layout.integratesCameraHousing
+                    let area = housed ? (left ? wings.left : wings.right) : wings.left.union(wings.right)
                     let outer = left ? frame.minX - area.minX : area.maxX - frame.maxX
-                    let camera = left ? area.maxX - frame.maxX : frame.minX - area.minX
+                    let camera = housed ? (left ? area.maxX - frame.maxX : frame.minX - area.minX) : .infinity
                     records.append("    outer_gutter=\(outer) camera_clearance=\(camera) vertical_offset=\(frame.midY - area.midY)")
                     guard abs(outer - 12) <= 1, camera >= 11, abs(frame.midY - area.midY) <= 1 else {
                         throw Failure("\(phase): \(id) has inconsistent gutters: \(records.last!)")
