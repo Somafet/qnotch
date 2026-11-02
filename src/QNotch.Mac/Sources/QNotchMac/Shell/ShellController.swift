@@ -980,14 +980,20 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     private func measureWing() -> CGFloat {
         let integrated = layout?.integratesTopBand == true
         // The wing grows to at most 170 points (content plus 24 of margin); a pill to 300.
-        var capacity: CGFloat = integrated ? 146 : 150
-        if integrated, let wings = layout?.wings(expanded: false, wing: 170) {
+        let virtual = integrated && layout?.integratesCameraHousing == false
+        // A virtual notch hides no camera, so its two clusters share the pill instead of each
+        // being held to half of it: a longer title may use the room a short right side leaves.
+        var capacity: CGFloat = virtual ? StatusGutters.virtualClusterLimit : integrated ? 146 : 150
+        if integrated, !virtual, let wings = layout?.wings(expanded: false, wing: 170) {
             capacity = min(capacity, max(0, min(wings.left.width, wings.right.width) - StatusGutters.inset * 2))
         }
         fitWings(maxWidth: capacity)
         let left = peekShown ? peekLeft.fittingSize.width : visibleWidth(leading)
         let right = peekShown ? peekRight.fittingSize.width : visibleWidth(trailing)
         guard left > 0 || right > 0 else { return 0 }
+        if virtual {
+            return min(peekShown ? 180 : StatusGutters.virtualWingLimit, StatusGutters.virtualWing(left: left, right: right, spacing: 8))
+        }
         if layout?.integratesTopBand == true {
             // Symmetric wings; rounded so a one-character change does not resize the notch.
             return min(peekShown ? 180 : 170, ceil((max(left, right) + 24) / 8) * 8)
@@ -1015,7 +1021,10 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         if let wings = layout.wings(expanded: false, wing: wing) {
             pill.isHidden = true
             peekLeft.isHidden = !peeking; peekRight.isHidden = !peeking
-            for (stack, area, side) in [(leading, wings.left, StatusGutters.Side.left), (trailing, wings.right, .right),
+            // Beside a camera each cluster keeps to its wing; a virtual notch has no housing to
+            // clear, so both clusters span the whole pill and meet in the middle with a small gap.
+            let whole = layout.integratesCameraHousing ? nil : wings.left.union(wings.right)
+            for (stack, area, side) in [(leading, whole ?? wings.left, StatusGutters.Side.left), (trailing, whole ?? wings.right, .right),
                                         (peekLeft, wings.left, .left), (peekRight, wings.right, .right)] {
                 if stack === leading || stack === trailing { stack.isHidden = !active || peeking }
                 guard !stack.isHidden else { continue }

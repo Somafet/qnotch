@@ -13,4 +13,15 @@ public enum StatusGutters {
         let x = side == .left ? area.minX + inset : area.maxX - inset - size.width
         return CGRect(x: x, y: area.midY - size.height / 2, width: size.width, height: size.height)
     }
+
+    /// Widest cluster on a virtual notch, where there is no camera to share the pill with.
+    public static let virtualClusterLimit: CGFloat = 170
+    public static let virtualWingLimit: CGFloat = 192
+
+    /// Half-width of a virtual notch that holds both clusters with only `spacing` between them:
+    /// rounded to 8 so a one-character change does not resize the pill, and symmetric about the center.
+    public static func virtualWing(left: CGFloat, right: CGFloat, spacing: CGFloat) -> CGFloat {
+        let total = left + right + (left > 0 && right > 0 ? spacing : 0)
+        return ceil((total / 2 + inset) / 8) * 8
+    }
 }
