@@ -256,6 +256,6 @@ internal sealed class TerminalBuffer
         uint Component(int value) => (uint)(value == 0 ? 0 : value * 40 + 55);
         return Component(index / 36) << 16 | Component(index / 6 % 6) << 8 | Component(index % 6);
     }
-    static readonly uint[] Palette = [0x0c0c0c, 0xc50f1f, 0x13a10e, 0xc19c00, 0x0037da, 0x881798, 0x3a96dd, 0xcccccc,
+    static readonly uint[] Palette = [0x3a3a44, 0xc50f1f, 0x13a10e, 0xc19c00, 0x0037da, 0x881798, 0x3a96dd, 0xcccccc,
         0x767676, 0xe74856, 0x16c60c, 0xf9f1a5, 0x3b78ff, 0xb4009e, 0x61d6d6, 0xf2f2f2];
 }

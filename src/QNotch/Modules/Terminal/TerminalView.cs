@@ -22,7 +22,10 @@ internal sealed class TerminalView : Grid, IPanelKeyboardInput
         DockPanel.SetDock(restart, Dock.Right);
         top.Children.Add(restart); top.Children.Add(_status); Children.Add(top);
         Input = new TerminalSurface(buffer, module.Send, module.Resize, module.TakeKeyboard, SetStatus);
-        Grid.SetRow(Input, 1); Children.Add(Input);
+        var card = new Border { CornerRadius = new CornerRadius(10), BorderThickness = new Thickness(1), Child = Input };
+        card.SetResourceReference(Border.BackgroundProperty, "CardBrush");
+        card.SetResourceReference(Border.BorderBrushProperty, "StrokeBrush");
+        Grid.SetRow(card, 1); Children.Add(card);
         IsVisibleChanged += (_, _) => { if (IsVisible) module.EnsureSession(); };
     }
     internal void SetStatus(string text) => _status.Text = text;
