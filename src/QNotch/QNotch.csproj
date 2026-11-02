@@ -11,6 +11,8 @@
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <SelfContained>false</SelfContained>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- Multi-size icon for Explorer, the taskbar and Alt-Tab; regenerate with Assets/Build-AppIcon.ps1 from Assets/AppIcon.svg. -->
+    <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
     <!-- Program.Main handles command line verbs before WPF starts; App.xaml still generates its own Main. -->
     <StartupObject>QNotch.Program</StartupObject>
     <RootNamespace>QNotch</RootNamespace>
