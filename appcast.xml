@@ -5,6 +5,29 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
 <title>QNotch for Mac</title>
 <link>https://github.com/Somafet/qnotch</link>
 <item>
+<title>QNotch 0.4.4</title>
+<pubDate>Tue, 03 Nov 2026 11:01:20 GMT</pubDate>
+<sparkle:version>11</sparkle:version>
+<sparkle:shortVersionString>0.4.4</sparkle:shortVersionString>
+<sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+<sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+<sparkle:fullReleaseNotesLink>https://github.com/Somafet/qnotch/releases/tag/macos-v0.4.4</sparkle:fullReleaseNotesLink>
+<description sparkle:format="markdown">## What's Changed
+* Windows: add app icon by @Somafet in https://github.com/Somafet/qnotch/pull/111
+* Windows: give the terminal a rounded card surface by @Somafet in https://github.com/Somafet/qnotch/pull/112
+* Mac: add app icon by @Somafet in https://github.com/Somafet/qnotch/pull/113
+* Mac: extend panel border through the top shoulder curve by @Somafet in https://github.com/Somafet/qnotch/pull/108
+* Mac: remove in-page tab titles by @Somafet in https://github.com/Somafet/qnotch/pull/107
+* Mac: give the terminal a card surface by @Somafet in https://github.com/Somafet/qnotch/pull/109
+* Mac: fill virtual notch without centre gap by @Somafet in https://github.com/Somafet/qnotch/pull/110
+* Mac smoke: wait for the timer wake instead of a fixed delay by @Somafet in https://github.com/Somafet/qnotch/pull/114
+* Offer winget and Scoop installs and an Other ways to install dialog by @Somafet in https://github.com/Somafet/qnotch/pull/115
+
+
+**Full Changelog**: https://github.com/Somafet/qnotch/compare/macos-v0.4.3...macos-v0.4.4</description>
+<enclosure url="https://github.com/Somafet/qnotch/releases/download/macos-v0.4.4/QNotch-macos-arm64.zip" length="3672845" type="application/octet-stream" sparkle:edSignature="M9Cx5JTBTcsT42Mq8Nh+30TMurEeToSjcOARsLKYfvX1oOvTBrnIAQqzOvmikB2mAUduuRf1ZI1iLUZYArtlCA=="/>
+</item>
+<item>
 <title>QNotch 0.4.3</title>
 <pubDate>Fri, 30 Oct 2026 19:12:32 GMT</pubDate>
 <sparkle:version>10</sparkle:version>
@@ -157,6 +180,6 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
 </channel>
 </rss>
 <!-- sparkle-signatures:
-edSignature: +0kyCZa8pWzu3/D51HBCjaUK2g0Zb1ps8BavP5NR+ytDVnUOhPQc6E8NGNfoIvqIGFK6TkYHQHVhcr8MwgYSAw==
-length: 11995
+edSignature: jGDdi41ZbLcQqlYoCp9pwOOMAM2PRARGjILJbmvisq+nwMEL+5s0KUiXiuqg2QTLldcbozUojBda5M2+MbjgDQ==
+length: 13798
 -->
