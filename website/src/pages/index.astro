@@ -6,6 +6,7 @@ import Features from '../components/Features.astro';
 import OpenSource from '../components/OpenSource.astro';
 import ThemeSwitch from '../components/ThemeSwitch.astro';
 import OsSwitch from '../components/OsSwitch.astro';
+import InstallDialog from '../components/InstallDialog.astro';
 import og from '../assets/og.png';
 
 const GH = 'https://github.com/Somafet/qnotch';
@@ -35,6 +36,28 @@ async function macDownload() {
   }
 }
 const MAC = await macDownload();
+
+// winget and Scoop show up in Other ways to install only once they carry QNotch, so every command on the
+// page works. Checked at build time; if GitHub can't be reached, the channel stays hidden until the next build.
+async function liveOnGitHub(name: string, path: string) {
+  try {
+    const token = import.meta.env.GITHUB_TOKEN ?? process.env.GITHUB_TOKEN;
+    const res = await fetch(`https://api.github.com/repos/${path}`, {
+      headers: { accept: 'application/vnd.github+json', ...(token ? { authorization: `Bearer ${token}` } : {}) },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (res.ok) return true;
+    if (res.status !== 404) throw new Error(`GitHub answered ${res.status}`);
+    console.info(`${name}: not published yet, left out of Other ways to install`);
+  } catch (e) {
+    console.warn(`${name}: left out of Other ways to install (${(e as Error).message})`);
+  }
+  return false;
+}
+const [WINGET, SCOOP] = await Promise.all([
+  liveOnGitHub('winget', 'microsoft/winget-pkgs/contents/manifests/s/Somafet/QNotch'),
+  liveOnGitHub('Scoop', 'Somafet/scoop-bucket/contents/bucket/qnotch.json'),
+]);
 
 const numbers = {
   win: [
@@ -189,7 +212,7 @@ const jsonLd = {
           <a class="btn btn-primary os-mac" href={MAC.url}><Icon name="apple" />Download for Mac</a>
           <a class="btn btn-ghost" href={GH}><Icon name="github" />Star on GitHub</a>
         </div>
-        <p class="fine os-win">Free, no account · Windows 10 2004 or newer, x64 · 27 MB</p>
+        <p class="fine os-win">Free, no account · Windows 10 2004 or newer, x64 · 27 MB · <a class="inline" href={DL} data-install-open>Other ways to install</a></p>
         <p class="fine os-mac">Free, no account · macOS 13 or newer, Apple silicon · {MAC.mb} MB · No notch? It floats under the menu bar.</p>
       </div>
       <div class="wrap demo-wrap">
@@ -281,10 +304,12 @@ const jsonLd = {
           <a class="btn btn-primary os-mac" href={MAC.url}><Icon name="apple" />Download for Mac</a>
           <a class="btn btn-ghost" href={GH}><Icon name="github" />View the source</a>
         </div>
-        <p class="fine">Free and open source · MIT license · <a class="inline os-win" href="?os=mac" data-os-link="mac">Also on Mac</a><a class="inline os-mac" href="?os=windows" data-os-link="win">Also on Windows</a></p>
+        <p class="fine">Free and open source · MIT license · <a class="inline os-win" href={DL} data-install-open>Other ways to install</a><span class="os-win"> · </span><a class="inline os-win" href="?os=mac" data-os-link="mac">Also on Mac</a><a class="inline os-mac" href="?os=windows" data-os-link="win">Also on Windows</a></p>
       </div>
     </section>
   </main>
+
+  <InstallDialog gh={GH} winget={WINGET} scoop={SCOOP} />
 
   <footer class="foot">
     <div class="wrap foot-in">

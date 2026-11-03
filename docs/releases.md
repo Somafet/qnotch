@@ -38,6 +38,22 @@ node scripts/publish-release.mjs --platform windows --tag v0.4.1 --asset dist/QN
 
 This command publishes remotely. Repository tests use a fake GitHub CLI transport and never create releases. Normal development does not require running the publishing command.
 
+## winget and Scoop
+
+After a Windows release is public, the release workflow's separate `package-managers` job points winget (`Somafet.QNotch`) and Scoop (`qnotch` in the `Somafet/scoop-bucket` bucket) at its `QNotch-self-contained.zip`. Both install that file unchanged, so nothing about the release assets, their names or the latest endpoint changes. `scripts/package-managers.mjs` writes the manifests from GitHub's metadata for the tag: download address, SHA-256 digest and publication date. It refuses a draft, a ZIP that is not fully uploaded, and any tag that is not the current global latest, so rerunning an old tag's job cannot downgrade users.
+
+- **winget:** the job submits the manifests with Microsoft's `wingetcreate submit`, which opens a pull request on `microsoft/winget-pkgs` from a fork in the token owner's account. The package is a portable ZIP: winget extracts `QNotch.exe` into its package folder and adds the `qnotch` command. Microsoft's validation and review take from a few hours to a few days; the new version is available to users only after the pull request merges.
+- **Scoop:** the job commits `bucket/qnotch.json` to the bucket repository. Users get it on their next `scoop update`. The manifest adds the `qnotch` shim and a Start menu shortcut.
+
+Each step skips with a warning while its token is missing, so a release never fails because of a package manager. If a step fails, rerun only that job; the release is already public. To set the jobs up once:
+
+1. Create the public `Somafet/scoop-bucket` repository with a `bucket/` folder, and add the repository secret `SCOOP_BUCKET_TOKEN`: a fine-grained token with Contents read and write on that repository only.
+2. Add the repository secret `WINGET_TOKEN`: a classic token with the `public_repo` scope, as `wingetcreate` requires. The first submission creates the package; later ones add versions.
+
+To produce the manifests locally for a published release: `node scripts/package-managers.mjs --tag v0.8.4 --out dist/package-managers`, then `winget validate --manifest dist/package-managers/winget` or `scoop install dist/package-managers/scoop/bucket/qnotch.json`. Neither publishes anything.
+
+Copies installed this way can still update themselves from Settings, About; the package manager then reports the old version until its own update runs, which downloads the same file again. The website offers each channel only once it is live (see [website/README.md](../website/README.md)).
+
 ## Mac channel
 
 - Tags are `macos-vX.Y.Z`, optionally with `-alpha.N`, `-beta.N`, or `-rc.N`. Versions can differ from Windows; only suffixed tags are prereleases.
