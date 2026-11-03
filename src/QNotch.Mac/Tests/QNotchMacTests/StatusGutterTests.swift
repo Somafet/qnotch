@@ -17,6 +17,26 @@ final class StatusGutterTests: XCTestCase {
         }
     }
 
+    func testVirtualNotchHasNoCenterGapBeyondSpacing() throws {
+        let virtual = DisplayLayout(frame: CGRect(x: 0, y: 0, width: 2560, height: 1440),
+                                    visibleFrame: CGRect(x: 0, y: 0, width: 2560, height: 1415), safeTop: 0, cameraGap: nil)
+        for (leftWidth, rightWidth) in [(CGFloat(170), CGFloat(60)), (60, 170), (100, 100), (170, 170)] {
+            let wing = StatusGutters.virtualWing(left: leftWidth, right: rightWidth, spacing: 8)
+            XCTAssertEqual(wing.truncatingRemainder(dividingBy: 8), 0)
+            let wings = try XCTUnwrap(virtual.wings(expanded: false, wing: wing))
+            let whole = wings.left.union(wings.right)
+            let left = try XCTUnwrap(StatusGutters.frame(size: CGSize(width: leftWidth, height: 17), in: whole, side: .left))
+            let right = try XCTUnwrap(StatusGutters.frame(size: CGSize(width: rightWidth, height: 17), in: whole, side: .right))
+            XCTAssertGreaterThanOrEqual(right.minX - left.maxX, 8)
+            XCTAssertLessThanOrEqual(right.minX - left.maxX, 8 + 16, "rounding each half to 8 is the only slack")
+            XCTAssertEqual(virtual.surface(expanded: false, wing: wing).midX, 1280, "pill stays centered")
+        }
+        // A one-sided pill has no spacing and is not padded for a missing cluster.
+        XCTAssertEqual(StatusGutters.virtualWing(left: 100, right: 0, spacing: 8), 64)
+        // The widest pair still fits the largest wing.
+        XCTAssertLessThanOrEqual(StatusGutters.virtualWing(left: 170, right: 170, spacing: 8), StatusGutters.virtualWingLimit)
+    }
+
     private func checkOuterAnchors(leftWidth: CGFloat, rightWidth: CGFloat) throws {
         let wings = try XCTUnwrap(layout.wings(expanded: false, wing: 170))
         let left = try XCTUnwrap(StatusGutters.frame(size: CGSize(width: leftWidth, height: 17), in: wings.left, side: .left))

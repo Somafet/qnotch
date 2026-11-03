@@ -97,7 +97,8 @@ final class HoverTargetTests: XCTestCase {
             shell.close(restoreFocus: false)
             shell.pointerLeft()
             let housing = try XCTUnwrap(shell.layout).surface(expanded: false, wing: shell.wing)
-            shell.completeHover(at: NSPoint(x: housing.midX, y: housing.midY))
+            // The pill has no camera gap: its outer padding, not its center, is empty.
+            shell.completeHover(at: NSPoint(x: housing.minX + 4, y: housing.midY))
             XCTAssertTrue(shell.activeTab == "fixture")
             shell.close(restoreFocus: false)
             shell.pointerLeft()
@@ -143,7 +144,11 @@ final class HoverTargetTests: XCTestCase {
         let fixture = try Fixture()
         defer { fixture.stop() }
         let shell = fixture.shell
-        try shell.withDiagnosticLayout(SnapshotViews.virtualDisplay) {
+        // Only a camera housing splits the status into wings, so only it spills a full wing.
+        let notched = DisplayLayout(frame: CGRect(x: -100, y: 200, width: 1512, height: 982),
+                                    visibleFrame: CGRect(x: -100, y: 200, width: 1512, height: 945),
+                                    safeTop: 37, cameraGap: CGRect(x: 560, y: 1145, width: 192, height: 37))
+        try shell.withDiagnosticLayout(notched) {
             let slot = try XCTUnwrap(fixture.slots.first { $0.segmentID == "fixture.memory" })
             let point = try fixture.point("fixture.memory")
             XCTAssertTrue(slot.superview?.identifier?.rawValue == "notch-left-wing", "Fixture must spill RAM to the other wing")
