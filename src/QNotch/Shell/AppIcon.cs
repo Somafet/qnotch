@@ -5,7 +5,8 @@ using QNotch.Interop;
 
 namespace QNotch.Shell;
 
-/// <summary>The app icon (a notch pill) drawn at startup: no .ico asset to ship.</summary>
+/// <summary>The brand mark (dark rounded square, white notch pill, accent dot) drawn at runtime for window icons, About and the
+/// tray, where the dot can change color to show state. The same mark is baked into Assets/AppIcon.ico for the exe.</summary>
 public static unsafe class AppIcon
 {
     public static BitmapSource Render(int size, Color? tint = null)
@@ -13,21 +14,17 @@ public static unsafe class AppIcon
         var dv = new DrawingVisual();
         using (var dc = dv.RenderOpen())
         {
-            var s = size;
-            dc.DrawRoundedRectangle(new SolidColorBrush(Color.FromRgb(0x14, 0x14, 0x18)), null, new Rect(0, 0, s, s), s * 0.22, s * 0.22);
-            var pill = new Rect(s * 0.14, s * 0.2, s * 0.72, s * 0.3);
-            var geo = new PathGeometry();
-            var r = s * 0.15;
-            var fig = new PathFigure { StartPoint = new Point(pill.Left, pill.Top), IsClosed = true };
-            fig.Segments.Add(new LineSegment(new Point(pill.Right, pill.Top), true));
-            fig.Segments.Add(new LineSegment(new Point(pill.Right, pill.Bottom - r), true));
-            fig.Segments.Add(new ArcSegment(new Point(pill.Right - r, pill.Bottom), new Size(r, r), 0, false, SweepDirection.Clockwise, true));
-            fig.Segments.Add(new LineSegment(new Point(pill.Left + r, pill.Bottom), true));
-            fig.Segments.Add(new ArcSegment(new Point(pill.Left, pill.Bottom - r), new Size(r, r), 0, false, SweepDirection.Clockwise, true));
-            geo.Figures.Add(fig);
-            dc.DrawGeometry(new SolidColorBrush(tint ?? Color.FromRgb(0x5B, 0x9D, 0xFF)), null, geo);
-            dc.DrawRoundedRectangle(new SolidColorBrush(Color.FromArgb(0x55, 255, 255, 255)), null, new Rect(s * 0.14, s * 0.62, s * 0.72, s * 0.1), s * 0.05, s * 0.05);
-            dc.DrawRoundedRectangle(new SolidColorBrush(Color.FromArgb(0x33, 255, 255, 255)), null, new Rect(s * 0.14, s * 0.78, s * 0.45, s * 0.08), s * 0.04, s * 0.04);
+            double s = size, k = s / 32;
+            // Pill at 7,9 / 18x7 of 32; snapped to whole pixels at small sizes so its edges stay sharp.
+            double x0 = 7 * k, y0 = 9 * k, x1 = 25 * k, y1 = 16 * k;
+            if (size <= 48)
+            {
+                x0 = Math.Round(x0); x1 = Math.Round(x1); y0 = Math.Round(y0); y1 = Math.Max(Math.Round(y1), y0 + 3);
+            }
+            var h = y1 - y0;
+            dc.DrawRoundedRectangle(new SolidColorBrush(Color.FromRgb(0x0B, 0x0B, 0x0D)), null, new Rect(0, 0, s, s), 8 * k, 8 * k);
+            dc.DrawRoundedRectangle(new SolidColorBrush(Color.FromRgb(0xF4, 0xF4, 0xF7)), null, new Rect(x0, y0, x1 - x0, h), h / 2, h / 2);
+            dc.DrawEllipse(new SolidColorBrush(tint ?? Color.FromRgb(0x5B, 0x9D, 0xFF)), null, new Point(x1 - h / 2, (y0 + y1) / 2), Math.Max(1, 1.6 * k), Math.Max(1, 1.6 * k));
         }
         var rtb = new RenderTargetBitmap(size, size, 96, 96, PixelFormats.Pbgra32);
         rtb.Render(dv);

@@ -139,6 +139,10 @@ The raw protocol is one JSON object per line each way; several requests can shar
 
 Security: the channel can read whatever QNotch shows (clipboard history, notifications) and press any control. It listens only to the same Windows user, never on the network, and only in a process started with `--debug-control`. Never start the user's own instance with it.
 
+## App icon
+
+`QNotch.exe` embeds `src/QNotch/Assets/AppIcon.ico` (`<ApplicationIcon>`), built from the brand mark in `Assets/AppIcon.svg`. Regenerate it with `pwsh src/QNotch/Assets/Build-AppIcon.ps1` (add `-PreviewDir <dir>` for PNGs). The 16 to 48 px sizes are pixel-snapped by hand in that script. The tray, About and window icons draw the same mark at runtime in `Shell/AppIcon.cs` so the tray dot can turn amber for Game mode.
+
 ## Publish and launch
 
 ```powershell
