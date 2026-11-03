@@ -77,3 +77,54 @@ jobs:
         run: >-
           node scripts/publish-release.mjs --platform windows --tag "$env:GITHUB_REF_NAME"
           --asset dist/QNotch.exe --asset dist/QNotch-self-contained.zip
+
+  # Separate from release so a failed submission can be rerun on its own once the release is public.
+  # Each step skips with a warning until its token is configured; see docs/releases.md.
+  package-managers:
+    needs: release
+    if: github.repository == 'Somafet/qnotch'
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Write winget and Scoop manifests
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: node scripts/package-managers.mjs --tag "$env:GITHUB_REF_NAME" --out dist/package-managers
+
+      - name: Submit to winget
+        env:
+          WINGET_TOKEN: ${{ secrets.WINGET_TOKEN }}
+        shell: pwsh
+        run: |
+          if (-not $env:WINGET_TOKEN) { Write-Output '::warning::WINGET_TOKEN is not set; skipped the winget submission.'; exit 0 }
+          Invoke-WebRequest https://aka.ms/wingetcreate/latest -OutFile "$env:RUNNER_TEMP/wingetcreate.exe"
+          & "$env:RUNNER_TEMP/wingetcreate.exe" submit --token $env:WINGET_TOKEN --prtitle "New version: Somafet.QNotch $env:GITHUB_REF_NAME" dist/package-managers/winget
+          exit $LASTEXITCODE
+
+      - name: Update the Scoop bucket
+        env:
+          SCOOP_BUCKET_TOKEN: ${{ secrets.SCOOP_BUCKET_TOKEN }}
+        shell: pwsh
+        run: |
+          if (-not $env:SCOOP_BUCKET_TOKEN) { Write-Output '::warning::SCOOP_BUCKET_TOKEN is not set; skipped the Scoop bucket.'; exit 0 }
+          $bucket = "$env:RUNNER_TEMP/scoop-bucket"
+          git clone --depth 1 "https://x-access-token:$env:SCOOP_BUCKET_TOKEN@github.com/Somafet/scoop-bucket.git" $bucket
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          New-Item -ItemType Directory -Force "$bucket/bucket" | Out-Null
+          Copy-Item dist/package-managers/scoop/bucket/qnotch.json "$bucket/bucket/qnotch.json"
+          git -C $bucket add bucket/qnotch.json
+          git -C $bucket diff --cached --quiet
+          if ($LASTEXITCODE -eq 0) { Write-Output 'The bucket already has this version.'; exit 0 }
+          git -C $bucket -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m "qnotch: Update to $env:GITHUB_REF_NAME"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          git -C $bucket push
+          exit $LASTEXITCODE

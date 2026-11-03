@@ -1,0 +1,413 @@
+---
+import Icon from './Icon.astro';
+
+// Other ways to install the Windows app. index.astro checks at build time which package managers
+// actually carry QNotch, so a channel appears only once its command works (see docs/releases.md).
+interface Props { gh: string; winget: boolean; scoop: boolean }
+const { gh, winget, scoop } = Astro.props;
+
+const latest = `${gh}/releases/latest/download`;
+type Channel = { id: string; label: string; note: string; command?: string[]; hint?: string };
+const channels: Channel[] = [
+  { id: 'download', label: 'Download', note: 'The same files as the Download button, straight from GitHub.' },
+  ...(winget ? [{ id: 'winget', label: 'winget', note: 'Built into Windows 10 and 11. Adds the qnotch command.',
+    command: ['winget install Somafet.QNotch'], hint: 'Update with winget upgrade Somafet.QNotch.' }] : []),
+  ...(scoop ? [{ id: 'scoop', label: 'Scoop', note: 'Adds the qnotch command and a Start menu shortcut.',
+    command: ['scoop bucket add qnotch https://github.com/Somafet/scoop-bucket', 'scoop install qnotch/qnotch'], hint: 'Update with scoop update qnotch.' }] : []),
+];
+---
+<dialog class="install" id="install" aria-labelledby="install-title">
+  <form method="dialog" class="install-in">
+    <h2 class="install-title" id="install-title">Other ways to install</h2>
+    <div class:list={['install-body', { single: channels.length === 1 }]}>
+      {channels.length > 1 && (
+        <div class="install-tabs" role="tablist" aria-orientation="vertical" aria-label="Install from">
+          {channels.map((c, i) => (
+            <button type="button" role="tab" id={`install-tab-${c.id}`} aria-controls={`install-${c.id}`}
+              aria-selected={String(i === 0)} tabindex={i === 0 ? 0 : -1} data-install-tab={c.id}>{c.label}</button>
+          ))}
+        </div>
+      )}
+      <div class="install-panels">
+        {channels.map((c, i) => (
+          <div class="install-panel card" role={channels.length > 1 ? 'tabpanel' : undefined} id={`install-${c.id}`}
+            aria-labelledby={channels.length > 1 ? `install-tab-${c.id}` : undefined} hidden={i !== 0}>
+            <p class="install-note">{c.note}</p>
+            {c.command ? (
+              <>
+                <div class="install-cmd">
+                  <pre><code>{c.command.map(line => <span><i aria-hidden="true">&gt;</i>{line}</span>)}</code></pre>
+                  <button type="button" class="install-copy" data-copy={c.command.join('\n')} aria-label="Copy command">
+                    <Icon name="copy" /><Icon name="check" class="i done" />
+                  </button>
+                </div>
+                <p class="install-hint">{c.hint}</p>
+              </>
+            ) : (
+              <ul class="install-files">
+                <li>
+                  <span><b>QNotch-self-contained.zip</b>Unzip and run. Nothing else to install.</span>
+                  <a class="btn btn-ghost btn-sm" href={`${latest}/QNotch-self-contained.zip`}><Icon name="download" />ZIP</a>
+                </li>
+                <li>
+                  <span><b>QNotch.exe</b>Smaller, needs the <a class="inline" href="https://dotnet.microsoft.com/download/dotnet/10.0">.NET 10 Desktop Runtime</a>.</span>
+                  <a class="btn btn-ghost btn-sm" href={`${latest}/QNotch.exe`}><Icon name="download" />EXE</a>
+                </li>
+              </ul>
+            )}
+          </div>
+        ))}
+        <div class="install-sponsor card">
+          <Icon name="heart" class="i heart" />
+          <p>These are all free. If QNotch is useful to you, consider sponsoring its development.</p>
+          <a class="btn btn-ghost btn-sm" href="https://github.com/sponsors/Somafet"><Icon name="github" />Sponsor on GitHub</a>
+        </div>
+      </div>
+    </div>
+    <div class="install-foot">
+      {channels.map((c, i) => c.command
+        ? <button type="button" class="btn btn-primary" data-for={c.id} data-copy={c.command.join('\n')} hidden={i !== 0}><Icon name="copy" /><span>Copy command</span></button>
+        : <a class="btn btn-primary" data-for={c.id} href={`${latest}/QNotch-self-contained.zip`} hidden={i !== 0}><Icon name="download" />Download ZIP</a>)}
+      <button class="btn btn-ghost" value="close">Close</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+  const dialog = document.getElementById('install') as HTMLDialogElement;
+  const tabs = [...dialog.querySelectorAll<HTMLButtonElement>('[data-install-tab]')];
+
+  // Without script these stay plain links to the release page.
+  document.querySelectorAll<HTMLAnchorElement>('[data-install-open]').forEach(a => a.addEventListener('click', e => {
+    e.preventDefault();
+    dialog.showModal();
+  }));
+  // A click on the backdrop lands on the dialog itself, outside its form.
+  dialog.addEventListener('click', e => { if (e.target === dialog) dialog.close(); });
+
+  function select(tab: HTMLButtonElement) {
+    for (const t of tabs) {
+      const on = t === tab;
+      t.setAttribute('aria-selected', String(on));
+      t.tabIndex = on ? 0 : -1;
+      document.getElementById(t.getAttribute('aria-controls')!)!.hidden = !on;
+    }
+    dialog.querySelectorAll<HTMLElement>('.install-foot [data-for]').forEach(el => { el.hidden = el.dataset.for !== tab.dataset.installTab; });
+  }
+  tabs.forEach((tab, i) => {
+    tab.addEventListener('click', () => select(tab));
+    tab.addEventListener('keydown', e => {
+      const step = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 }[e.key];
+      const next = step ? tabs[(i + step + tabs.length) % tabs.length] : e.key === 'Home' ? tabs[0] : e.key === 'End' ? tabs.at(-1) : null;
+      if (!next) return;
+      e.preventDefault();
+      select(next);
+      next.focus();
+    });
+  });
+
+  dialog.querySelectorAll<HTMLButtonElement>('[data-copy]').forEach(button => button.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(button.dataset.copy!);
+    } catch {
+      // No clipboard access (an insecure origin or a denied permission): select the command instead.
+      const panel = button.dataset.for ? document.getElementById(`install-${button.dataset.for}`) : button.closest('.install-panel');
+      const code = panel?.querySelector('code');
+      if (code) getSelection()?.selectAllChildren(code);
+      return;
+    }
+    const label = button.querySelector('span');
+    button.classList.add('copied');
+    if (label) label.textContent = 'Copied';
+    setTimeout(() => {
+      button.classList.remove('copied');
+      if (label) label.textContent = 'Copy command';
+    }, 1600);
+  }));
+</script>
+
+<style>
+  .install {
+    width: min(820px, 100% - 24px);
+    max-height: calc(100dvh - 24px);
+    padding: 0;
+    border: 1px solid var(--line-2);
+    border-radius: 24px;
+    background: var(--bg);
+    color: var(--ink);
+    box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.5);
+  }
+
+  .install::backdrop {
+    background: rgba(5, 5, 8, 0.55);
+    backdrop-filter: blur(4px);
+  }
+
+  .install[open] {
+    animation: install-in 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  .install[open]::backdrop {
+    animation: install-fade 0.2s ease;
+  }
+
+  @keyframes install-in {
+    from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  }
+
+  @keyframes install-fade {
+    from { opacity: 0; }
+  }
+
+  .install-in {
+    padding: clamp(22px, 4vw, 36px);
+  }
+
+  .install-title {
+    font-size: clamp(26px, 3.4vw, 32px);
+    letter-spacing: -0.03em;
+  }
+
+  .install-body {
+    display: grid;
+    grid-template-columns: 180px minmax(0, 1fr);
+    gap: 20px;
+    margin-top: 24px;
+  }
+
+  .install-body.single {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .install-tabs {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .install-tabs button {
+    position: relative;
+    padding: 11px 14px;
+    border-radius: 12px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--ink-2);
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+
+  .install-tabs button:hover {
+    background: var(--bg-2);
+    color: var(--ink);
+  }
+
+  .install-tabs button[aria-selected='true'] {
+    background: var(--card);
+    color: var(--ink);
+    box-shadow: var(--shadow);
+  }
+
+  .install-tabs button[aria-selected='true']::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 11px;
+    bottom: 11px;
+    width: 3px;
+    border-radius: 3px;
+    background: var(--accent);
+  }
+
+  .install-panels {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+    min-width: 0;
+  }
+
+  .install-panel {
+    padding: 20px;
+    min-height: 168px;
+  }
+
+  .install-panel[hidden] {
+    display: none;
+  }
+
+  .install-note {
+    color: var(--ink-2);
+  }
+
+  .install-cmd {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-top: 16px;
+    padding: 14px 10px 14px 16px;
+    border-radius: 12px;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+  }
+
+  .install-cmd pre {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    overflow-x: auto;
+    font-size: 14.5px;
+    line-height: 1.7;
+  }
+
+  .install-cmd span {
+    display: block;
+    white-space: pre;
+  }
+
+  .install-cmd i {
+    font-style: normal;
+    color: var(--ink-3);
+    margin-right: 10px;
+    user-select: none;
+  }
+
+  .install-copy {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    flex: none;
+    border-radius: 9px;
+    color: var(--ink-2);
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+
+  .install-copy:hover {
+    background: var(--card);
+    color: var(--ink);
+  }
+
+  /* Icons are injected markup, outside this component's style scope. */
+  .install-copy :global(.i),
+  .install-foot :global(.i) {
+    width: 18px;
+    height: 18px;
+  }
+
+  [data-copy] :global(.done),
+  [data-copy].copied :global(.i:not(.done)) {
+    display: none;
+  }
+
+  [data-copy].copied :global(.done) {
+    display: block;
+    color: var(--ok);
+  }
+
+  .install-hint {
+    margin-top: 12px;
+    font-size: 14px;
+    color: var(--ink-3);
+  }
+
+  .install-files {
+    margin: 12px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .install-files li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding-block: 12px;
+  }
+
+  .install-files li + li {
+    border-top: 1px solid var(--line);
+  }
+
+  .install-files span {
+    color: var(--ink-2);
+    font-size: 14.5px;
+  }
+
+  .install-files b {
+    display: block;
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+
+  .install-sponsor {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 20px;
+  }
+
+  .install-sponsor p {
+    flex: 1;
+    font-size: 14.5px;
+    color: var(--ink-2);
+  }
+
+  .install-sponsor :global(.heart) {
+    width: 24px;
+    height: 24px;
+    color: #e5484d;
+  }
+
+  .install-foot {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 24px;
+  }
+
+  .install-foot .btn {
+    justify-content: center;
+  }
+
+  .install-foot [hidden] {
+    display: none;
+  }
+
+  @media (max-width: 640px) {
+    .install-body {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 14px;
+    }
+
+    .install-tabs {
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: 1fr;
+      padding: 4px;
+      border-radius: 14px;
+      background: var(--bg-2);
+    }
+
+    .install-tabs button {
+      padding: 9px 6px;
+      text-align: center;
+    }
+
+    .install-tabs button[aria-selected='true']::before {
+      display: none;
+    }
+
+    .install-panel {
+      min-height: 0;
+    }
+
+    .install-sponsor {
+      flex-wrap: wrap;
+    }
+
+    .install-foot {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
