@@ -562,20 +562,27 @@ enum NativeSmokeTest {
         }
         guard shell.panel.level == ShellController.attachedLevel else { throw Failure("placement", "Integrated surface must be above the menu bar level") }
         guard shell.surface.integrated, shell.surface.band == layout.topBandHeight else { throw Failure("placement", "Surface does not use the integrated flare and band") }
+        var clusters: [String: CGRect] = [:]
         func walk(_ view: NSView) throws {
             guard !view.isHidden else { return }
             let global = shell.panel.convertToScreen(view.convert(view.bounds, to: nil))
             let id = view.identifier?.rawValue
             if id == "panel", global.maxY > layout.frame.maxY - layout.topBandHeight + 0.5 { throw Failure("placement", "Panel controls overlap the top band") }
             if (id == "notch-left-wing" || id == "notch-right-wing"), global.width > 0, global.height > 0 {
-                let clearArea = id == "notch-left-wing" ? wings.left : wings.right
+                // A virtual notch hides no camera: both clusters share the whole pill and may pass its middle.
+                let clearArea = !layout.integratesCameraHousing ? wings.left.union(wings.right)
+                    : id == "notch-left-wing" ? wings.left : wings.right
                 guard clearArea.insetBy(dx: -0.5, dy: -0.5).contains(global), layout.cameraHousing.map({ !global.intersects($0) }) ?? true else {
                     throw Failure("placement", "Status content overlaps the camera or bezel: \(id ?? "") \(global) area=\(clearArea) wing=\(shell.wing) expanded=\(shell.state.expanded) fitting=\(view.fittingSize)")
                 }
+                if let id { clusters[id] = global }
             }
             for child in view.subviews { try walk(child) }
         }
         if let view = shell.panel.contentView { try walk(view) }
+        if let left = clusters["notch-left-wing"], let right = clusters["notch-right-wing"], left.maxX > right.minX + 0.5 {
+            throw Failure("placement", "Status clusters overlap: left=\(left) right=\(right) wing=\(shell.wing)")
+        }
     }
 
     /// Exercise the real drag callbacks and persistence without moving the system pointer.
