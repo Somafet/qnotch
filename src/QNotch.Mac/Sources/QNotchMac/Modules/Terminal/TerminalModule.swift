@@ -70,23 +70,23 @@ final class TerminalTabView: NSView, PanelKeyboardContent {
     private let scroll = NSScrollView()
     let terminal: TerminalCanvas
     private let footer = line("", size: 10, color: Palette.textTertiary)
-    private var heading: NSStackView!
+    private let help = line("Quick commands · ⌘V paste · ⌘C copy selection · ⌘F search · ⌃⌥N close", size: 10, color: Palette.textTertiary)
+    /// The terminal's container: the same card surface (fill, border, radius) other pages use,
+    /// spanning the page's content edges. Hint and footer sit just outside it on those edges.
+    private let card = FillView(fill: Palette.card, stroke: Palette.stroke, radius: 14)
+    private static let cardPadding: CGFloat = 6
 
     init(module: TerminalModule) {
         self.module = module
         terminal = TerminalCanvas(module: module)
         super.init(frame: .zero)
-        let help = line("Quick commands · ⌘V paste · ⌘C copy selection · ⌘F search · ⌃⌥N close", size: 10, color: Palette.textTertiary)
-        heading = row([help, spacer()], spacing: 8)
         scroll.documentView = terminal
         scroll.hasVerticalScroller = true
         scroll.autohidesScrollers = true
         scroll.drawsBackground = false
         scroll.scrollerStyle = .overlay
-        scroll.wantsLayer = true
-        scroll.layer?.backgroundColor = NSColor.black.withAlphaComponent(0.35).cgColor
-        scroll.layer?.cornerRadius = 8
-        for view in [heading!, scroll, footer] {
+        card.addSubview(scroll)
+        for view in [help, card, footer] {
             view.translatesAutoresizingMaskIntoConstraints = true
             addSubview(view)
         }
@@ -96,10 +96,11 @@ final class TerminalTabView: NSView, PanelKeyboardContent {
 
     override func layout() {
         super.layout()
-        let width = max(0, bounds.width - 32)
-        heading.frame = NSRect(x: 16, y: bounds.height - 42, width: width, height: 26)
-        footer.frame = NSRect(x: 16, y: 16, width: width, height: 14)
-        scroll.frame = NSRect(x: 16, y: 40, width: width, height: max(0, bounds.height - 92))
+        let width = bounds.width
+        help.frame = NSRect(x: 0, y: bounds.height - 14, width: width, height: 14)
+        footer.frame = NSRect(x: 0, y: 0, width: width, height: 14)
+        card.frame = NSRect(x: 0, y: 22, width: width, height: max(0, bounds.height - 44))
+        scroll.frame = card.bounds.insetBy(dx: Self.cardPadding, dy: Self.cardPadding)
         scroll.tile()
         let size = scroll.contentSize
         guard size.width > 20, size.height > 20 else { return }
@@ -195,7 +196,8 @@ final class TerminalCanvas: NSView, NSTextInputClient {
     }
     private func color(_ index: Int, foreground: Bool) -> NSColor {
         if index < 0 { return foreground ? NSColor(white: 0.9, alpha: 1) : .clear }
-        let colors: [NSColor] = [.black, .systemRed, .systemGreen, .systemYellow, .systemBlue, .systemPurple, .systemCyan, .lightGray,
+        // ANSI black must stay visible on the card fill, as text and as a background.
+        let colors: [NSColor] = [Palette.rgb(0x3A3A44), .systemRed, .systemGreen, .systemYellow, .systemBlue, .systemPurple, .systemCyan, .lightGray,
                                  .darkGray, .systemRed, .systemGreen, .systemYellow, .systemBlue, .systemPink, .systemCyan, .white]
         if index < 16 { return colors[index] }
         if index >= 232 { return NSColor(white: CGFloat(8 + (index - 232) * 10) / 255, alpha: 1) }
