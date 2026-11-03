@@ -103,6 +103,8 @@ jobs:
       - name: Submit to winget
         env:
           WINGET_TOKEN: ${{ secrets.WINGET_TOKEN }}
+          # wingetcreate targets .NET 9; let it run on a newer runtime if the runner lacks that one.
+          DOTNET_ROLL_FORWARD: Major
         shell: pwsh
         run: |
           if (-not $env:WINGET_TOKEN) { Write-Output '::warning::WINGET_TOKEN is not set; skipped the winget submission.'; exit 0 }
