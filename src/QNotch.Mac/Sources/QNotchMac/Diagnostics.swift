@@ -59,7 +59,7 @@ enum NativeSmokeTest {
             try TerminalSmoke.check(run)
             (timer, note) = try checkShell(run, layout: layout)
         } catch { return finish(error) }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) {
+        afterWake(shell: shell, timer: timer) {
             do { try checkAfterWake(run, timer: timer, note: note) } catch { return finish(error) }
             // Keep panel open: the pointer leaving does not close it, also after the close delay.
             shell.pointerLeft()
@@ -232,6 +232,18 @@ enum NativeSmokeTest {
     }
 
     /// The countdown finished hidden, the note saved; then summon, Escape, the hotkeys and module switches.
+    /// Waits out the note debounce (1.6s), then until the 1s timer's wake has opened the panel, up to 5s in all.
+    /// The wake is an async chain on the main run loop; a fixed delay failed whenever a slow runner stalled it.
+    /// The assertions in `checkAfterWake` stay strict: a wake that never opens still fails at the deadline.
+    private static func afterWake(shell: ShellController, timer: TimerModule, _ body: @escaping () -> Void) {
+        let deadline = Date().addingTimeInterval(5)
+        func poll() {
+            if (timer.wakeCount >= 1 && shell.state.presentation == .hover) || Date() >= deadline { return body() }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05, execute: poll)
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.6, execute: poll)
+    }
+
     private static func checkAfterWake(_ run: SnapshotRun, timer: TimerModule, note: NoteModule?) throws {
         let shell = run.shell
         if note != nil {
