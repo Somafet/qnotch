@@ -12,7 +12,7 @@ namespace QNotch.Modules.Terminal;
 /// <summary>One event-driven drawing surface. No cursor blink, cell controls, render loop or hidden rendering.</summary>
 internal sealed class TerminalSurface : FrameworkElement, IExclusiveKeyboardInput
 {
-    const double FontSize = 12, CellWidth = 7.2, CellHeight = 17;
+    const double FontSize = 12, CellWidth = 7.2, CellHeight = 17, PadX = 12, PadY = 8, CornerRadius = 9;
     readonly TerminalBuffer _buffer;
     readonly Action<string> _send, _status;
     readonly Action<int, int> _resize;
@@ -25,11 +25,11 @@ internal sealed class TerminalSurface : FrameworkElement, IExclusiveKeyboardInpu
     internal TerminalSurface(TerminalBuffer buffer, Action<string> send, Action<int, int> resize, Action takeKeyboard, Action<string> status)
     {
         _buffer = buffer; _send = send; _resize = resize; _takeKeyboard = takeKeyboard; _status = status;
-        Focusable = true; ClipToBounds = true;
+        Focusable = true;
         AutomationProperties.SetName(this, "Terminal input and output");
         AutomationProperties.SetAutomationId(this, "terminal-input");
         IsVisibleChanged += (_, _) => { _visible = IsVisible; if (_visible) { UpdateSize(); InvalidateVisual(); } };
-        SizeChanged += (_, _) => { if (IsVisible) UpdateSize(); };
+        SizeChanged += (_, _) => { Clip = RoundedClip(); if (IsVisible) UpdateSize(); };
         GotKeyboardFocus += (_, _) => InvalidateVisual();
         LostKeyboardFocus += (_, _) => InvalidateVisual();
         PreviewMouseLeftButtonDown += (_, e) => { _takeKeyboard(); Focus(); e.Handled = true; };
@@ -39,10 +39,17 @@ internal sealed class TerminalSurface : FrameworkElement, IExclusiveKeyboardInpu
         InputMethod.SetIsInputMethodEnabled(this, true);
     }
 
+    // ClipToBounds is rectangular; the card corners need a geometry that follows the size.
+    Geometry RoundedClip()
+    {
+        var clip = new RectangleGeometry(new Rect(RenderSize), CornerRadius, CornerRadius);
+        clip.Freeze(); return clip;
+    }
+
     void UpdateSize()
     {
-        var columns = Math.Clamp((int)((ActualWidth - 12) / CellWidth), 20, 240);
-        var rows = Math.Clamp((int)((ActualHeight - 8) / CellHeight), 2, 100);
+        var columns = Math.Clamp((int)((ActualWidth - 2 * PadX) / CellWidth), 20, 240);
+        var rows = Math.Clamp((int)((ActualHeight - 2 * PadY) / CellHeight), 2, 100);
         _buffer.Resize(columns, rows);
         _resize(columns, rows);
     }
@@ -99,10 +106,10 @@ internal sealed class TerminalSurface : FrameworkElement, IExclusiveKeyboardInpu
     protected override void OnRender(DrawingContext drawing)
     {
         base.OnRender(drawing);
-        drawing.DrawRectangle((Brush)FindResource("SurfaceRaisedBrush"), null, new Rect(RenderSize));
+        drawing.DrawRectangle((Brush)FindResource("CardBrush"), null, new Rect(RenderSize));
         var frame = _buffer.Capture(_scroll);
         var foreground = (Brush)FindResource("TextPrimaryBrush");
-        var background = (Brush)FindResource("SurfaceRaisedBrush");
+        var background = (Brush)FindResource("CardBrush");
         Brush Color(uint rgb, Brush fallback)
         {
             if (rgb == TerminalBuffer.DefaultColor) return fallback;
@@ -117,7 +124,7 @@ internal sealed class TerminalSurface : FrameworkElement, IExclusiveKeyboardInpu
             for (var x = 0; x < Math.Min(line.Length, _buffer.Columns); x++)
             {
                 var cell = line[x];
-                var point = new Point(6 + x * CellWidth, 4 + y * CellHeight);
+                var point = new Point(PadX + x * CellWidth, PadY + y * CellHeight);
                 var fg = Color(cell.Foreground, foreground);
                 var bg = Color(cell.Background, background);
                 if (cell.Inverse) (fg, bg) = (bg, fg);
@@ -130,7 +137,7 @@ internal sealed class TerminalSurface : FrameworkElement, IExclusiveKeyboardInpu
             }
         }
         if (frame.CursorVisible && IsKeyboardFocused)
-            drawing.DrawRectangle((Brush)FindResource("AccentBrush"), null, new Rect(6 + frame.CursorX * CellWidth, 4 + (frame.CursorY + 1) * CellHeight - 2, CellWidth, 2));
+            drawing.DrawRectangle((Brush)FindResource("AccentBrush"), null, new Rect(PadX + frame.CursorX * CellWidth, PadY + (frame.CursorY + 1) * CellHeight - 2, CellWidth, 2));
     }
 
     protected override AutomationPeer OnCreateAutomationPeer() => new TerminalPeer(this);
