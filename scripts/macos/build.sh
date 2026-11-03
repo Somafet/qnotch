@@ -37,6 +37,8 @@ fi
 if [[ -n "${QNOTCH_BUILD_NUMBER:-}" ]]; then
     /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $QNOTCH_BUILD_NUMBER" "$app/Contents/Info.plist"
 fi
+# The app icon is generated from Resources/AppIcon.svg by scripts/macos/make-icon.swift and committed.
+cp "$package/Resources/AppIcon.icns" "$app/Contents/Resources/AppIcon.icns"
 # The yr.no weather symbols (github.com/metno/weathericons, MIT), the same files Windows ships.
 icons="$app/Contents/Resources/WeatherIcons"
 rm -rf "$icons"

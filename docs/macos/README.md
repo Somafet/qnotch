@@ -21,6 +21,8 @@ open dist/macos/QNotch.app
 
 Builds produce `dist/macos/QNotch.app` with release optimization and warnings treated as errors. No signing account, certificate, provisioning profile, or network service is needed. The development app bundle has no Developer ID signature or notarization. The toolchain may emit a local ad hoc executable signature; that is not distribution signing. Do not distribute this build as a public download.
 
+The app icon is `src/QNotch.Mac/Resources/AppIcon.svg` (the website favicon mark on Apple's 1024 icon grid) rendered to the committed `AppIcon.icns`; the build copies it to `Contents/Resources/AppIcon.icns` and `Info.plist` names it with `CFBundleIconFile`. After editing the SVG, run `swift scripts/macos/make-icon.swift` and commit both files. `release.sh` signs the bundle after the build, so the icon is covered by the app's seal.
+
 If Command Line Tools are selected, the build/test scripts use `/Applications/Xcode.app` when available, for that process only. For a different Xcode installation, set `DEVELOPER_DIR` to its `Contents/Developer` directory. They report a missing full Xcode installation explicitly. They never change the machine-wide developer directory. Use `xcrun swift --version` to inspect an explicitly selected toolchain.
 
 For an isolated interactive session:
