@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import test from 'node:test';
 import { parseDocument } from 'yaml';
+import { affectedPlatforms, outputs } from '../../scripts/ci-platforms.mjs';
 
 const root = resolve(import.meta.dirname, '../..');
 function yaml(path) {
@@ -12,11 +13,13 @@ function yaml(path) {
   return document.toJS();
 }
 
+const PLATFORM_JOBS = ['windows', 'macos'];
+
 test('the required build check waits for every independent job, including failure or cancellation', () => {
   const ci = yaml('.github/workflows/ci.yml');
   assert.ok(Object.hasOwn(ci.on, 'pull_request'));
   assert.deepEqual(ci.on.push.branches, ['main']);
-  assert.ok(!ci.on.push.paths && !ci.on.pull_request?.paths);
+  assert.ok(!ci.on.push.paths && !ci.on.pull_request?.paths && !ci.on.push['paths-ignore'] && !ci.on.pull_request?.['paths-ignore']);
   assert.equal(ci.jobs.build.name, 'build');
   assert.equal(ci.jobs.build.if, 'always()');
   const jobs = Object.keys(ci.jobs).filter(name => name !== 'build');
@@ -24,14 +27,70 @@ test('the required build check waits for every independent job, including failur
   const gate = ci.jobs.build.steps[0];
   for (const job of jobs) {
     assert.equal(gate.env[`${job.toUpperCase()}_RESULT`], `\u0024{{ needs.${job}.result }}`);
-    assert.ok(gate.run.includes(`test "\u0024${job.toUpperCase()}_RESULT" = success`));
-    assert.ok(!ci.jobs[job].if, `Do not silently skip ${job} without updating the gate.`);
+    if (PLATFORM_JOBS.includes(job)) {
+      // The only allowed skip: the changes job decided this platform is unaffected, and the gate checks that decision.
+      assert.equal(ci.jobs[job].needs, 'changes');
+      assert.equal(ci.jobs[job].if, `needs.changes.outputs.${job} == 'true'`);
+      assert.equal(gate.env[`${job.toUpperCase()}_AFFECTED`], `\u0024{{ needs.changes.outputs.${job} }}`);
+      assert.equal(ci.jobs.changes.outputs[job], `\u0024{{ steps.platforms.outputs.${job} }}`);
+    } else {
+      assert.ok(gate.run.includes(`test "\u0024${job.toUpperCase()}_RESULT" = success`));
+      assert.ok(!ci.jobs[job].if, `Do not silently skip ${job} without updating the gate.`);
+    }
   }
+  const choose = ci.jobs.changes.steps.find(step => step.id === 'platforms');
+  assert.equal(choose.shell, 'bash');
+  assert.ok(choose.run.includes('git diff --name-only --no-renames HEAD^1 HEAD'));
+  assert.ok(choose.run.includes('node scripts/ci-platforms.mjs --all'), 'Pushes to main run every platform.');
+  assert.equal(ci.jobs.changes.steps[0].with['fetch-depth'], 2);
   assert.equal(ci.jobs.windows['runs-on'], 'windows-latest');
   const snapshot = ci.jobs.windows.steps.find(step => step.name === 'Snapshot smoke test');
   assert.equal(snapshot.env.DOTNET_DISABLE_GUI_ERRORS, '1');
   assert.ok(snapshot.run.includes('$p.ExitCode -ne 0'));
   assert.equal(ci.jobs.website.defaults.run['working-directory'], 'website');
+});
+
+test('the build gate accepts a skipped platform only when the changes job skipped it on purpose', () => {
+  const gate = yaml('.github/workflows/ci.yml').jobs.build.steps[0];
+  const passing = { CHANGES_RESULT: 'success', REPOSITORY_RESULT: 'success', WEBSITE_RESULT: 'success',
+    WINDOWS_RESULT: 'success', WINDOWS_AFFECTED: 'true', MACOS_RESULT: 'success', MACOS_AFFECTED: 'true' };
+  const passes = changes => {
+    const result = spawnSync('bash', ['-e', '-c', gate.run], { env: { ...process.env, ...passing, ...changes }, encoding: 'utf8' });
+    assert.equal(result.error, undefined);
+    return result.status === 0;
+  };
+  assert.ok(passes({}));
+  assert.ok(passes({ MACOS_RESULT: 'skipped', MACOS_AFFECTED: 'false' }));
+  assert.ok(passes({ WINDOWS_RESULT: 'skipped', WINDOWS_AFFECTED: 'false', MACOS_RESULT: 'skipped', MACOS_AFFECTED: 'false' }));
+  for (const result of ['failure', 'cancelled', 'skipped']) {
+    assert.ok(!passes({ MACOS_RESULT: result }), `macos ${result} while affected`);
+    assert.ok(!passes({ WINDOWS_RESULT: result }), `windows ${result} while affected`);
+    assert.ok(!passes({ REPOSITORY_RESULT: result }), `repository ${result}`);
+    assert.ok(!passes({ WEBSITE_RESULT: result }), `website ${result}`);
+    assert.ok(!passes({ CHANGES_RESULT: result }), `changes ${result}`);
+  }
+  assert.ok(!passes({ MACOS_RESULT: 'failure', MACOS_AFFECTED: 'false' }));
+  assert.ok(!passes({ MACOS_RESULT: 'cancelled', MACOS_AFFECTED: 'false' }));
+  assert.ok(!passes({ MACOS_RESULT: 'skipped', MACOS_AFFECTED: '' }), 'A missing decision is not a deliberate skip.');
+});
+
+test('pull requests run the platforms their changes affect, and both for shared or unknown paths', () => {
+  const run = (...paths) => affectedPlatforms(paths);
+  const both = { windows: true, macos: true };
+  assert.deepEqual(run('src/QNotch.Mac/Sources/QNotchMac/Application.swift'), { windows: false, macos: true });
+  assert.deepEqual(run('scripts/macos/build.sh', 'docs/macos/README.md'), { windows: false, macos: true });
+  assert.deepEqual(run('src/QNotch/App.xaml.cs', 'tests/QNotch.WindowsTests/Program.cs', 'docs/windows/development.md', 'QNotch.sln'),
+    { windows: true, macos: false });
+  assert.deepEqual(run('website/src/pages/index.astro', 'README.md', 'ARCHITECTURE.md', 'docs/releases.md'), { windows: false, macos: false });
+  assert.deepEqual(run(), { windows: false, macos: false });
+  // The Mac build copies the Windows weather icons.
+  assert.deepEqual(run('src/QNotch/Modules/Weather/Icons/LICENSE'), both);
+  for (const shared of ['.github/workflows/ci.yml', '.github/pull_request_template.md', 'scripts/check-snapshots.mjs', 'spec/diagnostics.md',
+    'tests/fixtures/release-tags.json', 'tests/repository/workflows.test.mjs', 'package.json', 'artifacts/new/outline.txt', 'NEW.txt']) {
+    assert.deepEqual(run(shared), both, shared);
+  }
+  assert.deepEqual(run('src/QNotch/App.xaml.cs', 'src/QNotch.Mac/Package.swift'), both);
+  assert.equal(outputs({ windows: true, macos: false }), 'windows=true\nmacos=false\n');
 });
 
 test('Windows release workflow validates tags and both packages before guarded publication', () => {

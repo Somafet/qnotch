@@ -13,7 +13,37 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Pull requests run only the platform jobs their changes affect (scripts/ci-platforms.mjs). Pushes to main run both.
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      windows: ${{ steps.platforms.outputs.windows }}
+      macos: ${{ steps.platforms.outputs.macos }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      # The pull request checkout is a merge commit; its first parent is the base it merges into.
+      - name: Choose affected platforms
+        id: platforms
+        shell: bash
+        env:
+          EVENT: ${{ github.event_name }}
+        run: |
+          if [ "$EVENT" = pull_request ]; then
+            git diff --name-only --no-renames HEAD^1 HEAD > "$RUNNER_TEMP/changed.txt"
+            node scripts/ci-platforms.mjs "$RUNNER_TEMP/changed.txt" | tee -a "$GITHUB_OUTPUT"
+          else
+            node scripts/ci-platforms.mjs --all | tee -a "$GITHUB_OUTPUT"
+          fi
+
   windows:
+    needs: changes
+    if: needs.changes.outputs.windows == 'true'
     runs-on: windows-latest
     timeout-minutes: 15
     steps:
@@ -100,6 +130,8 @@ jobs:
           if-no-files-found: ignore
 
   macos:
+    needs: changes
+    if: needs.changes.outputs.macos == 'true'
     runs-on: macos-15
     timeout-minutes: 10
     steps:
@@ -153,21 +185,31 @@ jobs:
       - run: npm run build
 
   # Branch protection already requires "build". Never rename it or skip it on failure.
+  # A platform job counts as passed only when it succeeded, or when the changes job deliberately skipped it.
   build:
     name: build
     if: always()
-    needs: [windows, macos, repository, website]
+    needs: [changes, windows, macos, repository, website]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - name: Require every validation job to succeed
         env:
+          CHANGES_RESULT: ${{ needs.changes.result }}
           WINDOWS_RESULT: ${{ needs.windows.result }}
+          WINDOWS_AFFECTED: ${{ needs.changes.outputs.windows }}
           MACOS_RESULT: ${{ needs.macos.result }}
+          MACOS_AFFECTED: ${{ needs.changes.outputs.macos }}
           REPOSITORY_RESULT: ${{ needs.repository.result }}
           WEBSITE_RESULT: ${{ needs.website.result }}
         run: |
-          test "$WINDOWS_RESULT" = success
-          test "$MACOS_RESULT" = success
+          test "$CHANGES_RESULT" = success
           test "$REPOSITORY_RESULT" = success
           test "$WEBSITE_RESULT" = success
+          platform() {
+            if [ "$2" = success ] || { [ "$2" = skipped ] && [ "$3" = false ]; }; then echo "$1: $2"; return; fi
+            echo "$1: $2 (affected: ${3:-unknown})"
+            exit 1
+          }
+          platform windows "$WINDOWS_RESULT" "$WINDOWS_AFFECTED"
+          platform macos "$MACOS_RESULT" "$MACOS_AFFECTED"
