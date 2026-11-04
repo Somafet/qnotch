@@ -33,7 +33,7 @@ public sealed class ShellController : IShell
     readonly TabReorderController _tabReorder;
     readonly Dictionary<string, Border> _tabViews = new();
     readonly Dictionary<string, RadioButton> _tabButtons = new();
-    DispatcherTimer? _dwell, _leave, _tabDwell;
+    DispatcherTimer? _dwell, _leave;
     ICadenceAware[] _cadenceAware = [];
     ShellMode _mode;
     bool _hovering, _fileDrag, _built, _wasExpandedBeforeGame, _hoverQuiet;
@@ -42,11 +42,12 @@ public sealed class ShellController : IShell
 
     public ShellController(NotchWindow window, GeneralSettings settings, SettingsStore store, Shortcuts shortcuts, ForegroundWatcher foreground,
         CardLayout layout, Registry<TabDescriptor> tabs, Registry<SettingsSectionDescriptor> sections, Registry<SegmentDescriptor> segments,
-        Registry<QuickActionDescriptor>? quickActions = null)
+        Registry<QuickActionDescriptor>? quickActions = null, Registry<DropSourceDescriptor>? drops = null)
     {
         _w = window; _general = settings; _store = store; _shortcuts = shortcuts; _foreground = foreground;
         _layout = layout; _tabs = tabs; _sections = sections; _segments = segments;
         QuickActions = quickActions ?? new();
+        Drops = drops ?? new();
         Presentation = store.Get<WindowsPresentationSettings>("windows-presentation");
         Presentation.Changed += ApplyPresentation;
         _vm = new ShellViewModel(settings, () => OpenSettings());
@@ -68,6 +69,8 @@ public sealed class ShellController : IShell
     public string ActiveTab => _activeTab;
     public WindowsPresentationSettings Presentation { get; }
     internal Registry<QuickActionDescriptor> QuickActions { get; }
+    internal Registry<DropSourceDescriptor> Drops { get; }
+    DropScreen? _drop;
     public bool IsTabVisible(string id) => _tabs.Find(id) is not null && Presentation.TabVisible(id);
     public event Action<ShellMode>? ModeChanged;
     public event Action? EditModeChanged;
@@ -120,6 +123,7 @@ public sealed class ShellController : IShell
             _fileDrag = false;
             try { FilesDropped?.Invoke(files); } catch (Exception ex) { Log.Error("FilesDropped handler failed", ex); }
         };
+        _w.DragEnded += () => { _fileDrag = false; HideDropScreen(); };
 
         _general.PropertyChanged += OnSetting;
         _layout.Changed += () => _store.Save("general", _general);
@@ -271,6 +275,7 @@ public sealed class ShellController : IShell
         if (_mode != ShellMode.Expanded) return;
         StopTimers();
         IsEditMode = false;
+        HideDropScreen();
         _w.DisableKeyboard();
         SetMode(ShellMode.Collapsed);
         _w.SetOpen(false);
@@ -402,19 +407,51 @@ public sealed class ShellController : IShell
         StartLeave();
     }
 
-    bool OnFileDragOver(bool enter)
+    /// <summary>Files are over the notch. With drop sources registered the drop screen lists where they can go and only its tiles take the
+    /// drop; without any, a drop anywhere goes to <see cref="FilesDropped"/>. Returns whether an untaken drop goes there.</summary>
+    bool OnFileDragOver(bool enter, string[] files)
     {
-        if (FilesDropped is null || _mode == ShellMode.GameBar) return false;
+        var screen = Drops.Items.Count > 0;
+        if ((!screen && FilesDropped is null) || _mode == ShellMode.GameBar) return false;
         _hovering = true;
         _leave?.Stop();
         if (_mode == ShellMode.Collapsed && _dwell?.IsEnabled != true) Start(ref _dwell, _general.HoverDwellMs, () => { QNotch.Core.Analytics.Track("shell", "open_panel", "ui"); OpenPanel(); });
         if (!_fileDrag)
         {
             _fileDrag = true;
+            if (screen) ShowDropScreen(files);
             try { FileDragEntered?.Invoke(); } catch (Exception ex) { Log.Error("FileDragEntered handler failed", ex); }
         }
-        return true;
+        // The source app may name the files only after the first enter.
+        else if (screen && enter && files.Length > 0 && _drop is { IsShown: true } d && d.FileCount == 0) ShowDropScreen(files);
+        return !screen && FilesDropped is not null;
     }
+
+    /// <summary>Shows the drop screen for <paramref name="files"/> (built on first use). It shows inside the panel, so it is seen once the panel opens.</summary>
+    internal void ShowDropScreen(IReadOnlyList<string> files)
+    {
+        EnsurePanelBuilt();
+        if (_drop is null)
+        {
+            _drop = new DropScreen(Drops);
+            _drop.Dropped += (target, paths) =>
+            {
+                _fileDrag = false;
+                IsEditMode = false;
+                try { target.Drop(paths); } catch (Exception ex) { Log.Error($"Drop target '{target.Id}' failed", ex); }
+            };
+            _drop.ShownChanged += _w.CoverPanel;
+            _w.DropLayer.Children.Add(_drop);
+        }
+        _drop.Show(files);
+    }
+
+    internal void HideDropScreen() => _drop?.Hide();
+
+    /// <summary>Smoke test: what the window reports for a file drag entering, and for one that ended without a drop.</summary>
+    internal void FileDrag(string[] files) => OnFileDragOver(true, files);
+    internal void FileDragEnd() { _fileDrag = false; HideDropScreen(); OnHoverLeave(); }
+    internal DropScreen? DropView => _drop;
 
     bool CanAutoClose => _mode == ShellMode.Expanded && !_general.Pinned && !_w.HasKeyboard && _holds == 0 && !_vm.IsEditMode;
 
@@ -442,7 +479,7 @@ public sealed class ShellController : IShell
         t.Start();
     }
 
-    void StopTimers() { _dwell?.Stop(); _leave?.Stop(); _tabDwell?.Stop(); }
+    void StopTimers() { _dwell?.Stop(); _leave?.Stop(); }
 
     // ---------- game bar plumbing ----------
 
@@ -491,9 +528,6 @@ public sealed class ShellController : IShell
             System.Windows.Automation.AutomationProperties.SetAutomationId(rb, $"tab-{id}");
             rb.Click += (_, _) => { QNotch.Core.Analytics.Track("shell", "select_tab", target: id); SelectTab(id); };
             rb.Checked += (_, _) => SelectTab(id);
-            // A file drag that rests on a tab opens it, so a drop can reach that tab's own targets. Left unhandled for the hover logic.
-            rb.DragEnter += (_, e) => { if (e.Data.GetDataPresent(DataFormats.FileDrop)) Start(ref _tabDwell, 450, () => SelectTab(id)); };
-            rb.DragLeave += (_, _) => _tabDwell?.Stop();
             strip.Children.Add(rb);
             _tabButtons[id] = rb;
             rb.Visibility = IsTabVisible(id) ? Visibility.Visible : Visibility.Collapsed;

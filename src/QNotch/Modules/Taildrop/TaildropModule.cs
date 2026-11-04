@@ -70,8 +70,14 @@ public sealed class TaildropModule : INotchModule, ICadenceAware
         _ctx = ctx;
         ctx.Tabs.Register(new TabDescriptor(TabId, "Taildrop", Icon, 45, () => new TaildropTab(this, _st, ctx.Shell)));
         ctx.Cards.Register(new CardDescriptor(TabId, "Taildrop", 85, () => new TaildropCard(this, _st, ctx.Shell)));
+        ctx.Drops.Register(new DropSourceDescriptor(TabId, "Taildrop", Icon, 20, files => DropTargets(_st, files, Directory.Exists, (d, paths) =>
+        {
+            Send(d, paths);
+            ctx.Shell.SelectTab(TabId);
+        })));
         if (ctx.Settings.ReadOnly) { Seed(); return; }
         _client = new TaildropClient();
+        ctx.Shell.FileDragEntered += Refresh; // the drop screen asks again while it shows, so devices arrive in time
         ctx.Shell.TabChanged += _ => { UpdateTimer(); if (_cadence == Cadence.Fast && Watching) Refresh(); };
     }
 
@@ -205,6 +211,20 @@ public sealed class TaildropModule : INotchModule, ICadenceAware
     }
 
     internal void Cancel() => _transfer?.Cancel();
+
+    /// <summary>The drop screen tiles: one per device while Tailscale is ready, otherwise one disabled tile that says why.</summary>
+    internal static IReadOnlyList<DropTarget> DropTargets(TaildropState st, IReadOnlyList<string> files, Func<string, bool> isFolder, Action<TaildropDevice, string[]> send)
+    {
+        if (TaildropEmpty.For(st) is { } empty) return [new DropTarget("unavailable", empty.Title, Icon, _ => { }, Enabled: false)];
+        if (st.Availability != TaildropAvailability.Ready) return [new DropTarget("unavailable", "Checking Tailscale", Icon, _ => { }, "One moment", Enabled: false)];
+        var folders = files.Count > 0 && files.All(isFolder);
+        return st.Devices.Select(d =>
+        {
+            var reason = st.Busy ? "Busy sending" : !d.Online ? "Offline" : folders ? "Folders can't be sent" : null;
+            var os = TaildropUi.OsName(d.Os);
+            return new DropTarget(d.Id, d.Name, TaildropUi.DeviceGlyph(d), paths => send(d, paths), reason ?? (os.Length > 0 ? os : "Online"), Enabled: reason is null);
+        }).ToList();
+    }
 
     /// <summary>Moves every waiting file into Downloads.</summary>
     internal void SaveWaiting()

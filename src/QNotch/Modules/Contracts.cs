@@ -126,6 +126,17 @@ public sealed record TabDescriptor(string Id, string Title, string Glyph, int Or
 /// <summary>A section in the Settings window left nav. Factory is called once, lazily.</summary>
 public sealed record SettingsSectionDescriptor(string Id, string Title, string Glyph, int Order, Func<FrameworkElement> Factory) : IRegistryItem;
 
+/// <summary>One place dragged files can go, a tile on the drop screen. Drop runs on the UI thread after the screen closed, with the
+/// dropped paths. A disabled target is dimmed, shows Subtitle as its reason and refuses the drop.</summary>
+public sealed record DropTarget(string Id, string Title, string Glyph, Action<string[]> Drop, string? Subtitle = null, bool Enabled = true);
+
+/// <summary>
+/// What a module offers on the drop screen, the view the shell shows while files are dragged over the notch (spec/drop-screen.md).
+/// Targets gets the dragged paths (empty when the source app does not say yet) and runs on the UI thread every time the screen shows:
+/// filter what is in memory, no I/O. A source that returns no targets is left out. Glyph and Title head the source's group.
+/// </summary>
+public sealed record DropSourceDescriptor(string Id, string Title, string Glyph, int Order, Func<IReadOnlyList<string>, IReadOnlyList<DropTarget>> Targets) : IRegistryItem;
+
 /// <summary>Module-owned quick control in the panel header, optionally repeated in the tray menu. Factories run on the UI thread.</summary>
 public sealed record QuickActionDescriptor(string Id, int Order, Func<FrameworkElement> Factory, Func<MenuItem>? TrayFactory = null) : IRegistryItem;
 
@@ -204,6 +215,8 @@ public sealed class ModuleContext
     /// <summary>Snapshot run only: pill states the snapshot shows one at a time, see <see cref="DemoState"/>.</summary>
     public Registry<DemoState> Demos { get; init; } = new();
     public Registry<QuickActionDescriptor> QuickActions { get; init; } = new();
+    /// <summary>Where files dragged onto the notch can go: the drop screen lists every source's targets. Register in <c>Initialize</c>.</summary>
+    public Registry<DropSourceDescriptor> Drops { get; init; } = new();
     /// <summary>Read-only local consumer snapshots. Register module-owned projections during Initialize.</summary>
     public Core.Consumers.ConsumerRegistry Consumers { get; init; } = new();
 }

@@ -71,88 +71,6 @@ internal static class TaildropUi
             rest.Width = new GridLength(1 - v, GridUnitType.Star);
         });
     }
-
-    /// <summary>
-    /// Turns <paramref name="target"/> into a drop target for one device: it lights up while files hover and sends them on drop. The drag
-    /// events are handled here, so the shell's own file drop (the file tray) does not also take the files.
-    /// </summary>
-    public static void DropOn(FrameworkElement target, Border highlight, TaildropModule module, TaildropState st, Func<TaildropDevice> device)
-    {
-        target.AllowDrop = true;
-        bool Accepts(DragEventArgs e) => e.Data.GetDataPresent(DataFormats.FileDrop) && device().Online && !st.Busy;
-        void Light(bool on)
-        {
-            if (on) highlight.SetResourceReference(Border.BorderBrushProperty, "AccentBrush");
-            else highlight.BorderBrush = System.Windows.Media.Brushes.Transparent;
-        }
-        void Over(object? _, DragEventArgs e)
-        {
-            var ok = Accepts(e);
-            e.Effects = ok ? DragDropEffects.Copy : DragDropEffects.None;
-            e.Handled = true;
-            Light(ok);
-        }
-        target.DragEnter += Over;
-        target.DragOver += Over;
-        target.DragLeave += (_, _) => Light(false);
-        target.Drop += (_, e) =>
-        {
-            e.Handled = true;
-            Light(false);
-            if (Accepts(e) && e.Data.GetData(DataFormats.FileDrop) is string[] files) module.Send(device(), files);
-        };
-    }
-}
-
-/// <summary>
-/// Keeps the panel open while files are dragged over <paramref name="root"/> (its drag events are handled, so the shell does not see the
-/// pointer there) and refuses drops that miss every device.
-/// </summary>
-internal sealed class DropHold
-{
-    readonly IShell _shell;
-    readonly DispatcherTimer _release;
-    IDisposable? _hold;
-
-    public DropHold(FrameworkElement root, IShell shell, Action missed)
-    {
-        _shell = shell;
-        _release = new DispatcherTimer(DispatcherPriority.Input) { Interval = TimeSpan.FromMilliseconds(250) };
-        _release.Tick += (_, _) => Release();
-        root.AllowDrop = true;
-        root.PreviewDragEnter += (_, e) => Hold(e);
-        root.PreviewDragOver += (_, e) => Hold(e);
-        root.DragLeave += (_, _) => { if (_hold is not null) _release.Start(); };
-        void Refuse(object? _, DragEventArgs e)
-        {
-            if (e.Handled) return;
-            e.Effects = DragDropEffects.None;
-            e.Handled = true;
-        }
-        root.DragEnter += Refuse;
-        root.DragOver += Refuse;
-        root.AddHandler(DragDrop.DropEvent, new DragEventHandler((_, e) =>
-        {
-            Release();
-            if (e.Handled) return;
-            e.Handled = true;
-            missed();
-        }), handledEventsToo: true);
-    }
-
-    void Hold(DragEventArgs e)
-    {
-        if (!e.Data.GetDataPresent(DataFormats.FileDrop)) return;
-        _release.Stop();
-        _hold ??= _shell.HoldOpen();
-    }
-
-    void Release()
-    {
-        _release.Stop();
-        _hold?.Dispose();
-        _hold = null;
-    }
 }
 
 /// <summary>What to show instead of the devices: null while they are available.</summary>
@@ -171,7 +89,7 @@ internal static class TaildropEmpty
     };
 }
 
-/// <summary>The tab: every device as a drop target (click one to choose files), files waiting in the inbox, and the transfer line.</summary>
+/// <summary>The tab: every device (click one to choose files), files waiting in the inbox, and the transfer line. Drags go to the drop screen.</summary>
 internal sealed class TaildropTab : Grid
 {
     readonly TaildropModule _module;
@@ -198,11 +116,10 @@ internal sealed class TaildropTab : Grid
         RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         RowDefinitions.Add(new RowDefinition());
         RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        Background = System.Windows.Media.Brushes.Transparent; // the whole tab is a drag surface
 
         // Header
         var title = new TextBlock { Text = "Send to your devices", FontSize = 13, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center };
-        var hint = UiKit.Text("Drop files on a device, or click one to choose files.", "Muted");
+        var hint = UiKit.Text("Click a device to choose files, or drag files onto the notch.", "Muted");
         hint.VerticalAlignment = VerticalAlignment.Center;
         hint.TextWrapping = TextWrapping.NoWrap;
         hint.Margin = new Thickness(10, 1, 0, 0);
@@ -255,7 +172,6 @@ internal sealed class TaildropTab : Grid
         SetRow(footer, 3);
         Children.Add(footer);
 
-        _ = new DropHold(this, shell, () => _st.SetTransfer(false, null, "Drop the files on a device to send them.", "TextSecondaryBrush", -1));
         st.Changed += Render;
         st.TransferChanged += RenderTransfer;
         Render();
@@ -321,8 +237,6 @@ internal sealed class TaildropTab : Grid
         AutomationProperties.SetName(button, $"{d.Name}, {(d.Online ? "online" : "offline")}");
         button.Click += (_, _) => TaildropUi.Pick(_module, _shell, d);
         var frame = new Border { Child = button, Width = 160, CornerRadius = new CornerRadius(9), BorderThickness = new Thickness(1.5), Margin = new Thickness(0, 0, 8, 8), BorderBrush = System.Windows.Media.Brushes.Transparent };
-        // Offline tiles still take the drag, so the drop is refused instead of falling through to the file tray.
-        TaildropUi.DropOn(frame, frame, _module, _st, () => d);
 
         void Refresh()
         {
@@ -352,7 +266,7 @@ internal sealed class TaildropTab : Grid
     }
 }
 
-/// <summary>Home card body: online devices as drop targets (a click chooses files) and the transfer line. Other states open the tab.</summary>
+/// <summary>Home card body: online devices (a click chooses files) and the transfer line. Other states open the tab.</summary>
 internal sealed class TaildropCard : Grid
 {
     readonly TaildropModule _module;
@@ -381,7 +295,6 @@ internal sealed class TaildropCard : Grid
         foot.Children.Add(_bar);
         SetRow(foot, 1);
         Children.Add(foot);
-        _ = new DropHold(this, shell, () => { });
         st.Changed += Render;
         st.TransferChanged += Render;
         Render();
@@ -422,7 +335,7 @@ internal sealed class TaildropCard : Grid
         line.Children.Add(glyph);
         line.Children.Add(dot);
         line.Children.Add(name);
-        var b = new Button { Content = line, Padding = new Thickness(6, 4, 6, 4), IsEnabled = !_st.Busy, ToolTip = $"Send files to {d.Name} (or drop them here)",
+        var b = new Button { Content = line, Padding = new Thickness(6, 4, 6, 4), IsEnabled = !_st.Busy, ToolTip = $"Send files to {d.Name}",
             Style = (Style)Application.Current.FindResource("LinkButton") };
         b.SetResourceReference(Control.ForegroundProperty, "TextPrimaryBrush");
         AutomationProperties.SetName(b, $"Send files to {d.Name}");
@@ -431,7 +344,6 @@ internal sealed class TaildropCard : Grid
             Background = System.Windows.Media.Brushes.Transparent, Margin = new Thickness(-6, 0, -6, 2) };
         b.MouseEnter += (_, _) => frame.SetResourceReference(Border.BackgroundProperty, "ControlBrush");
         b.MouseLeave += (_, _) => frame.Background = System.Windows.Media.Brushes.Transparent;
-        TaildropUi.DropOn(frame, frame, _module, _st, () => d);
         return frame;
     }
 

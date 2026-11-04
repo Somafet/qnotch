@@ -27,9 +27,15 @@ public sealed class FileTrayModule : INotchModule, ICadenceAware
             .Where(i => i.Name.Contains(q, StringComparison.OrdinalIgnoreCase))
             .Select(i => new SearchHit(i.Name, i.Path, () => { svc.Open(i); shell.ClosePanel(); }))));
 
-        // Subscribing also makes the notch accept file drops. Dragging files over the notch reveals the drop target on the Files tab.
-        shell.FilesDropped += svc.Add;
-        shell.FileDragEntered += () => shell.SelectTab("files");
+        // Files dragged onto the notch: the drop screen offers the tray; a drop adds them and shows the tray.
+        ctx.Drops.Register(new DropSourceDescriptor("files", "File tray", Glyphs.Folder, 10, files => [DropTarget(state, files, paths => { svc.Add(paths); shell.SelectTab("files"); })]));
+    }
+
+    /// <summary>The tray's one drop target: off when every dragged item is already in the tray.</summary>
+    internal static DropTarget DropTarget(FileTrayState state, IReadOnlyList<string> files, Action<string[]> add)
+    {
+        var all = files.Count > 0 && files.All(f => state.Items.Any(i => string.Equals(i.Path, f, StringComparison.OrdinalIgnoreCase)));
+        return new DropTarget("add", "Add to tray", Glyphs.Add, add, all ? "Already in the tray" : "Keep them within reach", Enabled: !all);
     }
 
     public void SetCadence(Cadence cadence)

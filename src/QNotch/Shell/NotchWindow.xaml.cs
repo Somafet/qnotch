@@ -54,16 +54,40 @@ public partial class NotchWindow : Window
         };
         Surface.SizeChanged += (_, _) => ClampShift();
         Glance.SizeChanged += (_, _) => ClampShift();
-        // OLE drag: mouse events are suspended during a drag, so the drag events stand in for hover.
-        Surface.DragEnter += (_, e) => OnDrag(e, enter: true);
-        Surface.DragOver += (_, e) => OnDrag(e, enter: false);
-        Surface.DragLeave += (_, _) => DragLeft?.Invoke();
-        Surface.Drop += (_, e) =>
+        // OLE drag: mouse events are suspended during a drag, so the drag events stand in for hover. The preview (tunneling) events
+        // reach the surface even when a child (a drop screen tile) handles the drag, so hover keeping never depends on who takes it.
+        Surface.PreviewDragEnter += (_, e) => OnDragAlive(e, enter: true);
+        Surface.PreviewDragOver += (_, e) => OnDragAlive(e, enter: false);
+        Surface.DragEnter += (_, e) => OnDragEffects(e);
+        Surface.DragOver += (_, e) => OnDragEffects(e);
+        Surface.DragLeave += (_, _) =>
         {
-            if (e.Handled || e.Data.GetData(DataFormats.FileDrop) is not string[] files) return;
-            e.Handled = true;
-            FilesDropped?.Invoke(files);
+            DragLeft?.Invoke();
+            // Leaving one child for another raises DragLeave too: the drag only ended if no drag event follows soon.
+            _dragGone ??= NewDragGoneTimer();
+            _dragGone.Stop();
+            _dragGone.Start();
         };
+        Surface.AddHandler(DragDrop.DropEvent, new DragEventHandler((_, e) =>
+        {
+            _dragGone?.Stop();
+            if (!e.Handled && e.Data.GetData(DataFormats.FileDrop) is string[] files)
+            {
+                e.Handled = true;
+                if (_dragAccepted) FilesDropped?.Invoke(files);
+            }
+            DragEnded?.Invoke();
+        }), handledEventsToo: true);
+    }
+
+    System.Windows.Threading.DispatcherTimer? _dragGone;
+    bool _dragAccepted;
+
+    System.Windows.Threading.DispatcherTimer NewDragGoneTimer()
+    {
+        var t = new System.Windows.Threading.DispatcherTimer(System.Windows.Threading.DispatcherPriority.Input) { Interval = TimeSpan.FromMilliseconds(150) };
+        t.Tick += (_, _) => { t.Stop(); DragEnded?.Invoke(); };
+        return t;
     }
 
     void OnEditAction(object sender, RoutedEventArgs e) => Analytics.Track("shell", "toggle_edit", enabled: ((System.Windows.Controls.Primitives.ToggleButton)sender).IsChecked);
@@ -76,15 +100,34 @@ public partial class NotchWindow : Window
     public nint MonitorHandle { get; private set; }
 
     public event Action? HoverEntered, HoverLeft, EscPressed, KeyboardFocusLost, DragLeft;
-    /// <summary>File drag over the surface: arg is true on the first enter. Handler returns whether files are accepted.</summary>
-    public event Func<bool, bool>? FileDragOver;
+    /// <summary>File drag over the surface (any element): true on an enter, and the dragged paths (empty when the source does not say).
+    /// The handler returns whether a drop on an element that does not take it itself goes to <see cref="FilesDropped"/>.</summary>
+    public event Func<bool, string[], bool>? FileDragOver;
     public event Action<string[]>? FilesDropped;
+    /// <summary>The drag left the window (after a short debounce), was cancelled, or dropped.</summary>
+    public event Action? DragEnded;
+    /// <summary>The drop screen's place: over the header and the tabs.</summary>
+    public Grid DropLayer => DropHost;
 
-    void OnDrag(DragEventArgs e, bool enter)
+    /// <summary>Hides the header and the tabs (laid out, not rendered or announced) while the drop screen covers them.</summary>
+    public void CoverPanel(bool cover)
+    {
+        foreach (UIElement child in PanelLayer.Children)
+            if (child != DropHost) child.Visibility = cover ? Visibility.Hidden : Visibility.Visible;
+    }
+
+    void OnDragAlive(DragEventArgs e, bool enter)
+    {
+        if (!e.Data.GetDataPresent(DataFormats.FileDrop)) return;
+        _dragGone?.Stop();
+        var files = e.Data.GetData(DataFormats.FileDrop) as string[] ?? [];
+        _dragAccepted = FileDragOver?.Invoke(enter, files) == true;
+    }
+
+    void OnDragEffects(DragEventArgs e)
     {
         if (e.Handled) return;
-        var accept = e.Data.GetDataPresent(DataFormats.FileDrop) && FileDragOver?.Invoke(enter) == true;
-        e.Effects = accept ? DragDropEffects.Copy | DragDropEffects.Link : DragDropEffects.None;
+        e.Effects = _dragAccepted && e.Data.GetDataPresent(DataFormats.FileDrop) ? DragDropEffects.Copy | DragDropEffects.Link : DragDropEffects.None;
         e.Handled = true;
     }
 
