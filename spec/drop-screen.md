@@ -32,7 +32,7 @@ A target has an `id`, a `title`, an optional `subtitle`, a `glyph`, `enabled`, a
 | Source | Order | Targets |
 | --- | --- | --- |
 | `files`, File tray | 10 | `add`, "Add to tray": "Keep them within reach". Disabled with "Already in the tray" when every dragged item is already in the tray. Its drop adds the items and selects the Files tab. |
-| `taildrop`, Taildrop | 20 | One tile per device (id: its stable id) while Tailscale is ready. The subtitle is the device's OS. A device is disabled with "Offline" when it is offline, "Busy sending" while a send runs, and "Folders can't be sent" when every item is a folder. When Tailscale is not ready, there is one disabled tile titled with the state ("Tailscale is not running", "Sign in to Tailscale", ...). Its drop sends the files and selects the Taildrop tab. |
+| `taildrop`, Taildrop | 20 | One tile per device (id: its stable id) while Tailscale is ready. The subtitle is the device's OS. A device is disabled with the first reason that applies: "Folders can't be sent" when every item is a folder, "Busy sending" while a send runs, then "Offline". When Tailscale is not ready, there is one disabled tile titled with the state ("Tailscale is not running", "Sign in to Tailscale", ...). Its drop sends the files and selects the Taildrop tab. |
 
 ## Accessibility and diagnostics
 

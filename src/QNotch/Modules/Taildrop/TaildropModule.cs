@@ -220,7 +220,7 @@ public sealed class TaildropModule : INotchModule, ICadenceAware
         var folders = files.Count > 0 && files.All(isFolder);
         return st.Devices.Select(d =>
         {
-            var reason = st.Busy ? "Busy sending" : !d.Online ? "Offline" : folders ? "Folders can't be sent" : null;
+            var reason = folders ? "Folders can't be sent" : st.Busy ? "Busy sending" : !d.Online ? "Offline" : null; // spec order
             var os = TaildropUi.OsName(d.Os);
             return new DropTarget(d.Id, d.Name, TaildropUi.DeviceGlyph(d), paths => send(d, paths), reason ?? (os.Length > 0 ? os : "Online"), Enabled: reason is null);
         }).ToList();

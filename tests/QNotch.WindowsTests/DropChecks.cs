@@ -39,6 +39,7 @@ static class DropChecks
         Require(Targets(["dir"], folders: true).All(x => !x.Enabled) && Targets(["dir"], folders: true)[0].Subtitle == "Folders can't be sent");
         st.SetTransfer(true, "n1", "Sending a.txt", "TextSecondaryBrush", 0.2);
         Require(Targets(["a.txt"]).All(x => !x.Enabled && x.Subtitle == "Busy sending"));
+        Require(Targets(["dir"], folders: true).All(x => x.Subtitle == "Folders can't be sent")); // the folder reason wins over busy
     }
 
     static void Require(bool condition) { if (!condition) throw new InvalidOperationException("assertion failed"); }
