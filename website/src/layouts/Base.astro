@@ -3,14 +3,15 @@ import '@fontsource-variable/inter';
 import '../styles/global.css';
 import og from '../assets/og.png';
 
-interface Props { title: string; description: string; noindex?: boolean }
-const { title, description, noindex = false } = Astro.props;
+// os: a page about one platform (/windows/, /mac/) shows that one, whatever the visitor's OS. See scripts/platform.ts.
+interface Props { title: string; description: string; noindex?: boolean; os?: 'win' | 'mac' }
+const { title, description, noindex = false, os: pinned } = Astro.props;
 // Hashed file name, so caches and social crawlers pick up a new image right away
 const image = new URL(og.src, Astro.site).href;
 const url = new URL(Astro.url.pathname, Astro.site).href;
 ---
 <!doctype html>
-<html lang="en">
+<html lang="en" data-os={pinned} data-os-pinned={pinned && ''}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -43,6 +44,12 @@ const url = new URL(Astro.url.pathname, Astro.site).href;
         document.querySelector('meta[name="theme-color"]').content = theme === 'dark' ? '#0a0a0c' : '#f5f4f0';
 
         // Windows or Mac: a ?os= link, then this tab's earlier choice, then the visitor's OS. See scripts/platform.ts.
+        // A page about one platform has it set already, and the home page remembers it for this tab.
+        const root = document.documentElement;
+        if (root.hasAttribute('data-os-pinned')) {
+          try { sessionStorage.setItem('qnotch-os', root.dataset.os); } catch {}
+          return;
+        }
         let os = new URLSearchParams(location.search).get('os');
         os = os === 'mac' || os === 'macos' ? 'mac' : os === 'windows' || os === 'win' ? 'win' : null;
         if (!os) { try { os = sessionStorage.getItem('qnotch-os'); } catch {} }
@@ -50,7 +57,7 @@ const url = new URL(Astro.url.pathname, Astro.site).href;
           const platform = navigator.userAgentData?.platform || navigator.platform || navigator.userAgent;
           os = /mac|iphone|ipad|ipod/i.test(platform) ? 'mac' : 'win';
         }
-        document.documentElement.dataset.os = os;
+        root.dataset.os = os;
       })();
     </script>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
