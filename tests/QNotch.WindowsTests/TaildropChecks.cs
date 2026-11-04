@@ -78,6 +78,11 @@ static class TaildropChecks
 
         var info = ModuleList.All.Single(m => m.Id == "taildrop");
         Require(info.Shared is null && !info.Early && ModuleList.TourGroups.Count(g => g.Ids.Contains("taildrop")) == 1);
+        // Off by default: it needs Tailscale. A fresh install leaves it off; turning it on is a local choice.
+        var gs = new QNotch.Core.GeneralSettings();
+        Require(!info.DefaultEnabled && !info.IsEnabled(gs));
+        info.SetEnabled(gs, true);
+        Require(info.IsEnabled(gs) && gs.LocalEnabledModules.Contains("taildrop"));
     }
 
     /// <summary>Read-only check against the Tailscale service on this machine (<c>--taildrop-live</c>): nothing is sent or saved.</summary>
