@@ -117,19 +117,11 @@ internal sealed class TaildropTab : Grid
         RowDefinitions.Add(new RowDefinition());
         RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
-        // Header
-        var title = new TextBlock { Text = "Send to your devices", FontSize = 13, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center };
-        var hint = UiKit.Text("Click a device to choose files, or drag files onto the notch.", "Muted");
-        hint.VerticalAlignment = VerticalAlignment.Center;
-        hint.TextWrapping = TextWrapping.NoWrap;
-        hint.Margin = new Thickness(10, 1, 0, 0);
+        // Actions only: the tab strip already names the page.
         var refresh = TaildropUi.IconButton(Glyphs.Refresh, "Refresh devices", module.Refresh);
-        DockPanel.SetDock(refresh, Dock.Right);
-        var header = new DockPanel { VerticalAlignment = VerticalAlignment.Center };
-        header.Children.Add(refresh);
-        header.Children.Add(title);
-        header.Children.Add(hint);
-        Children.Add(header);
+        refresh.HorizontalAlignment = HorizontalAlignment.Right;
+        refresh.VerticalAlignment = VerticalAlignment.Center;
+        Children.Add(refresh);
 
         // Files waiting in the inbox
         _waiting.SetResourceReference(Border.BackgroundProperty, "AccentSoftBrush");
