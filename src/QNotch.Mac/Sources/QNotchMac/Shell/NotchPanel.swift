@@ -136,7 +136,8 @@ final class NotchSurfaceView: NSView {
     var entered: (() -> Void)?
     var exited: (() -> Void)?
     /// File drags: set by the shell only while a module accepts file drops.
-    var fileDragEntered: (() -> Void)?
+    /// A file drag entered; the argument is its `draggingSequenceNumber`.
+    var fileDragEntered: ((Int) -> Void)?
     var fileDragExited: (() -> Void)?
     var filesDropped: (([URL]) -> Bool)?
     let world = NSView()
@@ -195,7 +196,7 @@ final class NotchSurfaceView: NSView {
 
     override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
         guard filesDropped != nil, !fileURLs(sender).isEmpty else { return [] }
-        fileDragEntered?()
+        fileDragEntered?(sender.draggingSequenceNumber)
         return .copy
     }
     override func draggingUpdated(_ sender: NSDraggingInfo) -> NSDragOperation { filesDropped == nil ? [] : .copy }

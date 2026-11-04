@@ -98,7 +98,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         panel.contentView = surface
         surface.entered = { [weak self] in self?.pointerEntered() }
         surface.exited = { [weak self] in self?.pointerLeft() }
-        surface.fileDragEntered = { [weak self] in self?.fileDragEntered() }
+        surface.fileDragEntered = { [weak self] sequence in self?.fileDragEntered(sequence) }
         surface.fileDragExited = { [weak self] in self?.pointerLeft() }
         surface.setAccessibilityElement(true)
         surface.setAccessibilityRole(.group)
@@ -392,10 +392,16 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         surface.acceptFiles(true)
     }
 
-    private func fileDragEntered() {
+    private var fileDragSequence: Int?
+
+    private func fileDragEntered(_ sequence: Int) {
         leaveTask?.cancel()
         guard !gameActive else { return }
         if !state.expanded { open(keyboard: false) }
+        // Once per drag: coming back onto the surface from a drop target inside the panel (a tab
+        // button, a module's own target) keeps the page the user moved to.
+        guard sequence != fileDragSequence else { return }
+        fileDragSequence = sequence
         fileDropEntered?()
     }
     @discardableResult

@@ -88,9 +88,36 @@ final class SnapshotRun {
 /// shared by `--snapshot` and `--smoke-test`. Synchronous, so no click or timer moves anything in
 /// between. Leaves the panel collapsed on Home, without the demo agents.
 enum SnapshotViews {
+    /// Taildrop's send, result and unavailable states from demo data: no socket, nothing is sent.
+    private static func renderTaildropStates(_ run: SnapshotRun, _ taildrop: TaildropModule) {
+        let shell = run.shell
+        let demo = TaildropState.demo
+        guard let phone = demo.targets.first(where: { $0.name == "pixel-8" }) else { return run.fail("taildrop", "demo devices missing") }
+        var saved = demo
+        saved.waiting = []
+        var stopped = TaildropState(availability: .notRunning)
+        stopped.targets = []
+        let states: [(String, TaildropState, TaildropTransfer?, TaildropResult?)] = [
+            ("sending", demo, TaildropTransfer(deviceID: phone.id, deviceName: phone.name, fileName: "trip-notes.pdf", index: 2, count: 3, fraction: 0.45), nil),
+            ("sent", demo, nil, .sent(3, firstName: "trip-notes.pdf", to: phone.name, skippedFolders: 1)),
+            ("failed", demo, nil, .failed("trip-notes.pdf", to: "work-laptop", sent: 1, count: 3, reason: "the device went offline")),
+            ("saved", saved, nil, TaildropResult(text: "Saved holiday-photos.zip to Downloads", success: true, reveal: URL(fileURLWithPath: "/tmp/holiday-photos.zip"))),
+            ("not-running", stopped, nil, nil),
+            ("no-devices", TaildropState(availability: .ready), nil, nil)
+        ]
+        for (name, state, transfer, result) in states {
+            taildrop.showDemo(state, transfer: transfer, result: result)
+            shell.selectTab("taildrop")
+            run.notch("taildrop-" + name)
+            shell.selectTab("home")
+            run.write("taildrop-\(name)-card", cardViews(shell)["taildrop"], missing: "the Taildrop card is not on Home")
+        }
+        taildrop.showDemo(demo)
+    }
+
     static func render(_ run: SnapshotRun) {
         let shell = run.shell
-        shell.updateGeneral { $0.reduceMotion = true; $0.setEnabled("terminal", true) }
+        shell.updateGeneral { $0.reduceMotion = true; $0.setEnabled("terminal", true); $0.setEnabled("taildrop", true) }
         shell.module(ColorPickerModule.self)?.seedRecent(["#3CC8D9", "#4CD98C", "#FFB54D", "#FF7A6B", "#B07CFF", "#5B9DFF"])
         shell.module(StatsModule.self)?.sampleNow()
         shell.close(restoreFocus: false)
@@ -188,6 +215,7 @@ enum SnapshotViews {
             shell.selectTab("home")
             run.write("media-empty-card", cardViews(shell)["media"], missing: "the card is not on Home")
         }
+        if let taildrop = shell.module(TaildropModule.self) { renderTaildropStates(run, taildrop) }
         run.log("tab-header-frames", headerFrames)
         if !run.failed { run.pass("tab-headers") }
         shell.selectTab("home")

@@ -327,8 +327,46 @@ final class TabBar: FillView {
         setAccessibilityRole(.tabGroup)
         setAccessibilityLabel("Panel tabs")
         select(selected, animated: false)
+        registerForDraggedTypes([.fileURL])
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    // MARK: File drags
+
+    /// A file drag resting this long on a tab opens it, so the drop can reach that page's targets.
+    static let dragDwell: TimeInterval = 0.45
+    private var dwell: (index: Int, task: DispatchWorkItem)?
+
+    /// The tab under a drag, if any. Edit mode never switches.
+    func tab(at point: NSPoint) -> Int? {
+        guard !editing else { return nil }
+        return order.enumerated().first { frame(at: $0.offset).contains(point) }?.element
+    }
+
+    /// Starts, keeps or cancels the dwell for the tab at `point`. The tab strip itself never takes a drop.
+    @discardableResult
+    func dragMoved(to point: NSPoint?) -> NSDragOperation {
+        let index = point.flatMap(tab(at:))
+        guard index != dwell?.index else { return [] }
+        dwell?.task.cancel()
+        dwell = nil
+        if let index, index != selected {
+            let task = DispatchWorkItem { [weak self] in
+                guard let self, self.dwell?.index == index else { return }
+                self.dwell = nil
+                self.changed(index)
+            }
+            dwell = (index, task)
+            DispatchQueue.main.asyncAfter(deadline: .now() + Self.dragDwell, execute: task)
+        }
+        return []
+    }
+
+    override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation { dragMoved(to: convert(sender.draggingLocation, from: nil)) }
+    override func draggingUpdated(_ sender: NSDraggingInfo) -> NSDragOperation { dragMoved(to: convert(sender.draggingLocation, from: nil)) }
+    override func draggingExited(_ sender: NSDraggingInfo?) { dragMoved(to: nil) }
+    override func draggingEnded(_ sender: NSDraggingInfo) { dragMoved(to: nil) }
+    override func performDragOperation(_ sender: NSDraggingInfo) -> Bool { false }
 
     override var intrinsicContentSize: NSSize {
         let count = CGFloat(buttons.count)

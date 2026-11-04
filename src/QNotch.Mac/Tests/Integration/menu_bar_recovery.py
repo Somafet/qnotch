@@ -21,7 +21,7 @@ OUTPUT = REPO / "dist/macos/recovery-smoke"
 BUNDLE = OUTPUT / "QNotchRecovery.app"
 SOURCE = REPO / "dist/macos/QNotch.app"
 MODULES = ["media", "stats", "timer", "volume", "search", "note", "colorpicker", "capture",
-           "filetray", "clipboard", "notifications", "agents", "weather", "github", "ai", "terminal", "scheduled"]
+           "filetray", "clipboard", "notifications", "agents", "weather", "github", "ai", "terminal", "scheduled", "taildrop"]
 
 
 def until(check, message, timeout=10):
