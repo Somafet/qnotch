@@ -1,0 +1,238 @@
+---
+import Base from '../layouts/Base.astro';
+import ThemeSwitch from '../components/ThemeSwitch.astro';
+
+// Keep this page true to the apps. It mirrors spec/analytics.md, docs/windows/README.md#privacy-and-data and
+// docs/macos/README.md#data-permissions-and-diagnostics: change it in the same pull request as any new network
+// request, identifier or stored data, and move the date.
+const GH = 'https://github.com/Somafet/qnotch';
+const updated = { iso: '2026-11-04', text: '4 November 2026' };
+
+const online = [
+  { what: 'Update checks', who: 'GitHub', sends: 'A request for the latest QNotch release, with no token or identifier. The update itself downloads only when you choose to install it.', when: 'Automatically, unless you turn update checks off in Settings or the welcome tour.' },
+  { what: 'Weather', who: 'MET Norway (api.met.no) and yr.no', sends: 'The location of the place you picked. When you search for a place, what you type.', when: 'About every 30 minutes once you pick a place, and when you search.' },
+  { what: 'GitHub contributions', who: 'GitHub', sends: 'Your GitHub token, to read your contribution graph. Signing in uses GitHub’s device flow in your browser, asking only for read access to your profile.', when: 'Only after you sign in with GitHub or add a token.' },
+  { what: 'Claude Code usage', who: 'Anthropic (api.anthropic.com)', sends: 'Your existing Claude Code sign-in, to read your plan’s usage limits.', when: 'Only if Claude Code is signed in on your computer. Turn it off in Settings, AI.' },
+  { what: 'Usage data', who: 'PostHog, EU Cloud', sends: 'The usage events described above.', when: 'While Share usage data is on.' },
+];
+---
+<Base
+  title="Privacy policy · QNotch"
+  description="What QNotch keeps on your computer, what it sends and to whom, and how to turn it off. Covers the Windows and Mac apps and qnot.ch."
+>
+  <header class="top">
+    <div class="wrap top-in">
+      <a class="logo" href="/" aria-label="QNotch home"><span class="logo-mark"><i></i></span>QNotch</a>
+      <ThemeSwitch />
+    </div>
+  </header>
+
+  <main class="wrap doc">
+    <span class="eyebrow">Privacy</span>
+    <h1>Privacy policy</h1>
+    <p class="meta">Last updated <time datetime={updated.iso}>{updated.text}</time></p>
+
+    <p>QNotch is a free, open source app for Windows and macOS, made by Soma Somorjai. This policy covers both apps, however you installed them (from this site, GitHub, the Microsoft Store, winget, Scoop or Chocolatey), and this website. Every statement here can be checked against the <a href={GH}>source code</a>.</p>
+
+    <section aria-labelledby="short">
+      <h2 id="short">In short</h2>
+      <ul>
+        <li>QNotch needs no account and shows no ads. We don’t sell or share your data.</li>
+        <li>Your notes, clipboard, files, settings and coding agent sessions stay on your computer.</li>
+        <li>By default QNotch sends usage events: which features and commands you use, never what you typed, copied or opened. You can turn this off.</li>
+        <li>Online features contact only the service they are for, and only when you use them.</li>
+      </ul>
+    </section>
+
+    <section aria-labelledby="local">
+      <h2 id="local">What stays on your computer</h2>
+      <p>Settings, notes and logs are files on your computer: in <code>%APPDATA%\QNotch</code> on Windows and in <code>~/Library/Application Support/QNotch.Mac</code> on Mac. Tokens, such as a GitHub token or the notifications token, go to Windows Credential Manager or the macOS Keychain, never into a file. Clipboard history stays in memory unless you choose to keep it.</p>
+      <p>Several features read information on your computer to show it to you, and none of it leaves: what is playing, CPU and memory use, which apps use the microphone or camera, your Codex usage, and the transcripts Claude Code and Codex already keep, for agent status and token counts.</p>
+      <p>When you click Connect in Settings, Agents, QNotch adds a hook to Claude Code’s <code>settings.json</code> or Codex’s <code>hooks.json</code>, keeping a backup. The hook talks to QNotch on your computer only.</p>
+      <p>Share your setup creates a code you copy yourself. It leaves out your name and picture, history, app paths and tokens, and goes nowhere unless you paste it somewhere.</p>
+      <p>To remove everything, uninstall QNotch and delete the folder above.</p>
+    </section>
+
+    <section aria-labelledby="usage">
+      <h2 id="usage">Usage data</h2>
+      <p>QNotch records an event when you take an action yourself, such as opening Settings, starting the timer or copying a clipboard item again. We use these events only to learn which features people use on which platform, so we can decide what to improve.</p>
+      <p><b>Each event contains</b> the feature and action from a fixed list, where you started it (the panel, a hotkey, the tray or menu bar, the command line or the welcome tour), for some settings whether you turned them on or off, the QNotch version, Windows or macOS, the time and a random event ID.</p>
+      <p><b>Identifiers.</b> On first use QNotch creates a random installation ID and sends it only as a SHA-256 hash. If you are signed in to Codex or Claude Code on the same computer, events are linked by a SHA-256 hash of that account’s ID instead, so one person on several computers counts once. The account ID itself and any token are never sent. These hashes contain no name or email address, but they are stable identifiers, so we treat them as personal data.</p>
+      <p><b>Never sent:</b> notes, clipboard contents, files, file names or paths, searches, terminal input or output, window and app titles, notification text, account names, tokens or error messages. There is no session recording, screen capture, automatic click tracking or user profile.</p>
+      <p><b>Where it goes.</b> Events are sent over HTTPS to <a href="https://posthog.com/privacy">PostHog</a>, in its EU Cloud. The QNotch project discards IP addresses, so events are not stored with yours. Events wait only in memory: if sending fails, QNotch retries for up to 30 minutes and then drops them. Test and diagnostic runs never send events.</p>
+      <p><b>Turning it off.</b> Switch off Share usage data in Settings, General, or set the environment variable <code>QNOTCH_TELEMETRY_ENABLED=false</code>, which overrides the setting. QNotch then drops events it has not sent yet. Events already sent stay in PostHog; to have them deleted, see <a href="#contact">Contact</a>.</p>
+    </section>
+
+    <section aria-labelledby="online">
+      <h2 id="online">Online features</h2>
+      <p>Apart from usage data, QNotch only goes online for these features. Each service handles requests under its own privacy policy.</p>
+      <div class="table">
+        <table>
+          <thead><tr><th scope="col">Feature</th><th scope="col">Contacts</th><th scope="col">What it sends</th><th scope="col">When</th></tr></thead>
+          <tbody>
+            {online.map(r => <tr><th scope="row">{r.what}</th><td>{r.who}</td><td>{r.sends}</td><td>{r.when}</td></tr>)}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section aria-labelledby="network">
+      <h2 id="network">On your own network</h2>
+      <p><b>Phone sharing</b> (Windows) runs a small web server on your local network while a session is open, so a phone on the same network can open its private link. Files go directly between the two devices, not through the internet or any server of ours, and the server stops when you stop sharing or the session ends.</p>
+      <p><b>Notifications</b> from other apps and scripts, the <code>qnotch</code> command and agent hooks reach QNotch only from your own computer, through a local connection. Notifications sent over HTTP need your notifications token.</p>
+    </section>
+
+    <section aria-labelledby="stores">
+      <h2 id="stores">Where you got QNotch</h2>
+      <p>Downloads come from GitHub. The Microsoft Store, winget, Scoop and Chocolatey are run by others under their own privacy policies, and may record that you downloaded QNotch. We see only the overall download statistics they provide, never who you are.</p>
+    </section>
+
+    <section aria-labelledby="site">
+      <h2 id="site">This website</h2>
+      <p>qnot.ch uses no cookies, analytics, ads or third party scripts, and serves its fonts itself. Your browser remembers your light or dark choice and, for the open tab, your Windows or Mac choice; neither is sent anywhere. The server that hosts the site may keep ordinary access logs, such as IP address, page and browser, to keep it running and secure. Download buttons link to GitHub.</p>
+    </section>
+
+    <section aria-labelledby="children">
+      <h2 id="children">Children</h2>
+      <p>QNotch is a general purpose desktop tool. It is not directed at children and does not knowingly collect their data.</p>
+    </section>
+
+    <section aria-labelledby="rights">
+      <h2 id="rights">Your choices</h2>
+      <p>You can turn off usage data and every online feature, and remove all local data by uninstalling QNotch and deleting its folder. Depending on where you live, for example in the EU or UK, you may have the right to access or delete usage data linked to your identifiers, or to object to its use. We rely on our legitimate interest in improving QNotch to collect it, and you can always switch it off.</p>
+    </section>
+
+    <section aria-labelledby="changes">
+      <h2 id="changes">Changes</h2>
+      <p>When QNotch starts sending anything new, this page changes with it and the date at the top moves. Every earlier version is in the <a href={`${GH}/commits/main/website/src/pages/privacy.astro`}>page’s history on GitHub</a>.</p>
+    </section>
+
+    <section aria-labelledby="contact">
+      <h2 id="contact">Contact</h2>
+      <p>For questions about this policy or a request about your data, <a href={`${GH}/issues/new`}>open an issue on GitHub</a>. Don’t post personal details there; say how you would like to be contacted and we will reply privately.</p>
+    </section>
+  </main>
+
+  <footer class="wrap foot">
+    <a href="/">QNotch home</a>
+    <a href={GH}>GitHub</a>
+    <a href={`${GH}/blob/main/LICENSE`}>MIT license</a>
+  </footer>
+</Base>
+
+<style>
+  .top {
+    border-bottom: 1px solid var(--line);
+  }
+
+  .top-in {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+  }
+
+  .doc {
+    max-width: 760px;
+    padding-block: clamp(48px, 7vw, 88px);
+  }
+
+  h1 {
+    font-size: clamp(36px, 5vw, 56px);
+    letter-spacing: -0.04em;
+  }
+
+  .meta {
+    margin: 12px 0 32px;
+    color: var(--ink-3);
+    font-size: 15px;
+  }
+
+  /* The global section padding is for the landing page's bands; here sections are just headings in a document. */
+  section {
+    padding-block: 0;
+    margin-top: 40px;
+  }
+
+  h2 {
+    font-size: clamp(22px, 2.4vw, 26px);
+    letter-spacing: -0.02em;
+    margin-bottom: 12px;
+  }
+
+  p, li {
+    color: var(--ink-2);
+    line-height: 1.65;
+  }
+
+  p + p { margin-top: 14px; }
+
+  b { color: var(--ink); }
+
+  ul {
+    margin: 0;
+    padding-left: 20px;
+  }
+
+  li + li { margin-top: 8px; }
+
+  a:not(.logo) {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  code {
+    font-family: var(--mono);
+    font-size: 0.9em;
+    padding: 1px 5px;
+    border-radius: 6px;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    overflow-wrap: anywhere;
+  }
+
+  .table {
+    margin-top: 16px;
+    overflow-x: auto;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: var(--card);
+  }
+
+  table {
+    width: 100%;
+    min-width: 620px;
+    border-collapse: collapse;
+    font-size: 14.5px;
+  }
+
+  th, td {
+    padding: 12px 14px;
+    text-align: left;
+    vertical-align: top;
+    color: var(--ink-2);
+    line-height: 1.5;
+  }
+
+  thead th {
+    color: var(--ink-3);
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  tbody th { color: var(--ink); font-weight: 600; }
+
+  tr + tr th, tr + tr td, tbody tr th, tbody tr td { border-top: 1px solid var(--line); }
+
+  .foot {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 24px;
+    padding: 28px 0 40px;
+    border-top: 1px solid var(--line);
+    font-size: 14px;
+  }
+
+  .foot a { color: var(--ink-2); font-weight: 500; }
+  .foot a:hover { color: var(--ink); }
+</style>

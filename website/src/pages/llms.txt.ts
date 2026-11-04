@@ -30,6 +30,7 @@ export const GET: APIRoute = async ({ site }) => {
 - [QNotch for Windows](${page('/windows/')}): what it does on Windows 11 and 10, requirements and install options
 - [QNotch for Mac](${page('/mac/')}): what it does on a MacBook, requirements, signing and permissions
 - [Home](${page('/')}): both apps, with an interactive demo
+- [Privacy policy](${page('/privacy')}): what stays on the device, the usage events and identifiers sent, and every online feature
 
 ## Install on Windows
 
