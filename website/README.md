@@ -4,7 +4,7 @@ The site and interactive demo describe both released apps. A switch in the hero 
 
 The Mac download link is resolved at build time from the newest stable `macos-v*` release on GitHub (set `GITHUB_TOKEN` to avoid rate limits), never from `/releases/latest`, which is Windows. If GitHub can't be reached, the build falls back to the release pinned in `index.astro`. Rebuild the site after a Mac release to point at it. See [release compatibility](../docs/releases.md).
 
-**Other ways to install** (`src/components/InstallDialog.astro`, Windows only) always offers the direct downloads. winget and Scoop appear only when the build finds QNotch in `microsoft/winget-pkgs` and in `Somafet/scoop-bucket`, so the page never shows a command that fails. Rebuild the site once a channel goes live; [docs/releases.md](../docs/releases.md#winget-and-scoop) describes how releases reach them.
+**Other ways to install** (`src/components/InstallDialog.astro`, Windows only) always offers the direct downloads. winget, Scoop and Chocolatey appear only when the build finds QNotch in `microsoft/winget-pkgs`, in `Somafet/scoop-bucket` and among the approved packages of the Chocolatey community feed, so the page never shows a command that fails. Rebuild the site once a channel goes live; [docs/releases.md](../docs/releases.md#winget-scoop-and-chocolatey) describes how releases reach them.
 
 Use Node.js 24 or newer. CI installs from `website/package-lock.json` and runs `npm run build` independently of root repository tooling.
 

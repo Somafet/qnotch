@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import test from 'node:test';
 import { parse, parseDocument } from 'yaml';
-import { fetchSource, releaseSource, scoopManifest, wingetId, wingetManifests, writeManifests } from '../../scripts/package-managers.mjs';
+import { chocolateyPackage, fetchSource, releaseSource, scoopManifest, wingetId, wingetManifests, writeManifests } from '../../scripts/package-managers.mjs';
 import { repository } from '../../scripts/release-policy.mjs';
 
 const root = resolve(import.meta.dirname, '../..');
@@ -83,12 +83,37 @@ test('Scoop gets an x64 manifest with a shim, a shortcut and autoupdate', () => 
   assert.equal(manifest.autoupdate.architecture['64bit'].url.replace('$version', '0.9.0'), url('v0.9.0'));
 });
 
+test('Chocolatey gets a portable ZIP package with a pinned checksum, a shortcut and clean removal', () => {
+  const files = chocolateyPackage(releaseSource(release(), { tag_name: 'v0.9.0' }, 'v0.9.0'));
+  assert.deepEqual(Object.keys(files).sort(), ['qnotch.nuspec', 'tools/chocolateybeforemodify.ps1', 'tools/chocolateyinstall.ps1', 'tools/chocolateyuninstall.ps1']);
+  const nuspec = files['qnotch.nuspec'];
+  const field = name => new RegExp(`<${name}>([^<]*)</${name}>`).exec(nuspec)?.[1];
+  assert.equal(field('id'), 'qnotch');
+  assert.equal(field('version'), '0.9.0');
+  assert.equal(field('releaseNotes'), `https://github.com/${repository}/releases/tag/v0.9.0`);
+  for (const name of ['title', 'authors', 'projectUrl', 'iconUrl', 'licenseUrl', 'packageSourceUrl', 'summary']) assert.ok(field(name), name);
+  // Chocolatey tags are space separated and lowercase.
+  assert.ok(field('tags').split(' ').every(tag => /^[a-z0-9-]+$/.test(tag)));
+  assert.ok(field('description').length >= 30 && !/[<>]/.test(field('description')));
+  assert.ok(nuspec.includes('<file src="tools\\**" target="tools" />'));
+  const install = files['tools/chocolateyinstall.ps1'];
+  assert.ok(install.includes(`url64bit       = '${url('v0.9.0')}'`));
+  assert.ok(install.includes(`checksum64     = '${sha}'`) && install.includes("checksumType64 = 'sha256'"));
+  assert.ok(install.includes('Install-ChocolateyZipPackage') && install.includes('Install-ChocolateyShortcut'));
+  assert.ok(files['tools/chocolateyuninstall.ps1'].includes('Remove-Item -LiteralPath $shortcut'));
+  // Only the copy inside this package's folder is stopped, never a QNotch.exe run from elsewhere.
+  assert.ok(files['tools/chocolateybeforemodify.ps1'].includes('$_.Path.StartsWith($toolsDir'));
+  for (const [name, text] of Object.entries(files)) assert.ok(/^[\x09\x0a\x20-\x7e]*$/.test(text), `${name} is plain ASCII`);
+});
+
 test('manifests are written where wingetcreate and the bucket expect them', t => {
   const out = mkdtempSync(join(tmpdir(), 'qnotch package managers ü '));
   t.after(() => rmSync(out, { recursive: true }));
   writeManifests(releaseSource(release(), { tag_name: 'v0.9.0' }, 'v0.9.0'), out);
   assert.equal(readdirSync(join(out, 'winget')).length, 3);
   assert.equal(JSON.parse(readFileSync(join(out, 'scoop', 'bucket', 'qnotch.json'), 'utf8')).version, '0.9.0');
+  assert.ok(readFileSync(join(out, 'chocolatey', 'qnotch.nuspec'), 'utf8').includes('<version>0.9.0</version>'));
+  assert.deepEqual(readdirSync(join(out, 'chocolatey', 'tools')).sort(), ['chocolateybeforemodify.ps1', 'chocolateyinstall.ps1', 'chocolateyuninstall.ps1']);
 });
 
 test('package managers run after publication, with each token only in its own step', () => {
@@ -99,10 +124,10 @@ test('package managers run after publication, with each token only in its own st
   assert.ok(!job.permissions, 'The job only reads; the release token stays read-only.');
   const steps = job.steps.filter(step => step.run);
   assert.ok(steps[0].run.includes('scripts/package-managers.mjs') && steps[0].run.includes('GITHUB_REF_NAME'));
-  for (const [secret, text] of [['WINGET_TOKEN', 'wingetcreate.exe" submit'], ['SCOOP_BUCKET_TOKEN', 'Somafet/scoop-bucket']]) {
+  for (const [secret, text] of [['WINGET_TOKEN', 'wingetcreate.exe" submit'], ['SCOOP_BUCKET_TOKEN', 'Somafet/scoop-bucket'], ['CHOCOLATEY_API_KEY', 'push.chocolatey.org']]) {
     const using = job.steps.filter(step => JSON.stringify(step).includes(secret));
     assert.equal(using.length, 1, secret);
     assert.ok(using[0].run.includes(text) && using[0].run.includes(`if (-not $env:${secret})`), secret);
   }
-  assert.ok(!JSON.stringify(workflow.jobs.release).includes('WINGET_TOKEN') && !JSON.stringify(workflow.jobs.release).includes('SCOOP_BUCKET_TOKEN'));
+  for (const secret of ['WINGET_TOKEN', 'SCOOP_BUCKET_TOKEN', 'CHOCOLATEY_API_KEY']) assert.ok(!JSON.stringify(workflow.jobs.release).includes(secret), secret);
 });

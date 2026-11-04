@@ -94,7 +94,7 @@ jobs:
         with:
           node-version: '24'
 
-      - name: Write winget and Scoop manifests
+      - name: Write winget, Scoop and Chocolatey manifests
         env:
           GH_TOKEN: ${{ github.token }}
         shell: pwsh
@@ -129,4 +129,19 @@ jobs:
           git -C $bucket -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m "qnotch: Update to $env:GITHUB_REF_NAME"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           git -C $bucket push
+          exit $LASTEXITCODE
+
+      - name: Push to Chocolatey
+        env:
+          CHOCOLATEY_API_KEY: ${{ secrets.CHOCOLATEY_API_KEY }}
+        shell: pwsh
+        run: |
+          if (-not $env:CHOCOLATEY_API_KEY) { Write-Output '::warning::CHOCOLATEY_API_KEY is not set; skipped the Chocolatey push.'; exit 0 }
+          choco pack dist/package-managers/chocolatey/qnotch.nuspec --outputdirectory dist/package-managers
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $nupkg = Get-ChildItem dist/package-managers/qnotch.*.nupkg | Select-Object -First 1
+          choco push $nupkg.FullName --source https://push.chocolatey.org/ --api-key $env:CHOCOLATEY_API_KEY 2>&1 | Tee-Object -Variable pushed
+          if ($LASTEXITCODE -eq 0) { exit 0 }
+          # A rerun of this job finds the version already submitted; that is not a failure.
+          if ("$pushed" -match '\(409\)|Conflict') { Write-Output '::warning::Chocolatey already has this version.'; exit 0 }
           exit $LASTEXITCODE

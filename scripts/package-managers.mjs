@@ -1,15 +1,16 @@
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
 import { releasePolicy, repository } from './release-policy.mjs';
 
-// winget and Scoop install the self-contained ZIP from a published Windows release. They never change
+// winget, Scoop and Chocolatey install the self-contained ZIP from a published Windows release. They never change
 // release assets, names or the latest endpoint; they only point at what the guarded publisher verified.
 export const wingetId = 'Somafet.QNotch';
 export const scoopName = 'qnotch';
 export const scoopBucket = 'Somafet/scoop-bucket';
+export const chocolateyId = 'qnotch';
 const asset = 'QNotch-self-contained.zip';
 const manifestVersion = '1.10.0';
 const description = 'A small notch at the top of your desktop for music, system stats, files, clipboard history, and coding agents. Hover it to open the panel.';
@@ -104,7 +105,78 @@ export function scoopManifest({ version, url, sha256 }) {
   return `${JSON.stringify(manifest, null, 4)}\n`;
 }
 
+const xml = text => text.replace(/[<>&"']/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&apos;' })[c]);
+const ps = text => `'${text.replace(/'/g, "''")}'`;
+
+// A portable ZIP package. Chocolatey extracts QNotch.exe into the package's tools folder and shims it as
+// qnotch; the shim waits for the exe, so `qnotch usage --json` prints and returns its exit code. The
+// Start menu shortcut points at the exe itself, so the app starts without a console.
+export function chocolateyPackage({ tag, version, url, sha256 }) {
+  const fields = {
+    id: chocolateyId,
+    version,
+    title: 'QNotch',
+    authors: 'Soma Somorjai',
+    owners: 'Somafet',
+    projectUrl: 'https://qnot.ch',
+    iconUrl: `https://cdn.jsdelivr.net/gh/${repository}@main/src/QNotch/Assets/AppIcon.svg`,
+    licenseUrl: `https://github.com/${repository}/blob/main/LICENSE`,
+    requireLicenseAcceptance: 'false',
+    projectSourceUrl: `https://github.com/${repository}`,
+    packageSourceUrl: `https://github.com/${repository}/blob/main/scripts/package-managers.mjs`,
+    docsUrl: `https://github.com/${repository}#readme`,
+    bugTrackerUrl: `https://github.com/${repository}/issues`,
+    tags: 'qnotch notch clipboard clipboard-history system-monitor media productivity claude-code codex foss',
+    summary: 'A notch for your Windows desktop.',
+    description: [
+      description,
+      'The package adds the `qnotch` command and a Start menu shortcut. Run `qnotch usage --json` or `qnotch agents --json` while QNotch runs.',
+      'Requires 64-bit Windows 10 version 2004 or later.',
+    ].join('\n\n'),
+    releaseNotes: `https://github.com/${repository}/releases/tag/${tag}`,
+  };
+  const metadata = Object.entries(fields).map(([key, value]) => `    <${key}>${xml(value)}</${key}>`).join('\n');
+  const nuspec = `<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+  <metadata>
+${metadata}
+  </metadata>
+  <files>
+    <file src="tools\\**" target="tools" />
+  </files>
+</package>
+`;
+  const header = `$ErrorActionPreference = 'Stop'
+$toolsDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
+$shortcut = Join-Path ([Environment]::GetFolderPath('CommonPrograms')) 'QNotch.lnk'
+`;
+  return {
+    [`${chocolateyId}.nuspec`]: nuspec,
+    'tools/chocolateyinstall.ps1': `${header}
+$packageArgs = @{
+  packageName    = $env:ChocolateyPackageName
+  unzipLocation  = $toolsDir
+  url64bit       = ${ps(url)}
+  checksum64     = ${ps(sha256)}
+  checksumType64 = 'sha256'
+}
+Install-ChocolateyZipPackage @packageArgs
+Install-ChocolateyShortcut -ShortcutFilePath $shortcut -TargetPath (Join-Path $toolsDir 'QNotch.exe') -WorkingDirectory $toolsDir
+`,
+    // A running QNotch locks its exe, so upgrades and uninstalls stop this package's copy first.
+    'tools/chocolateybeforemodify.ps1': `${header}
+Get-Process -Name QNotch -ErrorAction SilentlyContinue |
+  Where-Object { $_.Path -and $_.Path.StartsWith($toolsDir, [StringComparison]::OrdinalIgnoreCase) } |
+  Stop-Process -Force
+`,
+    'tools/chocolateyuninstall.ps1': `${header}
+if (Test-Path -LiteralPath $shortcut) { Remove-Item -LiteralPath $shortcut -Force }
+`,
+  };
+}
+
 // winget: <out>/winget/*.yaml, ready for `wingetcreate submit`. Scoop: <out>/scoop/bucket/qnotch.json.
+// Chocolatey: <out>/chocolatey/qnotch.nuspec and its tools, ready for `choco pack`.
 export function writeManifests(source, out) {
   const winget = join(out, 'winget');
   mkdirSync(winget, { recursive: true });
@@ -112,7 +184,12 @@ export function writeManifests(source, out) {
   const bucket = join(out, 'scoop', 'bucket');
   mkdirSync(bucket, { recursive: true });
   writeFileSync(join(bucket, `${scoopName}.json`), scoopManifest(source));
-  return { winget, scoop: join(bucket, `${scoopName}.json`) };
+  const chocolatey = join(out, 'chocolatey');
+  for (const [name, text] of Object.entries(chocolateyPackage(source))) {
+    mkdirSync(dirname(join(chocolatey, name)), { recursive: true });
+    writeFileSync(join(chocolatey, name), text);
+  }
+  return { winget, scoop: join(bucket, `${scoopName}.json`), chocolatey: join(chocolatey, `${chocolateyId}.nuspec`) };
 }
 
 export function fetchSource(tag, run = gh) {
@@ -127,7 +204,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     if (!values.out) throw new Error('--out is required.');
     const source = fetchSource(values.tag);
     const paths = writeManifests(source, values.out);
-    console.log(`Wrote winget manifests to ${paths.winget} and the Scoop manifest to ${paths.scoop} for ${source.version}.`);
+    console.log(`Wrote winget manifests to ${paths.winget}, the Scoop manifest to ${paths.scoop} and the Chocolatey package to ${paths.chocolatey} for ${source.version}.`);
   } catch (error) {
     console.error(error.message);
     process.exitCode = 1;
