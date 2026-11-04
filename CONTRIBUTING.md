@@ -20,7 +20,7 @@ Bug reports, fixes, documentation, and extensions are welcome. One repository ho
 
 ## Build and check your change
 
-Run the relevant local checks. CI validates the whole repository, including Windows, even when a contributor only has another operating system.
+Run the relevant local checks. CI builds and tests each platform your change affects, including Windows, even when a contributor only has another operating system.
 
 ### Windows
 
@@ -73,7 +73,9 @@ These tests run on Windows, macOS, and Linux and never publish a release. They v
 
 For release or shared-protocol changes, also run affected Windows regressions. If packaging changes, publish both variants and run `--verify-publish` as described in [Windows development](docs/windows/development.md). Keep tags, asset names, ZIP layout, and the latest endpoint compatible with installed clients. Read [release policy](docs/releases.md) before editing workflows or publishing.
 
-CI's required check remains named `build`. It aggregates `windows`, `macos`, `repository`, and `website`, and rejects failed, cancelled, or skipped dependencies. The Mac job builds the real unsigned app, runs regressions, and validates the native UI.
+CI's required check remains named `build`. It aggregates `changes`, `windows`, `macos`, `repository`, and `website`, and rejects failed or cancelled dependencies. The Mac job builds the real unsigned app, runs regressions, and validates the native UI.
+
+On pull requests, the `changes` job runs [scripts/ci-platforms.mjs](scripts/ci-platforms.mjs) on the changed files and skips a platform job the change cannot affect. Mac work is under `src/QNotch.Mac/`, `scripts/macos/` and `docs/macos/`. Windows work is under `src/QNotch/`, `tests/QNotch.*/`, `docs/windows/` and `QNotch.sln`, except the weather icons the Mac build bundles. The website, other guides and top-level Markdown run neither platform job. Everything else runs both, including `.github/`, other `scripts/`, `spec/`, `tests/fixtures/`, `tests/repository/`, and any new path. `build` accepts a skipped platform job only when `changes` chose to skip it. Pushes to `main` run every job. Do not add trigger-level `paths` filters to CI: a job they skip would never report to `build`.
 
 ## Extensions and platform boundaries
 

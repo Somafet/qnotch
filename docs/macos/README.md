@@ -131,7 +131,7 @@ This waits three seconds, then records one 30-second collapsed-idle interval usi
 
 ## CI and future releases
 
-The `macos` CI job uses an Apple silicon `macos-14` runner to build the real target, run XCTest regressions, run native UI smoke validation, and check its snapshots with `scripts/check-snapshots.mjs`. It is part of the required `build` aggregate alongside Windows, repository, and website validation; any failure, cancellation, or skipped dependency rejects the gate. PR builds do not use signing secrets and publish nothing.
+The `macos` CI job uses an Apple silicon `macos-14` runner to build the real target, run XCTest regressions, run native UI smoke validation, and check its snapshots with `scripts/check-snapshots.mjs`. It is part of the required `build` aggregate alongside Windows, repository, and website validation; any failure or cancellation rejects the gate. Pull requests that change no Mac or shared files skip it, and `build` accepts only that deliberate skip. PR builds do not use signing secrets and publish nothing.
 
 The Mac update channel is `QNotchMacCore/UpdateChannel.swift`: the Sparkle appcast of `macos-vX.Y.Z` releases on the `macos-appcast` branch, never GitHub's global `/releases/latest`. See [Mac updates](../releases.md#mac-updates-sparkle) for how releases reach it.
 
