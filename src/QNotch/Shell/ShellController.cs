@@ -33,7 +33,7 @@ public sealed class ShellController : IShell
     readonly TabReorderController _tabReorder;
     readonly Dictionary<string, Border> _tabViews = new();
     readonly Dictionary<string, RadioButton> _tabButtons = new();
-    DispatcherTimer? _dwell, _leave;
+    DispatcherTimer? _dwell, _leave, _tabDwell;
     ICadenceAware[] _cadenceAware = [];
     ShellMode _mode;
     bool _hovering, _fileDrag, _built, _wasExpandedBeforeGame, _hoverQuiet;
@@ -442,7 +442,7 @@ public sealed class ShellController : IShell
         t.Start();
     }
 
-    void StopTimers() { _dwell?.Stop(); _leave?.Stop(); }
+    void StopTimers() { _dwell?.Stop(); _leave?.Stop(); _tabDwell?.Stop(); }
 
     // ---------- game bar plumbing ----------
 
@@ -491,6 +491,9 @@ public sealed class ShellController : IShell
             System.Windows.Automation.AutomationProperties.SetAutomationId(rb, $"tab-{id}");
             rb.Click += (_, _) => { QNotch.Core.Analytics.Track("shell", "select_tab", target: id); SelectTab(id); };
             rb.Checked += (_, _) => SelectTab(id);
+            // A file drag that rests on a tab opens it, so a drop can reach that tab's own targets. Left unhandled for the hover logic.
+            rb.DragEnter += (_, e) => { if (e.Data.GetDataPresent(DataFormats.FileDrop)) Start(ref _tabDwell, 450, () => SelectTab(id)); };
+            rb.DragLeave += (_, _) => _tabDwell?.Stop();
             strip.Children.Add(rb);
             _tabButtons[id] = rb;
             rb.Visibility = IsTabVisible(id) ? Visibility.Visible : Visibility.Collapsed;
