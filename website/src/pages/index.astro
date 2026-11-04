@@ -37,8 +37,8 @@ async function macDownload() {
 }
 const MAC = await macDownload();
 
-// winget and Scoop show up in Other ways to install only once they carry QNotch, so every command on the
-// page works. Checked at build time; if GitHub can't be reached, the channel stays hidden until the next build.
+// winget, Scoop and Chocolatey show up in Other ways to install only once they carry QNotch, so every command
+// on the page works. Checked at build time; if a source can't be reached, the channel stays hidden until the next build.
 async function liveOnGitHub(name: string, path: string) {
   try {
     const token = import.meta.env.GITHUB_TOKEN ?? process.env.GITHUB_TOKEN;
@@ -54,9 +54,24 @@ async function liveOnGitHub(name: string, path: string) {
   }
   return false;
 }
-const [WINGET, SCOOP] = await Promise.all([
+// The community feed lists a package only after moderators approve it, not while it waits for review.
+async function liveOnChocolatey() {
+  try {
+    const res = await fetch("https://community.chocolatey.org/api/v2/FindPackagesById()?id='qnotch'&$top=1", {
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) throw new Error(`Chocolatey answered ${res.status}`);
+    if ((await res.text()).includes('<entry')) return true;
+    console.info('Chocolatey: not approved yet, left out of Other ways to install');
+  } catch (e) {
+    console.warn(`Chocolatey: left out of Other ways to install (${(e as Error).message})`);
+  }
+  return false;
+}
+const [WINGET, SCOOP, CHOCOLATEY] = await Promise.all([
   liveOnGitHub('winget', 'microsoft/winget-pkgs/contents/manifests/s/Somafet/QNotch'),
   liveOnGitHub('Scoop', 'Somafet/scoop-bucket/contents/bucket/qnotch.json'),
+  liveOnChocolatey(),
 ]);
 
 const numbers = {
@@ -309,7 +324,7 @@ const jsonLd = {
     </section>
   </main>
 
-  <InstallDialog gh={GH} winget={WINGET} scoop={SCOOP} />
+  <InstallDialog gh={GH} winget={WINGET} scoop={SCOOP} chocolatey={CHOCOLATEY} />
 
   <footer class="foot">
     <div class="wrap foot-in">

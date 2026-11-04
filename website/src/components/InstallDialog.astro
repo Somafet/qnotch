@@ -3,8 +3,8 @@ import Icon from './Icon.astro';
 
 // Other ways to install the Windows app. index.astro checks at build time which package managers
 // actually carry QNotch, so a channel appears only once its command works (see docs/releases.md).
-interface Props { gh: string; winget: boolean; scoop: boolean }
-const { gh, winget, scoop } = Astro.props;
+interface Props { gh: string; winget: boolean; scoop: boolean; chocolatey: boolean }
+const { gh, winget, scoop, chocolatey } = Astro.props;
 
 const latest = `${gh}/releases/latest/download`;
 type Channel = { id: string; label: string; note: string; command?: string[]; hint?: string };
@@ -14,6 +14,8 @@ const channels: Channel[] = [
     command: ['winget install Somafet.QNotch'], hint: 'Update with winget upgrade Somafet.QNotch.' }] : []),
   ...(scoop ? [{ id: 'scoop', label: 'Scoop', note: 'Adds the qnotch command and a Start menu shortcut.',
     command: ['scoop bucket add qnotch https://github.com/Somafet/scoop-bucket', 'scoop install qnotch/qnotch'], hint: 'Update with scoop update qnotch.' }] : []),
+  ...(chocolatey ? [{ id: 'chocolatey', label: 'Chocolatey', note: 'Run from an administrator terminal. Adds the qnotch command and a Start menu shortcut.',
+    command: ['choco install qnotch'], hint: 'Update with choco upgrade qnotch.' }] : []),
 ];
 ---
 <dialog class="install" id="install" aria-labelledby="install-title">
@@ -380,17 +382,18 @@ const channels: Channel[] = [
       gap: 14px;
     }
 
+    /* Wraps to a second row when every channel's label doesn't fit across a narrow phone. */
     .install-tabs {
-      display: grid;
-      grid-auto-flow: column;
-      grid-auto-columns: 1fr;
+      flex-direction: row;
+      flex-wrap: wrap;
       padding: 4px;
       border-radius: 14px;
       background: var(--bg-2);
     }
 
     .install-tabs button {
-      padding: 9px 6px;
+      flex: 1 0 auto;
+      padding: 9px 10px;
       text-align: center;
     }
 
