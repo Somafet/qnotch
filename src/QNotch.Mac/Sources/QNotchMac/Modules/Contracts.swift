@@ -71,6 +71,31 @@ struct SearchSource: Contribution {
     let find: (String) -> [SearchHit]
 }
 
+/// One place dragged files can go: a tile on the drop screen.
+struct DropTarget {
+    let id: String
+    let title: String
+    /// Under the title; for a disabled target, the reason it can't take the files.
+    var subtitle: String? = nil
+    /// SF Symbol.
+    let glyph: String
+    var enabled = true
+    /// Runs after the drop screen has closed; the module decides what shows next.
+    let drop: ([URL]) -> Void
+}
+
+/// A module's group on the drop screen, shown while a file drag is over the notch.
+struct DropSource: Contribution {
+    let id: String
+    let title: String
+    /// SF Symbol for the group heading.
+    let glyph: String
+    let order: Int
+    /// Runs on the main thread while the drop screen shows, again as the drag moves. Filters
+    /// in-memory state only: no I/O, network or process spawns. Empty leaves the group out.
+    let targets: ([URL]) -> [DropTarget]
+}
+
 final class Registry<T: Contribution> {
     private var values: [String: (owner: String?, value: T)] = [:]
     /// The module whose `initialize` is running; its registrations are removed with it.
@@ -83,7 +108,7 @@ final class Registry<T: Contribution> {
     func owner(of id: String) -> String? { values[id]?.owner }
 }
 
-/// Mac-local equivalents of the five product extension concepts. No WPF or shared runtime.
+/// Mac-local equivalents of the product extension concepts, plus drop sources. No WPF or shared runtime.
 final class ModuleRegistries {
     let cards = Registry<ViewContribution>()
     let tabs = Registry<ViewContribution>()
@@ -91,21 +116,25 @@ final class ModuleRegistries {
     let searchSources = Registry<SearchSource>()
     let settingsSections = Registry<ViewContribution>()
     let menuActions = Registry<MenuActionContribution>()
+    let dropSources = Registry<DropSource>()
     let consumers = ConsumerRegistry()
     /// Set by the shell around each module's `initialize`.
     var owner: String? {
         didSet {
             cards.owner = owner; tabs.owner = owner; segments.owner = owner
             searchSources.owner = owner; settingsSections.owner = owner; menuActions.owner = owner
+            dropSources.owner = owner
         }
     }
     func removeAll(owner: String) {
         cards.removeAll(owner: owner); tabs.removeAll(owner: owner); segments.removeAll(owner: owner)
         searchSources.removeAll(owner: owner); settingsSections.removeAll(owner: owner); menuActions.removeAll(owner: owner)
+        dropSources.removeAll(owner: owner)
     }
     func removeAll() {
         cards.removeAll(); tabs.removeAll(); segments.removeAll()
         searchSources.removeAll(); settingsSections.removeAll(); menuActions.removeAll()
+        dropSources.removeAll()
     }
 }
 
@@ -140,9 +169,6 @@ protocol ModuleShell: AnyObject {
     /// While the returned token is alive the panel never auto-closes (pointer leave, outside clicks,
     /// focus loss). Hold one around drags, share pickers, menus and file dialogs.
     func holdOpen() -> AnyObject
-    /// Files dropped on the notch. `entered` runs once when a file drag reaches it; the shell opens
-    /// the panel itself. Only one module receives drops.
-    func acceptFileDrops(entered: @escaping () -> Void, dropped: @escaping ([URL]) -> Void)
     /// Collapses the panel (e.g. before picking from the screen under it) and gives the keyboard
     /// back to the app that had it.
     func closePanel()

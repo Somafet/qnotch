@@ -258,28 +258,47 @@ final class TaildropTests: XCTestCase {
         XCTAssertEqual(TaildropClient.message(Data("  denied\u{7}\nsecond".utf8)), "denied")
     }
 
-    // MARK: Shell: a file drag resting on a tab opens it
+    // MARK: Drop screen targets
 
-    func testFileDragRestingOnATabSelectsIt() {
-        var chosen: [Int] = []
-        let bar = TabBar(items: [("home", "house", "Home"), ("search", "magnifyingglass", "Search"), ("taildrop", "paperplane", "Taildrop")],
-                         selected: 0) { chosen.append($0) }
-        bar.frame = NSRect(origin: .zero, size: bar.intrinsicContentSize)
-        bar.layoutSubtreeIfNeeded()
-        let third = NSPoint(x: 3 + 2 * 42 + 20, y: 16)
-        XCTAssertEqual(bar.tab(at: third), 2)
-        bar.dragMoved(to: third)
-        RunLoop.main.run(until: Date().addingTimeInterval(TabBar.dragDwell + 0.2))
-        XCTAssertEqual(chosen, [2])
+    private let pdf = URL(fileURLWithPath: "/tmp/trip-notes.pdf", isDirectory: false)
+    private let folder = URL(fileURLWithPath: "/tmp/Photos", isDirectory: true)
 
-        // Moving off before the dwell ends cancels it.
-        bar.dragMoved(to: NSPoint(x: 3 + 42 + 20, y: 16))
-        bar.dragMoved(to: nil)
-        RunLoop.main.run(until: Date().addingTimeInterval(TabBar.dragDwell + 0.2))
-        XCTAssertEqual(chosen, [2])
+    func testDropTargetsAreOnePerDeviceWithOfflineDisabled() {
+        var sent: [(String, [URL])] = []
+        let targets = TaildropModule.dropTargets(state: .demo, sending: false, files: [pdf]) { sent.append(($0.id, $1)) }
+        XCTAssertEqual(targets.map(\.id), TaildropState.demo.targets.map(\.id), "One target per device, id = its stable ID")
+        XCTAssertEqual(targets.map(\.title), ["ipad-air", "pixel-8", "work-laptop", "home-nas"])
+        XCTAssertEqual(targets.map(\.subtitle), ["iOS", "Android", "Windows", "Offline"])
+        XCTAssertEqual(targets.map(\.enabled), [true, true, true, false])
+        XCTAssertEqual(targets[1].glyph, "smartphone")
+        targets[1].drop([pdf])
+        XCTAssertEqual(sent.map(\.0), ["demo-pixel"])
+        XCTAssertEqual(sent.first?.1, [pdf])
+    }
 
-        bar.editing = true
-        XCTAssertNil(bar.tab(at: third), "Edit mode never switches tabs on a drag")
+    func testDropTargetsAreBusyWhileSendingAndRefuseOnlyFolders() {
+        let busy = TaildropModule.dropTargets(state: .demo, sending: true, files: [pdf]) { _, _ in }
+        XCTAssertTrue(busy.allSatisfy { !$0.enabled && $0.subtitle == "Busy sending" }, "A running send disables every device")
+        let folders = TaildropModule.dropTargets(state: .demo, sending: false, files: [folder]) { _, _ in }
+        XCTAssertTrue(folders.allSatisfy { !$0.enabled && $0.subtitle == "Folders can't be sent" })
+        let mixed = TaildropModule.dropTargets(state: .demo, sending: false, files: [folder, pdf]) { _, _ in }
+        XCTAssertEqual(mixed.map(\.enabled), [true, true, true, false], "A folder among files is skipped at send time, not refused")
+    }
+
+    func testDropTargetIsOneDisabledStateWhenTailscaleIsNotReady() {
+        let cases: [(TaildropAvailability, String)] = [
+            (.notRunning, "Tailscale is not running"), (.notInstalled, "Tailscale is not installed"),
+            (.disconnected, "Tailscale is disconnected"), (.needsLogin, "Sign in to Tailscale"),
+            (.ready, "No devices can receive files")
+        ]
+        for (availability, title) in cases {
+            let targets = TaildropModule.dropTargets(state: TaildropState(availability: availability), sending: false, files: [pdf]) { _, _ in
+                XCTFail("A state target never sends")
+            }
+            XCTAssertEqual(targets.count, 1)
+            XCTAssertEqual(targets.first?.title, title)
+            XCTAssertEqual(targets.first?.enabled, false)
+        }
     }
 
     // MARK: Live (opt-in)

@@ -115,6 +115,24 @@ enum SnapshotViews {
         taildrop.showDemo(demo)
     }
 
+    /// Demo files for the drop screen; never read, so they need not exist.
+    static let dropFiles = ["holiday-photos.zip", "trip-notes.pdf"].map {
+        URL(fileURLWithPath: "/Users/Shared/QNotch demo").appendingPathComponent($0, isDirectory: false)
+    }
+
+    /// `panel-drop`: the drop screen for two demo files over the open panel, with every
+    /// registered source's demo targets. Nothing is dropped.
+    private static func renderDropScreen(_ run: SnapshotRun) {
+        let shell = run.shell
+        guard !shell.registries.dropSources.items.isEmpty else { return }
+        shell.selectTab("home")
+        shell.open(keyboard: false)
+        shell.fileDragEntered(dropFiles, at: .zero)
+        guard shell.dropScreen != nil else { return run.fail("panel-drop", "the drop screen did not show for a file drag over the open panel") }
+        run.notch("panel-drop")
+        shell.endDropScreen()
+    }
+
     static func render(_ run: SnapshotRun) {
         let shell = run.shell
         shell.updateGeneral { $0.reduceMotion = true; $0.setEnabled("terminal", true); $0.setEnabled("taildrop", true) }
@@ -187,14 +205,7 @@ enum SnapshotViews {
         let smallCards = cardViews(shell)
         for card in shell.registries.cards.items { run.write("card-" + card.id + "-small", smallCards[card.id], missing: "the Small card is not on Home") }
         shell.updateGeneral { $0.cardSizes = originalSizes }
-        if let tray = shell.module(FileTrayModule.self) {
-            shell.selectTab("files")
-            tray.dropActive = true
-            tray.reloadNow()
-            run.notch("files-drop")
-            tray.dropActive = false
-            addSampleFiles(shell, to: tray)
-        }
+        if let tray = shell.module(FileTrayModule.self) { addSampleFiles(shell, to: tray) }
         var headerFrames: [String] = ["Native AppKit points; page/header/body use bottom-left origins; actions are relative to header."]
         for tab in shell.registries.tabs.items {
             shell.selectTab(tab.id)
@@ -216,6 +227,7 @@ enum SnapshotViews {
             run.write("media-empty-card", cardViews(shell)["media"], missing: "the card is not on Home")
         }
         if let taildrop = shell.module(TaildropModule.self) { renderTaildropStates(run, taildrop) }
+        renderDropScreen(run)
         run.log("tab-header-frames", headerFrames)
         if !run.failed { run.pass("tab-headers") }
         shell.selectTab("home")

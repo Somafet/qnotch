@@ -98,8 +98,11 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         panel.contentView = surface
         surface.entered = { [weak self] in self?.pointerEntered() }
         surface.exited = { [weak self] in self?.pointerLeft() }
-        surface.fileDragEntered = { [weak self] sequence in self?.fileDragEntered(sequence) }
-        surface.fileDragExited = { [weak self] in self?.pointerLeft() }
+        surface.fileDragEntered = { [weak self] files, point in self?.fileDragEntered(files, at: point) ?? [] }
+        surface.fileDragUpdated = { [weak self] point in self?.fileDragUpdated(at: point) ?? [] }
+        surface.fileDragExited = { [weak self] in self?.fileDragExited() }
+        surface.filesDropped = { [weak self] files, point in self?.filesDropped(files, at: point) ?? false }
+        surface.fileDragEnded = { [weak self] in self?.endDropScreen() }
         surface.setAccessibilityElement(true)
         surface.setAccessibilityRole(.group)
         surface.setAccessibilityLabel("QNotch. Hover or click to open the panel, or use the menu-bar item.")
@@ -233,11 +236,6 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         let wanted = modulesDeferred ? [] : ModuleList.all.filter { general.isEnabled($0.id) }
         for (id, module) in loaded where !wanted.contains(where: { $0.id == id }) {
             module.stop()
-            if fileDropOwner == id {
-                fileDropOwner = nil; fileDropEntered = nil
-                surface.filesDropped = nil
-                surface.acceptFiles(false)
-            }
             for (command, owner) in ModuleList.consumerModules where owner == id { registries.consumers.capture[command] = nil }
             registries.removeAll(owner: id)
             sounds.removeAll(owner: id)
@@ -256,6 +254,9 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         contentCache = contentCache.filter { live.contains($0.key) }
         contentCache["tab.search"] = nil
         searchView = nil
+        // The notch takes file drags only while some module offers a place for them.
+        surface.acceptFiles(!registries.dropSources.items.isEmpty)
+        if registries.dropSources.items.isEmpty { endDropScreen() }
         if !tabs.contains(where: { $0.id == activeTab }) {
             activeTab = "home"
             if state.acceptsKeyboard { panel.makeFirstResponder(nil) }
@@ -382,28 +383,123 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     var isHeld: Bool { holds > 0 }
     func holdOpen() -> AnyObject { Hold(self) }
 
-    private var fileDropEntered: (() -> Void)?
-    private var fileDropOwner: String?
+    // MARK: Drop screen
 
-    func acceptFileDrops(entered: @escaping () -> Void, dropped: @escaping ([URL]) -> Void) {
-        fileDropEntered = entered
-        fileDropOwner = registries.owner
-        surface.filesDropped = { urls in dropped(urls); return true }
-        surface.acceptFiles(true)
-    }
+    /// The files of the drag over the notch, from entering until it ends or leaves.
+    private(set) var dragFiles: [URL]?
+    private(set) var dropScreen: DropScreenView?
+    private var dropHold: AnyObject?
+    private var dropDwell: DispatchWorkItem?
+    private var dropEnd: DispatchWorkItem?
+    private var dropQueried = Date.distantPast
+    /// Leaving the window or cancelling ends the screen after this, so the drag crossing an edge
+    /// or the window resizing under it never flickers.
+    static let dropEndDebounce: TimeInterval = 0.15
 
-    private var fileDragSequence: Int?
-
-    private func fileDragEntered(_ sequence: Int) {
+    /// A file drag entered the notch window (collapsed pill or open panel, including a drag that
+    /// started inside the panel). Collapsed, the usual hover dwell opens it first.
+    @discardableResult
+    func fileDragEntered(_ files: [URL], at point: NSPoint) -> NSDragOperation {
+        dropEnd?.cancel(); dropEnd = nil
+        guard !files.isEmpty, !gameActive, !modulesDeferred, screen != nil, !registries.dropSources.items.isEmpty else { return [] }
         leaveTask?.cancel()
-        guard !gameActive else { return }
-        if !state.expanded { open(keyboard: false) }
-        // Once per drag: coming back onto the surface from a drop target inside the panel (a tab
-        // button, a module's own target) keeps the page the user moved to.
-        guard sequence != fileDragSequence else { return }
-        fileDragSequence = sequence
-        fileDropEntered?()
+        dragFiles = files
+        if state.expanded {
+            showDropScreen()
+            return dropScreen?.hover(at: point) ?? []
+        }
+        guard dropDwell == nil else { return [] }
+        hoverTask?.cancel()
+        setHovering(true)
+        let task = DispatchWorkItem { [weak self] in
+            guard let self else { return }
+            self.dropDwell = nil
+            guard self.dragFiles != nil, !self.gameActive, self.expectedFrame?.containsPointer(NSEvent.mouseLocation) == true else { return }
+            self.open(keyboard: false, recordAction: false)
+            self.showDropScreen()
+        }
+        dropDwell = task
+        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(general.hoverDelayMs), execute: task)
+        return []
     }
+
+    func fileDragUpdated(at point: NSPoint) -> NSDragOperation {
+        guard dragFiles != nil else { return [] }
+        dropEnd?.cancel(); dropEnd = nil
+        guard let dropScreen else { return [] }
+        // Sources may change under a resting drag (a device went offline); cheap, and the
+        // screen rebuilds only when its model changed.
+        if Date().timeIntervalSince(dropQueried) > 0.25 { refreshDropScreen() }
+        return dropScreen.hover(at: point)
+    }
+
+    func fileDragExited() {
+        dropScreen?.hover(at: nil)
+        dropEnd?.cancel()
+        let task = DispatchWorkItem { [weak self] in self?.endDropScreen() }
+        dropEnd = task
+        DispatchQueue.main.asyncAfter(deadline: .now() + Self.dropEndDebounce, execute: task)
+    }
+
+    /// Released over the notch: an enabled tile's target takes the files once the screen has
+    /// closed. Anywhere else the drop is refused and nothing happens.
+    func filesDropped(_ files: [URL], at point: NSPoint) -> Bool {
+        guard let dropScreen, let tile = dropScreen.tile(at: point), let drop = dropScreen.action(for: tile) else {
+            endDropScreen()
+            return false
+        }
+        endDropScreen()
+        drop(files)
+        return true
+    }
+
+    /// Shows the drop screen over the open panel for `dragFiles`, holding the panel open.
+    func showDropScreen() {
+        guard dragFiles != nil, state.expanded else { return }
+        if dropScreen == nil {
+            let view = DropScreenView()
+            view.pressed = { [weak self] tile in
+                guard let self, let files = self.dragFiles, let drop = self.dropScreen?.action(for: tile) else { return }
+                self.endDropScreen()
+                drop(files)
+            }
+            dropScreen = view
+            dropHold = holdOpen()
+            setEditing(false)
+            if state.acceptsKeyboard { panel.makeFirstResponder(nil) }
+            Analytics.record("shell", "show_drop_screen")
+        }
+        refreshDropScreen()
+        panelView?.setDropScreen(dropScreen)
+        updateVisibility()
+    }
+
+    private func refreshDropScreen() {
+        guard let files = dragFiles, let dropScreen else { return }
+        dropQueried = Date()
+        let made = DropScreenModel.make(files: files, sources: registries.dropSources.items)
+        if dropScreen.apply(made.model, actions: made.actions) { dropScreen.layoutSubtreeIfNeeded() }
+    }
+
+    /// Ends the drag's screen: the panel shows its tabs again and the normal leave logic decides
+    /// whether it stays open.
+    func endDropScreen() {
+        dropDwell?.cancel(); dropDwell = nil
+        dropEnd?.cancel(); dropEnd = nil
+        let hadScreen = dropScreen != nil
+        let hadDrag = dragFiles != nil
+        dragFiles = nil
+        guard hadScreen else {
+            if hadDrag, !panel.frame.containsPointer(NSEvent.mouseLocation) { pointerLeft() }
+            return
+        }
+        dropScreen = nil
+        (panelView ?? closingPanel)?.setDropScreen(nil)
+        updateVisibility()
+        // Released last: if the pointer is outside, the hold's release starts the leave delay.
+        dropHold = nil
+    }
+
     @discardableResult
     func tryOpenPanel(tab: String, linger: TimeInterval) -> Bool {
         let previousSuppression = Analytics.suppressed; Analytics.suppressed = true
@@ -671,6 +767,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     func close(restoreFocus: Bool = true) {
         hoverTask?.cancel(); leaveTask?.cancel()
         guard state.expanded else { return }
+        endDropScreen()
         let restore = restoreFocus && panel.isKeyWindow
         hoverSuppressed = panel.frame.containsPointer(NSEvent.mouseLocation)
         hovering = false
@@ -815,6 +912,11 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
 
     private func updateVisibility() {
         for (id, module) in loaded {
+            // The drop screen covers every page; only the modules it lists are on screen.
+            if dropScreen != nil {
+                module.setVisibility(panel: state.expanded && !registries.dropSources.ids(owner: id).isEmpty, activeTab: activeTab)
+                continue
+            }
             let visible = transientDetail.map { registries.cards.owner(of: $0.cardID) == id } ?? (activeTab == "home"
                 ? registries.cards.ids(owner: id).contains(where: general.isCardVisible)
                 : registries.tabs.owner(of: activeTab) == id)
@@ -1177,6 +1279,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
                 view.setPinned(general.pinned)
                 view.setEditing(editing, onHome: activeTab == "home")
                 showBody()
+                view.setDropScreen(dropScreen)
                 if moving { Motion.resume(view, duration: 0.24) } else { view.layer?.removeAllAnimations() }
             } else {
                 let view = PanelView(tabs: tabs, selected: activeTab, profile: profile, pinned: general.pinned,
@@ -1189,6 +1292,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
                 surface.place(view, at: layout.panelBody)
                 view.layoutSubtreeIfNeeded()
                 showBody()
+                view.setDropScreen(dropScreen)
                 if moving { Motion.enter(view, delay: 0.07, duration: 0.3, up: 10) }
             }
         } else if !expanded, let view = panelView {

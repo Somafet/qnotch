@@ -55,7 +55,33 @@ final class TaildropModule: NotchModule {
                 }
             }
         })
+        context.registries.dropSources.register(DropSource(id: "taildrop", title: "Taildrop", glyph: "paperplane", order: 20) { [weak self] files in
+            guard let self else { return [] }
+            return Self.dropTargets(state: self.state, sending: self.transfer != nil, files: files) { [weak self] device, urls in
+                self?.send(urls, to: device)
+                self?.context.shell?.selectTab("taildrop")
+            }
+        })
         if Runtime.diagnostics { state = .demo }
+    }
+
+    /// The drop screen's targets, from the last refresh only (no I/O): a tile per device (id =
+    /// its stable ID), or one disabled tile naming why Taildrop can't send. A device takes the
+    /// files only when it is online, nothing is being sent and not every item is a folder
+    /// (a dragged folder's URL ends in a slash).
+    static func dropTargets(state: TaildropState, sending: Bool, files: [URL],
+                            send: @escaping (TaildropTarget, [URL]) -> Void) -> [DropTarget] {
+        guard state.availability == .ready, !state.targets.isEmpty else {
+            let symbol = state.availability.notice(hasTargets: false)?.symbol ?? "exclamationmark.triangle"
+            return [DropTarget(id: "status", title: state.availability.shortText, glyph: symbol, enabled: false) { _ in }]
+        }
+        let foldersOnly = !files.isEmpty && files.allSatisfy(\.hasDirectoryPath)
+        return state.targets.map { device in
+            let reason: String? = foldersOnly ? "Folders can't be sent" : sending ? "Busy sending" : device.online ? nil : "Offline"
+            return DropTarget(id: device.id, title: device.name, subtitle: reason ?? device.osLabel,
+                              glyph: device.symbol,
+                              enabled: reason == nil) { urls in send(device, urls) }
+        }
     }
 
     private func track<V: NSView & TaildropDisplay>(_ view: V) -> NSView {

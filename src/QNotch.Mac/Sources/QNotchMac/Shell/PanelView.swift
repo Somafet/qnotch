@@ -12,6 +12,9 @@ final class PanelView: NSView {
 
     private var pin: HoverButton!
     private var edit: HoverButton!
+    /// Header, tab strip and body: hidden while the drop screen covers them.
+    private var chrome: [NSView] = []
+    private(set) weak var dropScreen: NSView?
 
     init(tabs: [Tab], selected: String, profile: (name: String, image: NSImage?), pinned: Bool,
          select: @escaping (String) -> Void, togglePin: @escaping () -> Void, openSettings: @escaping () -> Void,
@@ -73,6 +76,7 @@ final class PanelView: NSView {
             host.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -12)
         ])
         host.wantsLayer = true
+        chrome = [profile, tabBar, actions, host]
         setPinned(pinned)
         let fixed = tabs.prefix { $0.id == "home" || $0.id == "search" }.count
         tabBar.fixed = fixed
@@ -92,6 +96,20 @@ final class PanelView: NSView {
         pin.setSymbol(pinned ? "pin.fill" : "pin", size: 13, label: pinned ? "Unpin panel" : "Keep panel open")
         pin.tint = pinned ? Palette.accent : nil
         pin.setAccessibilityValue(pinned ? "on" : "off")
+    }
+
+    /// Shows `screen` over the whole panel body in place of the header, tabs and tab content
+    /// (hidden, not removed: a drag that started on a tab's item keeps its source); nil restores them.
+    func setDropScreen(_ screen: NSView?) {
+        guard screen !== dropScreen else { return }
+        dropScreen?.removeFromSuperview()
+        dropScreen = screen
+        chrome.forEach { $0.isHidden = screen != nil }
+        if let screen {
+            screen.removeFromSuperview()
+            embed(screen, in: self, inset: 0, fill: true)
+            layoutSubtreeIfNeeded()
+        }
     }
 
     func select(_ id: String, animated: Bool) {

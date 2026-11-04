@@ -21,7 +21,6 @@ final class NotificationMuteTests: XCTestCase {
         func openSettings() {}
         func openSettings(section: String) {}
         func holdOpen() -> AnyObject { NSObject() }
-        func acceptFileDrops(entered: @escaping () -> Void, dropped: @escaping ([URL]) -> Void) {}
         func closePanel() {}
         func dismissPanel() {}
     }

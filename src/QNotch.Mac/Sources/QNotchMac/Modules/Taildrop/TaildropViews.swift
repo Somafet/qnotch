@@ -3,16 +3,12 @@ import QNotchMacCore
 
 protocol TaildropDisplay: AnyObject { func reload() }
 
-private func fileURLs(_ info: NSDraggingInfo) -> [URL] {
-    (info.draggingPasteboard.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL]) ?? []
-}
-
 private func resultColor(_ result: TaildropResult) -> NSColor { result.success ? .systemGreen : .systemRed }
 
 // MARK: - Device tile
 
-/// One device: click to choose files, or drop files on it. Offline devices, and every other
-/// device while a send runs, are disabled. A native control, so focus, Space/Return and
+/// One device: click to choose files (dragged files go through the notch's drop screen).
+/// Offline devices, and every other device while a send runs, are disabled. A native control, so focus, Space/Return and
 /// VoiceOver's press work like a button.
 final class TaildropTile: NSControl, OutlineRoleProviding {
     let device: TaildropTarget
@@ -21,7 +17,6 @@ final class TaildropTile: NSControl, OutlineRoleProviding {
     private let status: NSTextField
     private var hovering = false { didSet { refreshLook() } }
     private var pressing = false { didSet { refreshLook() } }
-    private var dropping = false { didSet { refreshLook() } }
     private var tracking: NSTrackingArea?
     /// Stored here: a cell-less NSControl keeps no enabled state of its own.
     private var enabledState = true
@@ -58,7 +53,6 @@ final class TaildropTile: NSControl, OutlineRoleProviding {
             heightAnchor.constraint(equalToConstant: 58).isActive = true
         }
         identifier = NSUserInterfaceItemIdentifier("taildrop-device")
-        registerForDraggedTypes([.fileURL])
         reload()
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -82,20 +76,19 @@ final class TaildropTile: NSControl, OutlineRoleProviding {
         }
         status.stringValue = text
         alphaValue = device.online ? 1 : 0.45
-        setAccessibilityLabel(device.online ? "\(device.name), \(text). Choose files to send, or drop files here." : "\(device.name), offline.")
+        setAccessibilityLabel(device.online ? "\(device.name), \(text). Choose files to send." : "\(device.name), offline.")
         toolTip = device.online ? "Send files to \(device.name)" : "\(device.name) is offline"
         refreshLook()
     }
 
     private func refreshLook() {
         let fill: NSColor?
-        if dropping { fill = Palette.accentSoft }
-        else if pressing { fill = Palette.controlPressed }
+        if pressing { fill = Palette.controlPressed }
         else if hovering && isEnabled { fill = Palette.controlHover }
         else { fill = compact ? nil : Palette.control }
         layer?.backgroundColor = fill?.cgColor
-        layer?.borderWidth = dropping || !compact ? 1 : 0
-        layer?.borderColor = (dropping ? Palette.accent : Palette.stroke).cgColor
+        layer?.borderWidth = compact ? 0 : 1
+        layer?.borderColor = Palette.stroke.cgColor
     }
 
     private func press() {
@@ -127,25 +120,6 @@ final class TaildropTile: NSControl, OutlineRoleProviding {
     }
     override var focusRingMaskBounds: NSRect { bounds }
     override func drawFocusRingMask() { NSBezierPath(roundedRect: bounds, xRadius: layer?.cornerRadius ?? 8, yRadius: layer?.cornerRadius ?? 8).fill() }
-
-    // File drops
-
-    override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
-        guard isEnabled, !fileURLs(sender).isEmpty else { return [] }
-        dropping = true
-        return .copy
-    }
-    override func draggingUpdated(_ sender: NSDraggingInfo) -> NSDragOperation { dropping ? .copy : [] }
-    override func draggingExited(_ sender: NSDraggingInfo?) { dropping = false }
-    override func prepareForDragOperation(_ sender: NSDraggingInfo) -> Bool { dropping }
-    override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
-        dropping = false
-        let urls = fileURLs(sender)
-        guard isEnabled, !urls.isEmpty, let module else { return false }
-        module.send(urls, to: device)
-        return true
-    }
-    override func concludeDragOperation(_ sender: NSDraggingInfo?) { dropping = false }
 }
 
 // MARK: - Footer
@@ -227,7 +201,7 @@ final class TaildropTabView: NSView, TaildropDisplay, TabHeaderProviding {
         tabHeaderActions = row([refresh], spacing: 8)
 
         let title = line("Send to your devices", size: 13, weight: .semibold, color: Palette.textPrimary)
-        let hint = line("Drop files on a device, or click one to choose files.", size: 11, color: Palette.textTertiary)
+        let hint = line("Click a device to choose files, or drag files onto the notch.", size: 11, color: Palette.textTertiary)
         hint.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         let header = row([title, hint, spacer()], spacing: 8)
 
@@ -310,7 +284,7 @@ final class TaildropTabView: NSView, TaildropDisplay, TabHeaderProviding {
 
 // MARK: - Home card
 
-/// Up to three online devices as drop and click targets, and one status line.
+/// Up to three online devices to click, and one status line.
 final class TaildropCardView: NSView, TaildropDisplay, NSGestureRecognizerDelegate {
     private weak var module: TaildropModule?
     private let list = NSStackView()
