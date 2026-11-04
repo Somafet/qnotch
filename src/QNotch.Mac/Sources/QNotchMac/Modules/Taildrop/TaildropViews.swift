@@ -200,11 +200,6 @@ final class TaildropTabView: NSView, TaildropDisplay, TabHeaderProviding {
         let refresh = HoverButton(symbol: "arrow.clockwise", style: .icon, symbolSize: 11, label: "Refresh devices") { [weak module] in module?.refresh() }
         tabHeaderActions = row([refresh], spacing: 8)
 
-        let title = line("Send to your devices", size: 13, weight: .semibold, color: Palette.textPrimary)
-        let hint = line("Click a device to choose files, or drag files onto the notch.", size: 11, color: Palette.textTertiary)
-        hint.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        let header = row([title, hint, spacer()], spacing: 8)
-
         bannerText.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         embed(row([symbol("tray.and.arrow.down.fill", size: 13, color: Palette.accent), bannerText, spacer(), saveButton], spacing: 8),
               in: banner, inset: NSEdgeInsets(top: 5, left: 12, bottom: 5, right: 6), fill: true)
@@ -226,7 +221,7 @@ final class TaildropTabView: NSView, TaildropDisplay, TabHeaderProviding {
             document.topAnchor.constraint(equalTo: scroll.contentView.topAnchor)
         ])
 
-        let stack = column([header, banner, message, scroll, noticeHost, footer], spacing: 10)
+        let stack = column([banner, message, scroll, noticeHost, footer], spacing: 10)
         for view in [scroll, noticeHost] {
             view.setContentHuggingPriority(.init(1), for: .vertical)
             view.setContentCompressionResistancePriority(.init(1), for: .vertical)

@@ -89,10 +89,11 @@ final class SnapshotRun {
 /// between. Leaves the panel collapsed on Home, without the demo agents.
 enum SnapshotViews {
     /// Taildrop's send, result and unavailable states from demo data: no socket, nothing is sent.
-    private static func renderTaildropStates(_ run: SnapshotRun, _ taildrop: TaildropModule) {
+    /// Returns each state's tab-header frames; every state must start under the shared action row.
+    private static func renderTaildropStates(_ run: SnapshotRun, _ taildrop: TaildropModule) -> [String] {
         let shell = run.shell
         let demo = TaildropState.demo
-        guard let phone = demo.targets.first(where: { $0.name == "pixel-8" }) else { return run.fail("taildrop", "demo devices missing") }
+        guard let phone = demo.targets.first(where: { $0.name == "pixel-8" }) else { run.fail("taildrop", "demo devices missing"); return [] }
         var saved = demo
         saved.waiting = []
         var stopped = TaildropState(availability: .notRunning)
@@ -105,14 +106,17 @@ enum SnapshotViews {
             ("not-running", stopped, nil, nil),
             ("no-devices", TaildropState(availability: .ready), nil, nil)
         ]
+        var headerFrames: [String] = []
         for (name, state, transfer, result) in states {
             taildrop.showDemo(state, transfer: transfer, result: result)
             shell.selectTab("taildrop")
             run.notch("taildrop-" + name)
+            headerFrames += TabHeaderDiagnostics.check(run, id: "taildrop-" + name, title: "Taildrop")
             shell.selectTab("home")
             run.write("taildrop-\(name)-card", cardViews(shell)["taildrop"], missing: "the Taildrop card is not on Home")
         }
         taildrop.showDemo(demo)
+        return headerFrames
     }
 
     /// Demo files for the drop screen; never read, so they need not exist.
@@ -226,7 +230,7 @@ enum SnapshotViews {
             shell.selectTab("home")
             run.write("media-empty-card", cardViews(shell)["media"], missing: "the card is not on Home")
         }
-        if let taildrop = shell.module(TaildropModule.self) { renderTaildropStates(run, taildrop) }
+        if let taildrop = shell.module(TaildropModule.self) { headerFrames += renderTaildropStates(run, taildrop) }
         renderDropScreen(run)
         run.log("tab-header-frames", headerFrames)
         if !run.failed { run.pass("tab-headers") }

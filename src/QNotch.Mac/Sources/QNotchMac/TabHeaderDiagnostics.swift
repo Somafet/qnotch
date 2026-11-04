@@ -21,6 +21,10 @@ enum TabHeaderDiagnostics {
         require(near(header.height, expectedHeader) && near(header.maxY, page.bounds.maxY), "action row is not fixed at the top")
         require(near(header.minY - body.maxY, expectedGap) && near(body.minX, 0) && near(body.width, page.bounds.width), "body gap/leading edge drifted")
         require(page.accessibilityRole() == .group && page.accessibilityLabel() == title, "page lost its accessible name")
+        func visibleTitle(_ view: NSView) -> Bool {
+            !view.isHidden && ((view as? NSTextField)?.stringValue == title || view.subviews.contains(where: visibleTitle))
+        }
+        require(!visibleTitle(page), "shows an in-page title; the tab bar already names the page")
         require(Outline.unnamedControls(in: Outline.text(for: page)).isEmpty, "an action or body control has no accessible name")
         var log = ["\(id) page=\(page.frame) header=\(header) body=\(body)"]
         if let actions = page.actions, !actions.isHidden {
