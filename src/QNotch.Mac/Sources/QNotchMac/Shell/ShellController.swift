@@ -478,17 +478,25 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     }
 
     /// The settled window frame for the current presentation.
-    var expectedFrame: CGRect? { layout.map(surfaceRect) }
+    var expectedFrame: CGRect? { layout.map { surfaceRect($0) } }
 
     /// The settled surface: the layout's, swollen a little while the pointer rests on the collapsed
     /// notch, so hovering answers at once, before the hover delay opens the panel.
-    private func surfaceRect(_ layout: DisplayLayout) -> CGRect {
+    private func surfaceRect(_ layout: DisplayLayout, swollen: Bool? = nil) -> CGRect {
         let rect = layout.surface(expanded: state.expanded, wing: wing)
-        guard hovering, !state.expanded, Motion.moves else { return rect }
+        guard swollen ?? hovering, !state.expanded, Motion.moves else { return rect }
         // Attached to the bezel it grows sideways and down; a floating pill grows all round.
         let swell: CGFloat = 2
         return layout.integratesTopBand ? CGRect(x: rect.minX - swell, y: rect.minY - swell, width: rect.width + swell * 2, height: rect.height + swell)
                                               : rect.insetBy(dx: -swell, dy: -swell / 2)
+    }
+
+    /// Whether `point` is on the collapsed notch as hovering draws it. Hover decisions use this,
+    /// never the window: a morph pads the window with transparent room for its spring, and a
+    /// pointer in that padding is not on the notch.
+    private func onCollapsedNotch(_ point: NSPoint) -> Bool {
+        guard let layout, !state.expanded else { return false }
+        return surfaceRect(layout, swollen: true).containsPointer(point)
     }
 
     /// Keep the menu bar in front while traversing it, even across QNotch's footprint.
@@ -526,6 +534,9 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         leaveTask?.cancel()
         guard !gameActive, !menuBarRevealed else { return }
         guard !state.expanded else { return }
+        // Entering a morph's padded window is not entering the notch; `settle` catches a pointer
+        // that moves on from there without leaving the window.
+        guard onCollapsedNotch(NSEvent.mouseLocation) else { return }
         if hoverSuppressed {
             guard !(expectedFrame?.containsPointer(NSEvent.mouseLocation) ?? false) else { return }
             hoverSuppressed = false
@@ -628,7 +639,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         if !(hoverSuppressed && !state.expanded && expectedFrame?.containsPointer(NSEvent.mouseLocation) == true) {
             hoverSuppressed = false
         }
-        if !panel.frame.containsPointer(NSEvent.mouseLocation) { setHovering(false) }
+        if !onCollapsedNotch(NSEvent.mouseLocation) { setHovering(false) }
         guard state.presentation == .hover, !general.pinned, holds == 0 else { return }
         let task = DispatchWorkItem { [weak self] in
             guard let self, !self.general.pinned, self.holds == 0, !self.panel.frame.containsPointer(NSEvent.mouseLocation) else { return }
@@ -1211,7 +1222,10 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
                 window = window.union(target.offsetBy(dx: reach.lowerBound - target.midX, dy: 0))
                     .union(target.offsetBy(dx: reach.upperBound - target.midX, dy: 0))
             }
-            window = window.insetBy(dx: -28, dy: -28).intersection(layout.frame)
+            // The hover swell is critically damped and never overshoots. Padding it would leave a
+            // transparent band under the notch that still takes the pointer and its clicks.
+            if style != .hover { window = window.insetBy(dx: -28, dy: -28) }
+            window = window.intersection(layout.frame)
         }
         setFrame(window)
         let wasHidden = pill.isHidden
@@ -1228,7 +1242,10 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         setFrame(frame)
         // The pointer may have been left outside the shrunken window without an exit event.
         if hoverSuppressed, !frame.containsPointer(NSEvent.mouseLocation) { hoverSuppressed = false }
-        if hovering, !frame.containsPointer(NSEvent.mouseLocation) { setHovering(false) }
+        let pointer = NSEvent.mouseLocation
+        if hovering, !onCollapsedNotch(pointer) { setHovering(false) }
+        // Entered through a morph's padding and moved onto the notch without an exit and entry.
+        else if !hovering, !state.expanded, !hoverSuppressed, onCollapsedNotch(pointer) { pointerEntered() }
         if !state.expanded, let closingPanel {
             closingPanel.removeFromSuperview()
             closingPanel.layer?.removeAllAnimations()
