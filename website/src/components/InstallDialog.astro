@@ -1,7 +1,7 @@
 ---
 import Icon from './Icon.astro';
 
-// Other ways to install the Windows app. index.astro checks at build time which package managers
+// Other ways to install the Windows app. src/lib/releases.ts checks at build time which package managers
 // actually carry QNotch, so a channel appears only once its command works (see docs/releases.md).
 interface Props { gh: string; winget: boolean; scoop: boolean; chocolatey: boolean }
 const { gh, winget, scoop, chocolatey } = Astro.props;
