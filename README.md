@@ -47,7 +47,7 @@ Windows defaults include Ctrl+Alt+N to toggle the panel, Ctrl+Alt+F to search, a
 
 ## Privacy and data
 
-The Windows app stores settings, notes, and logs locally, and secrets in Windows Credential Manager. Clipboard history stays in memory unless you choose to save it. Optional integrations and update checks make network requests. [Data locations and network behavior](docs/windows/README.md#privacy-and-data). The Mac app keeps preferences and bounded startup logs in `~/Library/Application Support/QNotch.Mac/`; optional integrations and update checks make network requests. [Mac data and permissions](docs/macos/README.md#data-permissions-and-diagnostics).
+The Windows app stores settings, notes, and logs locally, and secrets in Windows Credential Manager. Clipboard history stays in memory unless you choose to save it. Optional integrations and update checks make network requests. [Data locations and network behavior](docs/windows/README.md#privacy-and-data). The Mac app keeps preferences and bounded startup logs in `~/Library/Application Support/QNotch.Mac/`; optional integrations and update checks make network requests. [Mac data and permissions](docs/macos/README.md#data-permissions-and-diagnostics). Both apps send usage events (which features you use, never your content) unless you turn off Share usage data in Settings, General. The [privacy policy](https://qnot.ch/privacy) covers all of it; its source is `website/src/pages/privacy.astro`.
 
 ## Performance
 

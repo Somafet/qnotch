@@ -279,7 +279,7 @@ const jsonLd = {
         <div class="section-head center">
           <span class="eyebrow">Privacy</span>
           <h2>Your content stays on your device.</h2>
-          <p class="lead">Your content stays local. QNotch shares usage actions with PostHog by default, without your content. Turn off Share usage data in Settings, General or set QNOTCH_TELEMETRY_ENABLED=false. The source is on GitHub.</p>
+          <p class="lead">Your content stays local. QNotch shares usage actions with PostHog by default, without your content. Turn off Share usage data in Settings, General or set QNOTCH_TELEMETRY_ENABLED=false. The <a class="inline" href="/privacy">privacy policy</a> has the details.</p>
         </div>
         {(['win', 'mac'] as const).map(os => (
           <ul class={`priv os-${os}`}>
@@ -334,6 +334,7 @@ const jsonLd = {
         <a href={`${GH}/releases`}>Releases</a>
         <a href={`${GH}/blob/main/CONTRIBUTING.md`}>Contributing</a>
         <a href={`${GH}/blob/main/SECURITY.md`}>Security</a>
+        <a href="/privacy">Privacy</a>
         <a href={`${GH}/blob/main/LICENSE`}>MIT license</a>
         <ThemeSwitch />
       </nav>
@@ -357,45 +358,6 @@ const jsonLd = {
     align-items: center;
     height: 64px;
     gap: 24px;
-  }
-
-  .logo {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    font-weight: 700;
-    font-size: 17px;
-    letter-spacing: -0.02em;
-  }
-
-  .logo-mark {
-    position: relative;
-    width: 28px;
-    height: 28px;
-    border-radius: 8px;
-    background: var(--mark);
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
-  }
-
-  .logo-mark i {
-    position: absolute;
-    left: 6px;
-    right: 6px;
-    top: 0;
-    height: 9px;
-    border-radius: 0 0 5px 5px;
-    background: #f4f4f7;
-  }
-
-  .logo-mark i::after {
-    content: '';
-    position: absolute;
-    right: 3px;
-    top: 3px;
-    width: 3px;
-    height: 3px;
-    border-radius: 50%;
-    background: #5b9dff;
   }
 
   .nav-links {
@@ -703,9 +665,6 @@ const jsonLd = {
     justify-content: space-between;
     gap: 16px;
   }
-
-  .logo.small { font-size: 15px; }
-  .logo.small .logo-mark { width: 24px; height: 24px; }
 
   .foot nav {
     display: flex;

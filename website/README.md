@@ -19,6 +19,7 @@ npm run build    # static site in dist/
 | File | What it is |
 | --- | --- |
 | `src/pages/index.astro` | The page: hero, numbers, hotkeys, privacy, FAQ |
+| `src/pages/privacy.astro` | The privacy policy at /privacy, also the Microsoft Store listing's policy URL. Update it, and its date, with any change to what the apps store or send |
 | `src/components/Demo.astro` + `src/scripts/demo.ts` | The notch itself (pill, panel, tabs, terminal, scenarios) |
 | `src/scripts/desktop.ts` + `src/styles/desktop.css` | The fake desktop around it: windows, taskbar, Start, calendar, tray menu, Explorer, Music, browser upload |
 | `src/styles/mac.css` | The Mac version of that desktop: menu bar, Dock, traffic lights, and the notch's wings around the camera housing |
