@@ -5,6 +5,28 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
 <title>QNotch for Mac</title>
 <link>https://github.com/Somafet/qnotch</link>
 <item>
+<title>QNotch 0.5.0</title>
+<pubDate>Thu, 05 Nov 2026 11:37:58 GMT</pubDate>
+<sparkle:version>12</sparkle:version>
+<sparkle:shortVersionString>0.5.0</sparkle:shortVersionString>
+<sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+<sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+<sparkle:fullReleaseNotesLink>https://github.com/Somafet/qnotch/releases/tag/macos-v0.5.0</sparkle:fullReleaseNotesLink>
+<description sparkle:format="markdown">## What's Changed
+* Let wingetcreate run on a newer .NET runtime by @Somafet in https://github.com/Somafet/qnotch/pull/116
+* Publish Windows releases to Chocolatey by @Somafet in https://github.com/Somafet/qnotch/pull/117
+* Add Windows and Mac landing pages and llms.txt by @Somafet in https://github.com/Somafet/qnotch/pull/119
+* Add a privacy policy at /privacy by @Somafet in https://github.com/Somafet/qnotch/pull/118
+* Fix sticky hover area below the Mac notch by @Somafet in https://github.com/Somafet/qnotch/pull/120
+* Run only the platform CI jobs a pull request affects by @Somafet in https://github.com/Somafet/qnotch/pull/123
+* Add Taildrop to the Windows app by @Somafet in https://github.com/Somafet/qnotch/pull/121
+* Add Taildrop to the Mac app by @Somafet in https://github.com/Somafet/qnotch/pull/122
+
+
+**Full Changelog**: https://github.com/Somafet/qnotch/compare/macos-v0.4.4...macos-v0.5.0</description>
+<enclosure url="https://github.com/Somafet/qnotch/releases/download/macos-v0.5.0/QNotch-macos-arm64.zip" length="3816470" type="application/octet-stream" sparkle:edSignature="TmoFRKMWb5r2JaKNR60yPDN1dlcgoPoQ7UEb0dMr0WnTgTdZ1etu/6CZTYNr72vrHY3qQRXIeaMqRZs5b1ynBQ=="/>
+</item>
+<item>
 <title>QNotch 0.4.4</title>
 <pubDate>Tue, 03 Nov 2026 11:01:20 GMT</pubDate>
 <sparkle:version>11</sparkle:version>
@@ -180,6 +202,6 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
 </channel>
 </rss>
 <!-- sparkle-signatures:
-edSignature: jGDdi41ZbLcQqlYoCp9pwOOMAM2PRARGjILJbmvisq+nwMEL+5s0KUiXiuqg2QTLldcbozUojBda5M2+MbjgDQ==
-length: 13798
+edSignature: kFO61+1C8ylXLCBnA6U4nepjgvZcxvKtv0zWDP4KnZ9cwjrv0p73XaKM5EvcPqPA9fz8lzBMWd6kGiMyhHobBw==
+length: 15474
 -->
