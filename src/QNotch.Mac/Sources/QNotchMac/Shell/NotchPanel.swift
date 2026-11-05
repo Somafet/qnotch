@@ -135,10 +135,15 @@ final class ShapeView: NSView {
 final class NotchSurfaceView: NSView {
     var entered: (() -> Void)?
     var exited: (() -> Void)?
-    /// File drags: set by the shell only while a module accepts file drops.
-    var fileDragEntered: (() -> Void)?
+    /// File drags, registered by the shell only while a drop source exists. The surface is the
+    /// window's only drag destination; points are in window coordinates. Each returns the
+    /// operation to show (copy only over an enabled drop-screen tile).
+    var fileDragEntered: (([URL], NSPoint) -> NSDragOperation)?
+    var fileDragUpdated: ((NSPoint) -> NSDragOperation)?
+    /// The drag left the window or was cancelled.
     var fileDragExited: (() -> Void)?
-    var filesDropped: (([URL]) -> Bool)?
+    var filesDropped: (([URL], NSPoint) -> Bool)?
+    var fileDragEnded: (() -> Void)?
     let world = NSView()
     private let backdrop = ShapeView()
     private let outline = ShapeView()
@@ -194,16 +199,18 @@ final class NotchSurfaceView: NSView {
     }
 
     override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
-        guard filesDropped != nil, !fileURLs(sender).isEmpty else { return [] }
-        fileDragEntered?()
-        return .copy
+        let urls = fileURLs(sender)
+        guard !urls.isEmpty else { return [] }
+        return fileDragEntered?(urls, sender.draggingLocation) ?? []
     }
-    override func draggingUpdated(_ sender: NSDraggingInfo) -> NSDragOperation { filesDropped == nil ? [] : .copy }
+    override func draggingUpdated(_ sender: NSDraggingInfo) -> NSDragOperation { fileDragUpdated?(sender.draggingLocation) ?? [] }
     override func draggingExited(_ sender: NSDraggingInfo?) { fileDragExited?() }
+    override func prepareForDragOperation(_ sender: NSDraggingInfo) -> Bool { fileDragUpdated?(sender.draggingLocation) == .copy }
     override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
         let urls = fileURLs(sender)
-        return !urls.isEmpty && filesDropped?(urls) == true
+        return !urls.isEmpty && filesDropped?(urls, sender.draggingLocation) == true
     }
+    override func draggingEnded(_ sender: NSDraggingInfo) { fileDragEnded?() }
 
     /// Sets the region content can occupy (the expanded surface plus room for a spring overshoot).
     func configure(world rect: CGRect, integrated: Bool, band: CGFloat) {

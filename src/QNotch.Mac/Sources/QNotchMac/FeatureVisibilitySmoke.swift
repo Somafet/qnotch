@@ -35,7 +35,7 @@ extension NativeSmokeTest {
             guard let owner = shell.registries.tabs.owner(of: tab.id) else { return false }
             return !shell.registries.cards.ids(owner: owner).isEmpty
         }
-        try require(Set(both.map(\.id)) == ["media", "timer", "clipboard", "files", "notifications", "ai", "scheduled"],
+        try require(Set(both.map(\.id)) == ["media", "timer", "clipboard", "files", "notifications", "ai", "scheduled", "taildrop"],
                     "Card+tab coverage changed; update the regression inventory")
         for card in cards { try require(find("feature-home-" + card.id, in: page.window.contentView) != nil, "No Home control for \(card.id)") }
         for tab in tabs { try require(find("feature-tab-" + tab.id, in: page.window.contentView) != nil, "No tab control for \(tab.id)") }

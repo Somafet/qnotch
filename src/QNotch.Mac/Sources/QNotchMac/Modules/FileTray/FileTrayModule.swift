@@ -26,7 +26,6 @@ final class FileTrayModule: NSObject, NotchModule {
     private var quickLookHold: AnyObject?
     private var quickLookURL: URL?
     private let views = NSHashTable<AnyObject>.weakObjects()
-    var dropActive = false { didSet { refresh() } }
 
     var contextShell: ModuleShell? { context.shell }
     private var fileURL: URL { context.settings.directory.appendingPathComponent("filetray.json") }
@@ -49,13 +48,21 @@ final class FileTrayModule: NSObject, NotchModule {
                 }
             }
         })
-        context.shell?.acceptFileDrops(entered: { [weak self] in
-            self?.dropActive = true
-            self?.context.shell?.selectTab("files")
-        }, dropped: { [weak self] urls in
-            self?.dropActive = false
-            self?.add(urls)
+        context.registries.dropSources.register(DropSource(id: "files", title: "File tray", glyph: "tray.full", order: 10) { [weak self] files in
+            guard let self else { return [] }
+            return [Self.dropTarget(files: files, trayPaths: Set(self.items.map(\.url.path))) { [weak self] urls in
+                self?.add(urls)
+                self?.context.shell?.selectTab("files")
+            }]
         })
+    }
+
+    /// The drop screen's "Add to tray", disabled when every dragged item is already in the tray.
+    /// Compares paths only: no file system access.
+    static func dropTarget(files: [URL], trayPaths: Set<String>, drop: @escaping ([URL]) -> Void) -> DropTarget {
+        let fresh = files.contains { !trayPaths.contains($0.standardizedFileURL.path) }
+        return DropTarget(id: "add", title: "Add to tray", subtitle: fresh ? "Keep them within reach" : "Already in the tray",
+                          glyph: "tray.and.arrow.down", enabled: fresh, drop: drop)
     }
 
     private func track<V: NSView & FileTrayDisplay>(_ view: V) -> NSView {
@@ -74,7 +81,6 @@ final class FileTrayModule: NSObject, NotchModule {
             // Thumbnails are cheap to regenerate (Quick Look caches them); don't hold them while idle.
             thumbnails.removeAll()
             requested.removeAll()
-            dropActive = false
         }
     }
     func systemDidWake() {}

@@ -21,7 +21,7 @@ public struct GeneralSettings: Codable, Equatable {
     public var disabledModules: [String] = []
     /// Explicit opt-in for new, default-off modules; old saved settings never enable a shell.
     public var enabledOptionalModules: [String] = []
-    public static let defaultOffModules: Set<String> = ["terminal"]
+    public static let defaultOffModules: Set<String> = ["terminal", "taildrop"]
     /// Choose the segment under the pointer once after hover dwell. Opt-in.
     public var hoverOpensSegment = false
     /// Pointer rest before the panel opens, and pointer absence before it closes (milliseconds).

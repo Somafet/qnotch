@@ -215,6 +215,7 @@ enum NativeSmokeTest {
             }
             run.pass("file-tray")
         }
+        try DropScreenSmoke.check(run)
         guard let timer = shell.module(TimerModule.self) else { throw Failure("timer-wake", "Timer module was not constructed") }
         let note = shell.module(NoteModule.self)
         note?.edit("Smoke note\nsecond line")
