@@ -13,6 +13,8 @@ var tests = new List<(string Name, Action Run)>
     ("Consumer CLI contracts, synthetic quota/transcripts, bounded pipes and WPF-free clients", ConsumerChecks.Run),
     ("Analytics privacy, consent, bounded delivery, retries and identity", AnalyticsChecks.Run),
     ("Terminal defaults, local opt-in, bounded VT screen and input encoding", TerminalChecks.Deterministic),
+    ("Taildrop LocalAPI parsing, escaped paths, safe inbox names and set-if-changed state", TaildropChecks.Deterministic),
+    ("Drop screen targets: File tray and Taildrop tiles, and the reasons a tile is off", DropChecks.Run),
     ("Small and Medium bodies fit live, empty, loading and error states", CardRenderingChecks.Run),
     ("Home sizes preserve defaults, reject unsupported choices and survive reload", () =>
     {
@@ -102,6 +104,11 @@ if (args.Contains("--conpty"))
 {
     try { await TerminalChecks.ConPty(); }
     catch (Exception ex) { failures++; Console.Error.WriteLine("FAIL real ConPTY: " + ex); }
+}
+if (args.Contains("--taildrop-live"))
+{
+    try { await TaildropChecks.Live(); }
+    catch (Exception ex) { failures++; Console.Error.WriteLine("FAIL Taildrop live: " + ex); }
 }
 return failures == 0 ? 0 : 1;
 

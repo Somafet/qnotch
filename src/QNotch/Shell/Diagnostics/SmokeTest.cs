@@ -123,6 +123,7 @@ internal sealed partial class SmokeTest
             await Check("module-toggle", () => Task.FromResult<string?>("skip: modules apply on restart on Windows (Settings, Features asks for one)"));
             await Check("edit-mode", EditMode);
             await Check("pin", Pin);
+            await Check("drop-screen", DropScreenCheck);
             await Check("notify-cli", () => Module("notify-cli"));
             await Check("notify-transport", () => Module("notify-transport"));
             await Check("agents-hook", () => Module("agents-hook"));
@@ -327,6 +328,41 @@ internal sealed partial class SmokeTest
         Log($"pinned: open after the pointer left {stayed}; unpinned: closed {closed} (pointer really over the notch: {pointer})");
         if (!stayed) return "the pinned panel closed when the pointer left";
         return closed || pointer ? null : "unpinned, the panel stayed open with the pointer away";
+    }
+
+    /// <summary>A file drag over the collapsed notch opens the panel on the drop screen, which covers the tabs and names a tile per
+    /// target; a drag that ends without a drop takes the screen away and the panel closes again.</summary>
+    async Task<string?> DropScreenCheck()
+    {
+        if (S.Drops.Items.Count == 0) return "skip: no module offers a drop target";
+        S.ClosePanel();
+        await Task.Delay(300);
+        var demo = Path.Combine(Path.GetTempPath(), "QNotch demo");
+        S.FileDrag([Path.Combine(demo, "holiday-photos.zip"), Path.Combine(demo, "trip-notes.pdf")]);
+        var opened = await Until(() => S.Mode == ShellMode.Expanded, _h.Settings.HoverDwellMs + 1500);
+        if (!opened) return "a file drag did not open the panel";
+        await Task.Delay(300);
+        if (S.DropView is not { IsShown: true } screen) return "the panel opened without the drop screen";
+        if (Find(W.RootElement, "tab-home") is { IsVisible: true }) return "the tabs stayed visible under the drop screen";
+        var tiles = new List<Button>();
+        void Walk(DependencyObject d)
+        {
+            if (d is Button b && System.Windows.Automation.AutomationProperties.GetAutomationId(b).StartsWith("drop-", StringComparison.Ordinal)) tiles.Add(b);
+            for (var i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(d); i++) Walk(System.Windows.Media.VisualTreeHelper.GetChild(d, i));
+        }
+        Walk(screen);
+        var unnamed = tiles.Where(b => string.IsNullOrWhiteSpace(System.Windows.Automation.AutomationProperties.GetName(b))).ToList();
+        Log($"drop screen tiles: {string.Join(", ", tiles.Select(b => $"{System.Windows.Automation.AutomationProperties.GetAutomationId(b)}{(b.IsEnabled ? "" : " (off)")}"))}");
+        if (tiles.Count == 0) return "the drop screen shows no tiles";
+        if (unnamed.Count > 0) return "a drop tile has no name";
+        foreach (var source in S.Drops.Items)
+            if (source.Targets([demo]).Count > 0 && !tiles.Any(b => System.Windows.Automation.AutomationProperties.GetAutomationId(b).StartsWith($"drop-{source.Id}-", StringComparison.Ordinal)))
+                return $"the {source.Id} source has targets but no tile";
+        S.FileDragEnd();
+        if (S.DropView.IsShown) return "the drop screen stayed after the drag ended";
+        if (Find(W.RootElement, "tab-home") is { IsVisible: false } && S.Mode == ShellMode.Expanded) return "the tabs did not come back after the drag ended";
+        var closed = await Until(() => S.Mode == ShellMode.Collapsed, _h.Settings.LeaveDelayMs + 1500);
+        return closed || W.IsPointerOver() ? null : "the panel stayed open after the drag left";
     }
 
     async Task<string?> GameModeCheck()

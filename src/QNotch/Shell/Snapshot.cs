@@ -116,7 +116,7 @@ internal static partial class Snapshot
         // The open panel: every tab, Home in edit mode, then each Home card on its own.
         var tabs = scene.Tabs.Items.Select(t => (t.Id, Name: Name("tab-", t.Id))).ToList();
         var cards = scene.Cards.Ordered.Select(c => (c.Id, Name: Name("card-", c.Id))).ToList();
-        if (tabs.Select(t => t.Name).Concat(cards.Select(c => c.Name)).Append("tab-home-edit").Any(Wants))
+        if (tabs.Select(t => t.Name).Concat(cards.Select(c => c.Name)).Append("tab-home-edit").Append("panel-drop").Any(Wants))
         {
             shell.OpenPanel();
             await Task.Delay(600);
@@ -134,6 +134,14 @@ internal static partial class Snapshot
                 shell.IsEditMode = true;
                 try { await Task.Delay(400); Notch(p, NotchWindow.PanelH + 8); }
                 finally { shell.IsEditMode = false; }
+            });
+            // The drop screen for two demo files, with every registered source's targets.
+            await View("panel-drop", async p =>
+            {
+                var demo = Path.Combine(Path.GetTempPath(), "QNotch demo");
+                shell.ShowDropScreen([Path.Combine(demo, "holiday-photos.zip"), Path.Combine(demo, "trip-notes.pdf")]);
+                try { await Task.Delay(400); Notch(p, NotchWindow.PanelH + 8); }
+                finally { shell.HideDropScreen(); }
             });
             if (cards.Any(c => Wants(c.Name)))
             {

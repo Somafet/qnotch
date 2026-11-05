@@ -68,6 +68,8 @@
                         </StackPanel>
                     </Grid>
                     <Grid x:Name="TabHost" Grid.Row="1" Margin="4,0,4,0"/>
+                    <!-- Drop screen (Shell/DropScreen.cs): covers header and tabs while files are dragged over the notch -->
+                    <Grid x:Name="DropHost" Grid.RowSpan="2"/>
                 </Grid>
 
                 <!-- Game bar content (built by the game mode controller from the GameBar segments) -->
