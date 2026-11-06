@@ -111,15 +111,18 @@ const ps = text => `'${text.replace(/'/g, "''")}'`;
 // A portable ZIP package. Chocolatey extracts QNotch.exe into the package's tools folder and shims it as
 // qnotch; the shim waits for the exe, so `qnotch usage --json` prints and returns its exit code. The
 // Start menu shortcut points at the exe itself, so the app starts without a console.
-export function chocolateyPackage({ tag, version, url, sha256 }) {
+export function chocolateyPackage({ tag, version, url, sha256, commit }) {
+  // The icon comes from the tagged commit, so it cannot change underneath a published package.
+  if (!/^[0-9a-f]{40}$/.test(commit ?? '')) throw new Error(`${tag} has no resolved commit for the Chocolatey icon.`);
   const fields = {
     id: chocolateyId,
     version,
     title: 'QNotch',
     authors: 'Soma Somorjai',
     owners: 'Somafet',
+    copyright: 'Copyright (c) 2026 Soma Somorjai',
     projectUrl: 'https://qnot.ch',
-    iconUrl: `https://cdn.jsdelivr.net/gh/${repository}@main/src/QNotch/Assets/AppIcon.svg`,
+    iconUrl: `https://cdn.jsdelivr.net/gh/${repository}@${commit}/src/QNotch/Assets/AppIcon.svg`,
     licenseUrl: `https://github.com/${repository}/blob/main/LICENSE`,
     requireLicenseAcceptance: 'false',
     projectSourceUrl: `https://github.com/${repository}`,
@@ -195,7 +198,10 @@ export function writeManifests(source, out) {
 export function fetchSource(tag, run = gh) {
   const release = JSON.parse(run(['api', `repos/${repository}/releases/tags/${encodeURIComponent(tag)}`]));
   const latest = JSON.parse(run(['api', `repos/${repository}/releases/latest`]));
-  return releaseSource(release, latest, tag);
+  const source = releaseSource(release, latest, tag);
+  const commit = JSON.parse(run(['api', `repos/${repository}/commits/${encodeURIComponent(tag)}`])).sha?.toLowerCase();
+  if (!/^[0-9a-f]{40}$/.test(commit ?? '')) throw new Error(`Could not resolve ${tag} to a commit.`);
+  return { ...source, commit };
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

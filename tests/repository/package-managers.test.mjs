@@ -9,6 +9,7 @@ import { repository } from '../../scripts/release-policy.mjs';
 
 const root = resolve(import.meta.dirname, '../..');
 const sha = 'ab'.repeat(32);
+const commit = '0123456789abcdef'.repeat(2) + '01234567';
 const url = tag => `https://github.com/${repository}/releases/download/${tag}/QNotch-self-contained.zip`;
 function release(tag = 'v0.9.0', overrides = {}, zip = {}) {
   return {
@@ -43,10 +44,17 @@ test('the release is read from GitHub by tag and compared with latest', () => {
   const calls = [];
   const source = fetchSource('v0.9.0', args => {
     calls.push(args[1]);
+    if (args[1].includes('/commits/')) return JSON.stringify({ sha: commit.toUpperCase() });
     return JSON.stringify(args[1].endsWith('/latest') ? { tag_name: 'v0.9.0' } : release());
   });
   assert.equal(source.version, '0.9.0');
-  assert.deepEqual(calls, [`repos/${repository}/releases/tags/v0.9.0`, `repos/${repository}/releases/latest`]);
+  assert.equal(source.commit, commit);
+  assert.deepEqual(calls, [`repos/${repository}/releases/tags/v0.9.0`, `repos/${repository}/releases/latest`, `repos/${repository}/commits/v0.9.0`]);
+});
+
+test('the release is refused when its tag does not resolve to a commit', () => {
+  assert.throws(() => fetchSource('v0.9.0', args => JSON.stringify(
+    args[1].includes('/commits/') ? {} : args[1].endsWith('/latest') ? { tag_name: 'v0.9.0' } : release())));
 });
 
 test('winget gets a portable ZIP manifest set for one version', () => {
@@ -84,14 +92,17 @@ test('Scoop gets an x64 manifest with a shim, a shortcut and autoupdate', () => 
 });
 
 test('Chocolatey gets a portable ZIP package with a pinned checksum, a shortcut and clean removal', () => {
-  const files = chocolateyPackage(releaseSource(release(), { tag_name: 'v0.9.0' }, 'v0.9.0'));
+  const files = chocolateyPackage({ ...releaseSource(release(), { tag_name: 'v0.9.0' }, 'v0.9.0'), commit });
   assert.deepEqual(Object.keys(files).sort(), ['qnotch.nuspec', 'tools/chocolateybeforemodify.ps1', 'tools/chocolateyinstall.ps1', 'tools/chocolateyuninstall.ps1']);
   const nuspec = files['qnotch.nuspec'];
   const field = name => new RegExp(`<${name}>([^<]*)</${name}>`).exec(nuspec)?.[1];
   assert.equal(field('id'), 'qnotch');
   assert.equal(field('version'), '0.9.0');
   assert.equal(field('releaseNotes'), `https://github.com/${repository}/releases/tag/v0.9.0`);
-  for (const name of ['title', 'authors', 'projectUrl', 'iconUrl', 'licenseUrl', 'packageSourceUrl', 'summary']) assert.ok(field(name), name);
+  for (const name of ['title', 'authors', 'copyright', 'projectUrl', 'iconUrl', 'licenseUrl', 'packageSourceUrl', 'summary']) assert.ok(field(name), name);
+  // The icon is pinned to the tagged commit so it cannot change underneath the package.
+  assert.equal(field('iconUrl'), `https://cdn.jsdelivr.net/gh/${repository}@${commit}/src/QNotch/Assets/AppIcon.svg`);
+  assert.throws(() => chocolateyPackage(releaseSource(release(), { tag_name: 'v0.9.0' }, 'v0.9.0')));
   // Chocolatey tags are space separated and lowercase.
   assert.ok(field('tags').split(' ').every(tag => /^[a-z0-9-]+$/.test(tag)));
   assert.ok(field('description').length >= 30 && !/[<>]/.test(field('description')));
@@ -109,7 +120,7 @@ test('Chocolatey gets a portable ZIP package with a pinned checksum, a shortcut 
 test('manifests are written where wingetcreate and the bucket expect them', t => {
   const out = mkdtempSync(join(tmpdir(), 'qnotch package managers ü '));
   t.after(() => rmSync(out, { recursive: true }));
-  writeManifests(releaseSource(release(), { tag_name: 'v0.9.0' }, 'v0.9.0'), out);
+  writeManifests({ ...releaseSource(release(), { tag_name: 'v0.9.0' }, 'v0.9.0'), commit }, out);
   assert.equal(readdirSync(join(out, 'winget')).length, 3);
   assert.equal(JSON.parse(readFileSync(join(out, 'scoop', 'bucket', 'qnotch.json'), 'utf8')).version, '0.9.0');
   assert.ok(readFileSync(join(out, 'chocolatey', 'qnotch.nuspec'), 'utf8').includes('<version>0.9.0</version>'));
