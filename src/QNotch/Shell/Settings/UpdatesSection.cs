@@ -15,6 +15,7 @@ internal static class UpdatesSection
 
     public static FrameworkElement CreateGroup(GeneralSettings settings, UpdateService updates)
     {
+        if (updates.StoreManaged) return StoreGroup(updates);
         var rows = new List<FrameworkElement>();
         var choice = new StackPanel { Margin = new Thickness(16, 10, 16, 10) };
         choice.Children.Add(UiKit.Text("Keep automatic update checks enabled?", "Title"));
@@ -81,6 +82,26 @@ internal static class UpdatesSection
         available.Children.Add(UiKit.BindVisible(progress, updates.State, nameof(UpdateState.IsDownloading)));
         group.Children.Add(UiKit.BindVisible(available, updates.State, nameof(UpdateState.HasUpdate)));
         return group;
+    }
+
+    /// <summary>The Store package: the Store installs updates, so there is nothing to check or install here.</summary>
+    static FrameworkElement StoreGroup(UpdateService updates)
+    {
+        var store = new Button { Content = "Open the Microsoft Store" };
+        AutomationProperties.SetAutomationId(store, "updates-store");
+        store.Click += (_, _) => Open(AppPackage.StoreLink, "the Microsoft Store page");
+        var notes = new Button { Content = "Open GitHub" };
+        notes.Click += (_, _) => { Analytics.Track("shell", "open_release_notes"); Open(UpdateRelease.Repository + "/releases", "the QNotch releases page"); };
+        return UiKit.SettingsGroup([
+            UiKit.SettingsRow("Updates", updates.State.Status, store),
+            UiKit.SettingsRow("Release notes", null, notes),
+        ], title: "Updates");
+    }
+
+    static void Open(string target, string what)
+    {
+        try { Process.Start(new ProcessStartInfo(target) { UseShellExecute = true }); }
+        catch (Exception ex) { Log.Warn($"Opening {what} failed", ex); }
     }
 
     public static FrameworkElement Indicator(UpdateService updates, Action openSettings)

@@ -7,8 +7,9 @@
   whole pixels (the table below) so the pill edges stay sharp and the dot stays a clean dot; 64 px and up use
   the exact SVG geometry scaled. Sizes below 256 are stored as 32-bit BMP entries (widest compatibility), 256 as PNG.
   Run on Windows from anywhere: pwsh src/QNotch/Assets/Build-AppIcon.ps1 [-PreviewDir <dir>]
+  With -PngOnly it writes icon-<size>.png for -Sizes into -PreviewDir and leaves AppIcon.ico alone (the MSIX logos use this).
 #>
-param([string]$PreviewDir)
+param([string]$PreviewDir, [int[]]$Sizes = @(16, 20, 24, 32, 40, 48, 64, 128, 256), [switch]$PngOnly)
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Drawing
 
@@ -56,7 +57,13 @@ function Get-DibBytes($bmp, [int]$s) {
     $w.Flush(); $ms.ToArray()
 }
 
-$sizes = 16, 20, 24, 32, 40, 48, 64, 128, 256
+$sizes = $Sizes
+if ($PngOnly) {
+    if (-not $PreviewDir) { throw '-PngOnly needs -PreviewDir.' }
+    New-Item -ItemType Directory -Force $PreviewDir | Out-Null
+    foreach ($s in $sizes) { $bmp = New-IconBitmap $s; $bmp.Save((Join-Path $PreviewDir "icon-$s.png"), [System.Drawing.Imaging.ImageFormat]::Png); $bmp.Dispose() }
+    return
+}
 $images = foreach ($s in $sizes) {
     $bmp = New-IconBitmap $s
     if ($PreviewDir) { New-Item -ItemType Directory -Force $PreviewDir | Out-Null; $bmp.Save((Join-Path $PreviewDir "icon-$s.png"), [System.Drawing.Imaging.ImageFormat]::Png) }

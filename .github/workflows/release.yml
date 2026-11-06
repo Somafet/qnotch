@@ -78,6 +78,20 @@ jobs:
           node scripts/publish-release.mjs --platform windows --tag "$env:GITHUB_REF_NAME"
           --asset dist/QNotch.exe --asset dist/QNotch-self-contained.zip
 
+      # The Store package wraps the verified self-contained exe. It is a workflow artifact for Partner Center, never a release asset.
+      - name: Build the Microsoft Store package
+        shell: pwsh
+        env:
+          RELEASE_VERSION: ${{ steps.policy.outputs.version }}
+        run: ./src/QNotch/Packaging/Build-Msix.ps1 -Version $env:RELEASE_VERSION -SkipPublish
+
+      - name: Keep the Microsoft Store package
+        uses: actions/upload-artifact@v4
+        with:
+          name: QNotch-msix
+          path: dist/QNotch.msix
+          if-no-files-found: error
+
   # Separate from release so a failed submission can be rerun on its own once the release is public.
   # Each step skips with a warning until its token is configured; see docs/releases.md.
   package-managers:

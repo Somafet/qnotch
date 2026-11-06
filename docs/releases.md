@@ -56,6 +56,14 @@ To produce the manifests locally for a published release: `node scripts/package-
 
 Copies installed this way can still update themselves from Settings, About; the package manager then reports the old version until its own update runs, which downloads the same file again. Chocolatey's package folder is writable only by administrators, so there the in-app update reports that it cannot write to the install folder; update with `choco upgrade qnotch` instead. The website offers each channel only once it is live (see [website/README.md](../website/README.md)).
 
+## Microsoft Store
+
+The Store sells QNotch as a paid MSIX package (product `9MTFK5R4799F`). It is the same self-contained `QNotch.exe`, and it never touches the GitHub release: no new release asset, no change to the ZIP or the latest endpoint. `src/QNotch/Packaging/Build-Msix.ps1` stages the exe with `AppxManifest.xml` and logos drawn by `Assets/Build-AppIcon.ps1`, indexes them with `makepri` and packs `dist/QNotch.msix` with `makeappx`, both from the Windows SDK. The package is unsigned, because the Store signs it on upload. The manifest's identity (`Somafet.QNotch`, its publisher CN and the `Somafet` display name) comes from Partner Center, QNotch, Product identity, and must match it exactly.
+
+After publishing, the release job runs `Build-Msix.ps1 -SkipPublish` on the verified self-contained exe and keeps `dist/QNotch.msix` as the `QNotch-msix` workflow artifact. To ship it, download that artifact, open a new submission in Partner Center, replace the package under Packages and submit. The Store needs a higher version each time, and every tag already gives one (`X.Y.Z.0`).
+
+To try a package locally, turn on Developer Mode and run `pwsh src/QNotch/Packaging/Build-Msix.ps1 -Version 0.9.0 -Register`. Windows registers the staged folder with package identity, so Settings, About shows the Store updates row, `qnotch` works from any terminal, and Start with Windows uses the startup task. Remove it with `Get-AppxPackage Somafet.QNotch | Remove-AppxPackage`. What changes inside the package is described in the [Windows guide](windows/README.md#microsoft-store-copy).
+
 ## Mac channel
 
 - Tags are `macos-vX.Y.Z`, optionally with `-alpha.N`, `-beta.N`, or `-rc.N`. Versions can differ from Windows; only suffixed tags are prereleases.
