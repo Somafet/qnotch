@@ -57,6 +57,15 @@ When an update is available, QNotch sends a Windows notification, an arrow appea
 
 The install folder must be writable by your account. If downloading or verification fails, QNotch keeps running; if replacement fails, the helper starts the old version again and shows the error in Settings, About.
 
+### Microsoft Store copy
+
+The [Microsoft Store](https://apps.microsoft.com/detail/9MTFK5R4799F) sells the same app, packaged as MSIX, to support the project. Inside the package, QNotch notices its package identity and adapts:
+
+- **Updates:** the Store installs them. Settings, About shows **Open the Microsoft Store** instead of the GitHub checks, and the welcome tour leaves out the update switch.
+- **Start with Windows:** uses the package's startup task instead of the Run registry key. If you turn QNotch off in Settings, Apps, Startup or Task Manager, only you can turn it back on there.
+- **Command line:** `qnotch` is on the PATH through an app execution alias. Agent hooks point at that alias, which survives Store updates.
+- **Settings:** Windows keeps the package's `%APPDATA%\QNotch` in the package's own storage, apart from a downloaded copy's settings. Uninstalling removes it.
+
 ## Hotkeys
 
 | Keys | Action |

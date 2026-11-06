@@ -1051,10 +1051,13 @@ internal sealed class TourWindow : Window
         grid.ColumnDefinitions.Add(new ColumnDefinition());
 
         var prefs = new StackPanel();
-        prefs.Children.Add(Pref("Check for updates automatically", "Looks for a new release on GitHub every six hours.", _c.Updates, _c.SetUpdates, "finish-updates"));
-        var sep = new Border { Height = 1, Margin = new Thickness(0, 10, 0, 10) };
-        sep.SetResourceReference(Border.BackgroundProperty, "StrokeBrush");
-        prefs.Children.Add(sep);
+        if (!AppPackage.IsPackaged) // the Store package is updated by the Store
+        {
+            prefs.Children.Add(Pref("Check for updates automatically", "Looks for a new release on GitHub every six hours.", _c.Updates, _c.SetUpdates, "finish-updates"));
+            var sep = new Border { Height = 1, Margin = new Thickness(0, 10, 0, 10) };
+            sep.SetResourceReference(Border.BackgroundProperty, "StrokeBrush");
+            prefs.Children.Add(sep);
+        }
         prefs.Children.Add(Pref("Start with Windows", "Opens QNotch when you sign in.", _c.StartWithWindows, _c.SetStartWithWindows, "finish-autostart"));
         var left = Card(prefs);
         grid.Children.Add(left);

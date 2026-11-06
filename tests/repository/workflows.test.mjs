@@ -111,6 +111,23 @@ test('Windows release workflow validates tags and both packages before guarded p
   assert.ok(!runs.some(run => run.includes('gh release create') || run.includes('gh release edit')));
   assert.ok(runs[publish].includes('win-x64-self-contained') && runs[publish].includes('dist/QNotch-self-contained.zip'));
   assert.ok(runs.some(run => run.includes('npm test')));
+  // The Store package is built from the verified exe only after publication, and kept as an artifact, not a release asset.
+  const msix = runs.findIndex(run => run.includes('Build-Msix.ps1'));
+  assert.ok(msix > promote && runs[msix].includes('-SkipPublish'));
+  assert.ok(!runs[promote].includes('.msix'));
+  const keep = release.jobs.release.steps.find(step => step.uses?.startsWith('actions/upload-artifact@'));
+  assert.equal(keep?.with?.path, 'dist/QNotch.msix');
+});
+
+test('the Store package manifest keeps the Partner Center identity, startup task and alias', () => {
+  const manifest = readFileSync(resolve(root, 'src/QNotch/Packaging/AppxManifest.xml'), 'utf8');
+  assert.ok(manifest.includes('<Identity Name="Somafet.QNotch" Publisher="CN=6504AF97-FC5B-4A2D-8148-647FE98D5244" Version="{{VERSION}}" ProcessorArchitecture="x64" />'));
+  assert.ok(manifest.includes('<PublisherDisplayName>Somafet</PublisherDisplayName>'));
+  assert.ok(manifest.includes('<rescap:Capability Name="runFullTrust" />'));
+  // Core/AppPackage.cs relies on both of these names.
+  assert.ok(manifest.includes('TaskId="QNotchStartup"') && manifest.includes('Alias="qnotch.exe"'));
+  const appPackage = readFileSync(resolve(root, 'src/QNotch/Core/AppPackage.cs'), 'utf8');
+  assert.ok(appPackage.includes('StartupTaskId = "QNotchStartup"') && appPackage.includes('"qnotch.exe"'));
 });
 
 test('Mac validation builds a real native app, runs regressions and UI smoke, checks its snapshots, without signing secrets or publishing', () => {

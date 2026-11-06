@@ -117,7 +117,7 @@ internal sealed class ClaudeHooks(string dir, string account) : HookFile(dir, "s
     protected override string[] Events => ["SessionStart", "UserPromptSubmit", "PreToolUse", "PostToolUse", "Notification", "Stop", "SessionEnd"];
 
     /// <summary>Forward slashes and quotes: the same command works whether Claude Code runs hooks through Git Bash or cmd.</summary>
-    protected override string Command => $"\"{Environment.ProcessPath!.Replace('\\', '/')}\" agent";
+    protected override string Command => $"\"{Core.AppPackage.CommandPath.Replace('\\', '/')}\" agent";
 
     protected override bool IsOurs(string? command) =>
         command is not null && command.TrimEnd().EndsWith(" agent", StringComparison.Ordinal) && command.Contains("qnotch", StringComparison.OrdinalIgnoreCase);
@@ -162,7 +162,7 @@ internal sealed class CodexHooks(string dir) : HookFile(dir, "hooks.json")
     /// Codex runs hooks through PowerShell on Windows: a quoted path needs the call operator. PowerShell does not wait for a GUI exe
     /// unless its output is piped; without the wait the shell exits at once and the hook cannot find the codex.exe above it.
     /// </summary>
-    protected override string Command => $"& '{Environment.ProcessPath!.Replace("'", "''")}' agent codex | Out-Null";
+    protected override string Command => $"& '{Core.AppPackage.CommandPath.Replace("'", "''")}' agent codex | Out-Null";
 
     protected override bool IsOurs(string? command) =>
         command is not null && command.Contains("' agent codex", StringComparison.Ordinal) && command.Contains("qnotch", StringComparison.OrdinalIgnoreCase);

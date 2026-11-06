@@ -24,6 +24,9 @@ internal sealed class UpdateService : IDisposable
     bool _automaticCheck, _disposed;
 
     public UpdateState State { get; }
+
+    /// <summary>The Store package: updates come from the Microsoft Store, never from GitHub.</summary>
+    public bool StoreManaged { get; } = AppPackage.IsPackaged;
     public event Action? UpdateAvailable;
     public bool ShouldNotify => State.HasUpdate && _settings.LastNotifiedUpdateVersion != State.AvailableVersion;
     string ResultFile => Path.Combine(Paths.DataDir, "update-result.txt");
@@ -50,6 +53,13 @@ internal sealed class UpdateService : IDisposable
             if (!_disposed && !_dispatcher.HasShutdownStarted)
                 _dispatcher.BeginInvoke(() => { if (!_disposed && _settings.CheckForUpdates) _ = CheckAsync(true); });
         }, null, Timeout.Infinite, Timeout.Infinite);
+        if (StoreManaged)
+        {
+            // Windows owns the package folder and the Store installs updates: no GitHub checks, no choice to ask for.
+            State.NeedsPreferenceChoice = false;
+            State.Status = "The Microsoft Store keeps this copy of QNotch up to date.";
+            return;
+        }
         if (_readOnly)
         {
             settings.CheckForUpdates = true;
@@ -68,7 +78,7 @@ internal sealed class UpdateService : IDisposable
 
     public void Start()
     {
-        if (!_readOnly && _settings.CheckForUpdates) Schedule(TimeSpan.FromSeconds(10));
+        if (!_readOnly && !StoreManaged && _settings.CheckForUpdates) Schedule(TimeSpan.FromSeconds(10));
     }
 
     public void ChooseAutomaticChecks(bool enabled)
@@ -113,7 +123,7 @@ internal sealed class UpdateService : IDisposable
 
     public async Task CheckAsync(bool automatic = false)
     {
-        if (_disposed || _readOnly || State.IsBusy || (automatic && !_settings.CheckForUpdates)) return;
+        if (_disposed || _readOnly || StoreManaged || State.IsBusy || (automatic && !_settings.CheckForUpdates)) return;
         _timer.Change(Timeout.Infinite, Timeout.Infinite);
         State.IsBusy = true;
         State.Status = "Checking GitHub for updates…";
@@ -152,7 +162,7 @@ internal sealed class UpdateService : IDisposable
 
     public async Task InstallAsync()
     {
-        if (_disposed || _readOnly || !State.CanUpdate || _release is not { } release) return;
+        if (_disposed || _readOnly || StoreManaged || !State.CanUpdate || _release is not { } release) return;
         State.IsBusy = true; State.IsDownloading = true; State.DownloadPercent = 0;
         State.Status = "Downloading the update…";
         _timer.Change(Timeout.Infinite, Timeout.Infinite);
