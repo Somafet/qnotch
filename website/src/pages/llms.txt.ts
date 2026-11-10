@@ -2,12 +2,13 @@
 // from the same release checks, so its install commands and download size match the site. Keep its claims in
 // line with [...platform].astro and the READMEs.
 import type { APIRoute } from 'astro';
-import { GH, DL, releases } from '../lib/releases';
+import { GH, DL, STORE, releases } from '../lib/releases';
 
 export const GET: APIRoute = async ({ site }) => {
   const { mac, winget, scoop, chocolatey } = await releases();
   const page = (path: string) => new URL(path, site).href;
   const install = [
+    `- Microsoft Store: [QNotch](${STORE}), a paid copy of the same app that the Store installs and updates. Buying it funds development.`,
     `- Direct download: [latest Windows release](${DL}). QNotch.exe (27 MB) needs the .NET 10 Desktop Runtime; QNotch-self-contained.zip (80 MB) runs as is.`,
     ...(winget ? ['- winget: `winget install Somafet.QNotch`'] : []),
     ...(scoop ? ['- Scoop: `scoop bucket add qnotch https://github.com/Somafet/scoop-bucket`, then `scoop install qnotch/qnotch`'] : []),

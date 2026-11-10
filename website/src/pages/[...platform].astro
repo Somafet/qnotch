@@ -7,8 +7,9 @@ import OpenSource from '../components/OpenSource.astro';
 import ThemeSwitch from '../components/ThemeSwitch.astro';
 import OsSwitch from '../components/OsSwitch.astro';
 import InstallDialog from '../components/InstallDialog.astro';
+import StoreLogo from '../components/StoreLogo.astro';
 import og from '../assets/og.png';
-import { GH, DL, releases } from '../lib/releases';
+import { GH, DL, STORE, releases } from '../lib/releases';
 import type { OS } from '../scripts/platform';
 
 // One page at three addresses. / describes both apps behind the Windows/Mac switch; /windows/ and /mac/ each
@@ -77,10 +78,11 @@ const privacy = {
 // os: which version the answer is about. JSON-LD lists those the page shows, so questions stay distinct.
 const faq: { q: string; a: string; os?: OS }[] = [
   { q: 'Is it free?', a: 'Yes. QNotch is free under the MIT license, on Windows and Mac. It needs no account or subscription. The source is on GitHub.' },
+  { q: 'Why is it paid on the Microsoft Store?', os: 'win', a: "The Store copy is the same app. Buying it is an easy way to support development, and in return Windows installs it without a SmartScreen warning and the Store keeps it up to date. The download, winget, Scoop and Chocolatey stay free. Store and downloaded copies keep separate settings." },
   { q: 'Do I need a laptop with a notch?', os: 'win', a: "No. Windows laptops don't have one, so QNotch draws its own: a small pill at the top center of the screen. It works the same on a desktop monitor." },
   { q: 'Is QNotch a Dynamic Island for Windows?', os: 'win', a: "In spirit, yes. Like the Dynamic Island on an iPhone, the pill stays small, shows live activity such as music and your coding agents, and opens up when you hover over it. QNotch is an independent app, not made by Apple." },
   { q: 'How is QNotch different from other Mac notch apps?', os: 'mac', a: 'It is free and MIT licensed, it shows your Claude Code and Codex sessions beside the notch, and the same app runs on Windows: a setup code moves your layout between the two.' },
-  { q: 'Windows says "Windows protected your PC". Is that normal?', os: 'win', a: "Yep, for now. The exe isn't code-signed yet, so SmartScreen has no clue who I am. Click More info, then Run anyway. Or if you'd rather not run a random exe from the internet (fair), build it from source with the .NET 10 SDK." },
+  { q: 'Windows says "Windows protected your PC". Is that normal?', os: 'win', a: "Yep, for now. The exe isn't code-signed yet, so SmartScreen has no clue who I am. Click More info, then Run anyway. Or if you'd rather not run a random exe from the internet (fair), get it from the Microsoft Store, which installs without the warning, or build it from source with the .NET 10 SDK." },
   { q: 'Which download do I need?', os: 'win', a: 'QNotch-self-contained.zip (80 MB) runs as is. QNotch.exe (27 MB) is smaller but needs the .NET 10 Desktop Runtime.' },
   { q: 'Does it work on Windows 10?', os: 'win', a: 'Yes. It needs Windows 10 version 2004 or newer, on x64.' },
   { q: 'Which Macs does it run on?', os: 'mac', a: 'Apple silicon Macs (M1 or newer) with macOS 13 Ventura or newer. There is no Intel build.' },
@@ -113,11 +115,12 @@ const about: Record<OS, { eyebrow: string; h: string; p: string[]; facts: Fact[]
     ],
     facts: [
       { t: 'Runs on', d: 'Windows 11, and Windows 10 version 2004 or newer, on x64.' },
+      { t: 'Microsoft Store', d: 'The same app, installed and updated by the Store. Buying it funds development.', href: STORE },
       { t: 'Download', d: 'QNotch.exe (27 MB) with the .NET 10 Desktop Runtime, or the 80 MB self-contained ZIP.' },
       ...(WINGET ? [{ t: 'winget', d: 'Built into Windows 10 and 11.', code: ['winget install Somafet.QNotch'] }] : []),
       ...(SCOOP ? [{ t: 'Scoop', d: 'From the QNotch bucket.', code: ['scoop bucket add qnotch https://github.com/Somafet/scoop-bucket', 'scoop install qnotch/qnotch'] }] : []),
       ...(CHOCOLATEY ? [{ t: 'Chocolatey', d: 'From an administrator terminal.', code: ['choco install qnotch'] }] : []),
-      { t: 'Price', d: 'Free and open source under the MIT license. No account.' },
+      { t: 'Price', d: 'Free and open source under the MIT license, with no account. The Microsoft Store copy is paid.' },
       { t: 'Also on', d: 'Mac, as a native app for Apple silicon.', href: OS_PAGE.mac },
     ],
   },
@@ -182,7 +185,7 @@ const jsonLd = {
       applicationCategory: 'UtilitiesApplication',
       operatingSystem: 'Windows 10 version 2004 or newer, Windows 11 (x64); macOS 13 or newer (Apple silicon)',
       downloadUrl: [DL, MAC.url],
-      installUrl: [DL, MAC.url],
+      installUrl: [STORE, DL, MAC.url],
       softwareHelp: `${GH}#readme`,
       license: 'https://opensource.org/licenses/MIT',
       isAccessibleForFree: true,
@@ -226,7 +229,7 @@ const jsonLd = {
       <div class="nav-cta">
         <ThemeSwitch />
         <a class="gh-link" href={GH} aria-label="QNotch on GitHub"><Icon name="github" /></a>
-        <a class="btn btn-primary btn-sm os-win" href={DL}><Icon name="download" />Download</a>
+        <a class="btn btn-primary btn-sm os-win" href={STORE}><StoreLogo class="sm" />Get</a>
         <a class="btn btn-primary btn-sm os-mac" href={MAC.url}><Icon name="download" />Download</a>
       </div>
     </div>
@@ -248,11 +251,12 @@ const jsonLd = {
         {shows('mac') && <p class="lead hero-lead os-mac">Your music, system stats and coding agents in the wings beside the notch. Hover over it and you get clipboard history, files and quite a bit more.</p>}
         <div class="hero-os"><OsSwitch links={pin && OS_PAGE} /></div>
         <div class="hero-cta">
-          {shows('win') && <a class="btn btn-primary os-win" href={DL}><Icon name="windows" />Download for Windows</a>}
+          {shows('win') && <a class="btn btn-primary btn-store os-win" href={STORE}><StoreLogo /><span><b>Get QNotch</b><small>From the Microsoft Store</small></span></a>}
+          {shows('win') && <a class="btn btn-ghost btn-tall os-win" href={DL} data-install-open><Icon name="download" />Other ways to install</a>}
           {shows('mac') && <a class="btn btn-primary os-mac" href={MAC.url}><Icon name="apple" />Download for Mac</a>}
-          <a class="btn btn-ghost" href={GH}><Icon name="github" />Star on GitHub</a>
+          {shows('mac') && <a class="btn btn-ghost os-mac" href={GH}><Icon name="github" />Star on GitHub</a>}
         </div>
-        {shows('win') && <p class="fine os-win">Free, no account · Windows 10 2004 or newer, x64 · 27 MB · <a class="inline" href={DL} data-install-open>Other ways to install</a></p>}
+        {shows('win') && <p class="fine os-win">Open source and free to download · Your Store purchase funds development · Windows 10 2004 or newer, x64</p>}
         {shows('mac') && <p class="fine os-mac">Free, no account · macOS 13 or newer, Apple silicon · {MAC.mb} MB · No notch? It floats under the menu bar.</p>}
       </div>
       <div class="wrap demo-wrap">
@@ -363,12 +367,13 @@ const jsonLd = {
         {shows('win') && <p class="lead final-lead os-win">I saw a really nice notch app on Reddit, but it was Mac only. Well, I'm on Windows. So I built one.</p>}
         {shows('mac') && <p class="lead final-lead os-mac">I built QNotch for Windows because the nice notch apps were Mac only. Then I wanted it on my MacBook too, so I rebuilt it natively in Swift.</p>}
         <div class="hero-cta">
-          {shows('win') && <a class="btn btn-primary os-win" href={DL}><Icon name="windows" />Download for Windows</a>}
+          {shows('win') && <a class="btn btn-primary btn-store os-win" href={STORE}><StoreLogo /><span><b>Get QNotch</b><small>From the Microsoft Store</small></span></a>}
+          {shows('win') && <a class="btn btn-ghost btn-tall os-win" href={DL} data-install-open><Icon name="download" />Other ways to install</a>}
           {shows('mac') && <a class="btn btn-primary os-mac" href={MAC.url}><Icon name="apple" />Download for Mac</a>}
-          <a class="btn btn-ghost" href={GH}><Icon name="github" />View the source</a>
+          {shows('mac') && <a class="btn btn-ghost os-mac" href={GH}><Icon name="github" />View the source</a>}
         </div>
         {/* On / these switch the page in place; on /windows/ and /mac/ they go to the other page. */}
-        <p class="fine">Free and open source · MIT license · {shows('win') && <><a class="inline os-win" href={DL} data-install-open>Other ways to install</a><span class="os-win"> · </span><a class="inline os-win" href={OS_PAGE.mac} data-os-link={pin ? undefined : 'mac'}>Also on Mac</a></>}{shows('mac') && <a class="inline os-mac" href={OS_PAGE.win} data-os-link={pin ? undefined : 'win'}>Also on Windows</a>}</p>
+        <p class="fine">Free and open source · <a class="inline" href={GH}>MIT license</a> · {shows('win') && <><a class="inline os-win" href={OS_PAGE.mac} data-os-link={pin ? undefined : 'mac'}>Also on Mac</a></>}{shows('mac') && <a class="inline os-mac" href={OS_PAGE.win} data-os-link={pin ? undefined : 'win'}>Also on Windows</a>}</p>
       </div>
     </section>
   </main>
@@ -489,6 +494,15 @@ const jsonLd = {
     gap: 12px;
     margin-top: 34px;
   }
+
+  /* The Windows main button: two lines, like the Store's own badge. Other ways to install matches its height. */
+  .btn-store { height: 64px; padding: 0 28px 0 22px; gap: 14px; }
+  .btn-store :global(.store-logo) { width: 36px; height: 36px; flex: none; }
+  .btn :global(.store-logo.sm) { width: 20px; height: 20px; }
+  .btn-store span { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.15; }
+  .btn-store b { font-size: 18px; }
+  .btn-store small { font-size: 13px; font-weight: 500; opacity: 0.75; }
+  .btn-tall { height: 64px; padding: 0 26px; }
 
   .hero-os { margin-top: 34px; }
   .hero-os + .hero-cta { margin-top: 16px; }
