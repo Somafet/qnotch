@@ -7,6 +7,7 @@ import OpenSource from '../components/OpenSource.astro';
 import ThemeSwitch from '../components/ThemeSwitch.astro';
 import OsSwitch from '../components/OsSwitch.astro';
 import InstallDialog from '../components/InstallDialog.astro';
+import StoreLogo from '../components/StoreLogo.astro';
 import og from '../assets/og.png';
 import { GH, DL, STORE, releases } from '../lib/releases';
 import type { OS } from '../scripts/platform';
@@ -228,7 +229,7 @@ const jsonLd = {
       <div class="nav-cta">
         <ThemeSwitch />
         <a class="gh-link" href={GH} aria-label="QNotch on GitHub"><Icon name="github" /></a>
-        <a class="btn btn-primary btn-sm os-win" href={STORE}><Icon name="store" />Get</a>
+        <a class="btn btn-primary btn-sm os-win" href={STORE}><StoreLogo class="sm" />Get</a>
         <a class="btn btn-primary btn-sm os-mac" href={MAC.url}><Icon name="download" />Download</a>
       </div>
     </div>
@@ -250,7 +251,7 @@ const jsonLd = {
         {shows('mac') && <p class="lead hero-lead os-mac">Your music, system stats and coding agents in the wings beside the notch. Hover over it and you get clipboard history, files and quite a bit more.</p>}
         <div class="hero-os"><OsSwitch links={pin && OS_PAGE} /></div>
         <div class="hero-cta">
-          {shows('win') && <a class="btn btn-primary btn-store os-win" href={STORE}><Icon name="store" /><span><b>Get QNotch</b><small>From the Microsoft Store</small></span></a>}
+          {shows('win') && <a class="btn btn-primary btn-store os-win" href={STORE}><StoreLogo /><span><b>Get QNotch</b><small>From the Microsoft Store</small></span></a>}
           {shows('win') && <a class="btn btn-ghost btn-tall os-win" href={DL} data-install-open><Icon name="download" />Other ways to install</a>}
           {shows('mac') && <a class="btn btn-primary os-mac" href={MAC.url}><Icon name="apple" />Download for Mac</a>}
           {shows('mac') && <a class="btn btn-ghost os-mac" href={GH}><Icon name="github" />Star on GitHub</a>}
@@ -366,7 +367,7 @@ const jsonLd = {
         {shows('win') && <p class="lead final-lead os-win">I saw a really nice notch app on Reddit, but it was Mac only. Well, I'm on Windows. So I built one.</p>}
         {shows('mac') && <p class="lead final-lead os-mac">I built QNotch for Windows because the nice notch apps were Mac only. Then I wanted it on my MacBook too, so I rebuilt it natively in Swift.</p>}
         <div class="hero-cta">
-          {shows('win') && <a class="btn btn-primary btn-store os-win" href={STORE}><Icon name="store" /><span><b>Get QNotch</b><small>From the Microsoft Store</small></span></a>}
+          {shows('win') && <a class="btn btn-primary btn-store os-win" href={STORE}><StoreLogo /><span><b>Get QNotch</b><small>From the Microsoft Store</small></span></a>}
           {shows('win') && <a class="btn btn-ghost btn-tall os-win" href={DL} data-install-open><Icon name="download" />Other ways to install</a>}
           {shows('mac') && <a class="btn btn-primary os-mac" href={MAC.url}><Icon name="apple" />Download for Mac</a>}
           {shows('mac') && <a class="btn btn-ghost os-mac" href={GH}><Icon name="github" />View the source</a>}
@@ -496,7 +497,8 @@ const jsonLd = {
 
   /* The Windows main button: two lines, like the Store's own badge. Other ways to install matches its height. */
   .btn-store { height: 64px; padding: 0 28px 0 22px; gap: 14px; }
-  .btn-store .i { width: 30px; height: 30px; }
+  .btn-store :global(.store-logo) { width: 36px; height: 36px; flex: none; }
+  .btn :global(.store-logo.sm) { width: 20px; height: 20px; }
   .btn-store span { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.15; }
   .btn-store b { font-size: 18px; }
   .btn-store small { font-size: 13px; font-weight: 500; opacity: 0.75; }
