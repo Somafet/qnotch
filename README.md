@@ -31,7 +31,7 @@ Disabled features are never loaded. See the [Windows guide](docs/windows/README.
 
 ## Install
 
-Windows 10 2004 or newer, x64. Choose `QNotch-self-contained.zip` to run without installing .NET, or `QNotch.exe` if you have the .NET 10 Desktop Runtime. [Download and first-run instructions](docs/windows/README.md#install). There is no Mac download yet.
+Windows 10 2004 or newer, x64. Get it from the [Microsoft Store](https://apps.microsoft.com/detail/9MTFK5R4799F), a paid copy of the same app that funds development and updates through the Store, or download it for free: choose `QNotch-self-contained.zip` to run without installing .NET, or `QNotch.exe` if you have the .NET 10 Desktop Runtime. [Download and first-run instructions](docs/windows/README.md#install). There is no Mac download yet.
 
 ## Updates
 

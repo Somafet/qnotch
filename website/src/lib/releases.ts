@@ -2,6 +2,8 @@
 
 export const GH = 'https://github.com/Somafet/qnotch';
 export const DL = `${GH}/releases/latest`;
+// The paid Microsoft Store listing: the Windows site's main button. The same app, and buying it funds development.
+export const STORE = 'https://apps.microsoft.com/detail/9MTFK5R4799F';
 
 const token = () => import.meta.env.GITHUB_TOKEN ?? process.env.GITHUB_TOKEN;
 const github = (path: string) => fetch(`https://api.github.com/repos/${path}`, {
