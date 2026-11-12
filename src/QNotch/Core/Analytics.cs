@@ -9,7 +9,7 @@ namespace QNotch.Core;
 /// <summary>Explicit, allowlisted product actions only. No automatic UI, content or exception collection.</summary>
 internal sealed class Analytics : IDisposable
 {
-    internal static Analytics? Current { get; private set; }
+    internal static Analytics? Current { get; set; } // Set by Start; tests may install a mocked instance.
     static readonly AsyncLocal<string?> ActionSurface = new();
     internal static IDisposable Surface(string surface) { var old = ActionSurface.Value; ActionSurface.Value = surface; return new SurfaceScope(() => ActionSurface.Value = old); }
     sealed class SurfaceScope(Action restore) : IDisposable { public void Dispose() => restore(); }

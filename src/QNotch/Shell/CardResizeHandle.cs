@@ -45,16 +45,16 @@ internal sealed class CardResizeHandle : Thumb
             // Convert back to a stable window coordinate so snapping/reflow cannot compound them.
             var pointer = TranslatePoint(new Point(_press.X + e.HorizontalChange, _press.Y + e.VerticalChange), _dragRoot);
             var width = WidthOf(_startSize) + (pointer.X - _pointerStart.X) * _direction;
-            SetSize(host.Descriptor.SupportedSizes.MinBy(s => Math.Abs(WidthOf(s) - width)));
+            SetSize(host.Descriptor.SupportedSizes.MinBy(s => Math.Abs(WidthOf(s) - width)), track: false);
         };
-        DragCompleted += (_, e) => { if (e.Canceled) SetSize(_startSize); _dragRoot = null; };
+        DragCompleted += (_, e) => { if (_host.IsEditMode) _layout.EndResize(_host.CardId, _startSize, e.Canceled); _dragRoot = null; };
     }
 
     CardSize Size => _layout.SizeOf(_host.CardId);
     internal int Columns => (int)Size;
     internal int MaximumColumns => (int)_host.Descriptor.SupportedSizes[^1];
     static double WidthOf(CardSize size) => (int)size * (HomeView.Unit + HomeView.Gap) - HomeView.Gap;
-    void SetSize(CardSize size) { if (_host.IsEditMode) _layout.SetSize(_host.CardId, size); }
+    void SetSize(CardSize size, bool track = true) { if (_host.IsEditMode) _layout.SetSize(_host.CardId, size, track); }
 
     internal void SyncSize()
     {

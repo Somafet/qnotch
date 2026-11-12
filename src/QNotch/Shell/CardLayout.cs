@@ -49,11 +49,20 @@ public sealed class CardLayout
         return card.SupportedSizes.Contains(card.DefaultSize) ? card.DefaultSize : CardSize.Small;
     }
 
-    public void SetSize(string id, CardSize size)
-    { QNotch.Core.Analytics.Track("shell", "resize_card", "ui");
+    /// <summary>Applies a supported size. Records one resize when it changes the size, unless <paramref name="track"/> is off (drag previews).</summary>
+    public void SetSize(string id, CardSize size, bool track = true)
+    {
         if (_cards.Find(id) is not { } card || !card.SupportedSizes.Contains(size) || SizeOf(id) == size) return;
+        if (track) QNotch.Core.Analytics.Track("shell", "resize_card", "ui");
         _gs.CardSizes[id] = size.ToString();
         Save();
+    }
+
+    /// <summary>Ends a drag that previewed sizes with track off: a cancel restores <paramref name="start"/>, a changed size records one resize.</summary>
+    public void EndResize(string id, CardSize start, bool canceled)
+    {
+        if (canceled) SetSize(id, start, track: false);
+        else if (SizeOf(id) != start) QNotch.Core.Analytics.Track("shell", "resize_card", "ui");
     }
 
     public void SetVisible(string id, bool visible)
