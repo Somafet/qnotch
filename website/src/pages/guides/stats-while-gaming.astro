@@ -1,0 +1,46 @@
+---
+import Guide from '../../layouts/Guide.astro';
+---
+<Guide slug="stats-while-gaming">
+  <p>You want to know whether the stutter is your GPU, your RAM or the game, without an overlay that eats frames or steals a click at the wrong moment. QNotch's Game mode turns the notch into one line of status at the top of the screen that the mouse goes straight through.</p>
+
+  <h2>What Game mode does</h2>
+  <p>When a game or a fullscreen video comes to the front, QNotch shrinks from its pill to a slim bar, ignores hover and lets every click pass through to the game. When you leave the game, the pill comes back as it was.</p>
+  <p>The bar can show, left to right:</p>
+  <ul>
+    <li>The track and artist, if something is playing</li>
+    <li>CPU use</li>
+    <li>GPU use and temperature</li>
+    <li>RAM in use</li>
+    <li>Network speed and battery</li>
+    <li>The temperature outside, and the clock</li>
+    <li>A mic or camera icon while an app uses them</li>
+  </ul>
+  <p>Each one has its own switch, so the bar holds only what you want to see.</p>
+
+  <h2>Set it up</h2>
+  <ol>
+    <li>Install QNotch. Game mode is on Auto from the start, so launching a game is enough.</li>
+    <li>Open Settings, Game mode to pick the segments, and to set the bar's opacity, height and position. Move it off the game's own HUD if they overlap.</li>
+    <li>Press <kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>G</kbd> to switch between Auto, On and Off at any time, or use the tray icon's menu.</li>
+  </ol>
+
+  <h2>When Auto guesses wrong</h2>
+  <p>Auto looks for a game or a window that covers the whole monitor. If it misses one, or treats a borderless video player as a game when you still want to click the notch, add that app to the Always or Never list in Settings, Game mode.</p>
+
+  <h2>What it costs</h2>
+  <p>QNotch is a native app, not a web view. The bar repaints only when a number changes, and stats are sampled every five seconds while it shows. Idle on Windows 11, QNotch uses about 0.08% of one core and about 42 MB of memory.</p>
+
+  <h2>What stays quiet while you play</h2>
+  <ul>
+    <li>Agent alerts make no sound in Game mode.</li>
+    <li>A notification that waits for an answer is held until the game ends.</li>
+    <li>An error notification does not open the panel.</li>
+    <li>Update notices wait until you are done.</li>
+  </ul>
+
+  <p class="note">One limit: a game in true exclusive fullscreen draws over everything, so the bar cannot show there. QNotch does not inject into games. Run the game in borderless or windowed fullscreen to see the bar.</p>
+
+  <h2>On a Mac</h2>
+  <p>The Mac app has Game mode too. When a game is in front, the panel stays shut, clicks pass through and the wings beside the notch show only the stats you pick. <kbd>⌃</kbd> <kbd>⌥</kbd> <kbd>G</kbd> switches between Automatic, On and Off.</p>
+</Guide>

@@ -1,0 +1,67 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import SiteHeader from '../components/SiteHeader.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+import OsSwitch from '../components/OsSwitch.astro';
+import OpenSource from '../components/OpenSource.astro';
+import { GH } from '../lib/releases';
+
+// For people who want to build on QNotch: the extension model, the source layout and the script interface.
+// The landing page keeps a short version (ExtendTeaser.astro) that links here.
+const title = 'Build an extension for QNotch · Developers';
+const description = 'QNotch is a shell and a folder of extensions. See how one registers cards, tabs, status segments and search results, on Windows in C# and on Mac in Swift, and how to contribute yours.';
+const url = new URL(Astro.url.pathname, Astro.site).href;
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  '@id': url,
+  url,
+  name: title,
+  description,
+  inLanguage: 'en',
+  isPartOf: { '@id': `${Astro.site!.href}#website` },
+  about: { '@id': `${Astro.site!.href}#app` },
+};
+---
+<Base {title} {description}>
+  <script is:inline slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd).replace(/</g, '\\u003c')} />
+  <SiteHeader />
+  <main id="top">
+    <section class="dev-hero">
+      <div class="wrap">
+        <span class="eyebrow">Developers</span>
+        <h1>Build on QNotch.</h1>
+        <p class="lead">Every feature is an extension in its own folder, and the whole app is MIT licensed. Add a card, a tab or a status beside the notch, or just post notifications from a script. Pick the app you build for.</p>
+        <div class="dev-row">
+          <OsSwitch />
+          <a class="btn btn-ghost btn-sm" href={GH}><Icon name="github" />Somafet/qnotch</a>
+        </div>
+      </div>
+    </section>
+    <OpenSource gh={GH} />
+  </main>
+  <SiteFooter />
+</Base>
+
+<style>
+  .dev-hero { padding-block: clamp(40px, 6vw, 72px); }
+
+  h1 {
+    font-size: clamp(40px, 6vw, 72px);
+    letter-spacing: -0.04em;
+  }
+
+  .lead { margin-top: 20px; }
+
+  .dev-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin-top: 28px;
+  }
+
+  /* The dark section below ends the page. */
+  main :global(#open-source) { border-bottom: 0; }
+</style>

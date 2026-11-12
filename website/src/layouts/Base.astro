@@ -1,5 +1,6 @@
 ---
 import '@fontsource-variable/inter';
+import '@fontsource-variable/bricolage-grotesque';
 import '../styles/global.css';
 import og from '../assets/og.png';
 
@@ -46,6 +47,8 @@ const url = new URL(Astro.url.pathname, Astro.site).href;
         // Windows or Mac: a ?os= link, then this tab's earlier choice, then the visitor's OS. See scripts/platform.ts.
         // A page about one platform has it set already, and the home page remembers it for this tab.
         const root = document.documentElement;
+        // A phone or tablet can't run QNotch: pages offer to send the link to a computer instead. iPadOS says it is a Mac.
+        if (/android|iphone|ipad|ipod/i.test(navigator.userAgent) || (/mac/i.test(navigator.platform) && navigator.maxTouchPoints > 1)) root.dataset.phone = '';
         if (root.hasAttribute('data-os-pinned')) {
           try { sessionStorage.setItem('qnotch-os', root.dataset.os); } catch {}
           return;

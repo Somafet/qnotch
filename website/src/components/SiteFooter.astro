@@ -1,0 +1,121 @@
+---
+import ThemeSwitch from './ThemeSwitch.astro';
+import { GH } from '../lib/releases';
+import { guides, guideUrl } from '../lib/guides';
+
+const columns = [
+  {
+    title: 'Product',
+    links: [
+      { t: 'For Windows', href: '/windows/' },
+      { t: 'For Mac', href: '/mac/' },
+      { t: 'Demo', href: '/#demo' },
+      { t: 'Features', href: '/#features' },
+      { t: 'Releases', href: `${GH}/releases` },
+    ],
+  },
+  {
+    title: 'Guides',
+    links: [...guides.map(g => ({ t: g.short, href: guideUrl(g.slug) })), { t: 'All guides', href: '/guides/' }],
+  },
+  {
+    title: 'Developers',
+    links: [
+      { t: 'Build an extension', href: '/developers/' },
+      { t: 'Contributing', href: `${GH}/blob/main/CONTRIBUTING.md` },
+      { t: 'Architecture', href: `${GH}/blob/main/ARCHITECTURE.md` },
+      { t: 'Notifications reference', href: `${GH}/blob/main/docs/notifications.md` },
+      { t: 'GitHub', href: GH },
+    ],
+  },
+  {
+    title: 'About',
+    links: [
+      { t: 'FAQ', href: '/#faq' },
+      { t: 'Privacy', href: '/privacy' },
+      { t: 'Security', href: `${GH}/blob/main/SECURITY.md` },
+      { t: 'MIT license', href: `${GH}/blob/main/LICENSE` },
+    ],
+  },
+];
+---
+<footer class="foot">
+  <div class="wrap foot-in">
+    <div class="foot-brand">
+      <a class="logo small" href="/" aria-label="QNotch home"><span class="logo-mark"><i></i></span>QNotch</a>
+      <p>A free, open source notch for Windows and Mac.</p>
+      <ThemeSwitch />
+    </div>
+    {columns.map(c => (
+      <nav aria-label={c.title}>
+        <h2>{c.title}</h2>
+        {c.links.map(l => <a href={l.href}>{l.t}</a>)}
+      </nav>
+    ))}
+  </div>
+  <p class="wrap foot-note">QNotch is an independent project by Soma Somorjai, not affiliated with Apple or Microsoft.</p>
+</footer>
+
+<style>
+  .foot {
+    border-top: 1px solid var(--line);
+    padding: 48px 0 40px;
+  }
+
+  .foot-in {
+    display: grid;
+    grid-template-columns: 1.3fr repeat(4, 1fr);
+    gap: 32px 24px;
+  }
+
+  .foot-brand {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .foot-brand p {
+    max-width: 220px;
+    color: var(--ink-2);
+    font-size: 14.5px;
+  }
+
+  nav {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 9px;
+    font-size: 14.5px;
+    color: var(--ink-2);
+  }
+
+  h2 {
+    margin-bottom: 4px;
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0;
+    line-height: 1.4;
+    color: var(--ink-3);
+  }
+
+  nav a:hover { color: var(--ink); }
+
+  .foot-note {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+    font-size: 13.5px;
+    color: var(--ink-3);
+  }
+
+  @media (max-width: 960px) {
+    .foot-in { grid-template-columns: repeat(2, 1fr); }
+    .foot-brand { grid-column: 1 / -1; }
+  }
+
+  @media (max-width: 420px) {
+    .foot-in { grid-template-columns: 1fr; }
+  }
+</style>

@@ -1,0 +1,35 @@
+---
+import Guide from '../../layouts/Guide.astro';
+---
+<Guide slug="clipboard-history">
+  <p>You copied a command ten minutes ago, then copied three other things on top of it. QNotch keeps what you copied in the notch at the top of your screen, so getting it back is a hover and a click instead of a hunt.</p>
+
+  <h2>What it keeps</h2>
+  <ul>
+    <li>The last 40 entries: text, code, links and images.</li>
+    <li>Pinned entries stay at the top and are never pushed out.</li>
+    <li>Images are held up to 8 MB in total, and a text entry up to 200,000 characters.</li>
+  </ul>
+
+  <h2>Use it</h2>
+  <ol>
+    <li>Hover over the notch, or press <span class="os-win"><kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>N</kbd></span><span class="os-mac"><kbd>⌃</kbd> <kbd>⌥</kbd> <kbd>N</kbd></span>. The Home card shows the last three things you copied.</li>
+    <li>Open the Clipboard tab for the rest, and filter by All, Text, Code or Images.</li>
+    <li>Click an entry to copy it again, then paste as usual.</li>
+    <li>Pin the ones you keep reaching for: an address, a snippet, a color.</li>
+  </ol>
+  <p>To find something by what it said, press <span class="os-win"><kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>F</kbd></span><span class="os-mac"><kbd>⌃</kbd> <kbd>⌥</kbd> <kbd>F</kbd></span> and type. The one search box covers clipboard text along with your files, notes, notifications and settings.</p>
+
+  <h2>What happens to it</h2>
+  <p>Clipboard history lives in memory. Quit QNotch and it is gone, unless you turn on <b>Keep history between sessions</b> in Settings, which saves text entries and pins to a file on your computer. Images are never saved. Nothing you copy is sent anywhere: QNotch's usage events never include clipboard contents.</p>
+  <p>Passwords are left out. On Windows, QNotch skips anything an app marks as excluded from clipboard history. On a Mac, it skips what password managers mark as concealed or transient.</p>
+
+  <h2>On Windows, next to Win+V</h2>
+  <p>Windows has its own clipboard history on <kbd>Win</kbd> <kbd>V</kbd>, and QNotch does not replace or turn it off. The difference is where it sits: the notch shows your last copies on a card you can glance at, sorts them by type, and searches them together with everything else in the panel.</p>
+
+  <h2>On a Mac</h2>
+  <p>macOS gives apps no signal when the clipboard changes, so QNotch checks once a second whether it did and reads it only after a change. On macOS 15.4 or newer, the system may ask once whether QNotch can read the clipboard.</p>
+
+  <h2>Don't want it?</h2>
+  <p>Turn Clipboard off in Settings, Features. On Windows it is then never loaded, and on a Mac it stops right away, so it costs nothing.</p>
+</Guide>

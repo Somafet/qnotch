@@ -3,8 +3,10 @@ import Base from '../layouts/Base.astro';
 import Icon from '../components/Icon.astro';
 import Demo from '../components/Demo.astro';
 import Features from '../components/Features.astro';
-import OpenSource from '../components/OpenSource.astro';
-import ThemeSwitch from '../components/ThemeSwitch.astro';
+import ExtendTeaser from '../components/ExtendTeaser.astro';
+import SiteHeader from '../components/SiteHeader.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+import SendLink from '../components/SendLink.astro';
 import OsSwitch from '../components/OsSwitch.astro';
 import InstallDialog from '../components/InstallDialog.astro';
 import StoreLogo from '../components/StoreLogo.astro';
@@ -217,49 +219,40 @@ const jsonLd = {
 ---
 <Base {title} {description} os={pin}>
   <script is:inline slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd).replace(/</g, '\\u003c')} />
-  <header class="nav">
-    <div class="wrap nav-in">
-      <a class="logo" href="#top" aria-label="QNotch home"><span class="logo-mark"><i></i></span>QNotch</a>
-      <nav class="nav-links" aria-label="Sections">
-        <a href="#demo">Demo</a>
-        <a href="#features">Features</a>
-        <a href="#open-source">Open source</a>
-        <a href="#faq">FAQ</a>
-      </nav>
-      <div class="nav-cta">
-        <ThemeSwitch />
-        <a class="gh-link" href={GH} aria-label="QNotch on GitHub"><Icon name="github" /></a>
-        <a class="btn btn-primary btn-sm os-win" href={STORE}><StoreLogo class="sm" />Get</a>
-        <a class="btn btn-primary btn-sm os-mac" href={MAC.url}><Icon name="download" />Download</a>
-      </div>
-    </div>
-  </header>
+  <SiteHeader home />
 
   <main id="top">
     <section class="hero">
       <div class="wrap center">
-        <a class="badge" href={GH}><span class="badge-dot"></span>Free and open source<span class="sep">·</span>MIT</a>
         <h1>
           {shows('win') && (pin
             ? <span class="os-win">A <span class="grad">notch</span> for<br />Windows 11 and 10.</span>
-            : <span class="os-win">A <span class="grad">notch</span> for<br />your Windows desktop.</span>)}
+            : <span class="os-win">Windows has<br />a <span class="grad">notch</span> now.</span>)}
           {shows('mac') && (pin
             ? <span class="os-mac">Put your MacBook's<br /><span class="grad">notch</span> to work.</span>
             : <span class="os-mac">Put your Mac's<br /><span class="grad">notch</span> to work.</span>)}
         </h1>
-        {shows('win') && <p class="lead hero-lead os-win">Your music, system stats and coding agents in a little pill at the top of your screen. Hover over it and you get clipboard history, files and quite a bit more.</p>}
-        {shows('mac') && <p class="lead hero-lead os-mac">Your music, system stats and coding agents in the wings beside the notch. Hover over it and you get clipboard history, files and quite a bit more.</p>}
-        <div class="hero-os"><OsSwitch links={pin && OS_PAGE} /></div>
-        <div class="hero-cta">
+        {shows('win') && <p class="lead hero-lead os-win">A little pill at the top of your screen for music, system stats and coding agents. When Claude Code or Codex is waiting on you, it says so.</p>}
+        {shows('mac') && <p class="lead hero-lead os-mac">Music, system stats and coding agents in the wings beside the notch. When Claude Code or Codex is waiting on you, it says so.</p>}
+        <div class="hero-cta cta">
+          <SendLink />
           {shows('win') && <a class="btn btn-primary btn-store os-win" href={STORE}><StoreLogo /><span><b>Get QNotch</b><small>From the Microsoft Store</small></span></a>}
           {shows('win') && <a class="btn btn-ghost btn-tall os-win" href={DL} data-install-open><Icon name="download" />Other ways to install</a>}
           {shows('mac') && <a class="btn btn-primary os-mac" href={MAC.url}><Icon name="apple" />Download for Mac</a>}
           {shows('mac') && <a class="btn btn-ghost os-mac" href={GH}><Icon name="github" />Star on GitHub</a>}
         </div>
-        {shows('win') && <p class="fine os-win">Open source and free to download · Your Store purchase funds development · Windows 10 2004 or newer, x64</p>}
-        {shows('mac') && <p class="fine os-mac">Free, no account · macOS 13 or newer, Apple silicon · {MAC.mb} MB · No notch? It floats under the menu bar.</p>}
+        {shows('win') && <p class="fine os-win">Open source, MIT · Windows 10 2004+, x64 · Store purchase funds development</p>}
+        {shows('mac') && <p class="fine os-mac">Free and open source, MIT · macOS 13+, Apple silicon · No notch? It floats under the menu bar.</p>}
+        <p class="fine on-phone">QNotch runs on Windows and Mac. Send yourself the link and try it there.</p>
+        <div class="hero-os"><OsSwitch small links={pin && OS_PAGE} /></div>
       </div>
       <div class="wrap demo-wrap">
+        <a class="demo-cue" href="#demo">
+          <span class="cue-dot" aria-hidden="true"></span>
+          <span class="can-hover">This one is live. Hover over the notch.</span>
+          <span class="no-hover">This one is live. Tap the notch.</span>
+          <Icon name="down" />
+        </a>
         <Demo />
       </div>
     </section>
@@ -324,7 +317,7 @@ const jsonLd = {
       </div>
     </section>
 
-    <OpenSource gh={GH} />
+    <ExtendTeaser gh={GH} />
 
     <section class="privacy">
       <div class="wrap">
@@ -366,7 +359,8 @@ const jsonLd = {
         {shows('mac') && <h2 class="os-mac">Try QNotch on<br />your Mac.</h2>}
         {shows('win') && <p class="lead final-lead os-win">I saw a really nice notch app on Reddit, but it was Mac only. Well, I'm on Windows. So I built one.</p>}
         {shows('mac') && <p class="lead final-lead os-mac">I built QNotch for Windows because the nice notch apps were Mac only. Then I wanted it on my MacBook too, so I rebuilt it natively in Swift.</p>}
-        <div class="hero-cta">
+        <div class="hero-cta cta">
+          <SendLink />
           {shows('win') && <a class="btn btn-primary btn-store os-win" href={STORE}><StoreLogo /><span><b>Get QNotch</b><small>From the Microsoft Store</small></span></a>}
           {shows('win') && <a class="btn btn-ghost btn-tall os-win" href={DL} data-install-open><Icon name="download" />Other ways to install</a>}
           {shows('mac') && <a class="btn btn-primary os-mac" href={MAC.url}><Icon name="apple" />Download for Mac</a>}
@@ -380,119 +374,28 @@ const jsonLd = {
 
   <InstallDialog gh={GH} winget={WINGET} scoop={SCOOP} chocolatey={CHOCOLATEY} />
 
-  <footer class="foot">
-    <div class="wrap foot-in">
-      <span class="logo small"><span class="logo-mark"><i></i></span>QNotch</span>
-      <nav aria-label="Footer">
-        <a href={OS_PAGE.win}>For Windows</a>
-        <a href={OS_PAGE.mac}>For Mac</a>
-        <a href={GH}>GitHub</a>
-        <a href={`${GH}/releases`}>Releases</a>
-        <a href={`${GH}/blob/main/CONTRIBUTING.md`}>Contributing</a>
-        <a href={`${GH}/blob/main/SECURITY.md`}>Security</a>
-        <a href="/privacy">Privacy</a>
-        <a href={`${GH}/blob/main/LICENSE`}>MIT license</a>
-        <ThemeSwitch />
-      </nav>
-    </div>
-  </footer>
+  <SiteFooter />
 </Base>
 
 <style>
-  .nav {
-    position: sticky;
-    top: 0;
-    z-index: 50;
-    backdrop-filter: saturate(1.4) blur(16px);
-    background: color-mix(in srgb, var(--bg) 78%, transparent);
-    border-bottom: 1px solid transparent;
-    transition: border-color 0.2s ease;
-  }
-
-  .nav-in {
-    display: flex;
-    align-items: center;
-    height: 64px;
-    gap: 24px;
-  }
-
-  .nav-links {
-    display: flex;
-    gap: 28px;
-    margin-inline: auto;
-    font-size: 15px;
-    color: var(--ink-2);
-  }
-
-  .nav-links a:hover { color: var(--ink); }
-
-  .nav-cta {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  .gh-link {
-    width: 38px;
-    height: 38px;
-    display: grid;
-    place-items: center;
-    border-radius: 50%;
-    color: var(--ink-2);
-  }
-
-  .gh-link:hover { color: var(--ink); background: var(--bg-2); }
-  .gh-link :global(.i) { width: 20px; height: 20px; }
-
-  .hero { padding-top: clamp(48px, 8vw, 96px); padding-bottom: clamp(64px, 9vw, 120px); }
-
-  .badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    height: 32px;
-    padding: 0 14px;
-    border-radius: 999px;
-    background: var(--card);
-    border: 1px solid var(--line);
-    font-size: 13.5px;
-    font-weight: 500;
-    color: var(--ink-2);
-    margin-bottom: 28px;
-  }
-
-  .badge-dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: var(--ok);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 22%, transparent);
-  }
-
-  .sep { color: var(--ink-3); }
+  .hero { padding-top: clamp(32px, 5vw, 64px); padding-bottom: clamp(64px, 9vw, 120px); }
 
   h1 {
-    font-size: clamp(42px, 7.6vw, 96px);
-    letter-spacing: -0.05em;
-    line-height: 0.98;
+    font-size: clamp(42px, 7.2vw, 92px);
+    letter-spacing: -0.04em;
+    line-height: 0.96;
   }
 
-  .grad {
-    background: linear-gradient(100deg, #3b82f6 10%, #7a5cff 60%, #b45cff);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    padding-right: 0.04em;
-  }
+  .grad { color: var(--accent); }
 
-  .hero-lead { margin-top: 26px; }
+  .hero-lead { margin-top: 22px; text-wrap: balance; }
 
   .hero-cta {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
     gap: 12px;
-    margin-top: 34px;
+    margin-top: 28px;
   }
 
   /* The Windows main button: two lines, like the Store's own badge. Other ways to install matches its height. */
@@ -504,8 +407,7 @@ const jsonLd = {
   .btn-store small { font-size: 13px; font-weight: 500; opacity: 0.75; }
   .btn-tall { height: 64px; padding: 0 26px; }
 
-  .hero-os { margin-top: 34px; }
-  .hero-os + .hero-cta { margin-top: 16px; }
+  .hero-os { margin-top: 14px; }
 
   .fine {
     margin-top: 16px;
@@ -514,9 +416,45 @@ const jsonLd = {
   }
 
   .demo-wrap {
-    margin-top: clamp(56px, 8vw, 88px);
+    margin-top: clamp(28px, 4vw, 44px);
     scroll-margin-top: 90px;
   }
+
+  /* Says the picture below is the app, working, before anyone scrolls past it. */
+  .demo-cue {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    width: fit-content;
+    margin: 0 auto 16px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .demo-cue :global(.i) {
+    width: 16px;
+    height: 16px;
+    color: var(--ink-3);
+    animation: nudge 1.8s ease-in-out infinite;
+  }
+
+  .cue-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--ok);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--ok) 22%, transparent);
+  }
+
+  .no-hover { display: none; }
+
+  @media (hover: none) {
+    .can-hover { display: none; }
+    .no-hover { display: inline; }
+  }
+
+  @keyframes nudge { 50% { transform: translateY(4px); } }
 
   .h2-sm { font-size: clamp(32px, 4.2vw, 48px); }
 
@@ -552,6 +490,7 @@ const jsonLd = {
   .numbers li + li { padding-left: 24px; border-left: 1px solid var(--line); }
 
   .numbers b {
+    font-family: var(--display);
     font-size: clamp(40px, 5vw, 60px);
     font-weight: 700;
     letter-spacing: -0.045em;
@@ -742,7 +681,7 @@ const jsonLd = {
 
   .final .wrap { border-top: 1px solid var(--line-2); }
 
-  .final h2 { font-size: clamp(36px, 6vw, 72px); letter-spacing: -0.045em; }
+  .final h2 { font-size: clamp(36px, 6vw, 72px); }
   .final-lead { margin-top: 22px; }
 
   .final-pill {
@@ -767,30 +706,6 @@ const jsonLd = {
 
   @keyframes breathe { 50% { opacity: 0.35; } }
 
-  .foot {
-    border-top: 1px solid var(--line);
-    padding: 28px 0 40px;
-  }
-
-  .foot-in {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-  }
-
-  .foot nav {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 8px 24px;
-    font-size: 14px;
-    color: var(--ink-2);
-  }
-
-  .foot a:hover { color: var(--ink); }
-
   @media (max-width: 960px) {
     .keys-grid, .faq-grid { grid-template-columns: 1fr; gap: 32px; }
     .priv { grid-template-columns: repeat(2, 1fr); }
@@ -798,14 +713,7 @@ const jsonLd = {
     .numbers li:nth-child(3) { padding-left: 0; border-left: 0; }
   }
 
-  @media (max-width: 720px) {
-    .nav-links { display: none; }
-    .nav-cta { margin-left: auto; }
-  }
-
   @media (max-width: 560px) {
-    .nav-in { gap: 8px; }
-    .nav-cta .gh-link { display: none; }
     .priv { grid-template-columns: 1fr; }
     .hero-cta .btn { width: 100%; justify-content: center; }
     .kk { min-width: 120px; }

@@ -1,0 +1,34 @@
+---
+import Icon from './Icon.astro';
+// Shown on phones only (Base.astro sets <html data-phone>): QNotch runs on computers, so the useful thing a
+// phone can do is hand the page to one. Opens the share sheet, or copies the link where there is none.
+---
+<button type="button" class="btn btn-primary on-phone" data-send-link>
+  <Icon name="external" /><span data-send-label>Send the link to my computer</span>
+</button>
+
+<script>
+  const url = location.origin + location.pathname;
+  document.querySelectorAll<HTMLButtonElement>('[data-send-link]').forEach(button => {
+    const label = button.querySelector<HTMLElement>('[data-send-label]')!;
+    const original = label.textContent!;
+    const say = (text: string) => {
+      label.textContent = text;
+      setTimeout(() => (label.textContent = original), 2400);
+    };
+    button.addEventListener('click', async () => {
+      if (navigator.share) {
+        try {
+          await navigator.share({ title: 'QNotch', text: 'QNotch: a free notch for Windows and Mac', url });
+        } catch { /* Closing the share sheet is not an error. */ }
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(url);
+        say('Link copied');
+      } catch {
+        location.href = `mailto:?subject=QNotch&body=${encodeURIComponent(url)}`;
+      }
+    });
+  });
+</script>

@@ -1,0 +1,75 @@
+---
+import Base from '../../layouts/Base.astro';
+import Icon from '../../components/Icon.astro';
+import SiteHeader from '../../components/SiteHeader.astro';
+import SiteFooter from '../../components/SiteFooter.astro';
+import { guides, guideUrl } from '../../lib/guides';
+
+const title = 'Guides · QNotch';
+const description = 'How to see when a coding agent is waiting, notify from a script, keep a clipboard history and watch your stats while gaming, plus how QNotch compares with other notch apps.';
+---
+<Base {title} {description}>
+  <SiteHeader />
+  <main class="wrap list" id="top">
+    <span class="eyebrow">Guides</span>
+    <h1>Get more out of the notch.</h1>
+    <p class="lead">Short guides to the things people use QNotch for, on Windows and Mac.</p>
+    <ul>
+      {guides.map(g => (
+        <li><a class="card" href={guideUrl(g.slug)}><div><h2>{g.title}</h2><p>{g.description}</p></div><Icon name="arrow" /></a></li>
+      ))}
+    </ul>
+  </main>
+  <SiteFooter />
+</Base>
+
+<style>
+  .list {
+    max-width: 860px;
+    padding-block: clamp(40px, 6vw, 72px) clamp(64px, 8vw, 96px);
+  }
+
+  h1 { font-size: clamp(40px, 6vw, 68px); }
+  .lead { margin-top: 18px; }
+
+  ul {
+    display: grid;
+    gap: 12px;
+    margin: 40px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  a {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    padding: 22px 24px;
+    transition: border-color 0.15s ease;
+  }
+
+  a:hover { border-color: var(--line-2); }
+  a > div { flex: 1; min-width: 0; }
+
+  h2 {
+    font-family: var(--font);
+    font-size: 20px;
+    letter-spacing: -0.02em;
+    line-height: 1.25;
+  }
+
+  a p {
+    margin-top: 6px;
+    color: var(--ink-2);
+    font-size: 15.5px;
+  }
+
+  a :global(.i) {
+    width: 20px;
+    height: 20px;
+    color: var(--ink-3);
+    transition: transform 0.15s ease;
+  }
+
+  a:hover :global(.i) { transform: translateX(3px); color: var(--accent); }
+</style>

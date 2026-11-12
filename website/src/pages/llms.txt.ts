@@ -3,6 +3,7 @@
 // line with [...platform].astro and the READMEs.
 import type { APIRoute } from 'astro';
 import { GH, DL, STORE, releases } from '../lib/releases';
+import { guides, guideUrl } from '../lib/guides';
 
 export const GET: APIRoute = async ({ site }) => {
   const { mac, winget, scoop, chocolatey } = await releases();
@@ -14,6 +15,8 @@ export const GET: APIRoute = async ({ site }) => {
     ...(scoop ? ['- Scoop: `scoop bucket add qnotch https://github.com/Somafet/scoop-bucket`, then `scoop install qnotch/qnotch`'] : []),
     ...(chocolatey ? ['- Chocolatey: `choco install qnotch` from an administrator terminal'] : []),
   ];
+
+  const guideLines = guides.map(g => `- [${g.title}](${page(guideUrl(g.slug))}): ${g.description}`).join('\n');
 
   const body = `# QNotch
 
@@ -32,6 +35,11 @@ export const GET: APIRoute = async ({ site }) => {
 - [QNotch for Mac](${page('/mac/')}): what it does on a MacBook, requirements, signing and permissions
 - [Home](${page('/')}): both apps, with an interactive demo
 - [Privacy policy](${page('/privacy')}): what stays on the device, the usage events and identifiers sent, and every online feature
+- [Developers](${page('/developers/')}): how an extension registers cards, tabs, status segments and search results, and how to contribute one
+
+## Guides
+
+${guideLines}
 
 ## Install on Windows
 

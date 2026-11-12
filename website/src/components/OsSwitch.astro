@@ -2,10 +2,11 @@
 import Icon from './Icon.astro';
 
 // links: on a page about one platform, each choice goes to that platform's page instead of switching in place.
-interface Props { links?: { win: string; mac: string } }
-const { links } = Astro.props;
+// small: a compact version that sits under a page's buttons without competing with them.
+interface Props { links?: { win: string; mac: string }; small?: boolean }
+const { links, small } = Astro.props;
 ---
-<div class="os-switch" role="radiogroup" aria-label="Show QNotch for" data-os-pages={links && JSON.stringify(links)}>
+<div class:list={['os-switch', { small }]} role="radiogroup" aria-label="Show QNotch for" data-os-pages={links && JSON.stringify(links)}>
   <span class="thumb" aria-hidden="true"></span>
   <button type="button" role="radio" data-os-pick="win" aria-checked="false"><Icon name="windows" />Windows</button>
   <button type="button" role="radio" data-os-pick="mac" aria-checked="false"><Icon name="apple" />Mac</button>
@@ -92,6 +93,11 @@ const { links } = Astro.props;
   button[aria-checked='true'] { color: var(--ink); }
   button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   button :global(.i) { width: 16px; height: 16px; margin-top: -1px; }
+
+  .small { padding: 3px; }
+  .small .thumb { top: 3px; bottom: 3px; left: 3px; width: calc(50% - 3px); }
+  .small button { height: 28px; padding: 0 14px; gap: 6px; font-size: 13px; }
+  .small button :global(.i) { width: 13px; height: 13px; }
 
   @media (prefers-reduced-motion: reduce) {
     .thumb { transition: none; }

@@ -1,0 +1,53 @@
+---
+import Guide from '../../layouts/Guide.astro';
+import { GH } from '../../lib/releases';
+
+// Claims about other apps are kept to what their own pages state and carry no prices, which change.
+// Recheck them, and the date in src/lib/guides.ts, when you edit this page.
+---
+<Guide slug="mac-notch-apps" only="mac">
+  <p>Several apps put the space around a MacBook's notch to work, and they aim at different people. This is a fair look at four of them, written by the maker of one. It says where QNotch fits and where another app is the better pick.</p>
+
+  <h2>The short version</h2>
+  <div class="table">
+    <table>
+      <thead><tr><th>App</th><th>Price</th><th>Source</th><th>Known for</th></tr></thead>
+      <tbody>
+        <tr><td><b>QNotch</b></td><td>Free</td><td>Open, MIT</td><td>Coding agents, script notifications, the same app on Windows</td></tr>
+        <tr><td><a href="https://github.com/TheBoredTeam/boring.notch">Boring Notch</a></td><td>Free</td><td>Open, GPL-3.0</td><td>Music controls, a file shelf and a calendar</td></tr>
+        <tr><td><a href="https://lo.cafe/notchnook">NotchNook</a></td><td>Paid</td><td>Closed</td><td>Widgets and deep customization</td></tr>
+        <tr><td><a href="https://tryalcove.com">Alcove</a></td><td>Paid</td><td>Closed</td><td>Polished animation and media display</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Prices and features change, so check each app's own page before you decide.</p>
+
+  <h2>What QNotch is built around</h2>
+  <p>QNotch started on Windows, as a notch for people who work in terminals, and was then rebuilt natively for the Mac in Swift and AppKit. That shows in what it does:</p>
+  <ul>
+    <li><b>Coding agents.</b> Every Claude Code and Codex session sits beside the notch with its status, and it tells you when one is <a href="/guides/claude-code-waiting/">waiting for an answer</a>.</li>
+    <li><b>Notifications from scripts.</b> A build or a deploy can <a href="/guides/script-notifications/">post to the notch</a>, with buttons, and wait for your click.</li>
+    <li><b>A panel under the notch.</b> Hover to open clipboard history, a file tray, notes, weather, a timer and one search box across all of it.</li>
+    <li><b>Small.</b> About 11 MB of memory while idle with every feature on, measured in Activity Monitor on a MacBook Air (M2).</li>
+    <li><b>No permissions up front.</b> No Accessibility, Screen Recording or notification permission. macOS asks once before QNotch controls Music or Spotify.</li>
+    <li><b>Signed and notarized.</b> It opens like any other app, and updates through Sparkle.</li>
+    <li><b>Windows too.</b> The same app runs on Windows, and a setup code moves your layout between the two.</li>
+  </ul>
+
+  <h2>When another app is the better pick</h2>
+  <p>QNotch is not the best choice for everyone, and these are the places it falls short today:</p>
+  <ul>
+    <li><b>You play music from a browser or another player.</b> QNotch shows what is playing in Music and Spotify only. Reading every app's playback needs a private macOS framework, which QNotch does not use.</li>
+    <li><b>You have an Intel Mac.</b> QNotch runs on Apple silicon only, with macOS 13 Ventura or newer.</li>
+    <li><b>You mostly want a beautiful music display.</b> Alcove and NotchNook put more of their effort into animation and visual polish than QNotch does.</li>
+    <li><b>You want widgets you can arrange in depth.</b> That is NotchNook's focus. QNotch lets you reorder and hide its cards and tabs, and no more.</li>
+  </ul>
+
+  <h2>Free and open source: QNotch or Boring Notch</h2>
+  <p>Both are free and both publish their source. They differ in license and in direction. Boring Notch is GPL-3.0 and centers on music, files and the calendar. QNotch is MIT, signed and notarized, and centers on developer work: agents, notifications from scripts and a searchable panel. If you want both sets of features, nothing stops you trying each for a day. Run one at a time, since both draw at the notch.</p>
+
+  <h2>No notch?</h2>
+  <p>On a Mac or an external display without a notch, QNotch floats as a pill under the menu bar. Drag it sideways and it snaps to the center or an edge, and remembers the spot for each display.</p>
+
+  <p>QNotch's source is on <a href={GH}>GitHub</a>. If something here about another app is out of date, <a href={`${GH}/issues`}>open an issue</a> and it will be fixed.</p>
+</Guide>

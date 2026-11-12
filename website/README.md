@@ -26,7 +26,11 @@ npm run build    # static site in dist/
 | `src/styles/mac.css` | The Mac version of that desktop: menu bar, Dock, traffic lights, and the notch's wings around the camera housing |
 | `src/components/OsSwitch.astro` + `src/scripts/platform.ts` | The Windows/Mac switch and the shared platform state |
 | `src/components/Features.astro` | The feature grid |
-| `src/components/OpenSource.astro` | Extensions, the five slots, contributing |
+| `src/components/ExtendTeaser.astro` | The landing page's short extensions section, linking to `/developers/` |
+| `src/pages/developers.astro` + `src/components/OpenSource.astro` | `/developers/`: extensions, the five slots, the source layout, contributing, the script interface |
+| `src/lib/guides.ts` + `src/pages/guides/` + `src/layouts/Guide.astro` | The guides at `/guides/`. Add an entry to the list and a page with the same slug; the index, footer and `llms.txt` pick it up |
+| `src/components/SiteHeader.astro` + `SiteFooter.astro` | The header and footer every page except the privacy policy and 404 shares |
+| `src/components/SendLink.astro` | The phone-only button that sends the page to a computer |
 | `src/icons.ts` | Stroke icons used everywhere |
 | `og/og.html` | Source of the social preview `src/assets/og.png`; rerender with `node og/render.mjs` (needs Edge or Chrome) |
 | `src/layouts/Base.astro` | The head: title, description, canonical, Open Graph and Twitter tags. Pass `noindex` for pages search engines should skip |
@@ -39,3 +43,7 @@ Rule for the demo: anything that looks clickable must work. If a control can't b
 Search engines read the structured data (JSON-LD) at the top of `[...platform].astro`: the app, the site, the page on `/windows/` and `/mac/`, and the FAQ that page shows. The FAQ part is built from the same `faq` list the page shows, so the two stay in sync. Only real page headings should use `<h1>` to `<h6>`; titles inside the demo's mock UI use `.qn-h`.
 
 Keep claims on the page in line with the repo README: numbers, hotkeys and privacy statements come from there.
+
+Guides state what the apps do, so they follow the same rule. `guides/mac-notch-apps` also describes other apps: keep that to what their own pages say, leave prices out, and move the guide's `updated` date when you recheck it.
+
+Headlines (`h1`, `h2`) use Bricolage Grotesque (`--display`); everything else stays in Inter. Phones and tablets get `<html data-phone>` from `Base.astro`: elements with `.on-phone` show only there, and primary buttons inside `.cta` step back so the send-the-link button leads.

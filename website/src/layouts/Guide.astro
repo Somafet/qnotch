@@ -1,0 +1,270 @@
+---
+import Base from './Base.astro';
+import Icon from '../components/Icon.astro';
+import SiteHeader from '../components/SiteHeader.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+import SendLink from '../components/SendLink.astro';
+import StoreLogo from '../components/StoreLogo.astro';
+import { GH, DL, STORE, releases } from '../lib/releases';
+import { guides, guideUrl } from '../lib/guides';
+
+// One guide under /guides/: the title and description come from src/lib/guides.ts, the body from the page.
+// Guides state what the apps do, so check them against the READMEs like the landing page.
+// A guide about one platform passes `only`, so its download box shows that platform to every visitor.
+interface Props { slug: string; only?: 'mac' | 'windows' }
+const { slug, only } = Astro.props;
+const win = only ? '' : 'os-win';
+const mac = only ? '' : 'os-mac';
+const guide = guides.find(g => g.slug === slug);
+if (!guide) throw new Error(`No guide "${slug}" in src/lib/guides.ts`);
+const others = guides.filter(g => g !== guide);
+const { mac: MAC } = await releases();
+
+const site = Astro.site!.href;
+const url = new URL(Astro.url.pathname, Astro.site).href;
+const updated = new Date(`${guide.updated}T00:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+const author = { '@type': 'Person', name: 'Soma Somorjai', url: 'https://github.com/Somafet' };
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'TechArticle',
+      '@id': url,
+      url,
+      headline: guide.title,
+      description: guide.description,
+      dateModified: guide.updated,
+      inLanguage: 'en',
+      author,
+      publisher: author,
+      isPartOf: { '@id': `${site}#website` },
+      about: { '@id': `${site}#app` },
+    },
+    {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'QNotch', item: site },
+        { '@type': 'ListItem', position: 2, name: 'Guides', item: new URL('/guides/', site).href },
+        { '@type': 'ListItem', position: 3, name: guide.title, item: url },
+      ],
+    },
+  ],
+};
+---
+<Base title={`${guide.title} · QNotch`} description={guide.description}>
+  <script is:inline slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd).replace(/</g, '\\u003c')} />
+  <SiteHeader />
+  <main class="wrap guide" id="top">
+    <article>
+      <nav class="crumbs" aria-label="Breadcrumb"><a href="/">QNotch</a><Icon name="chevron" /><a href="/guides/">Guides</a></nav>
+      <h1>{guide.title}</h1>
+      <p class="meta">Updated <time datetime={guide.updated}>{updated}</time></p>
+      <div class="prose"><slot /></div>
+    </article>
+
+    <aside class="get card" aria-label="Get QNotch">
+      <div>
+        <h2>Get QNotch</h2>
+        {only !== 'mac' && <p class={win}>Free and open source for Windows 11 and 10. The Microsoft Store copy is the same app, and buying it funds development.</p>}
+        {only !== 'windows' && <p class={mac}>Free and open source for Apple silicon Macs with macOS 13 or newer. Signed and notarized, {MAC.mb} MB.</p>}
+      </div>
+      <div class="cta">
+        <SendLink />
+        {only !== 'mac' && <a class:list={['btn btn-primary', win]} href={STORE}><StoreLogo class="sm" />Microsoft Store</a>}
+        {only !== 'mac' && <a class:list={['btn btn-ghost', win]} href={DL}><Icon name="download" />Free download</a>}
+        {only !== 'windows' && <a class:list={['btn btn-primary', mac]} href={MAC.url}><Icon name="apple" />Download for Mac</a>}
+        {only !== 'windows' && <a class:list={['btn btn-ghost', mac]} href={GH}><Icon name="github" />View the source</a>}
+      </div>
+    </aside>
+
+    <nav class="more" aria-label="More guides">
+      <h2>More guides</h2>
+      <ul>
+        {others.map(g => <li><a href={guideUrl(g.slug)}><b>{g.title}</b><span>{g.description}</span></a></li>)}
+      </ul>
+    </nav>
+  </main>
+  <SiteFooter />
+</Base>
+
+<style>
+  .guide {
+    max-width: 780px;
+    padding-block: clamp(32px, 5vw, 56px) clamp(64px, 8vw, 96px);
+  }
+
+  .crumbs {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 18px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink-3);
+  }
+
+  .crumbs a:hover { color: var(--ink); }
+  .crumbs :global(.i) { width: 14px; height: 14px; }
+
+  h1 { font-size: clamp(34px, 5vw, 54px); }
+
+  .meta {
+    margin-top: 16px;
+    font-size: 14px;
+    color: var(--ink-3);
+  }
+
+  .prose { margin-top: 36px; }
+
+  .prose :global(h2) {
+    margin: 48px 0 0;
+    font-size: clamp(25px, 3vw, 32px);
+    line-height: 1.15;
+  }
+
+  .prose :global(h3) { margin: 32px 0 0; }
+
+  .prose :global(p),
+  .prose :global(ul),
+  .prose :global(ol),
+  .prose :global(pre),
+  .prose :global(.table) { margin: 16px 0 0; }
+
+  .prose :global(> p:first-child) {
+    margin-top: 0;
+    font-size: clamp(18px, 1.8vw, 20px);
+    color: var(--ink-2);
+  }
+
+  .prose :global(ul),
+  .prose :global(ol) { padding-left: 22px; }
+
+  .prose :global(li + li) { margin-top: 8px; }
+  .prose :global(li::marker) { color: var(--ink-3); }
+
+  .prose :global(a) {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .prose :global(a:hover) { text-decoration: underline; }
+
+  .prose :global(:not(pre) > code) {
+    padding: 2px 6px;
+    border-radius: 6px;
+    background: var(--bg-2);
+    font-size: 0.88em;
+    overflow-wrap: anywhere;
+  }
+
+  .prose :global(pre) {
+    padding: 16px 18px;
+    border-radius: 14px;
+    background: #0b0b0d;
+    color: #d6d6de;
+    font-size: 13.5px;
+    line-height: 1.65;
+    overflow-x: auto;
+  }
+
+  .prose :global(kbd) {
+    height: 24px;
+    min-width: 24px;
+    padding: 0 7px;
+    font-size: 12px;
+    vertical-align: 1px;
+  }
+
+  .prose :global(.note) {
+    padding: 14px 18px;
+    border-radius: 14px;
+    background: var(--accent-soft);
+    font-size: 16px;
+  }
+
+  .prose :global(.table) { overflow-x: auto; }
+
+  .prose :global(table) {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 15.5px;
+  }
+
+  .prose :global(th),
+  .prose :global(td) {
+    padding: 12px 14px 12px 0;
+    border-bottom: 1px solid var(--line);
+    text-align: left;
+    vertical-align: top;
+  }
+
+  /* Commands and paths in a table stay whole; the table scrolls sideways instead. */
+  .prose :global(td code) {
+    overflow-wrap: normal;
+    white-space: nowrap;
+  }
+
+  .prose :global(th) {
+    font-size: 13.5px;
+    color: var(--ink-3);
+    white-space: nowrap;
+  }
+
+  .get {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px 32px;
+    margin-top: 56px;
+    padding: 26px 28px;
+  }
+
+  .get > div:first-child { flex: 1 1 280px; }
+
+  .get h2,
+  .more h2 {
+    font-size: 24px;
+    line-height: 1.2;
+  }
+
+  .get p {
+    margin-top: 8px;
+    color: var(--ink-2);
+    font-size: 15.5px;
+  }
+
+  .cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .cta .btn { height: 46px; padding: 0 20px; font-size: 15px; }
+  .btn :global(.store-logo.sm) { width: 20px; height: 20px; }
+
+  .more { margin-top: 56px; }
+
+  .more ul {
+    margin: 12px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .more a {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .more b { font-size: 17px; letter-spacing: -0.01em; }
+  .more a:hover b { color: var(--accent); }
+  .more span { color: var(--ink-2); font-size: 15px; }
+
+  @media (max-width: 560px) {
+    .get { padding: 20px; }
+    .cta .btn { width: 100%; justify-content: center; }
+  }
+</style>

@@ -1,0 +1,47 @@
+---
+import Guide from '../../layouts/Guide.astro';
+import { GH } from '../../lib/releases';
+
+const hook = `{
+  "hooks": {
+    "Notification": [
+      { "hooks": [{ "type": "command", "command": "C:\\\\path\\\\to\\\\QNotch.exe notify \\"Claude needs you\\" --app \\"Claude Code\\" --icon chat --focus" }] }
+    ]
+  }
+}`;
+---
+<Guide slug="claude-code-waiting">
+  <p>You start a task in Claude Code or Codex, switch to something else, and come back twenty minutes later to a terminal that has been waiting on a yes/no question the whole time. QNotch puts every session at the top of your screen, so you see the moment one needs you.</p>
+
+  <h2>What you get</h2>
+  <ul>
+    <li><b>Every session by name.</b> The notch and the Agents tab list each Claude Code and Codex session by its title, with its status: working, needs you or done.</li>
+    <li><b>A nudge when one needs you.</b> On Windows the pill widens for a moment with the session's name. On a Mac the wings beside the notch say so. Both play a soft sound, except in Game mode or while you are in a call.</li>
+    <li><b>One click back.</b> The button on a session opens it in the Claude or Codex app. For a terminal session, it brings that terminal to the front.</li>
+    <li><b>What each session costs.</b> Today's tokens for each Claude Code session, and what they would cost at API list prices. On a Pro or Max plan that is not your bill, just a measure of what you are getting out of the plan.</li>
+    <li><b>What it left running.</b> The dev servers and test runners a session started, with their memory, CPU and ports, and a Stop button for any that outlived their session.</li>
+  </ul>
+
+  <h2>Set it up</h2>
+  <ol>
+    <li>Install QNotch and open it.</li>
+    <li>Open Settings, Agents and click <b>Connect</b> next to Claude Code or Codex.</li>
+    <li>If you connected Codex, it asks you to trust the hooks once. Say yes.</li>
+    <li>Start a session as usual. It shows in the notch within a moment.</li>
+  </ol>
+  <p>The welcome tour offers the same Connect step on first start, so a new install may already be set up.</p>
+
+  <h2>What Connect changes</h2>
+  <p>Connect adds a hook to Claude Code's <code>settings.json</code> or Codex's <code>hooks.json</code>, and keeps a backup of the file first. Your own hooks stay as they are. The hook talks to QNotch on your computer only: over a local pipe on Windows and a Unix socket on a Mac. Token counts come from the transcripts Claude Code already keeps on your computer, so nothing about your sessions leaves it.</p>
+
+  <h2>Only want a toast?</h2>
+  <p>If you would rather not connect the Agents tab, a single hook can post a notification with a button back to the session whenever Claude waits for you. Add this to <code>~/.claude/settings.json</code> on Windows:</p>
+  <pre><code>{hook}</code></pre>
+  <p>On a Mac, use the path to the app's executable instead: <code>/Applications/QNotch.app/Contents/MacOS/QNotch notify "Claude needs you" --app "Claude Code" --focus</code>. The <a href="/guides/script-notifications/">guide to script notifications</a> covers the rest of that command, and the <a href={`${GH}/blob/main/docs/notifications.md`}>notifications reference</a> has every option.</p>
+
+  <h2>Good to know</h2>
+  <ul>
+    <li>Agent sounds stay quiet in Game mode and while an app uses your microphone. Choose the sounds in Settings, Sounds.</li>
+    <li>Don't use the Agents tab? Turn it off in Settings, Features and QNotch does not load it.</li>
+  </ul>
+</Guide>

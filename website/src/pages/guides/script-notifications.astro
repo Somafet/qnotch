@@ -1,0 +1,78 @@
+---
+import Guide from '../../layouts/Guide.astro';
+import { GH } from '../../lib/releases';
+
+const win = `QNotch.exe notify "Build finished" "142 tests passed" --app Build --level success
+QNotch.exe notify "Deploy failed" --app CI --level error --url https://example.com/report`;
+const mac = `/Applications/QNotch.app/Contents/MacOS/QNotch notify "Build finished" "142 tests passed" --app Build --level success`;
+const ask = `$answer = QNotch.exe notify "Run the tests?" --action approve=Approve --action deny=Deny
+if ($answer -eq "approve") { npm test }`;
+const curl = `curl -X POST http://127.0.0.1:47821/notify \\
+  -H "Authorization: Bearer <token>" \\
+  -d '{"title":"Deploy done","app":"CI","level":"success"}'`;
+const progress = `{ "id": "build-42", "app": "Build", "title": "Building", "body": "Step 3 of 7" }`;
+---
+<Guide slug="script-notifications">
+  <p>A long build, a deploy or a nightly job should be able to tell you it finished, and sometimes ask you a question. With QNotch running, any script can post a notification to the notch with one command, add buttons and wait for your answer.</p>
+
+  <h2>Post a notification</h2>
+  <p>On Windows, call <code>QNotch.exe notify</code> with a title and an optional body:</p>
+  <pre><code>{win}</code></pre>
+  <p>On a Mac, the command is the app's own executable:</p>
+  <pre><code>{mac}</code></pre>
+  <p>The notification shows as a toast at the notch, adds to the unread count and stays in the Notifications tab. <code>--level</code> is <code>info</code>, <code>success</code>, <code>warning</code> or <code>error</code>. <code>--url</code> adds a button that opens a link. Run <code>notify --help</code> for the full list.</p>
+
+  <h2>Ask a question and wait for the answer</h2>
+  <p>Add up to three buttons with <code>--action id=Label</code>. The command then waits until you click one, and prints the id of the button you clicked:</p>
+  <pre><code>{ask}</code></pre>
+  <p>The exit code says what happened:</p>
+  <div class="table">
+    <table>
+      <thead><tr><th>Exit code</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td><code>0</code></td><td>Sent, or answered</td></tr>
+        <tr><td><code>1</code></td><td>Dismissed</td></tr>
+        <tr><td><code>2</code></td><td>Timed out</td></tr>
+        <tr><td><code>3</code></td><td>QNotch is not running</td></tr>
+        <tr><td><code>4</code></td><td>Error</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="note">On Windows, <code>QNotch.exe</code> is a GUI program, so an interactive shell does not wait for it. Capture the output, as above, when you need the answer. Scripts and hooks that capture output wait as usual.</p>
+
+  <h2>Without the command line</h2>
+  <p>The same JSON message goes in three ways, so anything that can open a pipe, a socket or an HTTP connection can post.</p>
+  <div class="table">
+    <table>
+      <thead><tr><th>Way</th><th>Windows</th><th>Mac</th></tr></thead>
+      <tbody>
+        <tr><td>Command line</td><td><code>QNotch.exe notify</code></td><td><code>QNotch notify</code>, in <code>QNotch.app/Contents/MacOS</code></td></tr>
+        <tr><td>Local pipe or socket</td><td><code>\\.\pipe\QNotch.Notify</code></td><td><code>notify.sock</code> in <code>~/Library/Application Support/QNotch.Mac</code></td></tr>
+        <tr><td>Local HTTP</td><td colspan="2"><code>POST http://127.0.0.1:47821/notify</code>, with a bearer token</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <pre><code>{curl}</code></pre>
+  <p>HTTP answers only on this computer and needs the token from Settings, Notifications. Requests from web pages, which carry an <code>Origin</code> header, are refused. Add <code>?wait=1</code> to wait for an answer.</p>
+
+  <h2>Update a notification in place</h2>
+  <p>Post again with the same <code>id</code> and the notification is replaced, which makes a progress display:</p>
+  <pre><code>{progress}</code></pre>
+
+  <h2>What a button can do</h2>
+  <ul>
+    <li><b>Open a link:</b> http, https, vscode, vscode-insiders, cursor or claude.</li>
+    <li><b>Bring a window forward:</b> <code>--focus</code> adds a button back to the terminal that posted the notification.</li>
+    <li><b>Answer a waiting request:</b> a button with neither only reports that it was clicked.</li>
+  </ul>
+  <p>No button can run a program. That is deliberate: a notification is something another process sent you.</p>
+
+  <h2>Good to know</h2>
+  <ul>
+    <li>While an app uses your microphone, notifications stay quiet and go straight to the history. One that waits for an answer still shows, because someone is waiting on it.</li>
+    <li>An error opens the panel, except in Game mode or during a call. You can turn that off.</li>
+    <li>Titles are capped at 80 characters and bodies at 300. Each app gets one toast per second; the rest go to the history.</li>
+    <li>Mute an app, change how long toasts show and how long history is kept in Settings, Notifications.</li>
+  </ul>
+  <p>The <a href={`${GH}/blob/main/docs/notifications.md`}>notifications reference</a> has the full message format. To follow Claude Code and Codex sessions instead of posting your own, see <a href="/guides/claude-code-waiting/">See when Claude Code or Codex is waiting for you</a>.</p>
+</Guide>
