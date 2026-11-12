@@ -595,19 +595,25 @@
   },
   {
     "file": "src/QNotch/Shell/CardLayout.cs",
-    "line": 53,
+    "line": 56,
     "module": "shell",
     "action": "resize_card"
   },
   {
     "file": "src/QNotch/Shell/CardLayout.cs",
-    "line": 60,
+    "line": 65,
+    "module": "shell",
+    "action": "resize_card"
+  },
+  {
+    "file": "src/QNotch/Shell/CardLayout.cs",
+    "line": 69,
     "module": "shell",
     "action": "change_card_visibility"
   },
   {
     "file": "src/QNotch/Shell/CardLayout.cs",
-    "line": 67,
+    "line": 76,
     "module": "shell",
     "action": "reorder_cards"
   },

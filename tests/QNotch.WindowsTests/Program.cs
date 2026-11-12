@@ -1,3 +1,4 @@
+using System.Net.Http;
 using System.Text.Json;
 using QNotch.Core;
 using QNotch.Modules;
@@ -46,6 +47,38 @@ var tests = new List<(string Name, Action Run)>
         Require(restored.SizeOf("wide") == CardSize.Medium && restored.SizeOf("small") == CardSize.Small);
         Require(cards.Items.All(c => c.SupportedSizes.Contains(CardSize.Small)));
         Require(SetupCode.ShellSections.Single(s => s.Id == "general").Shared.Fields.Contains("CardSizes"));
+    }),
+    ("card resize records one action per changed resize, not per drag update", () =>
+    {
+        var cards = new Registry<CardDescriptor>();
+        cards.Register(new("wide", "Resizable", 1, () => null!, DefaultSize: CardSize.Medium));
+        var layout = new CardLayout(cards, new GeneralSettings());
+        using var analytics = new Analytics("phc_test", new Uri("https://example.invalid/batch/"), () => true,
+            () => ("distinct", "install", "anonymous"), new HttpClient(), false);
+        var previous = Analytics.Current;
+        Analytics.Current = analytics;
+        try
+        {
+            // Drag: many pointer updates across sizes, then completion records once.
+            foreach (var size in new[] { CardSize.Small, CardSize.Small, CardSize.Medium, CardSize.Medium, CardSize.Small })
+                layout.SetSize("wide", size, track: false);
+            Require(analytics.Buffered == 0);
+            layout.EndResize("wide", CardSize.Medium, canceled: false);
+            Require(analytics.Buffered == 1 && layout.SizeOf("wide") == CardSize.Small);
+            // Unchanged drag (back to its start size) and canceled drag record nothing; cancel restores the start size.
+            layout.SetSize("wide", CardSize.Medium, track: false);
+            layout.SetSize("wide", CardSize.Small, track: false);
+            layout.EndResize("wide", CardSize.Small, canceled: false);
+            layout.SetSize("wide", CardSize.Medium, track: false);
+            layout.EndResize("wide", CardSize.Small, canceled: true);
+            Require(analytics.Buffered == 1 && layout.SizeOf("wide") == CardSize.Small);
+            // Keyboard and UI Automation: one action per change, none when the size cannot change.
+            layout.SetSize("wide", CardSize.Medium);
+            layout.SetSize("wide", CardSize.Medium);
+            layout.SetSize("wide", (CardSize)99);
+            Require(analytics.Buffered == 2);
+        }
+        finally { Analytics.Current = previous; }
     }),
     ("notification manual mute persists locally outside setup codes", () =>
     {
