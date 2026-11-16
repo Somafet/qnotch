@@ -130,6 +130,8 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
     readonly AgentsState _st = new();
     readonly HashSet<int> _watched = [];
     readonly HashSet<string> _ended = [];
+    // Sessions whose hooks were already counted: cli_hook is one action per agent session, not one per hook call.
+    readonly HashSet<string> _hooked = [];
     readonly ProcessTracker _procs = new();
     ModuleContext _ctx = null!;
     AgentsConfig _cfg = null!;
@@ -306,10 +308,20 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
                 using var reader = new StreamReader(s);
                 var line = await reader.ReadLineAsync(cts.Token);
                 var e = line is null ? null : JsonSerializer.Deserialize<AgentEvent>(line, Json);
-                if (e is { Session.Length: > 0 }) { QNotch.Core.Analytics.Track("agents", "cli_hook", "cli"); _ctx.Bus.Run(() => Apply(e)); }
+                if (e is { Session.Length: > 0 }) { if (FirstHook(e.Session)) QNotch.Core.Analytics.Track("agents", "cli_hook", "cli"); _ctx.Bus.Run(() => Apply(e)); }
             }
             catch (Exception ex) when (ex is JsonException or OperationCanceledException or IOException) { /* one bad or slow client */ }
             catch (Exception ex) { Log.Warn("Agents event failed", ex); }
+        }
+    }
+
+    /// <summary>True for a session's first hook since start. Pipe clients run concurrently; the set is bounded.</summary>
+    internal bool FirstHook(string session)
+    {
+        lock (_hooked)
+        {
+            if (_hooked.Count >= 1000) _hooked.Clear();
+            return _hooked.Add(session);
         }
     }
 

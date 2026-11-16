@@ -4,7 +4,7 @@ QNotch records explicit commands as `qnotch_action` under the [shared contract](
 
 Shipping configuration is `Sources/QNotchMac/Resources/analytics-config.json`, copied as an SPM resource bundle into the app. It contains the supplied QNotch public ingestion token and EU host `https://eu.i.posthog.com`. `QNOTCH_POSTHOG_KEY` and `QNOTCH_POSTHOG_HOST` override it. Missing/invalid configuration sends nothing and does not resolve identity. No T3 key or endpoint is reused.
 
-Identity resolves on a utility queue after the first eligible command. A persistent local UUID in `analytics-install-id` is SHA256-hashed for `install_id`. `distinct_id` hashes Codex `tokens.account_id`, then Claude `userID`, then that installation UUID; `identity_source` reports only codex/claude/anonymous. Raw identifiers and authentication material never enter the event or logs. Consent and identity stay local and are excluded from setup codes.
+Identity resolves on a utility queue after the first eligible event, normally the launch's `qnotch_active`. A persistent local UUID in `analytics-install-id` is SHA256-hashed for `install_id`. `distinct_id` hashes Codex `tokens.account_id`, then Claude `userID`, then that installation UUID; `identity_source` reports only codex/claude/anonymous. Raw identifiers and authentication material never enter the event or logs. Consent and identity stay local and are excluded from setup codes.
 
 Events carry only fixed module/action/surface identifiers, schema/app version, hashed identity, `outcome=requested`, and optional allowlisted `target` plus boolean `enabled`. Requested means invocation, including commands that later cancel or fail. It does not mean success. No paths, names, clipboard/notes/search/media text, application/window titles, raw IDs, credentials, control labels, replay, autocapture, error payloads, or person profiles are sent. Native URLSession uses ephemeral storage, no cookies/cache, HTTPS and no redirects.
 
@@ -16,19 +16,19 @@ Events carry only fixed module/action/surface identifiers, schema/app version, h
 | Onboarding | Next, back, skip, finish, feature target and enabled choice, login/update choice; integration commands use the same catalog |
 | General/appearance/features | Display, menu icon, hover/close delays, segment hover, pin, accent, motion, profile name/photo, module enable/disable with target, card/tab/notch visibility, setup export/check/apply |
 | Other settings | Login, shortcut assignment/reset, sound choice/preview, update checks/install/beta, game behavior/rules, each module's settings; setting identifiers and boolean choices are fixed |
-| Timer | Start, pause, reset, duration selection; no tick/completion events |
-| Media | Play/pause, next/previous, source selection, seek; no now-playing updates |
+| Timer | Start, pause, reset, duration selection (one per wheel gesture); no tick/completion events |
+| Media | Play/pause, next/previous, source selection, seek (one per drag); no now-playing updates |
 | Clipboard | Copy again, pin/unpin, remove, clear, history preference; no clipboard observation events |
 | Notes | Debounced save following editing, including flush on close; no text/keystroke payload |
 | Files | Add/drop/chooser, remove, clear, open, reveal, copy path command, export, native share picker, Quick Look; no file metadata |
 | Search | Return submits, keyboard/click executes result; no per-keystroke events |
-| GitHub | Connect, cancel, authorization browser, token save/test, disconnect, explicit refresh/retry |
+| GitHub | Connect, cancel of a sign-in in progress, authorization browser, token save/test, disconnect, explicit refresh/retry |
 | AI | Launch app, slot assignment, custom app add/remove, account select/rename, explicit refresh/scan, settings |
 | Agents | Show/open session, dismiss, stop process group, connect/disconnect hooks, settings; no hook/session/provider update events |
 | Notifications | Invoke, dismiss, clear, mute, test, token renewal, settings; no incoming notification/expiry/unread events |
 | Scheduled | Pause/resume, delete request, reveal, explicit reload; no scans |
 | Weather | Place search/selection, forecast link, explicit retry/refresh, units/notch preferences; no forecast updates |
-| Volume | User volume/mute commands; no CoreAudio observation events |
+| Volume | User volume (one per drag, wheel or key gesture) and mute commands; no CoreAudio observation events |
 | Color picker | Sample request, copy color command; no color payload |
 | Terminal | Copy, paste, Return submit; no input/output text or resize events |
 | Stats/Capture | Stats preference choices; Capture is passive and has no independent commands |
@@ -36,6 +36,8 @@ Events carry only fixed module/action/surface identifiers, schema/app version, h
 Native diagnostic runs (`--snapshot`, `--smoke-test`, `--measure`) and debug-control launches never configure analytics. Automatic timer/notification panel opening, startup pinned opening, periodic refreshes, provider observations, incoming CLI notification/hook traffic and geometry/layout refreshes are not user commands. Pointer-leave/focus-loss automatic closing is deliberately not recorded. Clipboard and terminal copy/paste commands mean invocation only. Mac lacks Windows phone-sharing commands; native share and Quick Look are platform-specific. Shared catalog fixture tests permit the native supported subset and reject any native entry absent from the shared contract.
 
 The queue is memory-only (lost on exit), bounded to 1000 staged/buffered entries with up to 20 in flight, batches of 20, a 10-second partial-batch timer, and a 10-second request timeout. Successful full backlogs drain immediately. Transient failures retry with the same event UUID, a two-second exponentially increasing cap up to five minutes, and random delay between half and full cap. Retention is 30 minutes; 400/401/413 responses drop their batch. No idle repeating timer is installed.
+
+`qnotch_active` ([shared contract](../../spec/analytics.md#lifecycle-event)) is recorded from `ShellController.start()` once modules run, then by one one-shot timer armed for just after the next UTC midnight, which re-arms itself. `modules` is read from the live enabled set at each event. `applicationWillTerminate` writes `exited` to `analytics-run-state` before the final flush. `channel` is `direct` when `scripts/macos/build.sh` ran with `QNOTCH_VERSION` (it adds `QNotchReleaseBuild` to Info.plist), otherwise `source`.
 
 ## Verification
 

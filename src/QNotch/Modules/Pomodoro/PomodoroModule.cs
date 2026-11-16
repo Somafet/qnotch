@@ -96,7 +96,7 @@ public sealed partial class PomodoroModule : INotchModule, ICadenceAware
     }
 
     void SetMinutes(int minutes, bool save = true)
-    { if (save) QNotch.Core.Analytics.Track("pomodoro", "set_duration", "ui");
+    { if (save) QNotch.Core.Analytics.TrackGesture("pomodoro", "set_duration"); // a wheel spin is one choice
         _tick.Stop();
         _done = false;
         _st.Minutes = minutes;

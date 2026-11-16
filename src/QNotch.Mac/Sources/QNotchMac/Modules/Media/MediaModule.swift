@@ -196,7 +196,7 @@ final class MediaModule: NotchModule {
     func next() { Analytics.record("media", "next"); if let session = current { run(session.source, "next track") } }
     func previous() { Analytics.record("media", "previous"); if let session = current { run(session.source, "previous track") } }
 
-    func seek(to seconds: Double) { Analytics.record("media", "seek");
+    func seek(to seconds: Double) { Analytics.recordGesture("media", "seek") // the seek bar reports every drag step
         guard let session = current else { return }
         sessions[session.source]?.position = seconds
         sessions[session.source]?.positionAt = Date()

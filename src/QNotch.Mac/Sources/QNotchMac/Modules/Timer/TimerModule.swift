@@ -82,7 +82,7 @@ final class TimerModule: NotchModule {
 
     func toggle() { Analytics.record("pomodoro", countdown.isRunning ? "pause" : "start"); completionUnseen = false; countdown.toggle(at: Date()); refresh(animated: true) }
     func reset() { Analytics.record("pomodoro", "reset"); completionUnseen = false; countdown.reset(); refresh(animated: true) }
-    func choose(minutes: Int) { Analytics.record("pomodoro", "set_duration");
+    func choose(minutes: Int) { Analytics.recordGesture("pomodoro", "set_duration") // a wheel spin is one choice
         preferences.minutes = min(180, max(1, minutes))
         completionUnseen = false
         countdown.reset(duration: TimeInterval(preferences.minutes * 60))

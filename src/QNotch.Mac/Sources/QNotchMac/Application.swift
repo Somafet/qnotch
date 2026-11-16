@@ -109,6 +109,7 @@ private final class ApplicationDelegate: NSObject, NSApplicationDelegate, NSMenu
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        Analytics.exited()
         Analytics.client?.flush()
         menuBar?.removeStatusItem()
         consumer?.close(); consumer = nil

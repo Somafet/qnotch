@@ -60,7 +60,7 @@ public sealed class VolumeModule : INotchModule, ICadenceAware
     {
         level = Math.Clamp(Math.Round(level), 0, 100);
         if (level == _st.Level) return;
-        QNotch.Core.Analytics.Track("volume", "set_volume", "ui");
+        QNotch.Core.Analytics.TrackGesture("volume", "set_volume"); // one per drag, wheel spin or key run, not per step
         _st.Level = level;
         _com.SetLevel((float)(level / 100));
         if (_st.Muted && level > 0) SetMute(false);

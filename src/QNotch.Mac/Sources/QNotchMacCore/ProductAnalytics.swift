@@ -4,7 +4,7 @@ import CryptoKit
 /// Fixed command catalog: no API accepts arbitrary event properties or user content.
 public enum AnalyticsCatalog {
     public static let actions: [String: Set<String>] = [
-        "shell": ["open_panel", "close_panel", "select_tab", "open_settings", "quit", "restart", "toggle_pin", "toggle_edit", "game_mode", "move_notch", "resize_card", "reorder_cards", "reorder_tabs", "check_updates"],
+        "shell": ["open_panel", "close_panel", "select_tab", "open_settings", "quit", "restart", "toggle_pin", "toggle_edit", "game_mode", "move_notch", "resize_card", "reorder_cards", "reorder_tabs", "check_updates", "show_drop_screen"],
         "onboarding": ["next", "back", "skip", "finish", "change_feature", "change_login"],
         "settings": ["change_feature", "change", "setup_export", "setup_check", "setup_apply", "choose_photo", "remove_photo", "open_login_items", "choose_sound", "preview_sound"],
         "pomodoro": ["start", "pause", "reset", "set_duration"],
@@ -23,10 +23,52 @@ public enum AnalyticsCatalog {
         "color_picker": ["pick", "copy"],
         "terminal": ["copy", "paste", "submit"]
     ]
-    public static let targets: Set<String> = ["notifications_http_port","agents_show_cost", "agents_sound_done", "agents_sound_needs_you", "ai_claude", "ai_codex", "ai_refresh_minutes", "notifications_http_enabled", "notifications_open_on_error", "notifications_quiet_during_calls", "notifications_retention_days", "notifications_sound", "notifications_toast_seconds", "stats_battery", "stats_clock", "stats_cpu", "stats_gpu", "stats_memory", "stats_network", "weather_show_in_pill", "weather_units", "home", "media", "clipboard", "ai", "agents", "notes", "files", "notifications", "scheduled", "search", "terminal", "pomodoro", "color_picker", "stats", "capture", "weather", "display", "menu_bar_icon", "hover_delay", "close_delay", "hover_opens_segment", "pinned", "accent", "reduce_motion", "profile_name", "profile_photo", "card_visibility", "tab_visibility", "notch_visibility", "hotkey", "sound", "login", "beta_updates", "automatic_updates", "automatic_install", "game_mode", "game_auto_detect", "game_any_fullscreen", "game_opacity", "game_segment", "game_always", "game_never", "timer_sound", "timer_open_when_done", "clipboard_history", "telemetry"]
+    public static let targets: Set<String> = ["notifications_http_port","agents_show_cost", "agents_sound_done", "agents_sound_needs_you", "ai_claude", "ai_codex", "ai_refresh_minutes", "notifications_http_enabled", "notifications_open_on_error", "notifications_quiet_during_calls", "notifications_retention_days", "notifications_sound", "notifications_toast_seconds", "stats_battery", "stats_clock", "stats_cpu", "stats_gpu", "stats_memory", "stats_network", "weather_show_in_pill", "weather_units", "home", "media", "clipboard", "ai", "agents", "notes", "files", "notifications", "scheduled", "search", "terminal", "pomodoro", "color_picker", "stats", "capture", "weather", "display", "menu_bar_icon", "hover_delay", "close_delay", "hover_opens_segment", "pinned", "accent", "reduce_motion", "profile_name", "profile_photo", "card_visibility", "tab_visibility", "notch_visibility", "hotkey", "sound", "login", "beta_updates", "automatic_updates", "automatic_install", "game_mode", "game_auto_detect", "game_any_fullscreen", "game_opacity", "game_segment", "game_always", "game_never", "timer_sound", "timer_open_when_done", "clipboard_history", "telemetry", "taildrop", "volume"]
     public static let surfaces: Set<String> = ["ui", "hotkey", "cli", "tray", "onboarding"]
     public static func accepts(module: String, action: String, surface: String) -> Bool {
         actions[module]?.contains(action) == true && surfaces.contains(surface)
+    }
+    /// qnotch_active, the lifecycle event (spec/analytics.md): fixed reasons, exits and Mac channels.
+    public static let lifecycleReasons: Set<String> = ["launch", "day"]
+    public static let previousExits: Set<String> = ["clean", "unclean", "none"]
+    public static let channels: Set<String> = ["direct", "source"]
+    /// Native module ids as catalog targets, sorted; unknown ids are dropped.
+    public static func moduleTargets(_ ids: [String]) -> [String] {
+        let canonical = ["timer": "pomodoro", "filetray": "files", "note": "notes", "colorpicker": "color_picker"]
+        return Array(Set(ids.map { canonical[$0] ?? $0 }).filter(targets.contains)).sorted()
+    }
+}
+
+/// Continuous controls (slider drags, wheel spins, arrow-key runs) count once per gesture: calls closer
+/// together than `gap` seconds belong to the same one.
+public struct AnalyticsGestures {
+    public static let gap: TimeInterval = 1.5
+    private var last: [String: TimeInterval] = [:]
+    public init() {}
+    public mutating func starts(_ key: String, at now: TimeInterval) -> Bool {
+        defer { last[key] = now }
+        guard let previous = last[key] else { return true }
+        return now - previous >= Self.gap
+    }
+}
+
+/// How the previous run ended, from a one-word local marker: written "running" at launch and
+/// "exited" on a normal quit. Only the fixed result is sent.
+public enum AnalyticsRunState {
+    public static func previousExit(at url: URL) -> String {
+        guard let text = try? String(contentsOf: url, encoding: .utf8) else { return "none" }
+        switch text.trimmingCharacters(in: .whitespacesAndNewlines) {
+        case "running": return "unclean"
+        case "exited": return "clean"
+        default: return "none"
+        }
+    }
+    @discardableResult public static func mark(_ url: URL, _ state: String) -> Bool {
+        do {
+            try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try Data(state.utf8).write(to: url, options: .atomic)
+            return true
+        } catch { return false }
     }
 }
 
@@ -86,7 +128,11 @@ public final class ProductAnalytics {
     private let version: String
     private var identity: AnalyticsIdentity?
     private var resolving = false
-    private var waiting: [(String, String, String, String?, Bool?)] = []
+    private enum Staged {
+        case action(module: String, action: String, surface: String, target: String?, enabled: Bool?)
+        case lifecycle(reason: String, channel: String, modules: [String], previousExit: String?)
+    }
+    private var waiting: [Staged] = []
     private var flushRequested = false
     private var pending: [Pending] = []
     private var timer: Timer?
@@ -112,9 +158,18 @@ public final class ProductAnalytics {
     public func capture(module: String, action: String, surface: String = "ui", target: String? = nil, enabled: Bool? = nil) {
         guard self.enabled, configuration.endpoint != nil, AnalyticsCatalog.accepts(module: module, action: action, surface: surface) else { return }
         if let target, !AnalyticsCatalog.targets.contains(target) { return }
+        stage(.action(module: module, action: action, surface: surface, target: target, enabled: enabled))
+    }
+    /// One qnotch_active event: a launch (with previousExit) or a new UTC day while running.
+    public func lifecycle(reason: String, channel: String, modules: [String], previousExit: String? = nil) {
+        guard enabled, configuration.endpoint != nil, AnalyticsCatalog.lifecycleReasons.contains(reason),
+              AnalyticsCatalog.channels.contains(channel), previousExit.map(AnalyticsCatalog.previousExits.contains) ?? true else { return }
+        stage(.lifecycle(reason: reason, channel: channel, modules: AnalyticsCatalog.moduleTargets(modules), previousExit: previousExit))
+    }
+    private func stage(_ staged: Staged) {
         guard let identity else {
             if waiting.count == 1000 { waiting.removeFirst() }
-            waiting.append((module, action, surface, target, enabled))
+            waiting.append(staged)
             if !resolving {
                 resolving = true
                 let current = generation, provider = identityProvider
@@ -125,7 +180,7 @@ public final class ProductAnalytics {
                         self.resolving = false; self.identity = resolved
                         let actions = self.waiting; self.waiting.removeAll()
                         guard resolved != nil else { self.flushRequested = false; return }
-                        for (module, action, surface, target, enabled) in actions { self.capture(module: module, action: action, surface: surface, target: target, enabled: enabled) }
+                        for staged in actions { self.stage(staged) }
                         if self.flushRequested { self.flushRequested = false; self.flush() }
                     }
                 }
@@ -136,11 +191,20 @@ public final class ProductAnalytics {
               identity.installID.range(of: "^[0-9a-f]{64}$", options: .regularExpression) != nil,
               ["codex", "claude", "anonymous"].contains(identity.source) else { return }
         var properties: [String: Any] = ["install_id": identity.installID, "identity_source": identity.source,
-                "schema_version": 1, "platform": "macos", "app_version": version,
-                "module": module, "action": action, "surface": surface, "outcome": "requested", "$process_person_profile": false]
-        if let target { properties["target"] = target }
-        if let enabled { properties["enabled"] = enabled }
-        let event: [String: Any] = ["event": "qnotch_action", "uuid": UUID().uuidString.lowercased(),
+                "schema_version": 1, "platform": "macos", "app_version": version, "$process_person_profile": false]
+        let name: String
+        switch staged {
+        case let .action(module, action, surface, target, enabled):
+            name = "qnotch_action"
+            properties["module"] = module; properties["action"] = action; properties["surface"] = surface; properties["outcome"] = "requested"
+            if let target { properties["target"] = target }
+            if let enabled { properties["enabled"] = enabled }
+        case let .lifecycle(reason, channel, modules, previousExit):
+            name = "qnotch_active"
+            properties["reason"] = reason; properties["channel"] = channel; properties["modules"] = modules
+            if let previousExit { properties["previous_exit"] = previousExit }
+        }
+        let event: [String: Any] = ["event": name, "uuid": UUID().uuidString.lowercased(),
             "distinct_id": identity.distinctID, "timestamp": ISO8601DateFormatter().string(from: Date()), "properties": properties]
         if pending.count == 1000 { pending.removeFirst() }
         pending.append(Pending(event: event, created: Date(), attempts: 0))

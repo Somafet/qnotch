@@ -185,4 +185,72 @@ final class AnalyticsTests: XCTestCase {
         XCTAssertEqual(ids.first, ids.last)
     }
 
+    func testLifecycleMatchesSharedContractAndCarriesOnlyFixedValues() throws {
+        let lifecycle = try XCTUnwrap(try fixture("catalog-v1.json")["lifecycle"] as? [String: Any])
+        XCTAssertEqual(lifecycle["event"] as? String, "qnotch_active")
+        XCTAssertEqual(Set(lifecycle["reasons"] as? [String] ?? []), AnalyticsCatalog.lifecycleReasons)
+        XCTAssertEqual(Set(lifecycle["previous_exit"] as? [String] ?? []), AnalyticsCatalog.previousExits)
+        XCTAssertEqual(Set((lifecycle["channels"] as? [String: [String]])?["macos"] ?? []), AnalyticsCatalog.channels)
+        XCTAssertEqual(AnalyticsCatalog.moduleTargets(["timer", "stats", "note", "private window title", "stats"]), ["notes", "pomodoro", "stats"])
+
+        let sent = expectation(description: "lifecycle batch")
+        let config = URLSessionConfiguration.ephemeral; config.protocolClasses = [AnalyticsURLProtocol.self]
+        var captured: [String: Any]?
+        AnalyticsURLProtocol.status = 200
+        AnalyticsURLProtocol.received = { request in
+            var data = request.httpBody ?? Data()
+            if let stream = request.httpBodyStream {
+                stream.open(); defer { stream.close() }
+                var buffer = [UInt8](repeating: 0, count: 4096)
+                while stream.hasBytesAvailable {
+                    let count = stream.read(&buffer, maxLength: buffer.count)
+                    if count <= 0 { break }; data.append(contentsOf: buffer.prefix(count))
+                }
+            }
+            captured = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
+            sent.fulfill()
+        }
+        defer { AnalyticsURLProtocol.received = nil }
+        let client = ProductAnalytics(configuration: .init(key: "synthetic"), enabled: true, version: "test", session: URLSession(configuration: config)) {
+            AnalyticsIdentity(distinctID: String(repeating: "a", count: 64), installID: String(repeating: "b", count: 64), source: "anonymous")
+        }
+        client.lifecycle(reason: "launch", channel: "direct", modules: ["timer", "stats"], previousExit: "unclean")
+        client.lifecycle(reason: "launch", channel: "unlisted channel", modules: [])
+        client.lifecycle(reason: "reboot", channel: "direct", modules: [])
+        client.lifecycle(reason: "day", channel: "direct", modules: [], previousExit: "crashed")
+        XCTAssertEqual(client.bufferedCount, 1)
+        client.flush()
+        wait(for: [sent], timeout: 2)
+        let event = try XCTUnwrap((captured?["batch"] as? [[String: Any]])?.first)
+        XCTAssertEqual(event["event"] as? String, "qnotch_active")
+        let properties = try XCTUnwrap(event["properties"] as? [String: Any])
+        XCTAssertEqual(Set(properties.keys), ["install_id", "identity_source", "schema_version", "platform", "app_version", "$process_person_profile", "reason", "channel", "modules", "previous_exit"])
+        XCTAssertEqual(properties["reason"] as? String, "launch")
+        XCTAssertEqual(properties["channel"] as? String, "direct")
+        XCTAssertEqual(properties["modules"] as? [String], ["pomodoro", "stats"])
+        XCTAssertEqual(properties["previous_exit"] as? String, "unclean")
+        XCTAssertEqual(properties["$process_person_profile"] as? Bool, false)
+        client.setEnabled(false)
+        client.lifecycle(reason: "day", channel: "direct", modules: [])
+        XCTAssertEqual(client.bufferedCount, 0)
+    }
+
+    func testGesturesCoalesceAndRunStateReportsPreviousExit() throws {
+        var gestures = AnalyticsGestures()
+        XCTAssertTrue(gestures.starts("volume/set_volume", at: 10))
+        XCTAssertFalse(gestures.starts("volume/set_volume", at: 11))
+        XCTAssertFalse(gestures.starts("volume/set_volume", at: 12.4))
+        XCTAssertTrue(gestures.starts("volume/set_volume", at: 13.9))
+        XCTAssertTrue(gestures.starts("media/seek", at: 13.9))
+
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let file = directory.appendingPathComponent("analytics-run-state")
+        XCTAssertEqual(AnalyticsRunState.previousExit(at: file), "none")
+        XCTAssertTrue(AnalyticsRunState.mark(file, "running"))
+        XCTAssertEqual(AnalyticsRunState.previousExit(at: file), "unclean")
+        XCTAssertTrue(AnalyticsRunState.mark(file, "exited"))
+        XCTAssertEqual(AnalyticsRunState.previousExit(at: file), "clean")
+    }
+
 }

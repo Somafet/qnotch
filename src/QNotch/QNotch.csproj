@@ -53,6 +53,8 @@
   <Target Name="UpdateBuildMetadata" BeforeTargets="GetAssemblyAttributes">
     <ItemGroup>
       <AssemblyMetadata Include="QNotchSelfContained" Value="$(SelfContained)" />
+      <!-- Tag builds on GitHub Actions are the released ones; analytics reports every other build as the source channel. -->
+      <AssemblyMetadata Include="QNotchReleaseBuild" Value="true" Condition="'$(GITHUB_ACTIONS)' == 'true' and '$(GITHUB_REF_TYPE)' == 'tag'" />
     </ItemGroup>
   </Target>
   <!-- What was built, for performance.json (the measure mode): the commit and whether tracked files had changes. Left out without git. -->

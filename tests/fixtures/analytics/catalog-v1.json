@@ -176,6 +176,7 @@
       "resize_card",
       "restart",
       "select_tab",
+      "show_drop_screen",
       "toggle_edit",
       "toggle_pin"
     ],
@@ -272,13 +273,42 @@
     "stats_memory",
     "stats_network",
     "tab_visibility",
+    "taildrop",
     "telemetry",
     "terminal",
     "theme",
     "timer_open_when_done",
     "timer_sound",
+    "volume",
     "weather",
     "weather_show_in_pill",
     "weather_units"
-  ]
+  ],
+  "lifecycle": {
+    "event": "qnotch_active",
+    "reasons": [
+      "launch",
+      "day"
+    ],
+    "previous_exit": [
+      "clean",
+      "unclean",
+      "none"
+    ],
+    "channels": {
+      "windows": [
+        "store",
+        "winget",
+        "scoop",
+        "chocolatey",
+        "zip",
+        "exe",
+        "source"
+      ],
+      "macos": [
+        "direct",
+        "source"
+      ]
+    }
+  }
 }

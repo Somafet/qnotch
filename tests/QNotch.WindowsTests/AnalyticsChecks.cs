@@ -146,5 +146,90 @@ internal static class AnalyticsChecks
         using var vectors = JsonDocument.Parse(File.ReadAllText(Path.Combine(fixtures, "identity-v1.json")));
         foreach (var vector in vectors.RootElement.GetProperty("vectors").EnumerateArray())
             Check(Analytics.Hash(vector.GetProperty("raw").GetString()!) == vector.GetProperty("sha256").GetString());
+        var targets = catalog.RootElement.GetProperty("targets").EnumerateArray().Select(t => t.GetString()!).ToHashSet();
+        Check(targets.SetEquals(AnalyticsCatalog.Targets));
+        var lifecycle = catalog.RootElement.GetProperty("lifecycle");
+        Check(lifecycle.GetProperty("event").GetString() == "qnotch_active");
+        Check(new[] { "launch", "day" }.SequenceEqual(lifecycle.GetProperty("reasons").EnumerateArray().Select(r => r.GetString())));
+        Check(new[] { "clean", "unclean", "none" }.SequenceEqual(lifecycle.GetProperty("previous_exit").EnumerateArray().Select(r => r.GetString())));
+
+        // Channels: fixed values only, and every Windows value is reachable.
+        var channels = new[] {
+            Analytics.Channel(true, true, true, @"C:\Program Files\WindowsApps\Somafet.QNotch_0.9.2.0_x64__x\QNotch.exe"),
+            Analytics.Channel(false, true, true, @"C:\Users\x\AppData\Local\Microsoft\WinGet\Packages\Somafet.QNotch_Microsoft.Winget.Source_8wekyb3d8bbwe\QNotch.exe"),
+            Analytics.Channel(false, true, true, @"C:\Users\x\scoop\apps\qnotch\current\QNotch.exe"),
+            Analytics.Channel(false, true, true, @"C:\ProgramData\chocolatey\lib\qnotch\tools\QNotch.exe"),
+            Analytics.Channel(false, true, true, @"D:\Tools\QNotch\QNotch.exe"),
+            Analytics.Channel(false, true, false, @"C:\Users\x\Downloads\QNotch.exe"),
+            Analytics.Channel(false, false, true, @"C:\ProgramData\chocolatey\lib\qnotch\tools\QNotch.exe") };
+        Check(channels.SequenceEqual(lifecycle.GetProperty("channels").GetProperty("windows").EnumerateArray().Select(c => c.GetString())));
+        Check(Analytics.Channel(false, true, false, null) == "exe");
+
+        // Continuous controls: one action per gesture, a new one after a pause of at least Gestures.Gap.
+        Check(Analytics.Gestures.Starts("test/slider", 10_000) && !Analytics.Gestures.Starts("test/slider", 11_000)
+            && !Analytics.Gestures.Starts("test/slider", 12_400) && Analytics.Gestures.Starts("test/slider", 13_900)
+            && Analytics.Gestures.Starts("test/other", 13_900));
+
+        // Agent hooks: one cli_hook per session.
+        var agents = new QNotch.Modules.Agents.AgentsModule();
+        Check(agents.FirstHook("session-a") && !agents.FirstHook("session-a") && agents.FirstHook("session-b"));
+
+        await LifecycleAsync();
+    }
+
+    static async Task LifecycleAsync()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "qnotch-analytics-life-" + Guid.NewGuid());
+        var state = Path.Combine(root, "analytics-run-state");
+        var now = new DateTimeOffset(2026, 11, 16, 23, 59, 0, TimeSpan.Zero);
+        var enabled = true;
+        Analytics Create(Transport transport) => new("phc_test", new Uri("https://example.invalid/batch/"), () => enabled,
+            () => (Analytics.Hash("synthetic-account"), Analytics.Hash("synthetic-install"), "anonymous"), new HttpClient(transport), false, () => now);
+        static JsonElement[] Events(Transport transport) => transport.Bodies.SelectMany(b => JsonDocument.Parse(b).RootElement.GetProperty("batch").EnumerateArray()).ToArray();
+        try
+        {
+            var first = new Transport();
+            using (var life = Create(first))
+            {
+                life.Heartbeat();
+                Check(life.Buffered == 0); // no day event before the launch
+                life.Launched(["timer", "stats", "note", "not-a-module", "stats"], "zip", state);
+                Check(File.ReadAllText(state) == "running");
+                life.Heartbeat();
+                Check(life.Buffered == 1); // same UTC day as the launch
+                now = now.AddMinutes(2);
+                life.Heartbeat(); life.Heartbeat();
+                Check(life.Buffered == 2); // one day event per new UTC day
+                await life.FlushAsync();
+            }
+            Check(File.ReadAllText(state) == "exited");
+            var events = Events(first);
+            Check(events.Length == 2 && events.All(e => e.GetProperty("event").GetString() == "qnotch_active"));
+            var launch = events[0].GetProperty("properties");
+            Check(launch.EnumerateObject().Select(p => p.Name).Order().SequenceEqual(new[] {
+                "$process_person_profile", "app_version", "channel", "identity_source", "install_id", "modules", "platform", "previous_exit", "reason", "schema_version" }.Order()));
+            Check(launch.GetProperty("reason").GetString() == "launch" && launch.GetProperty("previous_exit").GetString() == "none" && launch.GetProperty("channel").GetString() == "zip");
+            Check(launch.GetProperty("modules").EnumerateArray().Select(m => m.GetString()).SequenceEqual(new[] { "notes", "pomodoro", "stats" }));
+            Check(!launch.GetProperty("$process_person_profile").GetBoolean());
+            var day = events[1].GetProperty("properties");
+            Check(day.GetProperty("reason").GetString() == "day" && !day.TryGetProperty("previous_exit", out _));
+
+            string PreviousExit()
+            {
+                var transport = new Transport();
+                using (var life = Create(transport)) { life.Launched(["stats"], "exe", state); life.FlushAsync().GetAwaiter().GetResult(); }
+                return Events(transport).Single().GetProperty("properties").GetProperty("previous_exit").GetString()!;
+            }
+            Check(PreviousExit() == "clean");
+            File.WriteAllText(state, "running"); // the last run never reached its exit
+            Check(PreviousExit() == "unclean");
+
+            enabled = false;
+            File.Delete(state);
+            var off = new Transport();
+            using (var life = Create(off)) { life.Launched(["stats"], "exe", state); life.Heartbeat(); Check(life.Buffered == 0); }
+            Check(!File.Exists(state) && off.Bodies.Count == 0); // opted out: no marker, nothing sent
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
     }
 }

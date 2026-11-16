@@ -39,7 +39,7 @@ internal sealed class Analytics : IDisposable
     {
         _key = key; _endpoint = endpoint; _enabled = enabled; _identity = identity; _http = http;
         _clock = clock ?? (() => DateTimeOffset.UtcNow);
-        if (background) _timer = new Timer(_ => { _ = FlushAsync(); }, null, 10000, 10000);
+        if (background) _timer = new Timer(_ => { Heartbeat(); _ = FlushAsync(); }, null, 10000, 10000);
     }
 
     internal static bool EnvironmentAllows => !string.Equals(Environment.GetEnvironmentVariable("QNOTCH_TELEMETRY_ENABLED"), "false", StringComparison.OrdinalIgnoreCase);
@@ -99,26 +99,139 @@ internal sealed class Analytics : IDisposable
     }
 
     internal static void Track(string module, string action, string surface = "ui", string? target = null, bool? enabled = null) => Current?.Record(module, action, ActionSurface.Value ?? surface, target, enabled);
+
+    /// <summary>Tracks a continuous control (slider drag, wheel, arrow keys) once per gesture: a burst of calls with gaps under
+    /// <see cref="Gestures.Gap"/> counts as one action.</summary>
+    internal static void TrackGesture(string module, string action, string surface = "ui")
+    { if (Gestures.Starts(module + "/" + action, Environment.TickCount64)) Track(module, action, surface); }
+
+    internal static class Gestures
+    {
+        internal const long Gap = 1500;
+        static readonly Dictionary<string, long> Last = new();
+        internal static bool Starts(string key, long now)
+        {
+            lock (Last)
+            {
+                var starts = !Last.TryGetValue(key, out var last) || now - last >= Gap;
+                Last[key] = now;
+                return starts;
+            }
+        }
+    }
+
+    static string? Canonical(string? id) => id switch { "timer" => "pomodoro", "note" => "notes", "filetray" => "files", "colorpicker" => "color_picker", _ => id };
+
     internal void Record(string module, string action, string surface = "ui", string? target = null, bool? enabled = null)
     {
         lock (_gate)
         {
             if (_disposed || !_enabled()) { _queue.Clear(); _failed = []; return; }
             if (!AnalyticsCatalog.Allows(module, action) || surface is not ("ui" or "hotkey" or "cli" or "tray" or "onboarding")) return;
-            target = target switch { "timer" => "pomodoro", "note" => "notes", "filetray" => "files", "colorpicker" => "color_picker", _ => target };
+            target = Canonical(target);
             if (target is not null && !AnalyticsCatalog.Targets.Contains(target)) return;
-            try { _ids ??= _identity(); } catch { return; }
-            var ids = _ids.Value;
-            var properties = new Dictionary<string, object> {
-                ["schema_version"] = 1, ["platform"] = "windows", ["app_version"] = typeof(Analytics).Assembly.GetName().Version?.ToString(3) ?? "0.0.0",
-                ["module"] = module, ["action"] = action, ["surface"] = surface, ["outcome"] = "requested",
-                ["install_id"] = ids.Install, ["identity_source"] = ids.Source, ["$process_person_profile"] = false };
+            if (Identity() is not { } ids) return;
+            var properties = Common(ids);
+            properties["module"] = module; properties["action"] = action; properties["surface"] = surface; properties["outcome"] = "requested";
             if (target is not null) properties["target"] = target;
             if (enabled is not null) properties["enabled"] = enabled.Value;
-            while (_queue.Count + Math.Max(_failed.Length, _sending) >= 1000 && _queue.Count > 0) _queue.Dequeue();
-            if (_queue.Count + Math.Max(_failed.Length, _sending) >= 1000) return;
-            _queue.Enqueue(new(Guid.NewGuid().ToString(), "qnotch_action", ids.Distinct, properties, _clock().ToString("O")));
+            Enqueue("qnotch_action", ids.Distinct, properties);
         }
+    }
+
+    // ---------- lifecycle: qnotch_active, once per launch and once per UTC day while running (spec/analytics.md) ----------
+
+    string[]? _modules;
+    string _channel = "source";
+    DateOnly _activeDay;
+    string? _runState;
+
+    /// <summary>Called once per normal start, off the UI thread, with the module ids this start runs.</summary>
+    internal void Launched(IEnumerable<string> moduleIds, string channel, string runStatePath)
+    {
+        lock (_gate)
+        {
+            _modules = moduleIds.Select(Canonical).OfType<string>().Where(AnalyticsCatalog.Targets.Contains).Distinct().Order(StringComparer.Ordinal).ToArray();
+            _channel = channel;
+            if (_disposed || !_enabled()) return;
+            string previous;
+            try { previous = File.ReadAllText(runStatePath).Trim() switch { "running" => "unclean", "exited" => "clean", _ => "none" }; }
+            catch { previous = "none"; }
+            try { WriteRunState(runStatePath, "running"); _runState = runStatePath; } catch { /* the next start reports none */ }
+            Lifecycle("launch", previous);
+        }
+    }
+
+    /// <summary>Marks a clean exit for the next start's previous_exit. Only after <see cref="Launched"/> wrote the running marker.</summary>
+    internal void Exited()
+    {
+        lock (_gate)
+        {
+            if (_runState is null) return;
+            try { WriteRunState(_runState, "exited"); } catch { }
+            _runState = null;
+        }
+    }
+
+    /// <summary>Records the day event when the UTC date has moved on since the last qnotch_active. Runs on the delivery timer.</summary>
+    internal void Heartbeat()
+    {
+        lock (_gate) { if (_modules is not null && DateOnly.FromDateTime(_clock().UtcDateTime) != _activeDay) Lifecycle("day", null); }
+    }
+
+    void Lifecycle(string reason, string? previousExit)
+    {
+        if (_disposed || !_enabled()) { _queue.Clear(); _failed = []; return; }
+        if (_modules is null || Identity() is not { } ids) return;
+        var properties = Common(ids);
+        properties["reason"] = reason; properties["channel"] = _channel; properties["modules"] = _modules;
+        if (previousExit is not null) properties["previous_exit"] = previousExit;
+        _activeDay = DateOnly.FromDateTime(_clock().UtcDateTime);
+        Enqueue("qnotch_active", ids.Distinct, properties);
+    }
+
+    static void WriteRunState(string path, string state)
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        var temp = path + "." + Guid.NewGuid().ToString("N");
+        File.WriteAllText(temp, state);
+        File.Move(temp, path, true);
+    }
+
+    /// <summary>The install channel as a fixed value. Package-manager folders are matched locally; no path is sent.</summary>
+    internal static string Channel(bool packaged, bool release, bool selfContained, string? exePath)
+    {
+        if (packaged) return "store";
+        if (!release) return "source";
+        var path = (exePath ?? "").Replace('/', '\\');
+        if (path.Contains(@"\chocolatey\lib\", StringComparison.OrdinalIgnoreCase)) return "chocolatey";
+        if (path.Contains(@"\Microsoft\WinGet\", StringComparison.OrdinalIgnoreCase)) return "winget";
+        if (path.Contains(@"\scoop\apps\", StringComparison.OrdinalIgnoreCase)) return "scoop";
+        return selfContained ? "zip" : "exe";
+    }
+
+    internal static string CurrentChannel()
+    {
+        var metadata = typeof(Analytics).Assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyMetadataAttribute), false)
+            .Cast<System.Reflection.AssemblyMetadataAttribute>().ToList();
+        bool Flag(string key) => metadata.Any(a => a.Key == key && string.Equals(a.Value, "true", StringComparison.OrdinalIgnoreCase));
+        return Channel(AppPackage.IsPackaged, Flag("QNotchReleaseBuild"), Flag("QNotchSelfContained"), Environment.ProcessPath);
+    }
+
+    (string Distinct, string Install, string Source)? Identity()
+    {
+        try { return _ids ??= _identity(); } catch { return null; }
+    }
+
+    static Dictionary<string, object> Common((string Distinct, string Install, string Source) ids) => new() {
+        ["schema_version"] = 1, ["platform"] = "windows", ["app_version"] = typeof(Analytics).Assembly.GetName().Version?.ToString(3) ?? "0.0.0",
+        ["install_id"] = ids.Install, ["identity_source"] = ids.Source, ["$process_person_profile"] = false };
+
+    void Enqueue(string name, string distinct, Dictionary<string, object> properties)
+    {
+        while (_queue.Count + Math.Max(_failed.Length, _sending) >= 1000 && _queue.Count > 0) _queue.Dequeue();
+        if (_queue.Count + Math.Max(_failed.Length, _sending) >= 1000) return;
+        _queue.Enqueue(new(Guid.NewGuid().ToString(), name, distinct, properties, _clock().ToString("O")));
     }
 
     internal void Clear() { lock (_gate) { _generation++; _queue.Clear(); _failed = []; _failures = 0; _retryAt = default; _inflight?.Cancel(); } }
@@ -176,6 +289,7 @@ internal sealed class Analytics : IDisposable
     public void Dispose()
     {
         _timer?.Dispose();
+        Exited();
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         try { FlushAsync(timeout.Token, true).GetAwaiter().GetResult(); } catch { }
         lock (_gate) { _disposed = true; Clear(); }

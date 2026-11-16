@@ -151,8 +151,10 @@ final class GithubSignInView: NSStackView {
         }
     }
 
-    func cancel() { Analytics.record("github", "cancel_connect");
+    /// Also runs when the view leaves its window or the window closes, so only a sign-in in progress counts as a cancel.
+    func cancel() {
         guard isBusy else { return }
+        Analytics.record("github", "cancel_connect")
         stop()
         state = .idle
     }
