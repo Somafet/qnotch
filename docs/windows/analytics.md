@@ -4,7 +4,9 @@
 
 `Core/Analytics.cs` owns explicit native HTTP delivery. `Core/AnalyticsCatalog.cs` rejects noncatalog actions and targets. `analytics-config.json` is embedded by the existing project and both publish profiles, preserving the single-executable package. It contains the supplied QNotch public project token and EU Cloud host. Environment overrides are documented in the shared contract.
 
-General settings stores `ShareUsageData` locally with a default of true. Environment opt-out overrides the control, and setup codes exclude the preference. Identity is read lazily only after a valid configured, enabled action. Diagnostics return before analytics initialization.
+General settings stores `ShareUsageData` locally with a default of true. Environment opt-out overrides the control, and setup codes exclude the preference. Identity is read lazily with the first recorded event, normally the launch's `qnotch_active`. Diagnostics return before analytics initialization.
+
+`qnotch_active` ([shared contract](../../spec/analytics.md#lifecycle-event)) is recorded off the UI thread at the end of a normal `App.Boot`, with the module ids that start runs. The delivery timer's 10-second tick records the day event when the UTC date changes. `Analytics.Dispose` (from `OnExit`) writes `exited` to `analytics-run-state`. The channel comes from `AppPackage.IsPackaged`, the `QNotchReleaseBuild` and `QNotchSelfContained` assembly metadata and the executable's folder. `QNotch.csproj` sets `QNotchReleaseBuild` only for tag builds on GitHub Actions, so the release workflow needs no extra argument.
 
 Run `dotnet run --project tests/QNotch.WindowsTests -c Release` for synthetic transport/privacy/identity/consent/queue/retry and shared-fixture checks. No real PostHog request is made. Other required Windows regressions and snapshot/smoke checks remain in [development.md](development.md). The emitted source-site inventory is an audit aid and must be updated when action sites change.
 

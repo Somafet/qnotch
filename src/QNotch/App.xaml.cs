@@ -221,6 +221,12 @@ public partial class App : Application
         }
         catch (Exception ex) { Log.Error("Consumer service failed to start", ex); }
         updates.Start();
+        // One qnotch_active per start (spec/analytics.md): the configured modules, the install channel and how the last run ended.
+        if (Analytics.Current is { } analytics)
+        {
+            var launched = enabled.Select(i => i.Id).ToArray();
+            Task.Run(() => analytics.Launched(launched, Analytics.CurrentChannel(), Path.Combine(Paths.DataDir, "analytics-run-state")));
+        }
         if (updates.State.NeedsPreferenceChoice)
         {
             var promptPending = true;

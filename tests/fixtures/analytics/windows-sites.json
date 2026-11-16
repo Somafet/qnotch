@@ -1,25 +1,25 @@
 [
   {
     "file": "src/QNotch/Modules/Agents/AgentsModule.cs",
-    "line": 198,
+    "line": 205,
     "module": "agents",
     "action": "show"
   },
   {
     "file": "src/QNotch/Modules/Agents/AgentsModule.cs",
-    "line": 215,
+    "line": 222,
     "module": "agents",
     "action": "dismiss"
   },
   {
     "file": "src/QNotch/Modules/Agents/AgentsModule.cs",
-    "line": 227,
+    "line": 234,
     "module": "agents",
     "action": "stop_process"
   },
   {
     "file": "src/QNotch/Modules/Agents/AgentsModule.cs",
-    "line": 302,
+    "line": 311,
     "module": "agents",
     "action": "cli_hook"
   },
@@ -55,43 +55,43 @@
   },
   {
     "file": "src/QNotch/Modules/Ai/AiModule.cs",
-    "line": 43,
+    "line": 45,
     "module": "ai",
     "action": "refresh"
   },
   {
     "file": "src/QNotch/Modules/Ai/AiModule.cs",
-    "line": 45,
+    "line": 47,
     "module": "ai",
     "action": "scan"
   },
   {
     "file": "src/QNotch/Modules/Ai/AiModule.cs",
-    "line": 112,
+    "line": 114,
     "module": "ai",
     "action": "rename_account"
   },
   {
     "file": "src/QNotch/Modules/Ai/AiModule.cs",
-    "line": 139,
+    "line": 141,
     "module": "ai",
     "action": "set_slot"
   },
   {
     "file": "src/QNotch/Modules/Ai/AiModule.cs",
-    "line": 170,
+    "line": 172,
     "module": "ai",
     "action": "remove_app"
   },
   {
     "file": "src/QNotch/Modules/Ai/AiModule.cs",
-    "line": 264,
+    "line": 266,
     "module": "ai",
     "action": "launch"
   },
   {
     "file": "src/QNotch/Modules/Ai/AiModule.cs",
-    "line": 291,
+    "line": 293,
     "module": "ai",
     "action": "select_account"
   },
@@ -523,19 +523,19 @@
   },
   {
     "file": "src/QNotch/Modules/Terminal/TerminalSurface.cs",
-    "line": 59,
+    "line": 66,
     "module": "terminal",
     "action": "copy"
   },
   {
     "file": "src/QNotch/Modules/Terminal/TerminalSurface.cs",
-    "line": 68,
+    "line": 75,
     "module": "terminal",
     "action": "paste"
   },
   {
     "file": "src/QNotch/Modules/Terminal/TerminalSurface.cs",
-    "line": 88,
+    "line": 95,
     "module": "terminal",
     "action": "submit"
   },
@@ -691,13 +691,13 @@
   },
   {
     "file": "src/QNotch/Shell/NotchWindow.xaml.cs",
-    "line": 69,
+    "line": 93,
     "module": "shell",
     "action": "toggle_edit"
   },
   {
     "file": "src/QNotch/Shell/NotchWindow.xaml.cs",
-    "line": 70,
+    "line": 94,
     "module": "shell",
     "action": "toggle_pin"
   },
@@ -889,7 +889,7 @@
   },
   {
     "file": "src/QNotch/Shell/Settings/UpdatesSection.cs",
-    "line": 32,
+    "line": 33,
     "module": "settings",
     "action": "change"
   },
@@ -901,25 +901,25 @@
   },
   {
     "file": "src/QNotch/Shell/Settings/UpdatesSection.cs",
-    "line": 38,
+    "line": 39,
     "module": "settings",
     "action": "change"
   },
   {
     "file": "src/QNotch/Shell/Settings/UpdatesSection.cs",
-    "line": 49,
+    "line": 50,
     "module": "shell",
     "action": "check_updates"
   },
   {
     "file": "src/QNotch/Shell/Settings/UpdatesSection.cs",
-    "line": 59,
+    "line": 60,
     "module": "shell",
     "action": "install_update"
   },
   {
     "file": "src/QNotch/Shell/Settings/UpdatesSection.cs",
-    "line": 72,
+    "line": 73,
     "module": "shell",
     "action": "open_release_notes"
   },
@@ -931,43 +931,43 @@
   },
   {
     "file": "src/QNotch/Shell/ShellController.cs",
-    "line": 341,
+    "line": 346,
     "module": "shell",
     "action": "open_panel"
   },
   {
     "file": "src/QNotch/Shell/ShellController.cs",
-    "line": 342,
+    "line": 347,
     "module": "shell",
     "action": "close_panel"
   },
   {
     "file": "src/QNotch/Shell/ShellController.cs",
-    "line": 356,
+    "line": 361,
     "module": "shell",
     "action": "open_settings"
   },
   {
     "file": "src/QNotch/Shell/ShellController.cs",
-    "line": 385,
+    "line": 390,
     "module": "shell",
     "action": "open_panel"
   },
   {
     "file": "src/QNotch/Shell/ShellController.cs",
-    "line": 410,
+    "line": 418,
     "module": "shell",
     "action": "open_panel"
   },
   {
     "file": "src/QNotch/Shell/ShellController.cs",
-    "line": 492,
+    "line": 529,
     "module": "shell",
     "action": "select_tab"
   },
   {
     "file": "src/QNotch/Shell/ShellController.cs",
-    "line": 587,
+    "line": 624,
     "module": "shell",
     "action": "reorder_tabs"
   },

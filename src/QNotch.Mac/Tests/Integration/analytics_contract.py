@@ -19,7 +19,7 @@ assert targets <= set(catalog["targets"]), targets - set(catalog["targets"])
 calls = 0
 for path in (package / "Sources/QNotchMac").rglob("*.swift"):
     text = path.read_text(encoding="utf-8")
-    for module, action in re.findall(r'Analytics.record\("([a-z_]+)", "([a-z_]+)"', text):
+    for module, action in re.findall(r'Analytics.record(?:Gesture)?\("([a-z_]+)", "([a-z_]+)"', text):
         assert action in native.get(module, set()), (path.name, module, action)
         calls += 1
     for target in re.findall(r'Analytics.setting\("([a-z_]+)"', text):

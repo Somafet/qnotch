@@ -6,6 +6,21 @@ Every event has a generated UUID, capture timestamp and top-level `distinct_id`.
 
 `requested` means an action was invoked. Dialog cancellation, remote rejection or OS failure may follow; this event never claims completion. A debounced note save records the save attempt, without text. Periodic refresh, provider observations, property bindings, rendered views and timer ticks are not user actions. Passive modules can have feature/presentation settings without their own action events.
 
+Continuous controls record one action per gesture, not per step: volume changes, timer duration changes (a wheel spin through the minutes) and Mac media seeking. Calls less than 1.5 seconds apart belong to the same gesture. Windows `agents/cli_hook` records the first hook of each agent session since the app started, not every hook call. A Mac GitHub sign-in records `cancel_connect` only when a sign-in in progress is cancelled, not when its view closes.
+
+## Lifecycle event
+
+`qnotch_active` says that QNotch is running, whether or not anyone touches it. It is sent once per launch, after the modules start (after the first-run tour, if one runs), and once per new UTC day while the app keeps running. Its fixed values are in the catalog's `lifecycle` section. Properties are the shared `schema_version`, `platform`, `app_version`, `install_id`, `identity_source` and `$process_person_profile: false`, plus:
+
+| Property | Values |
+| --- | --- |
+| `reason` | `launch`, or `day` for a new UTC day while running |
+| `channel` | Windows: `store` (MSIX), `winget`, `scoop`, `chocolatey`, `zip` (self-contained download), `exe` (framework-dependent download), `source` (not a tagged release build). Mac: `direct` (release build), `source` |
+| `modules` | Enabled modules as sorted catalog targets. Windows reports the modules this start runs; Mac reads them at each event, because Mac module changes apply live |
+| `previous_exit` | `launch` only: `clean` (the last run quit normally), `unclean` (it ended without its normal exit: a crash, a forced stop or power loss), `none` (no record) |
+
+Package-manager channels are recognized locally from the executable's install folder; the path itself is never sent. Release builds are marked at build time: Windows tag builds on GitHub Actions, Mac builds given `QNOTCH_VERSION`. `previous_exit` comes from a one-word local file, `analytics-run-state` in the data directory, written `running` at launch and `exited` at a normal exit. It is written only while analytics is enabled. Windows checks for the new day on its existing 10-second delivery timer; Mac arms one one-shot timer for just after the next UTC midnight.
+
 ## Privacy and identity
 
 No paths, names, titles, clipboard, notes, searches, terminal input/output, file metadata, account names, raw account ids, credentials, JWTs, notification text, token material or arbitrary errors enter payloads. Token reveal/copy events contain only the fixed action. No identify/person updates, autocapture, pageviews, exception capture, session recording or replay are enabled.
@@ -14,7 +29,7 @@ Identity adapts T3 Code commit `32ecd71726fee16f335484c1f95cbce126d461f6`: SHA-2
 
 Analytics is enabled by default through a local preference. `QNOTCH_TELEMETRY_ENABLED=false` overrides that preference; UI cannot override the environment. The **Share usage data** control is last in General. Disabling clears queued events and cancels active delivery; previously delivered events cannot be withdrawn. Re-enabling starts a fresh queue. The preference is excluded from setup codes.
 
-Diagnostics, snapshot, smoke, measurement and Windows debug-control runs never initialize analytics transport, read provider identity or create the install id. CLI invocations are recorded by the running app's receiving boundary, so diagnostic CLI children cannot independently initialize telemetry.
+Identity is read when the first event of a run is recorded, which is now the launch event. Diagnostics, snapshot, smoke, measurement and debug-control runs never initialize analytics transport, read provider identity, create the install id or write the run-state file. CLI invocations are recorded by the running app's receiving boundary, so diagnostic CLI children cannot independently initialize telemetry.
 
 ## Configuration and delivery
 
@@ -36,15 +51,15 @@ The [source-site inventory](../tests/fixtures/analytics/windows-sites.json) reco
 | Media | Play/pause, next/previous, session choice, seek; no playback or timeline observations |
 | Clipboard | Copy, pin, remove, clear, persistence setting; no captured clipboard observation |
 | AI | Launch/slots, custom apps, provider choices, account selection/rename, explicit usage refresh/scan; background usage polling silent |
-| Agents | Show, dismiss, stop process, hook connect/disconnect, received CLI hook; no transcript/tool contents |
+| Agents | Show, dismiss, stop process, hook connect/disconnect, first received CLI hook per agent session; no transcript/tool contents |
 | Notes | Debounced save attempt; single note on Windows, no fabricated multi-note actions |
 | Files/phone share | Add/drop/open/reveal/remove/clear/export, copy path action, share open/back/start/stop/extend/link copy/select all/none/reveal received; no paths or names |
 | Notifications | Invoke/dismiss/clear/mute, test/token renewal/copy, settings, external command receipt; no automatic alerts/read tracking |
-| Timer | Start/pause, user duration/reset through duration command; no ticks/completion events |
+| Timer | Start/pause, user duration/reset through duration command, one per wheel gesture; no ticks/completion events |
 | Color picker | Pick and copy result/recent color; no color value |
 | Weather | Explicit search/place selection/forecast opening/refresh, units/pill settings; no periodic forecast traffic |
 | Scheduled | Enable/pause and remove; no periodic Task Scheduler enumeration |
-| Volume | Volume change and mute invocation; OS volume observation silent |
+| Volume | Volume change, one per drag/wheel/key gesture, and mute invocation; OS volume observation silent |
 | Terminal | New session, submit/copy/paste invocation; no keystrokes/commands/output |
 | Stats/capture | Passive OS observations only; module and presentation choices are captured by shell settings |
 

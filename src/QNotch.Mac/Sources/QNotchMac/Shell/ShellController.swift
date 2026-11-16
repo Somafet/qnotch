@@ -190,6 +190,13 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     }
 
     func start() {
+        // One qnotch_active per launch once the modules run (after the first-run tour, if any); the day event reads them live.
+        if !modulesDeferred {
+            Analytics.launched(directory: store.directory) { [weak self] in
+                guard let self else { return [] }
+                return ModuleList.all.map(\.id).filter { self.general.isEnabled($0) }
+            }
+        }
         guard screen != nil else { return }
         panel.orderFrontRegardless()
         if general.pinned { DispatchQueue.main.async { [weak self] in self?.open(keyboard: false, recordAction: false) } }

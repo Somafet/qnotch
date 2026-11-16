@@ -26,7 +26,7 @@ final class VolumeModule: NotchModule {
 
     var level: VolumeLevel? { output.level }
 
-    func set(_ level: VolumeLevel) { Analytics.record("volume", "set_volume");
+    func set(_ level: VolumeLevel) { Analytics.recordGesture("volume", "set_volume") // once per drag, wheel spin or key run
         output.set(level)
         refresh()
     }
