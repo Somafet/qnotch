@@ -5,6 +5,23 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
 <title>QNotch for Mac</title>
 <link>https://github.com/Somafet/qnotch</link>
 <item>
+<title>QNotch 0.5.1</title>
+<pubDate>Mon, 16 Nov 2026 11:31:05 GMT</pubDate>
+<sparkle:version>13</sparkle:version>
+<sparkle:shortVersionString>0.5.1</sparkle:shortVersionString>
+<sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+<sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+<sparkle:fullReleaseNotesLink>https://github.com/Somafet/qnotch/releases/tag/macos-v0.5.1</sparkle:fullReleaseNotesLink>
+<description sparkle:format="markdown">## What's Changed
+* Point the Windows site at the Microsoft Store listing by @Somafet in https://github.com/Somafet/qnotch/pull/126
+* Record one resize_card action per resize, not per drag update by @Somafet in https://github.com/Somafet/qnotch/pull/127
+* Add analytics lifecycle events and extension protocol draft by @Somafet in https://github.com/Somafet/qnotch/pull/128
+
+
+**Full Changelog**: https://github.com/Somafet/qnotch/compare/v0.9.1...macos-v0.5.1</description>
+<enclosure url="https://github.com/Somafet/qnotch/releases/download/macos-v0.5.1/QNotch-macos-arm64.zip" length="3828459" type="application/octet-stream" sparkle:edSignature="Jyz0efwkCQn9uAkSKU7iOXrgiOYsA4d6QcPAZZNY8LlzZH3nx3+pp5SBzujy0WIVtQJmPhudD22X2BIk6JnGDQ=="/>
+</item>
+<item>
 <title>QNotch 0.5.0</title>
 <pubDate>Thu, 05 Nov 2026 11:37:58 GMT</pubDate>
 <sparkle:version>12</sparkle:version>
@@ -202,6 +219,6 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
 </channel>
 </rss>
 <!-- sparkle-signatures:
-edSignature: kFO61+1C8ylXLCBnA6U4nepjgvZcxvKtv0zWDP4KnZ9cwjrv0p73XaKM5EvcPqPA9fz8lzBMWd6kGiMyhHobBw==
-length: 15474
+edSignature: Q8BPE4/iptfYExST3Sx6RF+XnYXTlA5QxYQd6AWF4y7/P8H1P4Sz0QsY2CCPwiruYSEM/iC1Ne+jT+hQ/0kACg==
+length: 16701
 -->
