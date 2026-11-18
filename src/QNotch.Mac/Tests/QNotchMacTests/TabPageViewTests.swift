@@ -42,9 +42,11 @@ final class TabPageViewTests: XCTestCase {
                         body.scroll.isHidden = height == 0
                         body.scroll.contentView.scroll(to: NSPoint(x: 0, y: max(0, height - 100)))
                         page.layoutSubtreeIfNeeded()
-                        XCTAssertEqual(page.header.frame.height, 28)
+                        // With its only action hidden the row collapses and the body moves up.
+                        XCTAssertEqual(page.showsActionRow, !hidden)
+                        XCTAssertEqual(page.header.frame.height, hidden ? 0 : 28)
                         XCTAssertEqual(page.bounds.maxY - page.header.frame.maxY, 0)
-                        XCTAssertEqual(page.header.frame.minY - body.frame.maxY, TabPageView.bodyGap)
+                        XCTAssertEqual(page.header.frame.minY - body.frame.maxY, hidden ? 0 : TabPageView.bodyGap)
                         XCTAssertEqual(body.frame.minX, 0)
                         XCTAssertEqual(body.frame.width, width)
                         if !hidden {
