@@ -256,6 +256,7 @@
     "notifications_retention_days",
     "notifications_sound",
     "notifications_toast_seconds",
+    "open_on",
     "pinned",
     "pomodoro",
     "profile_name",

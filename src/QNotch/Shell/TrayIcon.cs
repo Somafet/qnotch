@@ -73,7 +73,7 @@ public sealed unsafe class TrayIcon : IDisposable
         {
             handled = true;
             var ev = (int)(lParam & 0xFFFF);
-            if (ev == Native.WM_LBUTTONUP) _shell.ToggleFromUser();
+            if (ev == Native.WM_LBUTTONUP) _shell.ToggleFromTray();
             else if (ev == Native.WM_RBUTTONUP) ShowMenu();
             else if (ev == BalloonUserClick) _shell.OpenSettings("about");
         }

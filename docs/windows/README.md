@@ -1,6 +1,6 @@
 # QNotch for Windows
 
-A notch for Windows 11. A slim pill at the top of your screen shows what is playing, system stats and the time. Hover it and it opens into a panel with everything else.
+A notch for Windows 11. A slim pill at the top of your screen shows what is playing, system stats and the time. Hover it and it opens into a panel with everything else. If it pops open while you reach for browser tabs, set Settings, General, **Open on** to **Click**: then only a click on the pill opens it, and a click outside, Esc or the hotkey closes it.
 
 ![The QNotch panel](../images/home.png)
 

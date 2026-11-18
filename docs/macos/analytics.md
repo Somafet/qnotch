@@ -14,7 +14,7 @@ Events carry only fixed module/action/surface identifiers, schema/app version, h
 | --- | --- |
 | Shell | Open panel, select tab (canonical target), settings, close by Escape/shortcut/module dismissal, pin, edit mode, game override, move notch, card resize/reorder, tab reorder, restart, quit, check updates |
 | Onboarding | Next, back, skip, finish, feature target and enabled choice, login/update choice; integration commands use the same catalog |
-| General/appearance/features | Display, menu icon, hover/close delays, segment hover, pin, accent, motion, profile name/photo, module enable/disable with target, card/tab/notch visibility, setup export/check/apply |
+| General/appearance/features | Display, menu icon, open on, hover/close delays, segment hover, pin, accent, motion, profile name/photo, module enable/disable with target, card/tab/notch visibility, setup export/check/apply |
 | Other settings | Login, shortcut assignment/reset, sound choice/preview, update checks/install/beta, game behavior/rules, each module's settings; setting identifiers and boolean choices are fixed |
 | Timer | Start, pause, reset, duration selection (one per wheel gesture); no tick/completion events |
 | Media | Play/pause, next/previous, source selection, seek (one per drag); no now-playing updates |

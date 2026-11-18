@@ -112,7 +112,7 @@ internal sealed class NotchNudge
         _w.Surface.ReleaseMouseCapture(); // Drop runs from LostMouseCapture
         if (dragged) return;
         _shell.SuppressHover(false);
-        if (_shell.Mode == ShellMode.Collapsed) _shell.OpenPanel(); // a plain click opens, no dwell needed
+        if (_shell.Mode == ShellMode.Collapsed) _shell.OpenFromClick(); // a plain click opens, no dwell needed
     }
 
     /// <summary>The pointer crossed onto another display: the notch moves there and stays where the pointer holds it.</summary>

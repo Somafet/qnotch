@@ -5,6 +5,9 @@ namespace QNotch.Core;
 
 public enum ThemeChoice { System, Dark, Light }
 
+/// <summary>What opens the panel from the pill: resting the pointer on it (with <see cref="GeneralSettings.HoverDwellMs"/>) or a click.</summary>
+public enum PanelOpenTrigger { Hover, Click }
+
 /// <summary>Shell settings (general.json). Live object: bind to it, mutate it; the shell persists changes automatically.</summary>
 public sealed partial class GeneralSettings : ObservableObject
 {
@@ -12,6 +15,8 @@ public sealed partial class GeneralSettings : ObservableObject
     [ObservableProperty] int _monitorIndex;
     [ObservableProperty] int _hoverDwellMs = 120;
     [ObservableProperty] int _leaveDelayMs = 400;
+    /// <summary>Click: only a click on the pill opens the panel, with the keyboard; the pointer leaving never closes it.</summary>
+    [ObservableProperty] PanelOpenTrigger _openOn = PanelOpenTrigger.Hover;
     [ObservableProperty] bool _pinned;
     // Only the defaults of the "toggle" and "gamemode" shortcuts now (a value saved here before hotkeys.json existed still counts).
     [ObservableProperty] string _toggleHotkey = "Ctrl+Alt+N";

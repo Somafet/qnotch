@@ -75,7 +75,11 @@ enum NativeSmokeTest {
                                 return finish(Failure("settings-search", "Search does not find the About page"))
                             }
                             run.pass("settings-search")
-                            exerciseDebugChannel(run, done: finish)
+                            exerciseDebugChannel(run) { error in
+                                if let error { return finish(error) }
+                                // Last: a click opening activates QNotch, and its late focus events must not reach other checks.
+                                HoverTargetSmoke.exerciseClickOpening(run, done: finish)
+                            }
                         }
                     }
                 }

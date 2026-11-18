@@ -123,6 +123,7 @@ internal sealed partial class SmokeTest
             await Check("module-toggle", () => Task.FromResult<string?>("skip: modules apply on restart on Windows (Settings, Features asks for one)"));
             await Check("edit-mode", EditMode);
             await Check("pin", Pin);
+            await Check("open-on-click", () => Foreground(OpenOnClick));
             await Check("drop-screen", DropScreenCheck);
             await Check("notify-cli", () => Module("notify-cli"));
             await Check("notify-transport", () => Module("notify-transport"));
@@ -328,6 +329,40 @@ internal sealed partial class SmokeTest
         Log($"pinned: open after the pointer left {stayed}; unpinned: closed {closed} (pointer really over the notch: {pointer})");
         if (!stayed) return "the pinned panel closed when the pointer left";
         return closed || pointer ? null : "unpinned, the panel stayed open with the pointer away";
+    }
+
+    /// <summary>Open on Click: resting on the pill opens nothing; a press and release without a drag opens the panel with the keyboard,
+    /// the pointer leaving does not close it, and losing the focus (a click outside) does.</summary>
+    async Task<string?> OpenOnClick()
+    {
+        var was = _h.Settings.OpenOn;
+        _h.Settings.OpenOn = PanelOpenTrigger.Click;
+        try
+        {
+            S.Hover(true);
+            await Task.Delay(_h.Settings.HoverDwellMs + 400);
+            var hoverOpened = S.Mode == ShellMode.Expanded;
+            S.Hover(false);
+            if (hoverOpened) return "with Open on Click, resting on the pill opened the panel";
+            // What a click on the pill delivers: NotchNudge opens on a release that did not move.
+            W.Surface.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice, Environment.TickCount, MouseButton.Left) { RoutedEvent = UIElement.MouseLeftButtonDownEvent });
+            W.Surface.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice, Environment.TickCount, MouseButton.Left) { RoutedEvent = UIElement.MouseLeftButtonUpEvent });
+            var opened = await Until(() => S.Mode == ShellMode.Expanded, 1500);
+            var kb = W.HasKeyboard;
+            S.Hover(true);
+            S.Hover(false); // the pointer leaves
+            await Task.Delay(_h.Settings.LeaveDelayMs + 400);
+            var stayed = S.Mode == ShellMode.Expanded;
+            W.DisableKeyboard(); // what the window's Deactivated handler runs when a click elsewhere takes the focus
+            S.KeyboardFocusLost();
+            var closed = await Until(() => S.Mode == ShellMode.Collapsed, 1000);
+            Log($"hover opened {hoverOpened}; click opened {opened}, keyboard {kb}; open after the pointer left {stayed}; closed on focus loss {closed}");
+            if (!opened) return "a click on the pill did not open the panel";
+            if (!kb) return "the click opened the panel without the keyboard";
+            if (!stayed) return "the pointer leaving closed a panel opened by a click";
+            return closed ? null : "losing the focus did not close a panel opened by a click";
+        }
+        finally { _h.Settings.OpenOn = was; }
     }
 
     /// <summary>A file drag over the collapsed notch opens the panel on the drop screen, which covers the tabs and names a tile per
