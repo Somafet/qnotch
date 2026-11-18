@@ -41,7 +41,6 @@ final class TabPageView: NSView, PanelKeyboardContent {
         let bodyTop = content.topAnchor.constraint(equalTo: header.bottomAnchor)
         self.headerHeight = headerHeight
         self.bodyTop = bodyTop
-        header.clipsToBounds = true
         NSLayoutConstraint.activate([
             header.leadingAnchor.constraint(equalTo: leadingAnchor),
             header.trailingAnchor.constraint(equalTo: trailingAnchor),

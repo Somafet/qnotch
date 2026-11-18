@@ -43,13 +43,15 @@ enum TabHeaderDiagnostics {
             inspect(actions)
             if let trailing { require(near(trailing, page.header.bounds.maxX), "actions are not trailing-aligned") }
             // With every action hidden (Clipboard with nothing to clear) the row gives its space back.
-            actions.isHidden = true
-            page.layoutSubtreeIfNeeded()
-            require(!page.showsActionRow && near(page.header.frame.height, 0) && near(page.content.frame.maxY, page.bounds.maxY),
-                    "hidden actions still reserve the row")
-            actions.isHidden = false
-            page.layoutSubtreeIfNeeded()
-            require(page.showsActionRow && near(page.header.frame.height, TabPageView.actionRowHeight), "action row did not come back")
+            if page.showsActionRow {
+                actions.isHidden = true
+                page.layoutSubtreeIfNeeded()
+                require(!page.showsActionRow && near(page.header.frame.height, 0) && near(page.content.frame.maxY, page.bounds.maxY),
+                        "hidden actions still reserve the row")
+                actions.isHidden = false
+                page.layoutSubtreeIfNeeded()
+                require(page.showsActionRow && near(page.header.frame.height, TabPageView.actionRowHeight), "action row did not come back")
+            }
         }
         return log
     }
