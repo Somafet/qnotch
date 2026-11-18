@@ -14,7 +14,7 @@ enum TabHeaderDiagnostics {
             if !condition { run.fail("tab-headers", "\(id): " + message) }
         }
         func near(_ a: CGFloat, _ b: CGFloat) -> Bool { abs(a - b) <= 1 }
-        let hasActions = page.actions != nil
+        let hasActions = page.showsActionRow
         let expectedHeader: CGFloat = hasActions ? TabPageView.actionRowHeight : 0
         let expectedGap: CGFloat = hasActions ? TabPageView.bodyGap : 0
         require(page.superview.map { near(page.frame.minX, $0.bounds.minX) && near(page.frame.width, $0.bounds.width) } == true, "page shifted the host leading edge")
@@ -42,6 +42,16 @@ enum TabHeaderDiagnostics {
             }
             inspect(actions)
             if let trailing { require(near(trailing, page.header.bounds.maxX), "actions are not trailing-aligned") }
+            // With every action hidden (Clipboard with nothing to clear) the row gives its space back.
+            if page.showsActionRow {
+                actions.isHidden = true
+                page.layoutSubtreeIfNeeded()
+                require(!page.showsActionRow && near(page.header.frame.height, 0) && near(page.content.frame.maxY, page.bounds.maxY),
+                        "hidden actions still reserve the row")
+                actions.isHidden = false
+                page.layoutSubtreeIfNeeded()
+                require(page.showsActionRow && near(page.header.frame.height, TabPageView.actionRowHeight), "action row did not come back")
+            }
         }
         return log
     }
