@@ -211,3 +211,82 @@ extension HoverTargetSmoke {
         } catch { finish(error) }
     }
 }
+
+extension HoverTargetSmoke {
+    /// Graphical smoke only: Open on Click. Resting the OS pointer on the notch opens nothing; a press
+    /// and release without movement through the panel's own event path (the nudge tracker on a
+    /// floating pill) opens it with the keyboard; the pointer leaving keeps it open; focus loss closes it.
+    static func exerciseClickOpening(_ run: SnapshotRun, done: @escaping (Error?) -> Void) {
+        let shell = run.shell
+        let original = shell.general
+        let gameOverride = shell.gameMode.override
+        let pointer = CGEvent(source: nil)?.location
+        var records: [String] = []
+        func finish(_ error: Error?) {
+            run.log("open-on-click", records)
+            shell.close(restoreFocus: false)
+            shell.pointerLeft()
+            shell.updateGeneral { $0 = original }
+            shell.gameMode.override = gameOverride
+            if let pointer { CGWarpMouseCursorPosition(pointer) }
+            done(error)
+        }
+        func require(_ condition: Bool, _ message: String) throws {
+            if !condition { throw NativeSmokeTest.Failure("open-on-click", message) }
+        }
+        func move(_ point: NSPoint) throws {
+            guard let primary = NSScreen.screens.first else { throw NativeSmokeTest.Failure("open-on-click", "No primary display") }
+            try require(CGWarpMouseCursorPosition(CGPoint(x: point.x, y: primary.frame.maxY - point.y)) == .success, "OS pointer move failed")
+        }
+        func record(_ stage: String) {
+            records.append("stage=\(stage) state=\(shell.state.presentation) expanded=\(shell.state.expanded) keyboard=\(shell.state.acceptsKeyboard) pointer=\(NSEvent.mouseLocation)")
+        }
+        shell.gameMode.override = .off
+        shell.endPeek()
+        shell.updateGeneral { $0.openOnClick = true; $0.hoverDelayMs = 100; $0.pinned = false }
+        shell.close(restoreFocus: false)
+        guard let layout = shell.layout, let notch = shell.expectedFrame else { return finish(NativeSmokeTest.Failure("open-on-click", "No display")) }
+        let outside = NSPoint(x: layout.frame.midX, y: layout.frame.midY)
+        let center = NSPoint(x: notch.midX, y: notch.midY)
+        do {
+            try require(pointer != nil, "Cannot save the system pointer")
+            try move(outside)
+            shell.pointerLeft()
+            try move(center)
+            shell.pointerEntered()
+            record("rested")
+        } catch { return finish(error) }
+        // Three hover delays: a dwell would have opened by now.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            do {
+                record("after-dwell")
+                try require(!shell.state.expanded, "Resting on the notch opened the panel with Open on Click")
+                let local = shell.panel.convertPoint(fromScreen: NSEvent.mouseLocation)
+                func event(_ type: NSEvent.EventType) -> NSEvent {
+                    NSEvent.mouseEvent(with: type, location: local, modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime,
+                                       windowNumber: shell.panel.windowNumber, context: nil, eventNumber: 0, clickCount: 1, pressure: type == .leftMouseDown ? 1 : 0)!
+                }
+                let floating = shell.panel.canNudge?() == true
+                // The nudge tracker reads the release from the queue, as it would a real one.
+                if floating { NSApp.postEvent(event(.leftMouseUp), atStart: false) }
+                shell.panel.sendEvent(event(.leftMouseDown))
+                record("clicked floating=\(floating)")
+                try require(shell.state.expanded && shell.state.acceptsKeyboard, "A click did not open the panel with the keyboard")
+                try move(outside)
+                shell.pointerLeft()
+            } catch { return finish(error) }
+            DispatchQueue.main.asyncAfter(deadline: .now() + Double(shell.general.closeDelayMs) / 1000 + 0.3) {
+                do {
+                    record("left")
+                    try require(shell.state.expanded, "The pointer leaving closed a panel opened by a click")
+                    shell.windowDidResignKey(Notification(name: NSWindow.didResignKeyNotification))
+                    record("focus-lost")
+                    try require(!shell.state.expanded, "Losing focus did not close a panel opened by a click")
+                    records.append("input=scripted OS pointer warps with tracking callbacks and a click through NotchPanel.sendEvent; pointer restored after check")
+                    run.pass("open-on-click")
+                    finish(nil)
+                } catch { finish(error) }
+            }
+        }
+    }
+}

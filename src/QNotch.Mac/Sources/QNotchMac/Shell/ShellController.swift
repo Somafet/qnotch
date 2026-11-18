@@ -105,7 +105,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         surface.fileDragEnded = { [weak self] in self?.endDropScreen() }
         surface.setAccessibilityElement(true)
         surface.setAccessibilityRole(.group)
-        surface.setAccessibilityLabel("QNotch. Hover or click to open the panel, or use the menu-bar item.")
+        updateSurfaceLabel()
         surface.identifier = NSUserInterfaceItemIdentifier("pill")
         panel.clicked = { [weak self] in
             guard let self else { return false }
@@ -288,6 +288,10 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
             clearSegmentDetail()
         }
         store.save("general", general)
+        if previous.openOnClick != general.openOnClick {
+            hoverTask?.cancel()
+            updateSurfaceLabel()
+        }
         if previous.cardSizes != general.cardSizes { homeView?.applySizes(general.cardSizes) }
         Motion.userReduced = general.reduceMotion
         Palette.accentOverride = general.accent.flatMap(Palette.hex)
@@ -313,6 +317,11 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         rebuildSurface()
         updateVisibility()
         statusChanged?()
+    }
+
+    private func updateSurfaceLabel() {
+        surface.setAccessibilityLabel(general.openOnClick ? "QNotch. Click to open the panel, or use the menu-bar item."
+                                                          : "QNotch. Hover or click to open the panel, or use the menu-bar item.")
     }
 
     /// Ends the first-run deferral: constructs the chosen modules and shows their status.
@@ -652,6 +661,8 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         }
         setHovering(true)
         hoverTask?.cancel()
+        // Open on Click: the hover glow still shows the notch is under the pointer, but only a click opens it.
+        guard !general.openOnClick else { return }
         // The settled shape, not the window: while a close morph runs, the window still covers
         // the panel's old area, and a pointer there must not reopen it.
         let task = DispatchWorkItem { [weak self] in
@@ -668,7 +679,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     /// Already-expanded openings are latched: crossing another segment never navigates.
     func completeHover(at point: NSPoint) {
         traceHover("completeHover requested=\(point)")
-        guard !state.expanded, !hoverSuppressed, !gameActive,
+        guard !state.expanded, !hoverSuppressed, !gameActive, !general.openOnClick,
               expectedFrame?.containsPointer(point) == true else { return }
         let target = general.hoverOpensSegment ? segmentID(at: point) : nil
         open(keyboard: false)

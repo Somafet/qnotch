@@ -41,6 +41,7 @@ public enum SetupCode {
         var cardVisible: [String: Bool] = [:]
         s.general.hiddenCards.forEach { cardVisible[$0] = false }
         var general: [String: Any] = ["HoverDwellMs": s.general.hoverDelayMs, "LeaveDelayMs": s.general.closeDelayMs,
+                                      "OpenOn": s.general.openOnClick ? "Click" : "Hover",
                                       "ReduceMotion": s.general.reduceMotion, "DisabledModules": s.general.disabledModules,
                                       "CardOrder": s.general.cardOrder, "CardVisible": cardVisible, "TabOrder": s.general.tabOrder]
         if let accent = s.general.accent { general["AccentColor"] = accent }
@@ -104,6 +105,11 @@ public enum SetupCode {
             let t = "Appearance and features"
             if let v = try int(f["HoverDwellMs"], GeneralSettings.hoverRange, t) { s.general.hoverDelayMs = v }
             if let v = try int(f["LeaveDelayMs"], GeneralSettings.closeRange, t) { s.general.closeDelayMs = v }
+            if let value = f["OpenOn"] {
+                // Windows reads enum names case-insensitively.
+                guard let text = (value as? String)?.lowercased(), ["hover", "click"].contains(text) else { throw Failure(message: "This code has a value QNotch cannot use (\(t)).") }
+                s.general.openOnClick = text == "click"
+            }
             if let v = try bool(f["ReduceMotion"], t) { s.general.reduceMotion = v }
             if let v = try strings(f["DisabledModules"], t) { s.general.disabledModules = v.map { $0.lowercased() }.sorted() }
             if let v = try strings(f["CardOrder"], t) { s.general.cardOrder = v }

@@ -35,7 +35,7 @@ public static class SetupCode
     /// update choices, OnboardingDone, and the Game mode app lists (they name the user's games).</summary>
     public static readonly IReadOnlyList<Section> ShellSections =
     [
-        new("general", "Appearance and features", new(typeof(GeneralSettings), "HoverDwellMs:0..600", "LeaveDelayMs:100..1500",
+        new("general", "Appearance and features", new(typeof(GeneralSettings), "HoverDwellMs:0..600", "LeaveDelayMs:100..1500", "OpenOn",
             "AccentColor", "Theme", "ReduceMotion", "DisabledModules", "CardOrder", "CardVisible", "CardSizes", "TabOrder")),
         new("hotkeys", "Hotkeys", new(typeof(ShortcutSettings), "Keys")),
         new("gamemode", "Game mode", new(typeof(GameModeSettings), "AutoDetect", "Opacity:0.3..1", "Height:16..40",

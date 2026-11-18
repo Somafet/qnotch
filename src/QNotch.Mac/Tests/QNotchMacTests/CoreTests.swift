@@ -1122,6 +1122,24 @@ final class SetupCodeTests: XCTestCase {
         XCTAssertEqual(mac["hiddenTabs"] as? [String], ["terminal"])
     }
 
+    func testOpenOnTravelsAsTheWindowsEnumName() throws {
+        func read(_ json: String, current: SetupCode.Snapshot? = nil) throws -> SetupCode.Plan {
+            try SetupCode.read(SetupCode.prefix + SetupCode.base64url(SetupCode.deflate(Data(json.utf8))), current: current ?? base, modules: [])
+        }
+        XCTAssertFalse(try JSONDecoder().decode(GeneralSettings.self, from: Data("{}".utf8)).openOnClick, "Hover stays the default for existing settings")
+        var click = base
+        click.general.openOnClick = true
+        XCTAssertEqual(try SetupCode.read(SetupCode.export(click), current: base, modules: []).result.general.openOnClick, true)
+        XCTAssertTrue(try read(#"{"general":{"OpenOn":"Click"}}"#).result.general.openOnClick, "Windows writes the PanelOpenTrigger name")
+        var current = base
+        current.general.openOnClick = true
+        XCTAssertFalse(try read(#"{"general":{"OpenOn":"Hover"}}"#, current: current).result.general.openOnClick)
+        XCTAssertTrue(try read(#"{"general":{"OpenOn":"click"}}"#).result.general.openOnClick, "Windows matches enum names case-insensitively")
+        for bad in [#"{"general":{"OpenOn":"Clack"}}"#, #"{"general":{"OpenOn":1}}"#, #"{"general":{"OpenOn":true}}"#] {
+            XCTAssertThrowsError(try read(bad)) { XCTAssertEqual(($0 as? SetupCode.Failure)?.message, "This code has a value QNotch cannot use (Appearance and features).") }
+        }
+    }
+
     func testZeroAndOneAreNumbersNotBooleansAndTruncatedCodesFail() throws {
         // 0 and 1 bridge to Bool, so a naive `is Bool` check used to reject "Off" toasts, 1-day history and a 0 ms hover.
         let edges = Data(#"{"general":{"HoverDwellMs":0},"notifications":{"ToastSeconds":0,"RetentionDays":1,"Sound":true}}"#.utf8)

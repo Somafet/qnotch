@@ -27,6 +27,9 @@ public struct GeneralSettings: Codable, Equatable {
     /// Pointer rest before the panel opens, and pointer absence before it closes (milliseconds).
     public var hoverDelayMs = 120
     public var closeDelayMs = 400
+    /// Open on Click: resting the pointer on the notch never opens the panel; a click does, with
+    /// the keyboard, so pointer leave never closes it. Windows' `OpenOn` ("Hover" or "Click").
+    public var openOnClick = false
     /// Keep panel open: it never closes on pointer leave, outside clicks or focus loss.
     public var pinned = false
     /// One of `accents`, or nil to follow the macOS accent color.
@@ -88,7 +91,7 @@ public struct GeneralSettings: Codable, Equatable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case shareUsageData, displayID, reduceMotion, showMenuBarIcon, disabledModules, enabledOptionalModules, timerEnabled, hoverOpensSegment, hoverDelayMs, closeDelayMs, pinned, accent, profileName, hiddenCards, hiddenTabs, hiddenNotchModules, cardOrder, cardSizes, tabOrder, pillOffsets, betaUpdates, onboardingDone
+        case shareUsageData, displayID, reduceMotion, showMenuBarIcon, disabledModules, enabledOptionalModules, timerEnabled, hoverOpensSegment, hoverDelayMs, closeDelayMs, openOnClick, pinned, accent, profileName, hiddenCards, hiddenTabs, hiddenNotchModules, cardOrder, cardSizes, tabOrder, pillOffsets, betaUpdates, onboardingDone
     }
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -103,6 +106,7 @@ public struct GeneralSettings: Codable, Equatable {
         hoverOpensSegment = c.value(.hoverOpensSegment, false)
         hoverDelayMs = min(Self.hoverRange.upperBound, max(Self.hoverRange.lowerBound, c.value(.hoverDelayMs, 120)))
         closeDelayMs = min(Self.closeRange.upperBound, max(Self.closeRange.lowerBound, c.value(.closeDelayMs, 400)))
+        openOnClick = c.value(.openOnClick, false)
         pinned = c.value(.pinned, false)
         accent = c.value(.accent, String?.none).flatMap { Self.accents.contains($0) ? $0 : nil }
         profileName = c.value(.profileName, String?.none)
@@ -127,6 +131,7 @@ public struct GeneralSettings: Codable, Equatable {
         try c.encode(hoverOpensSegment, forKey: .hoverOpensSegment)
         try c.encode(hoverDelayMs, forKey: .hoverDelayMs)
         try c.encode(closeDelayMs, forKey: .closeDelayMs)
+        try c.encode(openOnClick, forKey: .openOnClick)
         try c.encode(pinned, forKey: .pinned)
         try c.encodeIfPresent(accent, forKey: .accent)
         try c.encodeIfPresent(profileName, forKey: .profileName)

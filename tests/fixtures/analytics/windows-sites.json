@@ -817,37 +817,43 @@
   },
   {
     "file": "src/QNotch/Shell/Settings/GeneralSection.cs",
-    "line": 28,
+    "line": 31,
     "module": "settings",
     "action": "change"
   },
   {
     "file": "src/QNotch/Shell/Settings/GeneralSection.cs",
-    "line": 30,
+    "line": 36,
     "module": "settings",
     "action": "change"
   },
   {
     "file": "src/QNotch/Shell/Settings/GeneralSection.cs",
-    "line": 52,
+    "line": 38,
+    "module": "settings",
+    "action": "change"
+  },
+  {
+    "file": "src/QNotch/Shell/Settings/GeneralSection.cs",
+    "line": 60,
     "module": "settings",
     "action": "setup_export"
   },
   {
     "file": "src/QNotch/Shell/Settings/GeneralSection.cs",
-    "line": 81,
+    "line": 89,
     "module": "settings",
     "action": "setup_check"
   },
   {
     "file": "src/QNotch/Shell/Settings/GeneralSection.cs",
-    "line": 93,
+    "line": 101,
     "module": "settings",
     "action": "setup_apply"
   },
   {
     "file": "src/QNotch/Shell/Settings/GeneralSection.cs",
-    "line": 109,
+    "line": 117,
     "module": "settings",
     "action": "change"
   },
@@ -931,43 +937,49 @@
   },
   {
     "file": "src/QNotch/Shell/ShellController.cs",
-    "line": 346,
+    "line": 356,
     "module": "shell",
     "action": "open_panel"
   },
   {
     "file": "src/QNotch/Shell/ShellController.cs",
-    "line": 347,
+    "line": 357,
     "module": "shell",
     "action": "close_panel"
   },
   {
     "file": "src/QNotch/Shell/ShellController.cs",
-    "line": 361,
+    "line": 371,
     "module": "shell",
     "action": "open_settings"
   },
   {
     "file": "src/QNotch/Shell/ShellController.cs",
-    "line": 390,
+    "line": 427,
     "module": "shell",
     "action": "open_panel"
   },
   {
     "file": "src/QNotch/Shell/ShellController.cs",
-    "line": 418,
+    "line": 436,
     "module": "shell",
     "action": "open_panel"
   },
   {
     "file": "src/QNotch/Shell/ShellController.cs",
-    "line": 529,
+    "line": 464,
+    "module": "shell",
+    "action": "open_panel"
+  },
+  {
+    "file": "src/QNotch/Shell/ShellController.cs",
+    "line": 575,
     "module": "shell",
     "action": "select_tab"
   },
   {
     "file": "src/QNotch/Shell/ShellController.cs",
-    "line": 624,
+    "line": 670,
     "module": "shell",
     "action": "reorder_tabs"
   },

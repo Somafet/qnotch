@@ -33,7 +33,7 @@ internal static class AboutSection
         tour.Click += (_, _) => { QNotch.Core.Analytics.Track("settings", "tour", "ui"); showTour(); };
         page.Children.Add(UiKit.SettingsGroup([
             UiKit.SettingsRow("Welcome tour", "What QNotch does, your features and accounts, in a few steps.", tour),
-            UiKit.SettingsRow("Hover the notch", "Opens the panel without taking the keyboard.", new TextBlock()),
+            UiKit.SettingsRow("Hover the notch", "Opens the panel without taking the keyboard. Set Open on to Click in General to open it only by clicking.", new TextBlock()),
             UiKit.SettingsRow("Click the notch", "Opens the panel with keyboard control.", new TextBlock()),
             UiKit.SettingsRow("Escape or click outside", "Closes the panel and returns focus to your app.", new TextBlock())
         ], title: "Using QNotch"));

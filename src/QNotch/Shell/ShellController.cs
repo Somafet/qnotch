@@ -36,7 +36,7 @@ public sealed class ShellController : IShell
     DispatcherTimer? _dwell, _leave;
     ICadenceAware[] _cadenceAware = [];
     ShellMode _mode;
-    bool _hovering, _fileDrag, _built, _wasExpandedBeforeGame, _hoverQuiet;
+    bool _hovering, _fileDrag, _built, _wasExpandedBeforeGame, _hoverQuiet, _glancePressed;
     int _holds;
     string _activeTab = "home";
 
@@ -113,7 +113,17 @@ public sealed class ShellController : IShell
         _w.HoverEntered += OnHoverEnter;
         _w.HoverLeft += OnHoverLeave;
         _w.EscPressed += ClosePanel;
-        _w.KeyboardFocusLost += () => { _shortcuts.InputCaptured = false; if (!_w.IsPointerOver()) { _hovering = false; StartLeave(); } };
+        _w.KeyboardFocusLost += KeyboardFocusLost;
+        // The glance strip opens on a click too: a press and its release on it.
+        _w.Glance.MouseLeftButtonDown += (_, e) => _glancePressed = !e.Handled;
+        _w.Glance.MouseLeftButtonUp += (_, e) =>
+        {
+            if (!_glancePressed || e.Handled) return;
+            _glancePressed = false;
+            e.Handled = true;
+            OpenFromClick();
+        };
+        _w.Glance.MouseLeave += (_, _) => _glancePressed = false;
         _w.AddHandler(Keyboard.GotKeyboardFocusEvent, new KeyboardFocusChangedEventHandler((_, e) =>
             _shortcuts.InputCaptured = _w.HasKeyboard && e.NewFocus is IExclusiveKeyboardInput));
         _w.FileDragOver += OnFileDragOver;
@@ -383,11 +393,47 @@ public sealed class ShellController : IShell
 
     // ---------- hover ----------
 
+    bool OpensOnClick => _general.OpenOn == PanelOpenTrigger.Click;
+    long _focusClosedAt = long.MinValue / 2;
+
+    /// <summary>Tray left click. With Open on Click the press on the tray already took the focus and closed the panel
+    /// (<see cref="KeyboardFocusLost"/>), so this release must not open it again.</summary>
+    internal void ToggleFromTray()
+    {
+        if (_mode == ShellMode.Collapsed && Environment.TickCount64 - _focusClosedAt < 1000) return;
+        ToggleFromUser();
+    }
+
+    /// <summary>The window gave up the keyboard (it was deactivated). The smoke test calls it after <see cref="NotchWindow.DisableKeyboard"/>, as Deactivated does.</summary>
+    internal void KeyboardFocusLost()
+    {
+        _shortcuts.InputCaptured = false;
+        if (OpensOnClick)
+        {
+            // Focus went elsewhere (a click outside, another app): close now, without the leave grace period, wherever the pointer is.
+            _hovering = false;
+            if (!CanAutoClose) return;
+            ClosePanel();
+            _focusClosedAt = Environment.TickCount64;
+        }
+        else if (!_w.IsPointerOver()) { _hovering = false; StartLeave(); }
+    }
+
+    /// <summary>A plain click on the pill or the glance strip (a release without a drag). With Open on Click it is the only way the
+    /// pointer opens the panel, so it takes the keyboard: Esc, the hotkey or a click outside closes it, and leaving never does.</summary>
+    internal void OpenFromClick()
+    {
+        if (!_started || _mode != ShellMode.Collapsed) return;
+        QNotch.Core.Analytics.Track("shell", "open_panel", "ui");
+        if (OpensOnClick) OpenPanelWithKeyboard();
+        else OpenPanel();
+    }
+
     void OnHoverEnter()
     {
         _hovering = true;
         _leave?.Stop();
-        if (_mode == ShellMode.Collapsed && !_hoverQuiet) Start(ref _dwell, _general.HoverDwellMs, () => { QNotch.Core.Analytics.Track("shell", "open_panel", "ui"); OpenPanel(); });
+        if (_mode == ShellMode.Collapsed && !_hoverQuiet && !OpensOnClick) Start(ref _dwell, _general.HoverDwellMs, () => { QNotch.Core.Analytics.Track("shell", "open_panel", "ui"); OpenPanel(); });
     }
 
     /// <summary>While the pill is pressed or sliding (NotchNudge), the pointer being over it does not open the panel.</summary>
@@ -661,6 +707,7 @@ public sealed class ShellController : IShell
             case nameof(GeneralSettings.ReduceMotion): Motion.Refresh(_general.ReduceMotion); break;
             case nameof(GeneralSettings.ProfileName) or nameof(GeneralSettings.ProfileImagePath): LoadProfile(); break;
             case nameof(GeneralSettings.StartWithWindows): if (!_store.ReadOnly) Autostart.Set(_general.StartWithWindows); break; // never in a snapshot run
+            case nameof(GeneralSettings.OpenOn): if (OpensOnClick && !_fileDrag) _dwell?.Stop(); break; // a file drag still opens after the dwell
             case nameof(GeneralSettings.Pinned):
                 if (_general.Pinned) _leave?.Stop();
                 else if (!_hovering) StartLeave();

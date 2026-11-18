@@ -48,6 +48,7 @@ var tests = new List<(string Name, Action Run)>
         Require(cards.Items.All(c => c.SupportedSizes.Contains(CardSize.Small)));
         Require(SetupCode.ShellSections.Single(s => s.Id == "general").Shared.Fields.Contains("CardSizes"));
     }),
+    ("Open on travels in setup codes by its enum name, as Mac codes write it", OpenOnSetupCode),
     ("card resize records one action per changed resize, not per drag update", () =>
     {
         var cards = new Registry<CardDescriptor>();
@@ -146,3 +147,22 @@ if (args.Contains("--taildrop-live"))
 return failures == 0 ? 0 : 1;
 
 static void Require(bool condition) { if (!condition) throw new InvalidOperationException("assertion failed"); }
+
+static void OpenOnSetupCode()
+{
+    var general = new[] { SetupCode.ShellSections.Single(s => s.Id == "general") };
+    Require(new GeneralSettings().OpenOn == PanelOpenTrigger.Hover && general[0].Shared.Fields.Contains("OpenOn"));
+    static string Code(string json)
+    {
+        using var packed = new System.IO.MemoryStream();
+        using (var z = new System.IO.Compression.DeflateStream(packed, System.IO.Compression.CompressionLevel.Optimal, leaveOpen: true))
+            z.Write(System.Text.Encoding.UTF8.GetBytes(json));
+        return "qnotch-setup-1:" + System.Buffers.Text.Base64Url.EncodeToString(packed.ToArray());
+    }
+    string? OpenOn(SetupCode.Plan? plan) => plan is null ? null : JsonDocument.Parse(plan.Files["general"]).RootElement.GetProperty("OpenOn").GetString();
+    var store = new SettingsStore { ReadOnly = true };
+    store.Get<GeneralSettings>("general").OpenOn = PanelOpenTrigger.Click;
+    Require(OpenOn(SetupCode.Read(SetupCode.Export(store, general), new SettingsStore { ReadOnly = true }, general, out _)) == "Click");
+    Require(OpenOn(SetupCode.Read(Code("""{"general":{"OpenOn":"Click"}}"""), new SettingsStore { ReadOnly = true }, general, out _)) == "Click");
+    Require(SetupCode.Read(Code("""{"general":{"OpenOn":1}}"""), new SettingsStore { ReadOnly = true }, general, out var error) is null && error.Contains("cannot use"));
+}

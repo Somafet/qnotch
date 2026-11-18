@@ -126,6 +126,7 @@ Other controls should get kebab-case ids prefixed with their module or area (`ti
 | `module-toggle` | Turning a module off and on stops and restarts it |
 | `edit-mode` | Edit mode holds the panel open; a card drag saves its new place |
 | `pin` | Keep panel open survives the pointer leaving |
+| `open-on-click` | With Open on Click, resting on the notch opens nothing; a click opens the panel with keyboard focus, and the pointer leaving does not close it |
 | `notify-cli` | The `notify` command posts a toast and `--wait` returns the chosen action |
 | `notify-transport` | The local transport (pipe or socket) accepts a request and answers |
 | `agents-hook` | An agent hook event updates the Agents board |

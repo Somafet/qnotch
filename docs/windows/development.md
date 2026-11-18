@@ -77,6 +77,7 @@ The report is `smoke.txt`: the snapshot lines, then `check <name>: ok`, `check <
 | `escape-collapses` | Escape through the window's key handling closes the panel and releases the keyboard |
 | `module-disabled` | A child process (`--smoke-test <dir> --smoke-probe notifications`) boots with Notifications off and lists the modules it created, every registry id and every AutomationId it built: nothing of the module may appear |
 | `module-toggle` | Skip: modules apply on restart on Windows |
+| `open-on-click` | With Open on Click, the hover path opens nothing; a press and release on the pill (raised through its mouse handlers) opens the panel with the keyboard, and the pointer leaving does not close it |
 | `edit-mode`, `pin` | The pointer leaving does not close the panel; a card move is saved (`general.json` as the read-only store would write it) |
 | `card-sizes` | Every card supports Small; edge drags snap in both directions, cancel restores the original size, UI Automation reports supported sizes, the same body is retained, saved sizes reload, and cards do not overlap. Resize anchors appear only in edit mode |
 | `notify-cli`, `notify-transport` | The real `QNotch.exe notify --action ... --wait` answered through the module; a raw pipe request and dismiss. Only the pipe starts, never the HTTP endpoint or its token |
@@ -86,7 +87,7 @@ The report is `smoke.txt`: the snapshot lines, then `check <name>: ok`, `check <
 | `onboarding` | No tour opened by itself; one opened on demand (off screen, settings copied) steps through every step with Return and finishes; another skips with Esc |
 | `debug-channel` | No debug pipe in the run; a private one opened in process answers `ping`, `state`, `select-tab`, `outline`, an unknown command and `close` as documented |
 
-When game mode detection sees a fullscreen app in front at the start, the checks that take the foreground (`hotkey-toggle`, `hotkey-search`, `escape-collapses`, `debug-channel`) skip rather than interrupt it. CI runs the smoke test after the snapshot (240-second timeout, the checker, `smoke` uploaded even on failure).
+When game mode detection sees a fullscreen app in front at the start, the checks that take the foreground (`hotkey-toggle`, `hotkey-search`, `escape-collapses`, `open-on-click`, `debug-channel`) skip rather than interrupt it. CI runs the smoke test after the snapshot (240-second timeout, the checker, `smoke` uploaded even on failure).
 
 ## Measure
 

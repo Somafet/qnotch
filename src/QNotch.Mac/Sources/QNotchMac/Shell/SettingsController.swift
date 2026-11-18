@@ -226,6 +226,11 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
         let leave = SettingsSlider("Close delay", value: shell.general.closeDelayMs, range: GeneralSettings.closeRange, step: 50) { [weak self] value in
             Analytics.setting("close_delay"); self?.shell.updateGeneral { $0.closeDelayMs = value }
         }
+        let openOn = ActionPopUp("Open on", items: ["Hover", "Click"], selected: shell.general.openOnClick ? 1 : 0) { [weak self] index in
+            guard let self, self.shell.general.openOnClick != (index == 1) else { return }
+            Analytics.setting("open_on"); self.shell.updateGeneral { $0.openOnClick = index == 1 }
+        }
+        openOn.identifier = NSUserInterfaceItemIdentifier("open-on")
         let segmentHover = ActionSwitch("Open hovered feature", value: shell.general.hoverOpensSegment) { [weak self] value in
             Analytics.setting("hover_opens_segment", enabled: value); self?.shell.updateGeneral { $0.hoverOpensSegment = value }
         }
@@ -247,9 +252,10 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
                 settingsRow("Show menu-bar icon", detail: "Reopen QNotch from Finder or Spotlight to restore it here, even during game mode or with shortcuts turned off.", control: menuBar, width: width)
             ], width: width),
             settingsGroup([
-                settingsRow("Hover delay", detail: "How long the pointer rests on the notch before the panel opens.", control: hover, width: width),
-                settingsRow("Open hovered feature", detail: "After the hover delay, open details for the status under the pointer. Moving across statuses while open does not change the view.", control: segmentHover, width: width),
-                settingsRow("Close delay", detail: "How long after the pointer leaves before the panel closes.", control: leave, width: width),
+                settingsRow("Open on", detail: "Hover opens the panel when the pointer rests on the notch. Click opens it only when you click the notch, so heading for tabs or the menu bar never pops it open; a click outside, Escape or the toggle hotkey closes it.", control: openOn, width: width),
+                settingsRow("Hover delay", detail: "How long the pointer rests on the notch before the panel opens. With Open on Click it still applies to files dragged onto the notch.", control: hover, width: width),
+                settingsRow("Open hovered feature", detail: "After the hover delay, open details for the status under the pointer. Moving across statuses while open does not change the view. Not used with Open on Click; clicking a status always opens its details.", control: segmentHover, width: width),
+                settingsRow("Close delay", detail: "How long after the pointer leaves before the panel closes. Not used for a panel opened by a click.", control: leave, width: width),
                 settingsRow("Keep panel open", detail: "The panel stays open until you close it with Escape, the pin, or the toggle hotkey. Also the pin in the panel header.", control: pin, width: width)
             ], header: "Panel", width: width),
             settingsGroup([loginRow(width: width)], width: width),
@@ -676,7 +682,7 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
             ], width: width),
             settingsGroup([
                 settingsRow("Welcome tour", detail: "What QNotch does, your features and accounts, in a few steps.", control: tour, width: width),
-                settingsRow("Hover the notch", detail: "Opens the panel without taking the keyboard.", width: width),
+                settingsRow("Hover the notch", detail: shell.general.openOnClick ? "Open on is set to Click in General, so hovering does not open the panel." : "Opens the panel without taking the keyboard.", width: width),
                 settingsRow("Click the notch", detail: shell.general.isEnabled("search") ? "Opens it for typing. Start typing to search, or press ⌘F." : "Opens the panel with keyboard control. Enable Search in Features to search by typing.", width: width),
                 settingsRow("Escape or click outside", detail: "Closes the panel and returns focus to your app.", width: width),
                 settingsRow("Reopen QNotch", detail: "Finder or Spotlight brings Settings forward in the running instance, including during game mode. Restore the icon in General; choose a game-mode override in Game mode.", width: width)
