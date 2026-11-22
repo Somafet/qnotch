@@ -102,7 +102,7 @@ public sealed class Shortcuts(HotkeyService hotkeys, SettingsStore store)
     /// A disabled shortcut holds no key, so its gesture can be reused; when it is enabled again, the lower order keeps the key.</summary>
     public Shortcut? Set(Shortcut s, string gesture)
     {
-        if (gesture.Length > 0 && _items.FirstOrDefault(x => x != s && x.Enabled && Same(x.Gesture, gesture)) is { } other) return other;
+        if (gesture.Length > 0 && _items.Where(x => x != s && x.Enabled && Same(x.Gesture, gesture)).OrderBy(x => x.Order).FirstOrDefault() is { } other) return other;
         var old = s.Gesture;
         s.Gesture = gesture;
         if (gesture == s.Default) _cfg.Keys.Remove(s.Id); else _cfg.Keys[s.Id] = gesture;

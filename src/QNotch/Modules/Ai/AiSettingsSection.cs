@@ -96,7 +96,7 @@ internal static class AiSettingsSection
                 };
                 var conflict = current >= 0 && st.Apps[current].HotkeyConflict;
                 var key = ctx.Shortcuts.Find($"ai.slot{i + 1}")?.Gesture ?? "";
-                slots.Children.Add(UiKit.Row($"Slot {i + 1}" + (key.Length > 0 ? $": {key}" : ""), conflict ? "Taken by another app. Pick a different slot or change the shortcut in Hotkeys." : null, combo));
+                slots.Children.Add(UiKit.Row($"Slot {i + 1}" + (key.Length > 0 ? $": {key}" : ""), conflict ? "Already in use. Pick a different slot or change the shortcut in Hotkeys." : null, combo));
             }
 
             customs.Children.Clear();

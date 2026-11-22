@@ -54,7 +54,7 @@ public sealed partial class AiAppItem : ObservableObject
 
     public string Initial => Name.Length > 0 ? Name[..1].ToUpperInvariant() : "?";
     public string Tooltip => Name
-        + (Hotkey.Length > 0 ? $"\n{Hotkey}" + (HotkeyConflict ? " (taken by another app)" : "") : "")
+        + (Hotkey.Length > 0 ? $"\n{Hotkey}" + (HotkeyConflict ? " (already in use)" : "") : "")
         + (Error.Length > 0 ? "\n" + Error : "");
 
     partial void OnNameChanged(string value) { OnPropertyChanged(nameof(Initial)); OnPropertyChanged(nameof(Tooltip)); }

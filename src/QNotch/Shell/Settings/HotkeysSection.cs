@@ -44,7 +44,7 @@ public static class HotkeysSection
     {
         var box = new TextBox
         {
-            Width = 150, IsReadOnly = true, IsReadOnlyCaretVisible = false, TextAlignment = TextAlignment.Center,
+            Width = 180, IsReadOnly = true, IsReadOnlyCaretVisible = false, TextAlignment = TextAlignment.Center,
             FontFamily = new System.Windows.Media.FontFamily("Consolas"), FontSize = 12, Cursor = Cursors.Arrow, ToolTip = "Click, then press the new shortcut",
         };
         var note = new TextBlock { Margin = new Thickness(0, 0, 10, 0), VerticalAlignment = VerticalAlignment.Center, FontSize = 12 };

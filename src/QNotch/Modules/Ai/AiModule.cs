@@ -256,7 +256,7 @@ public sealed partial class AiModule : INotchModule, ICadenceAware
             St.Slotted.Clear();
             foreach (var a in slotted) St.Slotted.Add(a);
         }
-        St.HotkeyWarning = conflicts.Count == 0 ? "" : $"{string.Join(", ", conflicts)} taken by another app, so {(conflicts.Count == 1 ? "it" : "they")} will not launch anything.";
+        St.HotkeyWarning = conflicts.Count == 0 ? "" : $"{string.Join(", ", conflicts)} already in use, so {(conflicts.Count == 1 ? "it" : "they")} will not launch anything.";
         Changed?.Invoke();
     }
 
