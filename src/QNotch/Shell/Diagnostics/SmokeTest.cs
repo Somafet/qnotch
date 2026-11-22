@@ -118,6 +118,7 @@ internal sealed partial class SmokeTest
             await Check("hover-keeps-focus", HoverKeepsFocus);
             await Check("hotkey-toggle", () => Foreground(HotkeyToggle));
             await Check("hotkey-search", () => Foreground(HotkeySearch));
+            await Check("hotkey-tab", () => Foreground(HotkeyTab));
             await Check("escape-collapses", () => Foreground(EscapeCollapses));
             await Check("module-disabled", () => ModuleDisabled(probe));
             await Check("module-toggle", () => Task.FromResult<string?>("skip: modules apply on restart on Windows (Settings, Features asks for one)"));

@@ -6,6 +6,36 @@ namespace QNotch.Shell.Diagnostics;
 
 internal sealed partial class SmokeTest
 {
+    /// <summary>A tab shortcut opens its tab even when empty, closes on a second press, and is released while the tab is hidden.</summary>
+    async Task<string?> HotkeyTab()
+    {
+        var keys = _h.Shortcuts.Items.Where(s => s.Id.StartsWith("tab.", StringComparison.Ordinal)).ToList();
+        if (keys.Count == 0) return "no tab shortcuts are declared";
+        if (keys.Any(k => k.Default.Length != 0)) return "a tab shortcut has a default key";
+        var empty = _h.Tabs.Items.FirstOrDefault(t => t.Id != "home" && S.IsTabVisible(t.Id) && _h.Shortcuts.Find($"tab.{t.Id}") is not null && t.IsEmpty?.Invoke() == true);
+        var tab = empty ?? _h.Tabs.Items.FirstOrDefault(t => t.Id != "home" && S.IsTabVisible(t.Id) && _h.Shortcuts.Find($"tab.{t.Id}") is not null);
+        if (tab is null) return "skip: no tab other than Home is visible";
+        var key = _h.Shortcuts.Find($"tab.{tab.Id}")!;
+        var shown = new Dictionary<string, bool>(S.Presentation.Tabs);
+        try
+        {
+            S.ClosePanel();
+            key.Action();
+            await Task.Delay(50);
+            if (S.Mode != ShellMode.Expanded || S.ActiveTab != tab.Id) return $"{key.Id} did not open {tab.Id} (mode {S.Mode}, tab {S.ActiveTab})";
+            key.Action();
+            await Task.Delay(50);
+            if (S.Mode != ShellMode.Collapsed) return $"second press of {key.Id} did not close the panel";
+            S.Presentation.SetTab(tab.Id, false);
+            if (key.Enabled) return $"hidden {tab.Id} kept its shortcut";
+            S.Presentation.SetTab(tab.Id, true);
+            if (!key.Enabled) return $"showing {tab.Id} did not restore its shortcut";
+            Log($"{key.Id}: opened {(empty is null ? "a" : "an empty")} tab, closed on the second press, released while hidden.");
+            return null;
+        }
+        finally { S.Presentation.Tabs = shown; }
+    }
+
     async Task<string?> PresentationCheck()
     {
         var p = S.Presentation;

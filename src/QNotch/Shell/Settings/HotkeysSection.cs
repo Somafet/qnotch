@@ -16,8 +16,18 @@ public static class HotkeysSection
         page.Children.Add(intro);
 
         var refresh = new List<Action>();
+        ShortcutGroup? group = null;
         foreach (var s in keys.Items)
         {
+            if (s.Group != group && (group = s.Group) is not null)
+            {
+                var title = UiKit.Text(group.Title, "Title");
+                title.Margin = new Thickness(0, 8, 0, 4);
+                page.Children.Add(title);
+                var hint = UiKit.Text(group.Hint);
+                hint.Margin = new Thickness(0, 0, 0, 12);
+                page.Children.Add(hint);
+            }
             var (row, update) = Recorder(keys, s);
             page.Children.Add(UiKit.Row(s.Title, s.Hint.Length > 0 ? s.Hint : null, row));
             refresh.Add(update);
@@ -34,7 +44,7 @@ public static class HotkeysSection
     {
         var box = new TextBox
         {
-            Width = 150, IsReadOnly = true, IsReadOnlyCaretVisible = false, TextAlignment = TextAlignment.Center,
+            Width = 180, IsReadOnly = true, IsReadOnlyCaretVisible = false, TextAlignment = TextAlignment.Center,
             FontFamily = new System.Windows.Media.FontFamily("Consolas"), FontSize = 12, Cursor = Cursors.Arrow, ToolTip = "Click, then press the new shortcut",
         };
         var note = new TextBlock { Margin = new Thickness(0, 0, 10, 0), VerticalAlignment = VerticalAlignment.Center, FontSize = 12 };
@@ -45,8 +55,10 @@ public static class HotkeysSection
         void Update()
         {
             if (!box.IsKeyboardFocused) box.Text = s.Gesture.Length > 0 ? s.Gesture : "None";
-            note.Text = clash.Length > 0 ? clash : s.Taken ? "Taken by another app" : "";
-            reset.ToolTip = $"Reset to {s.Default}";
+            var hidden = clash.Length == 0 && s.Group is not null && !s.Enabled && s.Gesture.Length > 0;
+            note.Text = clash.Length > 0 ? clash : s.UsedBy is { } user ? $"Used by {user.Title}" : s.Taken ? "Taken by another app" : hidden ? "Tab hidden, key is free" : "";
+            note.SetResourceReference(TextBlock.ForegroundProperty, hidden ? "TextSecondaryBrush" : "DangerBrush");
+            reset.ToolTip = s.Default.Length > 0 ? $"Reset to {s.Default}" : "Turn off";
             reset.Visibility = s.Gesture == s.Default ? Visibility.Hidden : Visibility.Visible;
         }
         void Set(string gesture)
