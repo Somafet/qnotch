@@ -43,7 +43,7 @@ Windows 10 2004 or newer, x64. Download from [Releases](https://github.com/Somaf
 
 The exe is not code-signed yet, so Windows may say "Windows protected your PC" on first run. Click **More info**, then **Run anyway**.
 
-Quit from the tray icon.
+Quit from the tray icon. In its first week a new install asks once, when you quit, for the main reason, with six one-click answers and Skip; only the answer you pick, or that you skipped, is sent, never text, and it follows Share usage data.
 
 ## First start
 

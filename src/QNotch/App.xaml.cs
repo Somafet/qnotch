@@ -110,6 +110,9 @@ public partial class App : Application
         // Welcome tour: only on a fresh install. Settings from before it existed record it as done, silently.
         var tour = FirstRun.Decide(!fresh, gs.OnboardingDone, snapDir is not null);
         if (tour == TourStart.MarkDone) { gs.OnboardingDone = true; _store.Save("general", gs); }
+        // A fresh install records its first run, whether the tour is finished or skipped; it is saved with the tour's own save. Installs from
+        // before this have no value and are never asked the quit question. Set before the shell exists, so nothing writes general.json early.
+        if (tour == TourStart.Show && !_debugControl) gs.FirstRunAt = DateTimeOffset.UtcNow;
         Motion.Refresh(gs.ReduceMotion);
         ThemeManager.Apply(gs);
         var bus = new EventBus(Dispatcher);
@@ -154,7 +157,7 @@ public partial class App : Application
         tabs.Register(new TabDescriptor("home", "Home", Glyphs.Home, 0, () => new HomeView(layout, shell)));
         sections.Register(new SettingsSectionDescriptor("features", "Features", Glyphs.Apps, 5, () => FeaturesSection.Create(gs, _store!, ModuleList.All, bootDisabled, Restart, layout, tabs, segments)));
         sections.Register(new SettingsSectionDescriptor("general", "General", Glyphs.Settings, 0, () => GeneralSection.Create(gs, _store!, SetupCode.All(ModuleList.All), Restart, shell.Nudge.ResetAll)));
-        sections.Register(new SettingsSectionDescriptor("about", "About", "\uE946", 1000, () => AboutSection.Create(gs, updates, () => ShowTour(gs, _store!, shortcuts, shell), () => Shutdown())));
+        sections.Register(new SettingsSectionDescriptor("about", "About", "\uE946", 1000, () => AboutSection.Create(gs, updates, () => ShowTour(gs, _store!, shortcuts, shell), () => QuitByUser(gs, "ui"))));
         sections.Register(new SettingsSectionDescriptor("appearance", "Appearance", Glyphs.Color, 10, () => AppearanceSection.Create(gs, layout)));
         sections.Register(new SettingsSectionDescriptor("hotkeys", "Hotkeys", "", 7, () => HotkeysSection.Create(shortcuts)));
         sections.Register(new SettingsSectionDescriptor("sounds", "Sounds", Glyphs.Volume, 8, () => SoundsSection.Create(sounds)));
@@ -214,7 +217,7 @@ public partial class App : Application
                 pipe => DebugChannel.Start(new DebugHost(window, shell, shortcuts, tabs, sections, bootDisabled, _running, () => ShowTour(gs, _store!, shortcuts, shell), () => { }), pipe)), Shutdown);
             return;
         }
-        _tray = new TrayIcon(window, shell, shortcuts, () => Shutdown(), updates);
+        _tray = new TrayIcon(window, shell, shortcuts, () => QuitByUser(gs, "tray"), updates);
         try
         {
             _consumers = new ConsumerHost((request, ct) => Dispatcher.InvokeAsync(() => consumers.Capture(request),
@@ -262,6 +265,37 @@ public partial class App : Application
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
     static void ShowTour(GeneralSettings gs, SettingsStore store, Shortcuts shortcuts, ShellController shell) =>
         Shell.Onboarding.Tour.ShowOnDemand(gs, store, shortcuts, ModuleList.All, id => shell.OpenSettings(id), () => shell.OpenPanelWithKeyboard("home"));
+
+    bool _quitting;
+
+    /// <summary>The two quit paths a user takes (tray menu, Settings, About): asks the first-week question when it is due, then quits. Every
+    /// other exit (sign-out, restart, update, the debug channel's quit) calls Shutdown directly and never asks. Never blocks the quit.</summary>
+    void QuitByUser(GeneralSettings gs, string surface)
+    {
+        if (_quitting) return; // a second Quit while the question is open
+        _quitting = true;
+        try
+        {
+            var analyticsOn = gs.ShareUsageData && Analytics.EnvironmentAllows && Analytics.Current is not null;
+            var normalRun = _store is { ReadOnly: false } && !_debugControl;
+            if (QuitQuestion.ShouldAsk(gs.FirstRunAt, gs.QuitQuestionAsked, analyticsOn, normalRun, _shell?.Mode == ShellMode.GameBar, DateTimeOffset.UtcNow))
+                AskQuitReason(gs, surface);
+        }
+        catch (Exception ex) { Log.Error("Quit question failed", ex); }
+        Shutdown();
+    }
+
+    // The dialog lives in its own method (never inlined), so a normal start does not load its types.
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+    void AskQuitReason(GeneralSettings gs, string surface)
+    {
+        // Asked once: on disk before the window opens, because the app exits right after (saves are debounced; OnExit flushes as well).
+        gs.QuitQuestionAsked = true;
+        _store!.Save("general", gs);
+        _store.Flush();
+        if (Shell.Onboarding.QuitQuestionWindow.Ask() is { } target)
+            Analytics.Track("shell", "quit_reason", surface, target); // OnExit's Analytics.Dispose flushes the queue, this event included
+    }
 
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
     static void SnapshotTour(GeneralSettings gs, SettingsStore store, Shortcuts shortcuts, Action<FrameworkElement, string> save) =>

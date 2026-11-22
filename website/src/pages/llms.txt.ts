@@ -10,7 +10,7 @@ export const GET: APIRoute = async ({ site }) => {
   const page = (path: string) => new URL(path, site).href;
   const install = [
     `- Microsoft Store: [QNotch](${STORE}), a paid copy of the same app that the Store installs and updates. Buying it funds development.`,
-    `- Direct download: [latest Windows release](${DL}). QNotch.exe (27 MB) needs the .NET 10 Desktop Runtime; QNotch-self-contained.zip (80 MB) runs as is.`,
+    `- Direct download: [latest Windows release](${DL}). QNotch-self-contained.zip (80 MB) runs as is; a smaller QNotch.exe (27 MB) for people who already have the .NET 10 Desktop Runtime is on the same release page.`,
     ...(winget ? ['- winget: `winget install Somafet.QNotch`'] : []),
     ...(scoop ? ['- Scoop: `scoop bucket add qnotch https://github.com/Somafet/scoop-bucket`, then `scoop install qnotch/qnotch`'] : []),
     ...(chocolatey ? ['- Chocolatey: `choco install qnotch` from an administrator terminal'] : []),

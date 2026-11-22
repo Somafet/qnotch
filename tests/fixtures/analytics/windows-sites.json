@@ -1,5 +1,11 @@
 [
   {
+    "file": "src/QNotch/App.xaml.cs",
+    "line": 296,
+    "module": "shell",
+    "action": "quit_reason"
+  },
+  {
     "file": "src/QNotch/Modules/Agents/AgentsModule.cs",
     "line": 205,
     "module": "agents",

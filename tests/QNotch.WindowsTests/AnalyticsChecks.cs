@@ -148,6 +148,7 @@ internal static class AnalyticsChecks
             Check(Analytics.Hash(vector.GetProperty("raw").GetString()!) == vector.GetProperty("sha256").GetString());
         var targets = catalog.RootElement.GetProperty("targets").EnumerateArray().Select(t => t.GetString()!).ToHashSet();
         Check(targets.SetEquals(AnalyticsCatalog.Targets));
+        await QuitReasonAsync(targets);
         var lifecycle = catalog.RootElement.GetProperty("lifecycle");
         Check(lifecycle.GetProperty("event").GetString() == "qnotch_active");
         Check(new[] { "launch", "day" }.SequenceEqual(lifecycle.GetProperty("reasons").EnumerateArray().Select(r => r.GetString())));
@@ -175,6 +176,28 @@ internal static class AnalyticsChecks
         Check(agents.FirstHook("session-a") && !agents.FirstHook("session-a") && agents.FirstHook("session-b"));
 
         await LifecycleAsync();
+    }
+
+    /// <summary>The first-week quit question: shell/quit_reason with one of the seven fixed targets, nothing free-form, and it leaves with the exit flush.</summary>
+    static async Task QuitReasonAsync(HashSet<string> catalogTargets)
+    {
+        Check(AnalyticsCatalog.Allows("shell", "quit") && AnalyticsCatalog.Allows("shell", "quit_reason"));
+        Check(QuitQuestion.Targets.Count() == 7 && QuitQuestion.Targets.All(t => AnalyticsCatalog.Targets.Contains(t) && catalogTargets.Contains(t)));
+        var transport = new Transport();
+        var analytics = new Analytics("phc_test", new Uri("https://example.invalid/batch/"), () => true,
+            () => (Analytics.Hash("synthetic-account"), Analytics.Hash("synthetic-install"), "anonymous"), new HttpClient(transport), false);
+        analytics.Record("shell", "quit", "tray");
+        analytics.Record("shell", "quit_reason", "tray", "quit_back_later");
+        analytics.Record("shell", "quit_reason", "ui", "quit_skipped");
+        analytics.Record("shell", "quit_reason", "ui", "quit_because I said so"); // free text is never accepted
+        Check(analytics.Buffered == 3);
+        analytics.Dispose(); // exit: the best-effort flush includes an answer recorded a moment before
+        var sent = transport.Bodies.SelectMany(b => JsonDocument.Parse(b).RootElement.GetProperty("batch").EnumerateArray()).Select(e => e.GetProperty("properties")).ToArray();
+        Check(sent.Length == 3);
+        Check(!sent[0].TryGetProperty("target", out _) && sent[0].GetProperty("action").GetString() == "quit");
+        Check(sent[1].GetProperty("action").GetString() == "quit_reason" && sent[1].GetProperty("surface").GetString() == "tray"
+            && sent[1].GetProperty("target").GetString() == "quit_back_later" && sent[1].GetProperty("module").GetString() == "shell");
+        Check(sent[2].GetProperty("surface").GetString() == "ui" && sent[2].GetProperty("target").GetString() == "quit_skipped");
     }
 
     static async Task LifecycleAsync()

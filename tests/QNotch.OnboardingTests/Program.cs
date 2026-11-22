@@ -58,6 +58,47 @@ await Test("OnboardingDone is never in a setup code", () =>
     return Task.CompletedTask;
 });
 
+// ---------- the first-week quit question (spec/analytics.md, Quit question) ----------
+
+await Test("the first-run date and the asked flag are never in a setup code", () =>
+{
+    var shared = SetupCode.ShellSections.SelectMany(s => s.Shared.Fields).ToList();
+    foreach (var name in new[] { nameof(GeneralSettings.FirstRunAt), nameof(GeneralSettings.QuitQuestionAsked) })
+    {
+        Assert(typeof(GeneralSettings).GetProperty(name) is not null);
+        Assert(!shared.Any(f => f.StartsWith(name, StringComparison.OrdinalIgnoreCase)));
+    }
+    var gs = new GeneralSettings();
+    Assert(gs.FirstRunAt is null && !gs.QuitQuestionAsked); // an existing install has neither, so it is never asked
+    return Task.CompletedTask;
+});
+await Test("quit question decision table", () =>
+{
+    var first = new DateTimeOffset(2026, 11, 1, 12, 0, 0, TimeSpan.Zero);
+    bool Ask(DateTimeOffset? firstRun = null, bool asked = false, bool analytics = true, bool normal = true, bool game = false, double days = 0.004) =>
+        QuitQuestion.ShouldAsk(firstRun ?? first, asked, analytics, normal, game, first.AddDays(days));
+    Assert(Ask());                                                           // six minutes in
+    Assert(Ask(days: 6.999));                                                // still inside the week
+    Assert(!Ask(days: 7));                                                   // the boundary is outside: "less than 7 days"
+    Assert(!Ask(days: 30));
+    Assert(!Ask(asked: true));                                               // once only
+    Assert(!Ask(analytics: false));                                          // preference or environment off, or no delivery configured
+    Assert(!Ask(normal: false));                                             // --snapshot, --smoke-test, --measure, --debug-control, read-only
+    Assert(!Ask(game: true));                                                // game bar
+    Assert(!QuitQuestion.ShouldAsk(null, false, true, true, false, first));  // no first-run date: an install from before this
+    Assert(!Ask(days: -0.5));                                                // the clock moved back past the recorded date
+    Assert(Ask(days: 0));                                                    // the same instant is not "earlier"
+    return Task.CompletedTask;
+});
+await Test("quit question answers: six fixed ids plus skip", () =>
+{
+    Assert(QuitQuestion.Answers.Select(a => a.Target).SequenceEqual(
+        ["quit_in_the_way", "quit_not_useful", "quit_missing_feature", "quit_not_working", "quit_just_trying", "quit_back_later"]));
+    Assert(QuitQuestion.Skipped == "quit_skipped" && QuitQuestion.Targets.Count() == 7);
+    Assert(QuitQuestion.Answers.All(a => a.Label.Length is > 0 and <= 40 && !a.Label.Contains('—')));
+    return Task.CompletedTask;
+});
+
 // ---------- feature choices ----------
 
 await Test("declared feature defaults apply; DisabledModules lists switched-off default-on modules in order", () =>

@@ -34,6 +34,10 @@ public sealed partial class GeneralSettings : ObservableObject
     [ObservableProperty] string _lastNotifiedUpdateVersion = "";
     /// <summary>The welcome tour finished, was skipped or closed (or the settings predate it). A local preference: never in setup codes.</summary>
     [ObservableProperty] bool _onboardingDone;
+    /// <summary>When a fresh install first ran (UTC). Empty for installs from before it existed, which are never asked the quit question. A local value: never in setup codes.</summary>
+    [ObservableProperty] DateTimeOffset? _firstRunAt;
+    /// <summary>The first-week quit question was shown to this install, once. A local value: never in setup codes.</summary>
+    [ObservableProperty] bool _quitQuestionAsked;
     [ObservableProperty] string _lastTab = "home";
 
     /// <summary>Ids of modules the user turned off (Settings, Features). They are never created; a change applies on restart.</summary>
