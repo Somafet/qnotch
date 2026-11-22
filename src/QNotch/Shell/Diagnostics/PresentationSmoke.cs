@@ -13,7 +13,8 @@ internal sealed partial class SmokeTest
         if (keys.Count == 0) return "no tab shortcuts are declared";
         if (keys.Any(k => k.Default.Length != 0)) return "a tab shortcut has a default key";
         var empty = _h.Tabs.Items.FirstOrDefault(t => t.Id != "home" && S.IsTabVisible(t.Id) && _h.Shortcuts.Find($"tab.{t.Id}") is not null && t.IsEmpty?.Invoke() == true);
-        var tab = empty ?? _h.Tabs.Items.First(t => t.Id != "home" && S.IsTabVisible(t.Id) && _h.Shortcuts.Find($"tab.{t.Id}") is not null);
+        var tab = empty ?? _h.Tabs.Items.FirstOrDefault(t => t.Id != "home" && S.IsTabVisible(t.Id) && _h.Shortcuts.Find($"tab.{t.Id}") is not null);
+        if (tab is null) return "skip: no tab other than Home is visible";
         var key = _h.Shortcuts.Find($"tab.{tab.Id}")!;
         var shown = new Dictionary<string, bool>(S.Presentation.Tabs);
         try
