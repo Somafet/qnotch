@@ -3,13 +3,13 @@ import Icon from './Icon.astro';
 
 // Other ways to install the Windows app. src/lib/releases.ts checks at build time which package managers
 // actually carry QNotch, so a channel appears only once its command works (see docs/releases.md).
-interface Props { gh: string; winget: boolean; scoop: boolean; chocolatey: boolean }
-const { gh, winget, scoop, chocolatey } = Astro.props;
+interface Props { gh: string; store: string; winget: boolean; scoop: boolean; chocolatey: boolean }
+const { gh, store, winget, scoop, chocolatey } = Astro.props;
 
 const latest = `${gh}/releases/latest/download`;
 type Channel = { id: string; label: string; note: string; command?: string[]; hint?: string };
 const channels: Channel[] = [
-  { id: 'download', label: 'Download', note: 'The same files as the Download button, straight from GitHub.' },
+  { id: 'download', label: 'Download', note: 'The free download, straight from GitHub.' },
   ...(winget ? [{ id: 'winget', label: 'winget', note: 'Built into Windows 10 and 11. Adds the qnotch command.',
     command: ['winget install Somafet.QNotch'], hint: 'Update with winget upgrade Somafet.QNotch.' }] : []),
   ...(scoop ? [{ id: 'scoop', label: 'Scoop', note: 'Adds the qnotch command and a Start menu shortcut.',
@@ -46,16 +46,20 @@ const channels: Channel[] = [
                 <p class="install-hint">{c.hint}</p>
               </>
             ) : (
+              <>
               <ul class="install-files">
                 <li>
                   <span><b>QNotch-self-contained.zip</b>Unzip and run. Nothing else to install.</span>
                   <a class="btn btn-ghost btn-sm" href={`${latest}/QNotch-self-contained.zip`}><Icon name="download" />ZIP</a>
                 </li>
-                <li>
-                  <span><b>QNotch.exe</b>Smaller, needs the <a class="inline" href="https://dotnet.microsoft.com/download/dotnet/10.0">.NET 10 Desktop Runtime</a>.</span>
-                  <a class="btn btn-ghost btn-sm" href={`${latest}/QNotch.exe`}><Icon name="download" />EXE</a>
-                </li>
               </ul>
+              <ol class="install-steps">
+                <li>Unzip it and put <code>QNotch.exe</code> somewhere it can stay, not in Downloads. Start with Windows remembers where it is.</li>
+                <li>Run it. If Windows shows "Windows protected your PC" (the exe is not code-signed yet), click <b>More info</b>, then <b>Run anyway</b>.</li>
+                <li>QNotch appears as a small pill at the top centre of the screen and opens a short welcome tour. After that, hover the pill or press <span class="install-keys"><kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>N</kbd></span> to open it.</li>
+              </ol>
+              <p class="install-hint">To skip the warning, get <a class="inline" href={store}>QNotch from the Microsoft Store</a> instead.</p>
+              </>
             )}
           </div>
         ))}
@@ -340,6 +344,33 @@ const channels: Channel[] = [
     font-size: 14px;
     font-weight: 600;
     margin-bottom: 2px;
+  }
+
+  .install-steps {
+    margin: 4px 0 0;
+    padding: 12px 0 0 20px;
+    border-top: 1px solid var(--line);
+    color: var(--ink-2);
+    font-size: 14.5px;
+  }
+
+  .install-steps li {
+    padding-left: 4px;
+    margin-bottom: 6px;
+  }
+
+  .install-keys {
+    white-space: nowrap;
+  }
+
+  .install-steps b {
+    color: var(--ink);
+  }
+
+  .install-steps code {
+    font-family: var(--mono);
+    font-size: 13.5px;
+    color: var(--ink);
   }
 
   .install-sponsor {
