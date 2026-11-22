@@ -119,7 +119,7 @@ public sealed class ShellController : IShell
     /// <summary>Opens the panel on the tab with the keyboard, even when the tab is empty because the user asked for it by name. On that tab already, closes.</summary>
     void ToggleTabFromHotkey(string id)
     {
-        if (!_started || _mode == ShellMode.GameBar || !IsTabVisible(id)) return;
+        if (!_started || _mode == ShellMode.GameBar || _drop is { IsShown: true } || !IsTabVisible(id)) return;
         if (_mode == ShellMode.Expanded && _activeTab == id) { QNotch.Core.Analytics.Track("shell", "close_panel"); ClosePanel(); return; }
         if (_mode == ShellMode.Collapsed) QNotch.Core.Analytics.Track("shell", "open_panel");
         QNotch.Core.Analytics.Track("shell", "select_tab", target: id);
@@ -707,6 +707,9 @@ public sealed class ShellController : IShell
         order.Insert(to, id);
         _general.TabOrder = order;
         _store.Save("general", _general);
+        var keyOrder = 1000;
+        foreach (var t in OrderedTabs())
+            if (_tabKeys.FirstOrDefault(k => k.Tab == t.Id).Key is { } key) _shortcuts.SetOrder(key, keyOrder++);
 
         var strip = _w.TabStrip.Children;
         var rb = _tabButtons[id];

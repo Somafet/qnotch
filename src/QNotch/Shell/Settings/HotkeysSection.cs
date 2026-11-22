@@ -55,7 +55,9 @@ public static class HotkeysSection
         void Update()
         {
             if (!box.IsKeyboardFocused) box.Text = s.Gesture.Length > 0 ? s.Gesture : "None";
-            note.Text = clash.Length > 0 ? clash : s.Taken ? "Taken by another app" : "";
+            var hidden = clash.Length == 0 && s.Group is not null && !s.Enabled && s.Gesture.Length > 0;
+            note.Text = clash.Length > 0 ? clash : s.UsedBy is { } user ? $"Used by {user.Title}" : s.Taken ? "Taken by another app" : hidden ? "Tab hidden, key is free" : "";
+            note.SetResourceReference(TextBlock.ForegroundProperty, hidden ? "TextSecondaryBrush" : "DangerBrush");
             reset.ToolTip = s.Default.Length > 0 ? $"Reset to {s.Default}" : "Turn off";
             reset.Visibility = s.Gesture == s.Default ? Visibility.Hidden : Visibility.Visible;
         }

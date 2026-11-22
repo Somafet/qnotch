@@ -126,7 +126,9 @@ ctx.Shell.AddHwndHook(hook);                                     // e.g. WM_CLIP
 ```
 Every lasting global hotkey goes through `ctx.Shortcuts` (`Shell/Shortcuts.cs`), never `ctx.Hotkeys`: call `Add(id, title, hint, defaultGesture, action, order, enabled)` once per id in `Initialize` (gesture in KeyGestureConverter syntax). The returned `Shortcut` has `Gesture` (empty when the user turned it off), `Enabled` and `Taken` (another app owns the key); `Shortcuts.Changed` fires when any of them change, so show the gesture from there and never hardcode it in UI text. Changed gestures are saved in `hotkeys.json` (id to gesture); the shell's own two are `toggle` and `gamemode`. Orders in use: toggle 0, gamemode 10, search 20, ai.slot1 to ai.slot6 30 to 35, tab shortcuts from 1000.
 
-After every module has initialized, the shell declares an unbound `tab.<id>` shortcut for each tab, in strip order, unless the tab's module already declared a shortcut under the tab's own id. It opens the panel on that tab with the keyboard, keeps an empty tab instead of falling back to Home, closes the panel when that tab is already showing, stays active during exclusive input, and is released while the tab is hidden.
+After every module has initialized, the shell declares an unbound `tab.<id>` shortcut for each tab, in strip order, unless the tab's module already declared a shortcut under the tab's own id. It opens the panel on that tab with the keyboard, keeps an empty tab instead of falling back to Home, closes the panel when that tab is already showing, stays active during exclusive input, does nothing while the drop screen shows, and is released while the tab is hidden. Tab shortcuts follow the strip order when tabs are reordered.
+
+A disabled shortcut (a hidden tab, an empty AI slot) holds no key, so another shortcut can use its gesture. When it is enabled again, the lower order keeps the key and the other row shows "Used by".
 
 ### Sounds
 
