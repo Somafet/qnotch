@@ -21,6 +21,12 @@ Continuous controls record one action per gesture, not per step: volume changes,
 
 Package-manager channels are recognized locally from the executable's install folder; the path itself is never sent. Release builds are marked at build time: Windows tag builds on GitHub Actions, Mac builds given `QNOTCH_VERSION`. `previous_exit` comes from a one-word local file, `analytics-run-state` in the data directory, written `running` at launch and `exited` at a normal exit. It is written only while analytics is enabled. Windows checks for the new day on its existing 10-second delivery timer; Mac arms one one-shot timer for just after the next UTC midnight.
 
+## Quit question (Windows)
+
+A new Windows install is asked once, when the user quits, for the main reason. The question appears only when the install's first run was less than 7 days ago, it was never asked before, analytics is enabled (the local preference and the environment override, with delivery configured), the run is a normal one (not `--snapshot`, `--smoke-test`, `--measure`, `--debug-control` or read-only) and the shell is not in game mode. It never follows another exit: sign-out or shutdown, Restart now, an update install, the debug channel's `quit`, a second instance leaving or a crash. Only the two quit commands a user chooses ask: the tray menu and Settings, About. An install from before the question has no recorded first-run date and is never asked.
+
+Choosing an answer, Skip, Esc or closing the dialog records `shell`/`quit_reason` with the same surface as the `quit` that triggered it (`tray` for the tray menu, `ui` for Settings), then quits. `quit` is unchanged. The `target` is one of seven fixed ids and nothing else: `quit_in_the_way` (It gets in my way), `quit_not_useful` (Nothing in it I'd use), `quit_missing_feature` (It's missing something I need), `quit_not_working` (Something didn't work), `quit_just_trying` (Just having a look), `quit_back_later` (Closing it for now, I'll be back) and `quit_skipped`. There is no text field and nothing else is sent. Every way out of the dialog quits; it cannot cancel the quit. The first-run date and the asked flag are local `GeneralSettings` values, excluded from setup codes. The Mac has no such question.
+
 ## Privacy and identity
 
 No paths, names, titles, clipboard, notes, searches, terminal input/output, file metadata, account names, raw account ids, credentials, JWTs, notification text, token material or arbitrary errors enter payloads. Token reveal/copy events contain only the fixed action. No identify/person updates, autocapture, pageviews, exception capture, session recording or replay are enabled.
@@ -45,7 +51,7 @@ The [source-site inventory](../tests/fixtures/analytics/windows-sites.json) reco
 
 | Area | Action boundaries |
 | --- | --- |
-| Shell | User summon/hover, tab choice, settings navigation, pin/edit controls, card visibility/size/order, tab order, notch positioning, tray actions, game-mode overrides, manual update checks/install/release notes, quit |
+| Shell | User summon/hover, tab choice, settings navigation, pin/edit controls, card visibility/size/order, tab order, notch positioning, tray actions, game-mode overrides, manual update checks/install/release notes, quit, and the first-week quit reason (`quit_reason`, see [Quit question](#quit-question-windows)) |
 | Onboarding | Next/back/skip/finish, feature choices, account setup callbacks |
 | General/settings | Display, timing, pin/login/telemetry preferences, setup copy/check/apply, theme/accent/profile, sound choice/preview/reset, shortcut change/reset, feature enablement/presentation |
 | Media | Play/pause, next/previous, session choice, seek; no playback or timeline observations |

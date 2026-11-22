@@ -1132,15 +1132,17 @@ internal sealed class TourWindow : Window
     // ---------- chrome ----------
 
     /// <summary>Rounded corners and a border in the theme's stroke color (Windows 11), dark frame in dark mode.</summary>
-    void Frame()
+    void Frame() => Frame(this);
+
+    internal static void Frame(Window w)
     {
-        var hwnd = new WindowInteropHelper(this).Handle;
+        var hwnd = new WindowInteropHelper(w).Handle;
         if (hwnd == 0) return;
         int dark = 1;
         Native.DwmSetWindowAttribute(hwnd, 20, ref dark, 4); // DWMWA_USE_IMMERSIVE_DARK_MODE
         int round = 2;
         Native.DwmSetWindowAttribute(hwnd, 33, ref round, 4); // DWMWA_WINDOW_CORNER_PREFERENCE: round
-        if (TryFindResource("WindowBrush") is SolidColorBrush b)
+        if (w.TryFindResource("WindowBrush") is SolidColorBrush b)
         {
             int bgr = b.Color.R | (b.Color.G << 8) | (b.Color.B << 16);
             Native.DwmSetWindowAttribute(hwnd, 35, ref bgr, 4); // caption color, in case the frame ever shows
@@ -1150,7 +1152,7 @@ internal sealed class TourWindow : Window
     }
 
     /// <summary>Keyboard focus ring for the tour's controls (the shared styles hide focus visuals for mouse users).</summary>
-    static Style FocusRing()
+    internal static Style FocusRing()
     {
         var rect = new FrameworkElementFactory(typeof(Rectangle));
         rect.SetValue(Shape.StrokeThicknessProperty, 2.0);

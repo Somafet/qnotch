@@ -207,6 +207,13 @@ internal static partial class Snapshot
             try { scene.Tour((el, name) => Shot(name, p => Render.Save(el, p))); }
             catch (Exception ex) { Fail("onboarding", Reason(ex)); Log.Warn("Welcome tour snapshot failed", ex); }
         }
+
+        // The first-week quit question, rendered from a window that is never activated: quit-question.png.
+        if (Wants("quit-question"))
+        {
+            try { Onboarding.QuitQuestionWindow.Snapshot((el, name) => Shot(name, p => Render.Save(el, p))); }
+            catch (Exception ex) { Fail("quit-question", Reason(ex)); Log.Warn("Quit question snapshot failed", ex); }
+        }
         return ok;
     }
 
