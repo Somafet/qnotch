@@ -1,13 +1,13 @@
 # QNotch for macOS
 
-Status: functional development milestone, not a public release. A native Swift/AppKit menu-bar app provides a display-anchored notch surface with a hover panel and the feature modules listed below. Which Windows features exist on the Mac, and how, is tracked in the [parity table](parity.md). The notch surface shares the Windows visual language (near-black surface, bordered cards, icon tab strip, soft-accent chips) built from AppKit: SF Symbols, system typography, the macOS accent color, native focus, accessibility, and Core Animation. Settings is a System Settings–style sidebar window that follows the system appearance. Windows remains independently released.
+Status: publicly released for Apple silicon as a signed, notarized app. [Download it here](https://qnot.ch/mac/). A native Swift/AppKit menu-bar app provides a display-anchored notch surface with a hover panel and the feature modules listed below. Which Windows features exist on the Mac, and how, is tracked in the [parity table](parity.md). The notch surface shares the Windows visual language (near-black surface, bordered cards, icon tab strip, soft-accent chips) built from AppKit: SF Symbols, system typography, the macOS accent color, native focus, accessibility, and Core Animation. Settings is a System Settings–style sidebar window that follows the system appearance. Windows remains independently released.
 
 ## Requirements and commands
 
 - Apple silicon (arm64), macOS 13 or newer. Intel and universal downloads are not supported by this milestone.
 - Xcode 15 or newer, including its macOS SDK and XCTest; Swift 5.9 or newer. One package dependency, [Sparkle](https://sparkle-project.org) for updates, pinned exactly in `Package.swift` and `Package.resolved`; SwiftPM fetches it on the first build. No Windows tooling.
 - A logged-in graphical macOS session for the native UI smoke test and interactive app. Headless geometry/state/settings tests run through XCTest.
-- The deployment target is macOS 13. CI runs on macOS 15; development evidence also records the local OS. Compatibility on a physical macOS 13 machine still needs validation before a public release.
+- The deployment target is macOS 13. CI runs on macOS 15; development evidence also records the local OS. No check on a physical macOS 13 machine is recorded yet.
 
 From the repository root:
 
