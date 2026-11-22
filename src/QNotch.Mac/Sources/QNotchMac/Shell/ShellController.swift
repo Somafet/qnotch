@@ -269,6 +269,17 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
             if state.acceptsKeyboard { panel.makeFirstResponder(nil) }
         }
         buildStatus()
+        syncTabShortcuts()
+    }
+
+    /// One shortcut per registered tab, unless the tab's module declared its own under the tab's id.
+    private func syncTabShortcuts() {
+        let items = registries.tabs.items
+        let bindable = tabStripIDs.compactMap { id in items.first { $0.id == id } }.filter { tab in
+            guard let own = shortcuts.shortcut(tab.id) else { return true }
+            return own.owner != registries.tabs.owner(of: tab.id)
+        }
+        shortcuts.syncTabs(bindable.map { ($0.id, $0.title, general.isTabVisible($0.id)) }) { [weak self] in self?.summonTab($0) }
     }
 
     func updateGeneral(_ change: (inout GeneralSettings) -> Void) {
@@ -313,6 +324,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
             }
             discardPanel()
         }
+        if previous.hiddenTabs != general.hiddenTabs || previous.tabOrder != general.tabOrder { syncTabShortcuts() }
         resolveDisplay()
         rebuildSurface()
         updateVisibility()
@@ -832,6 +844,12 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
             order.compactMap { id in items.first { $0.id == id } }.map { PanelView.Tab(id: $0.id, symbol: $0.symbol, title: $0.title) }
     }
 
+    /// Every tab in strip order, hidden ones included.
+    private var tabStripIDs: [String] {
+        ["home"] + registries.tabs.items.filter { $0.id == "search" }.map(\.id) +
+            LayoutOrder.apply(saved: general.tabOrder, defaults: registries.tabs.items.filter { $0.id != "search" }.map(\.id))
+    }
+
     // MARK: Edit mode
 
     private(set) var editing = false
@@ -855,8 +873,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         if hadDetail { showBody(); updateVisibility() }
         // Hidden tabs remain action/shortcut destinations. Show a temporary selected tab while
         // active, then remove it on leaving; Home and enabled Search retain their fixed positions.
-        let ids = ["home"] + registries.tabs.items.filter { $0.id == "search" }.map(\.id) +
-            LayoutOrder.apply(saved: general.tabOrder, defaults: registries.tabs.items.filter { $0.id != "search" }.map(\.id))
+        let ids = tabStripIDs
         guard let next = ids.firstIndex(of: id) else { return }
         let previous = ids.firstIndex(of: activeTab) ?? 0
         let stripChanges = !general.isTabVisible(activeTab) || !general.isTabVisible(id)
@@ -937,6 +954,18 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         open(keyboard: true)
         selectTab("search")
         searchView?.focus(appending: "")
+    }
+
+    /// A tab's own hotkey: opens the panel on it with the keyboard or switches to it. Pressed while
+    /// that tab is showing, it closes the panel.
+    func summonTab(_ id: String) {
+        guard !gameActive, !modulesDeferred, screen != nil, dropScreen == nil, general.isTabVisible(id),
+              registries.tabs.items.contains(where: { $0.id == id }) else { return }
+        if state.expanded, activeTab == id, transientDetail == nil { Analytics.record("shell", "close_panel"); close(); return }
+        selectTab(id)
+        open(keyboard: true)
+        // Opening during a notification peek moves to Notifications; an explicit tab stays.
+        if activeTab != id { selectTab(id) }
     }
 
     private func updateVisibility() {

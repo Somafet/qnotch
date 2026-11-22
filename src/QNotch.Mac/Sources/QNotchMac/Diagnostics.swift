@@ -53,6 +53,7 @@ enum NativeSmokeTest {
             guard let layout = shell.layout else { throw Failure("placement", "No display available for native UI validation") }
             try checkSearchEnablement(run)
             try checkFeatureVisibility(run)
+            try checkTabHotkeys(run)
             try checkHomeCardSizes(run)
             // Visibility exercises keyboard-open navigation; Terminal's toggle starts collapsed.
             shell.close(restoreFocus: false)
