@@ -19,7 +19,7 @@ A target has an `id`, a `title`, an optional `subtitle`, a `glyph`, `enabled`, a
 
 ## Behavior
 
-- **When it shows:** a file drag enters the collapsed pill or the open panel, at least one source is registered, and the notch is not in game mode. The shell opens the panel with the normal hover dwell, and the screen covers the header, the tabs and the tab content. A drag that starts inside the panel, such as a File tray item, gets the screen too.
+- **When it shows:** a file drag enters the collapsed pill or the open panel, at least one source is registered, and the notch is not in game mode. The shell opens the panel with the normal hover dwell (macOS: at once, and already for a file drag rising just below the collapsed notch, because a drag resting against the top edge can open Mission Control), and the screen covers the header, the tabs and the tab content. A drag that starts inside the panel, such as a File tray item, gets the screen too.
 - **Header:** "Drop <name>" for one item, or "Drop N items" for several. Under it, a muted line: "Choose where they go".
 - **Groups:** one per source, in `order`. Each group has a small heading with the source's glyph and title, then its target tiles in a wrapping row. If no source has a target, the screen shows "Nothing can take these files right now".
 - **Tiles:** an enabled tile highlights with an accent border while files are over it, and accepts the drop as a copy. A disabled tile is dimmed and refuses the drop. A drop outside every tile is refused and does nothing.

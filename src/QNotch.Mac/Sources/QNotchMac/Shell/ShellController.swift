@@ -98,7 +98,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         panel.contentView = surface
         surface.entered = { [weak self] in self?.pointerEntered() }
         surface.exited = { [weak self] in self?.pointerLeft() }
-        surface.fileDragEntered = { [weak self] files, point in self?.fileDragEntered(files, at: point) ?? [] }
+        surface.fileDragEntered = { [weak self] files, point in self?.fileDragEntered(files, at: point, requireNotch: true) ?? [] }
         surface.fileDragUpdated = { [weak self] point in self?.fileDragUpdated(at: point) ?? [] }
         surface.fileDragExited = { [weak self] in self?.fileDragExited() }
         surface.filesDropped = { [weak self] files, point in self?.filesDropped(files, at: point) ?? false }
@@ -154,11 +154,12 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         }
         // Event-driven: no polling while the pointer is stationary. Entering the menu bar
         // outside QNotch yields its whole band, including icons underneath our wings.
-        globalMenuPointer = NSEvent.addGlobalMonitorForEvents(matching: [.mouseMoved, .leftMouseDragged]) { [weak self] _ in
-            self?.updateMenuBarAccess(at: NSEvent.mouseLocation)
+        let pointerEvents: NSEvent.EventTypeMask = [.mouseMoved, .leftMouseDown, .leftMouseDragged, .leftMouseUp]
+        globalMenuPointer = NSEvent.addGlobalMonitorForEvents(matching: pointerEvents) { [weak self] event in
+            self?.pointerEvent(event.type)
         }
-        localMenuPointer = NSEvent.addLocalMonitorForEvents(matching: [.mouseMoved, .leftMouseDragged]) { [weak self] event in
-            self?.updateMenuBarAccess(at: NSEvent.mouseLocation)
+        localMenuPointer = NSEvent.addLocalMonitorForEvents(matching: pointerEvents) { [weak self] event in
+            self?.pointerEvent(event.type)
             return event
         }
         let center = NotificationCenter.default
@@ -417,7 +418,6 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     private(set) var dragFiles: [URL]?
     private(set) var dropScreen: DropScreenView?
     private var dropHold: AnyObject?
-    private var dropDwell: DispatchWorkItem?
     private var dropEnd: DispatchWorkItem?
     private var dropQueried = Date.distantPast
     /// Leaving the window or cancelling ends the screen after this, so the drag crossing an edge
@@ -425,35 +425,123 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     static let dropEndDebounce: TimeInterval = 0.15
 
     /// A file drag entered the notch window (collapsed pill or open panel, including a drag that
-    /// started inside the panel). Collapsed, the usual hover dwell opens it first.
+    /// started inside the panel). A collapsed pill opens at once, with no hover dwell: a file held
+    /// still against the top edge of the screen makes the Dock open Mission Control.
+    /// `requireNotch`: a closing morph's padded window is not the notch, so it must not reopen.
     @discardableResult
-    func fileDragEntered(_ files: [URL], at point: NSPoint) -> NSDragOperation {
+    func fileDragEntered(_ files: [URL], at point: NSPoint, requireNotch: Bool = false) -> NSDragOperation {
         dropEnd?.cancel(); dropEnd = nil
-        guard !files.isEmpty, !gameActive, !modulesDeferred, screen != nil, !registries.dropSources.items.isEmpty else { return [] }
+        dropApproached = false
+        guard !files.isEmpty, acceptsFileDrags else { return [] }
         leaveTask?.cancel()
         dragFiles = files
-        if state.expanded {
+        if !state.expanded {
+            if requireNotch, !onCollapsedNotch(NSEvent.mouseLocation) { return [] }
+            open(keyboard: false, recordAction: false)
             showDropScreen()
-            return dropScreen?.hover(at: point) ?? []
+            // `point` predates the window's resize; the next drag update hit-tests the tiles.
+            return []
         }
-        guard dropDwell == nil else { return [] }
-        hoverTask?.cancel()
-        setHovering(true)
-        let task = DispatchWorkItem { [weak self] in
-            guard let self else { return }
-            self.dropDwell = nil
-            guard self.dragFiles != nil, !self.gameActive, self.expectedFrame?.containsPointer(NSEvent.mouseLocation) == true else { return }
-            self.open(keyboard: false, recordAction: false)
-            self.showDropScreen()
+        showDropScreen()
+        return dropScreen?.hover(at: point) ?? []
+    }
+
+    private var acceptsFileDrags: Bool { !gameActive && !modulesDeferred && screen != nil && !registries.dropSources.items.isEmpty }
+
+    // MARK: Approaching file drags
+
+    /// How far below (and beside) the collapsed notch a rising file drag opens the drop screen, so
+    /// its tiles appear under the pointer before it reaches the top edge of the screen. Small, and
+    /// only after steady upward travel, so a drag across a window's tab bar is left alone.
+    static let dropApproachReach = CGSize(width: 16, height: 48)
+    static let dropApproachRise: CGFloat = 8
+    /// The drag pasteboard's change count once read, when a followed drag ended, or when the panel
+    /// last closed outside one. The pasteboard keeps old drags' contents, so only a different
+    /// count is a new drag, and each is read at most once.
+    private var dragBoardHandled = NSPasteboard(name: .drag).changeCount
+    /// The drop screen opened for a nearby drag that has not entered the window yet, so the
+    /// window's drag events cannot end it.
+    private var dropApproached = false
+    /// The previous position of the press being dragged.
+    private var lastDragPoint: NSPoint?
+    /// Points of unbroken, mostly upward travel in the current drag.
+    private var dragRise: CGFloat = 0
+
+    /// Where a file drag opens the collapsed notch before touching it.
+    private var dropApproachZone: CGRect? {
+        guard let frame = layout?.surface(expanded: false, wing: wing) else { return nil }
+        let reach = Self.dropApproachReach
+        return CGRect(x: frame.minX - reach.width, y: frame.minY - reach.height,
+                      width: frame.width + reach.width * 2, height: frame.height + reach.height)
+    }
+
+    private func pointerEvent(_ type: NSEvent.EventType) {
+        updateMenuBarAccess(at: NSEvent.mouseLocation)
+        // A plain move has no button down, so a drag still being tracked ended unseen.
+        if type != .mouseMoved { trackFileDrag(type) } else if lastDragPoint != nil { trackFileDrag(.leftMouseUp) }
+    }
+
+    /// Every left-button press, drag and release, in any app. Only a new drag rising near the
+    /// collapsed notch reads the drag pasteboard.
+    private func trackFileDrag(_ type: NSEvent.EventType) {
+        let point = NSEvent.mouseLocation
+        switch type {
+        case .leftMouseDown:
+            // A new press means any earlier drag is over, even if its release went unseen.
+            if lastDragPoint != nil { dragBoardHandled = NSPasteboard(name: .drag).changeCount }
+            lastDragPoint = nil
+            dragRise = 0
+            if dropApproached || (dragFiles != nil && dropScreen == nil) { endDropScreen() }
+        case .leftMouseDragged:
+            if let last = lastDragPoint {
+                let dy = point.y - last.y
+                dragRise = dy > abs(point.x - last.x) ? dragRise + dy : 0
+            }
+            lastDragPoint = point
+            if dropApproached {
+                // Moved away without entering the window, which would take over the drag.
+                if !panel.frame.containsPointer(point), dropApproachZone?.containsPointer(point) != true { endDropScreen() }
+                return
+            }
+            guard dragRise >= Self.dropApproachRise, dragFiles == nil, !state.expanded, !renderOnly, !menuBarRevealed,
+                  !general.openOnClick, acceptsFileDrags,
+                  dropApproachZone?.containsPointer(point) == true else { return }
+            let board = NSPasteboard(name: .drag)
+            guard board.changeCount != dragBoardHandled else { return }
+            dragBoardHandled = board.changeCount
+            let files = (board.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL]) ?? []
+            guard !files.isEmpty else { return }
+            fileDragEntered(files, at: .zero)
+            dropApproached = dropScreen != nil
+        case .leftMouseUp:
+            guard lastDragPoint != nil else { return }
+            lastDragPoint = nil
+            dragRise = 0
+            dragBoardHandled = NSPasteboard(name: .drag).changeCount
+            // Refused in a closing morph's padding: no screen to end, only the drag's files.
+            if dragFiles != nil, dropScreen == nil { endDropScreen() }
+            // A release the window takes ends the screen itself or clears `dropApproached`;
+            // after the debounce, nothing else would end this one.
+            guard dropApproached else { return }
+            dropEnd?.cancel()
+            let task = DispatchWorkItem { [weak self] in
+                if self?.dropApproached == true { self?.endDropScreen() }
+            }
+            dropEnd = task
+            DispatchQueue.main.asyncAfter(deadline: .now() + Self.dropEndDebounce, execute: task)
+        default:
+            break
         }
-        dropDwell = task
-        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(general.hoverDelayMs), execute: task)
-        return []
     }
 
     func fileDragUpdated(at point: NSPoint) -> NSDragOperation {
         guard dragFiles != nil else { return [] }
         dropEnd?.cancel(); dropEnd = nil
+        // Refused in a closing morph's padding, then reached the notch or an opened panel.
+        if dropScreen == nil, state.expanded || onCollapsedNotch(NSEvent.mouseLocation) {
+            if !state.expanded { open(keyboard: false, recordAction: false) }
+            showDropScreen()
+        }
         guard let dropScreen else { return [] }
         // Sources may change under a resting drag (a device went offline); cheap, and the
         // screen rebuilds only when its model changed.
@@ -512,7 +600,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     /// Ends the drag's screen: the panel shows its tabs again and the normal leave logic decides
     /// whether it stays open.
     func endDropScreen() {
-        dropDwell?.cancel(); dropDwell = nil
+        dropApproached = false
         dropEnd?.cancel(); dropEnd = nil
         let hadScreen = dropScreen != nil
         let hadDrag = dragFiles != nil
@@ -1320,6 +1408,8 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     /// covers both shapes plus overshoot room; it returns to the exact surface when settled.
     /// `velocity`: a released drag's speed in spring units (`Fluid.relativeVelocity`).
     private func present(_ style: NotchSurfaceView.Morph, velocity: CGFloat = 0) {
+        // A drag out of the panel can end unseen; one the monitors are following is still live.
+        if style == .close, lastDragPoint == nil { dragBoardHandled = NSPasteboard(name: .drag).changeCount }
         guard let layout else { return }
         surfaceRevision += 1
         let expanded = state.expanded

@@ -1,7 +1,8 @@
 import AppKit
 import QNotchMacCore
 
-/// drop-screen: a file drag over the open panel shows the drop screen in place of the tabs, with
+/// drop-screen: a file drag on the collapsed notch opens the drop screen at once; one over the
+/// open panel shows the drop screen in place of the tabs, with
 /// named File tray and Taildrop tiles; a disabled tile and the space between tiles refuse the
 /// drop and close the screen; a drop on Add to tray adds the file and opens the Files tab.
 /// Driven through the shell's drag entry points (the surface's NSDraggingDestination calls the
@@ -26,6 +27,13 @@ enum DropScreenSmoke {
             shell.endDropScreen()
             shell.selectTab("home")
         }
+
+        // Collapsed, the panel opens at once: a dwell would hold the file against the top edge,
+        // where the Dock opens Mission Control.
+        shell.close(restoreFocus: false)
+        shell.fileDragEntered([file], at: .zero)
+        try require(shell.state.expanded && shell.dropScreen != nil, "A file drag on the collapsed notch did not open the drop screen at once")
+        shell.endDropScreen()
 
         shell.open(keyboard: false)
         shell.selectTab("home")
