@@ -5,6 +5,9 @@ namespace QNotch.Shell;
 /// <summary>hotkeys.json: shortcut id to gesture, only for shortcuts the user changed. An empty gesture means off.</summary>
 public sealed class ShortcutSettings { public Dictionary<string, string> Keys { get; set; } = new(); }
 
+/// <summary>A titled block of rows on the Settings, Hotkeys page.</summary>
+public sealed record ShortcutGroup(string Title, string Hint);
+
 /// <summary>One global hotkey the user can change in Settings, Hotkeys. Created with <see cref="Shortcuts.Add"/>.</summary>
 public sealed class Shortcut
 {
@@ -16,6 +19,7 @@ public sealed class Shortcut
     public string Hint { get; }
     public string Default { get; }
     public int Order { get; }
+    public ShortcutGroup? Group { get; init; }
     internal bool AllowDuringInput { get; init; }
     internal Action Action { get; }
 
@@ -60,13 +64,14 @@ public sealed class Shortcuts(HotkeyService hotkeys, SettingsStore store)
     /// Declares a shortcut and registers it with the saved gesture, or <paramref name="defaultGesture"/> (KeyGestureConverter syntax).
     /// Call it once per id, in <c>Initialize</c>. <paramref name="action"/> runs on the UI thread.
     /// </summary>
-    public Shortcut Add(string id, string title, string hint, string defaultGesture, Action action, int order = 100, bool enabled = true, bool allowDuringInput = false)
+    public Shortcut Add(string id, string title, string hint, string defaultGesture, Action action, int order = 100, bool enabled = true, bool allowDuringInput = false, ShortcutGroup? group = null)
     {
         var s = new Shortcut(id, title, hint, defaultGesture, action, order)
         {
             Gesture = _cfg.Keys.TryGetValue(id, out var saved) ? saved : defaultGesture,
             Enabled = enabled,
             AllowDuringInput = allowDuringInput,
+            Group = group,
         };
         _items.Add(s);
         Apply(s);

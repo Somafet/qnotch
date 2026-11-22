@@ -99,6 +99,35 @@ public sealed class ShellController : IShell
         _shortcuts.Add("gamemode", "Cycle Game mode", "Auto, Force on, Force off.", _general.GameModeHotkey, () => { if (_started) GameMode.CycleOverride(); }, 10, allowDuringInput: true);
     }
 
+    static readonly ShortcutGroup TabKeys = new("Tabs", "Opens the panel on that tab. Press it again to close the panel.");
+    readonly List<(string Tab, Shortcut Key)> _tabKeys = [];
+    bool _keepEmptyTab;
+
+    /// <summary>Declares an unbound shortcut per tab, in strip order. Called once, after every module registered its tabs. A tab whose
+    /// module declared a shortcut under the tab's own id already has one.</summary>
+    internal void AddTabShortcuts()
+    {
+        var order = 1000;
+        foreach (var t in OrderedTabs())
+        {
+            if (_shortcuts.Find(t.Id) is not null) continue;
+            var id = t.Id;
+            _tabKeys.Add((id, _shortcuts.Add($"tab.{id}", $"Open {t.Title}", "", "", () => ToggleTabFromHotkey(id), order++, IsTabVisible(id), allowDuringInput: true, group: TabKeys)));
+        }
+    }
+
+    /// <summary>Opens the panel on the tab with the keyboard, even when the tab is empty because the user asked for it by name. On that tab already, closes.</summary>
+    void ToggleTabFromHotkey(string id)
+    {
+        if (!_started || _mode == ShellMode.GameBar || !IsTabVisible(id)) return;
+        if (_mode == ShellMode.Expanded && _activeTab == id) { QNotch.Core.Analytics.Track("shell", "close_panel"); ClosePanel(); return; }
+        if (_mode == ShellMode.Collapsed) QNotch.Core.Analytics.Track("shell", "open_panel");
+        QNotch.Core.Analytics.Track("shell", "select_tab", target: id);
+        _keepEmptyTab = true;
+        try { OpenPanelWithKeyboard(id); }
+        finally { _keepEmptyTab = false; }
+    }
+
     public void Start()
     {
         BuildPill();
@@ -234,6 +263,7 @@ public sealed class ShellController : IShell
     void ApplyPresentation()
     {
         _store.Save("windows-presentation", Presentation);
+        foreach (var (tab, key) in _tabKeys) _shortcuts.Enable(key, IsTabVisible(tab));
         foreach (var sync in _syncSegments) sync();
         UpdateGlance();
         _w.InvalidatePill(exact: true);
@@ -265,7 +295,7 @@ public sealed class ShellController : IShell
         if (_mode != ShellMode.Collapsed) return;
         EnsurePanelBuilt();
         // Never reopen on a tab with nothing to show (a file drag selects the empty Files tab on purpose).
-        if (!_fileDrag && IsTabEmpty(_activeTab)) SelectTab("home");
+        if (!_fileDrag && !_keepEmptyTab && IsTabEmpty(_activeTab)) SelectTab("home");
         StopTimers();
         MemoryTrim.Cancel();
         var now = DateTime.Now;

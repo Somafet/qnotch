@@ -193,9 +193,10 @@ public partial class App : Application
             {
                 shell.GameMode.Start();
                 shell.SetCadenceAware(early.Concat(Init(enabled.Where(i => !i.Early))).OfType<ICadenceAware>());
+                shell.AddTabShortcuts();
             });
         shell.Start();
-        if (snapDir is not null && !measure) shell.GameMode.Start();
+        if (snapDir is not null && !measure) { shell.GameMode.Start(); shell.AddTabShortcuts(); }
         shell.SetCadenceAware(early.OfType<ICadenceAware>());
         window.Show();
         window.Reposition();
