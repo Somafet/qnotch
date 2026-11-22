@@ -5,6 +5,26 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
 <title>QNotch for Mac</title>
 <link>https://github.com/Somafet/qnotch</link>
 <item>
+<title>QNotch 0.6.0</title>
+<pubDate>Sun, 22 Nov 2026 14:19:54 GMT</pubDate>
+<sparkle:version>14</sparkle:version>
+<sparkle:shortVersionString>0.6.0</sparkle:shortVersionString>
+<sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+<sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+<sparkle:fullReleaseNotesLink>https://github.com/Somafet/qnotch/releases/tag/macos-v0.6.0</sparkle:fullReleaseNotesLink>
+<description sparkle:format="markdown">## What's Changed
+* Mac: drop the empty action row when a tab has nothing to show there by @Somafet in https://github.com/Somafet/qnotch/pull/130
+* Add an Open on Click option so the panel stops popping open near the top edge by @Somafet in https://github.com/Somafet/qnotch/pull/131
+* Add hotkeys that jump straight to a notch tab on Windows by @Somafet in https://github.com/Somafet/qnotch/pull/132
+* Add per-tab hotkeys on Mac by @Somafet in https://github.com/Somafet/qnotch/pull/133
+* Turn the README into a landing page with feature GIFs by @Somafet in https://github.com/Somafet/qnotch/pull/134
+* Ask new installs why they quit, and smooth the Windows download's first minute by @Somafet in https://github.com/Somafet/qnotch/pull/135
+
+
+**Full Changelog**: https://github.com/Somafet/qnotch/compare/macos-v0.5.1...macos-v0.6.0</description>
+<enclosure url="https://github.com/Somafet/qnotch/releases/download/macos-v0.6.0/QNotch-macos-arm64.zip" length="3851520" type="application/octet-stream" sparkle:edSignature="+8XUcAaka0RYRGV5qn0BLI9zSuYTddIdFEMMwrt2VaVfbdw3bf3HsamPY5WrqX9e6CUNEUPW67s3W+6LiC5uDw=="/>
+</item>
+<item>
 <title>QNotch 0.5.1</title>
 <pubDate>Mon, 16 Nov 2026 11:31:05 GMT</pubDate>
 <sparkle:version>13</sparkle:version>
@@ -219,6 +239,6 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
 </channel>
 </rss>
 <!-- sparkle-signatures:
-edSignature: Q8BPE4/iptfYExST3Sx6RF+XnYXTlA5QxYQd6AWF4y7/P8H1P4Sz0QsY2CCPwiruYSEM/iC1Ne+jT+hQ/0kACg==
-length: 16701
+edSignature: 3h0qxsgsVIfkNEsXsYt1XKFMgAQaUVxJy8oX2jSo1zvRrFtuqDQ7qXfTal7ZPL5FHXqX9UjS5/vAYe9jUNTxAA==
+length: 18301
 -->
