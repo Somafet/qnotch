@@ -11,7 +11,7 @@ final class ShortcutRegistry {
         let title: String
         let hint: String
         let defaultCombo: KeyCombo?
-        let order: Int
+        fileprivate(set) var order: Int
         let action: () -> Void
         let owner: String?
         fileprivate(set) var enabled: Bool
@@ -29,9 +29,14 @@ final class ShortcutRegistry {
             self.order = order; self.enabled = enabled; self.owner = owner; self.action = action
         }
         var isRegistered: Bool { reference != nil }
+        /// One of the shell's per-tab shortcuts (see `syncTabs`).
+        var isTab: Bool { id.hasPrefix(ShortcutRegistry.tabPrefix) }
     }
 
     private static let signature: OSType = 0x514E_4348 // 'QNCH'
+    static let tabPrefix = "tab."
+    /// After every fixed and module shortcut, so those keep a key they share with a tab.
+    private static let firstTabOrder = 1000
     private let store: SettingsStore
     private var settings: ShortcutSettings
     private var shortcuts: [String: Shortcut] = [:]
@@ -84,7 +89,37 @@ final class ShortcutRegistry {
         apply()
     }
 
+    /// Makes the per-tab shortcuts match `tabs` (in strip order): none for a tab that is gone, a
+    /// saved gesture back for one that returns, and no key held while a tab is hidden.
+    func syncTabs(_ tabs: [(id: String, title: String, shown: Bool)], action: @escaping (String) -> Void) {
+        let wanted = Set(tabs.map { Self.tabPrefix + $0.id })
+        var dirty = false
+        for shortcut in shortcuts.values where shortcut.isTab && !wanted.contains(shortcut.id) {
+            unregister(shortcut)
+            shortcuts[shortcut.id] = nil
+            dirty = true
+        }
+        for (index, tab) in tabs.enumerated() {
+            let id = Self.tabPrefix + tab.id, order = Self.firstTabOrder + index
+            if let existing = shortcuts[id] {
+                guard existing.order != order || existing.enabled != tab.shown else { continue }
+                existing.order = order
+                existing.enabled = tab.shown
+            } else {
+                let shortcut = Shortcut(id: id, title: "Open \(tab.title)", hint: "", defaultCombo: nil, order: order,
+                                        enabled: tab.shown, owner: nil) { action(tab.id) }
+                nextNumber += 1
+                shortcut.number = nextNumber
+                shortcut.combo = saved(for: shortcut)
+                shortcuts[id] = shortcut
+            }
+            dirty = true
+        }
+        if dirty { apply() }
+    }
+
     /// `nil` turns the shortcut off.
+
     func set(_ id: String, _ combo: KeyCombo?) { Analytics.setting("hotkey");
         guard let shortcut = shortcuts[id] else { return }
         settings.keys[id] = combo == shortcut.defaultCombo ? nil : (combo?.text ?? "")
@@ -117,10 +152,11 @@ final class ShortcutRegistry {
         for shortcut in items {
             shortcut.taken = false
             shortcut.usedBy = nil
-            guard let combo = shortcut.combo else { continue }
+            // A disabled shortcut holds no key, so it cannot block another one that wants it.
+            guard let combo = shortcut.combo, shortcut.enabled else { continue }
             if let owner = owners[combo] { shortcut.usedBy = owner; continue }
             owners[combo] = shortcut.title
-            guard shortcut.enabled, !suspended else { continue }
+            guard !suspended else { continue }
             installHandler()
             var reference: EventHotKeyRef?
             let status = RegisterEventHotKey(combo.keyCode, combo.modifiers, EventHotKeyID(signature: Self.signature, id: shortcut.number),

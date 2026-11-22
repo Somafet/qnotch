@@ -520,7 +520,7 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
 
     private func hotkeysPage() -> NSView {
         let width = Self.contentWidth
-        let rows = shell.shortcuts.items.map { shortcut -> NSView in
+        func rows(_ shortcuts: [ShortcutRegistry.Shortcut]) -> [NSView] { shortcuts.map { shortcut -> NSView in
             let recorder = ShortcutRecorder(registry: shell.shortcuts, id: shortcut.id)
             recorder.finished = { [weak self] in self?.select("hotkeys", animated: false) }
             let reset = HoverButton(symbol: "arrow.uturn.backward", style: .icon, symbolSize: 12, label: "Reset \(shortcut.title) to \(shortcut.defaultCombo?.display ?? "off")") { [weak self] in
@@ -529,14 +529,18 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
             }
             reset.tint = .secondaryLabelColor
             reset.isHidden = shortcut.combo == shortcut.defaultCombo
-            var detail = shortcut.hint
-            if let owner = shortcut.usedBy { detail += " Used by \(owner)." }
-            else if shortcut.taken { detail += " Taken by another app. Pick another shortcut." }
-            return settingsRow(shortcut.title, detail: detail, control: row([reset, recorder], spacing: 4), width: width)
+            var notes = shortcut.hint.isEmpty ? [] : [shortcut.hint]
+            if let owner = shortcut.usedBy { notes.append("Used by \(owner).") }
+            else if shortcut.taken { notes.append("Taken by another app. Pick another shortcut.") }
+            else if shortcut.isTab, !shortcut.enabled, shortcut.combo != nil { notes.append("Tab hidden in Features. The key is free until it is shown.") }
+            return settingsRow(shortcut.title, detail: notes.isEmpty ? nil : notes.joined(separator: " "), control: row([reset, recorder], spacing: 4), width: width)
+        } }
+        let items = shell.shortcuts.items, tabs = items.filter(\.isTab)
+        var groups = [settingsGroup(rows(items.filter { !$0.isTab }), footer: "Hotkeys work from any app without Accessibility access. If another app already uses a key, QNotch leaves it alone.", width: width)]
+        if !tabs.isEmpty {
+            groups.append(settingsGroup(rows(tabs), header: "Tabs", footer: "Opens the panel on that tab. Press it again to close the panel.", width: width))
         }
-        return page("Hotkeys", subtitle: "Click a shortcut, then press the new keys. A shortcut needs ⌃, ⌥ or ⌘. Esc cancels; Delete turns it off.", [
-            settingsGroup(rows, footer: "Hotkeys work from any app without Accessibility access. If another app already uses a key, QNotch leaves it alone.", width: width)
-        ])
+        return page("Hotkeys", subtitle: "Click a shortcut, then press the new keys. A shortcut needs ⌃, ⌥ or ⌘. Esc cancels; Delete turns it off.", groups)
     }
 
     private func soundsPage() -> NSView {
