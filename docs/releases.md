@@ -1,6 +1,6 @@
 # Releases and CI
 
-QNotch has one repository and independent platform channels. Windows is available; macOS has a native development target and no public download yet. Preserve the compatibility contract below for already-installed Windows versions.
+QNotch has one repository and independent platform channels. Windows and macOS both ship public releases, on separate channels. Preserve the compatibility contract below for already-installed Windows versions.
 
 ## Windows compatibility contract
 
@@ -75,7 +75,7 @@ The workflow reads the repository variable `APPLE_TEAM_ID` (and optionally `MACO
 
 To produce the same signed disk image locally, save the API key as a notarytool profile (the setup script offers to), then run `scripts/macos/build.sh` and `APPLE_TEAM_ID=<team> NOTARY_KEYCHAIN_PROFILE=qnotch bash scripts/macos/release.sh`. That submits to Apple's notary service but publishes nothing.
 
-Before the first public Mac release, verify installation of the published disk image on a clean Mac and on macOS 13, the deployment target.
+No install of the published disk image on a clean Mac or on macOS 13, the deployment target, is recorded yet.
 
 ## Mac updates (Sparkle)
 

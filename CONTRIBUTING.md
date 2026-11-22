@@ -1,13 +1,13 @@
 # Contributing to QNotch
 
-Bug reports, fixes, documentation, and extensions are welcome. One repository hosts the released Windows app, its website, and a native Mac development milestone. You can contribute to one area without owning both operating systems.
+Bug reports, fixes, documentation, and extensions are welcome. One repository hosts the released Windows and Mac apps and their website. You can contribute to one area without owning both operating systems.
 
 ## Before you start
 
 - **Bugs:** include the platform/area, OS and architecture, app version or commit, reproduction steps, and relevant logs. Remove personal details, tokens, and signing/account information.
 - **Small fixes:** send a focused pull request directly.
 - **New extensions or larger changes:** open an issue describing the behavior and where it appears: card, tab, pill, game bar, settings, or platform integration. Space is limited, so agree on scope first.
-- **Mac work:** read [its status and scope](docs/macos/README.md). Its Swift/AppKit target currently supports Apple silicon on macOS 13+; no public download or feature parity is implied.
+- **Mac work:** read [its status and scope](docs/macos/README.md). Its Swift/AppKit app supports Apple silicon on macOS 13+. Feature parity with Windows is not implied: see the [parity table](docs/macos/parity.md).
 
 ## Choose an area
 
