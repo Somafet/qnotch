@@ -377,9 +377,10 @@ internal static class AgentsSettings
             };
             Sync();
         }
-        // The first event can arrive while this page is open: the rows turn from waiting to receiving at once.
+        // The first event can arrive while this page is open: the rows turn from waiting to receiving at once. The page is kept while
+        // Settings shows another section, so an event from then is read when it comes back.
         void SyncAll() { foreach (var sync in syncs) sync(); }
-        page.Loaded += (_, _) => m.HooksChanged += SyncAll;
+        page.Loaded += (_, _) => { m.HooksChanged += SyncAll; SyncAll(); };
         page.Unloaded += (_, _) => m.HooksChanged -= SyncAll;
 
         page.Children.Add(UiKit.Row("Sound when an agent needs you", "Never in Game mode or while an app uses the microphone. Choose the sound in Settings, Sounds.",
