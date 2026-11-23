@@ -85,6 +85,9 @@ public interface IExclusiveKeyboardInput
     void InsertText(string text);
 }
 
+/// <summary>A control with its own middle-click action. The debug channel presses it through the action a real click would reach.</summary>
+public interface IMiddleClickTarget { void MiddleClick(bool releasedInside); }
+
 /// <summary>
 /// What a setup row (<see cref="ModuleInfo.Setup"/>) and a tip may use. The welcome tour builds rows before the module exists, so a row
 /// uses only static helpers, these settings and the credential store: no providers, bus, shell or timers. The running module picks up what
@@ -187,6 +190,9 @@ public sealed class Registry<T> where T : class, IRegistryItem
         _sorted = null;
         Changed?.Invoke();
     }
+
+    /// <summary>A registered item has new content: whoever shows this registry should read it again. UI thread.</summary>
+    public void Invalidate() => Changed?.Invoke();
 
     public IReadOnlyList<T> Items => _sorted ??= _items.OrderBy(i => i.Order).ToList();
     public T? Find(string id) => _items.FirstOrDefault(i => i.Id == id);

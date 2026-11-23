@@ -1,0 +1,5147 @@
+{
+  "version": 1,
+  "status": "Calc exact-definition catalog; localized aliases unverified.",
+  "dimensions": [
+    "length",
+    "mass",
+    "time",
+    "current",
+    "temperature",
+    "amount",
+    "luminousIntensity",
+    "information"
+  ],
+  "sources": {
+    "si": "https://www.bipm.org/en/publications/si-brochure",
+    "nist": "https://www.nist.gov/pml/special-publication-811/nist-guide-si-appendix-b-conversion-factors/nist-guide-si-appendix-b8",
+    "binary": "https://physics.nist.gov/cuu/Units/binary.html",
+    "temperature": "https://www.nist.gov/pml/owm/si-units-temperature"
+  },
+  "units": [
+    {
+      "id": "m",
+      "symbol": "m",
+      "dimension": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1",
+      "names": [
+        "metre",
+        "metres",
+        "meter",
+        "meters"
+      ],
+      "symbols": [
+        "m"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "pm",
+      "symbol": "pm",
+      "dimension": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/1000000000000",
+      "names": [
+        "picometre",
+        "picometres",
+        "picometer",
+        "picometers"
+      ],
+      "symbols": [
+        "pm"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "nm",
+      "symbol": "nm",
+      "dimension": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/1000000000",
+      "names": [
+        "nanometre",
+        "nanometres",
+        "nanometer",
+        "nanometers"
+      ],
+      "symbols": [
+        "nm"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "um",
+      "symbol": "um",
+      "dimension": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/1000000",
+      "names": [
+        "micrometre",
+        "micrometres",
+        "micrometer",
+        "micrometers"
+      ],
+      "symbols": [
+        "um",
+        "µm",
+        "μm"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "mm",
+      "symbol": "mm",
+      "dimension": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/1000",
+      "names": [
+        "millimetre",
+        "millimetres",
+        "millimeter",
+        "millimeters"
+      ],
+      "symbols": [
+        "mm"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "cm",
+      "symbol": "cm",
+      "dimension": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/100",
+      "names": [
+        "centimetre",
+        "centimetres",
+        "centimeter",
+        "centimeters"
+      ],
+      "symbols": [
+        "cm"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "dm",
+      "symbol": "dm",
+      "dimension": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/10",
+      "names": [
+        "decimetre",
+        "decimetres",
+        "decimeter",
+        "decimeters"
+      ],
+      "symbols": [
+        "dm"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "dam",
+      "symbol": "dam",
+      "dimension": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "10",
+      "names": [
+        "decametre",
+        "decametres",
+        "decameter",
+        "decameters"
+      ],
+      "symbols": [
+        "dam"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "hm",
+      "symbol": "hm",
+      "dimension": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "100",
+      "names": [
+        "hectometre",
+        "hectometres",
+        "hectometer",
+        "hectometers"
+      ],
+      "symbols": [
+        "hm"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "km",
+      "symbol": "km",
+      "dimension": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1000",
+      "names": [
+        "kilometre",
+        "kilometres",
+        "kilometer",
+        "kilometers"
+      ],
+      "symbols": [
+        "km"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "Mm",
+      "symbol": "Mm",
+      "dimension": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1000000",
+      "names": [
+        "megametre",
+        "megametres",
+        "megameter",
+        "megameters"
+      ],
+      "symbols": [
+        "Mm"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "Gm",
+      "symbol": "Gm",
+      "dimension": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1000000000",
+      "names": [
+        "gigametre",
+        "gigametres",
+        "gigameter",
+        "gigameters"
+      ],
+      "symbols": [
+        "Gm"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "g",
+      "symbol": "g",
+      "dimension": [
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/1000",
+      "names": [
+        "gram",
+        "grams"
+      ],
+      "symbols": [
+        "g"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "ug",
+      "symbol": "ug",
+      "dimension": [
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/1000000000",
+      "names": [
+        "microgram",
+        "micrograms"
+      ],
+      "symbols": [
+        "ug",
+        "µg",
+        "μg"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "mg",
+      "symbol": "mg",
+      "dimension": [
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/1000000",
+      "names": [
+        "milligram",
+        "milligrams"
+      ],
+      "symbols": [
+        "mg"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "kg",
+      "symbol": "kg",
+      "dimension": [
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1",
+      "names": [
+        "kilogram",
+        "kilograms"
+      ],
+      "symbols": [
+        "kg"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "Mg",
+      "symbol": "Mg",
+      "dimension": [
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1000",
+      "names": [
+        "megagram",
+        "megagrams"
+      ],
+      "symbols": [
+        "Mg"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "s",
+      "symbol": "s",
+      "dimension": [
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1",
+      "names": [
+        "second",
+        "seconds",
+        "sec"
+      ],
+      "symbols": [
+        "s"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "ps",
+      "symbol": "ps",
+      "dimension": [
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/1000000000000",
+      "names": [
+        "picosecond",
+        "picoseconds",
+        "picosec",
+        "picosecs"
+      ],
+      "symbols": [
+        "ps"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "ns",
+      "symbol": "ns",
+      "dimension": [
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/1000000000",
+      "names": [
+        "nanosecond",
+        "nanoseconds",
+        "nanosec",
+        "nanosecs"
+      ],
+      "symbols": [
+        "ns"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "us",
+      "symbol": "us",
+      "dimension": [
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/1000000",
+      "names": [
+        "microsecond",
+        "microseconds",
+        "microsec",
+        "microsecs"
+      ],
+      "symbols": [
+        "us",
+        "µs",
+        "μs"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "ms",
+      "symbol": "ms",
+      "dimension": [
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/1000",
+      "names": [
+        "millisecond",
+        "milliseconds",
+        "millisec",
+        "millisecs"
+      ],
+      "symbols": [
+        "ms"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "L",
+      "symbol": "L",
+      "dimension": [
+        3,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/1000",
+      "names": [
+        "litre",
+        "litres",
+        "liter",
+        "liters"
+      ],
+      "symbols": [
+        "L",
+        "l"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "uL",
+      "symbol": "uL",
+      "dimension": [
+        3,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/1000000000",
+      "names": [
+        "microlitre",
+        "microlitres",
+        "microliter",
+        "microliters"
+      ],
+      "symbols": [
+        "uL",
+        "µL",
+        "μL"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "mL",
+      "symbol": "mL",
+      "dimension": [
+        3,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/1000000",
+      "names": [
+        "millilitre",
+        "millilitres",
+        "milliliter",
+        "milliliters"
+      ],
+      "symbols": [
+        "mL",
+        "ml"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "cL",
+      "symbol": "cL",
+      "dimension": [
+        3,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/100000",
+      "names": [
+        "centilitre",
+        "centilitres",
+        "centiliter",
+        "centiliters"
+      ],
+      "symbols": [
+        "cL"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "dL",
+      "symbol": "dL",
+      "dimension": [
+        3,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/10000",
+      "names": [
+        "decilitre",
+        "decilitres",
+        "deciliter",
+        "deciliters"
+      ],
+      "symbols": [
+        "dL"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "daL",
+      "symbol": "daL",
+      "dimension": [
+        3,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/100",
+      "names": [
+        "decalitre",
+        "decalitres",
+        "decaliter",
+        "decaliters"
+      ],
+      "symbols": [
+        "daL"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "hL",
+      "symbol": "hL",
+      "dimension": [
+        3,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/10",
+      "names": [
+        "hectolitre",
+        "hectolitres",
+        "hectoliter",
+        "hectoliters"
+      ],
+      "symbols": [
+        "hL"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "kL",
+      "symbol": "kL",
+      "dimension": [
+        3,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1",
+      "names": [
+        "kilolitre",
+        "kilolitres",
+        "kiloliter",
+        "kiloliters"
+      ],
+      "symbols": [
+        "kL"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "N",
+      "symbol": "N",
+      "dimension": [
+        1,
+        1,
+        -2,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1",
+      "names": [
+        "newton",
+        "newtons"
+      ],
+      "symbols": [
+        "N"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "nN",
+      "symbol": "nN",
+      "dimension": [
+        1,
+        1,
+        -2,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/1000000000",
+      "names": [
+        "nanonewton",
+        "nanonewtons"
+      ],
+      "symbols": [
+        "nN"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "uN",
+      "symbol": "uN",
+      "dimension": [
+        1,
+        1,
+        -2,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/1000000",
+      "names": [
+        "micronewton",
+        "micronewtons"
+      ],
+      "symbols": [
+        "uN",
+        "µN",
+        "μN"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "mN",
+      "symbol": "mN",
+      "dimension": [
+        1,
+        1,
+        -2,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/1000",
+      "names": [
+        "millinewton",
+        "millinewtons"
+      ],
+      "symbols": [
+        "mN"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "kN",
+      "symbol": "kN",
+      "dimension": [
+        1,
+        1,
+        -2,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1000",
+      "names": [
+        "kilonewton",
+        "kilonewtons"
+      ],
+      "symbols": [
+        "kN"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "MN",
+      "symbol": "MN",
+      "dimension": [
+        1,
+        1,
+        -2,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1000000",
+      "names": [
+        "meganewton",
+        "meganewtons"
+      ],
+      "symbols": [
+        "MN"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "Pa",
+      "symbol": "Pa",
+      "dimension": [
+        -1,
+        1,
+        -2,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1",
+      "names": [
+        "pascal",
+        "pascals"
+      ],
+      "symbols": [
+        "Pa"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "uPa",
+      "symbol": "uPa",
+      "dimension": [
+        -1,
+        1,
+        -2,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/1000000",
+      "names": [
+        "micropascal",
+        "micropascals"
+      ],
+      "symbols": [
+        "uPa",
+        "µPa",
+        "μPa"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "mPa",
+      "symbol": "mPa",
+      "dimension": [
+        -1,
+        1,
+        -2,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/1000",
+      "names": [
+        "millipascal",
+        "millipascals"
+      ],
+      "symbols": [
+        "mPa"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "hPa",
+      "symbol": "hPa",
+      "dimension": [
+        -1,
+        1,
+        -2,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "100",
+      "names": [
+        "hectopascal",
+        "hectopascals"
+      ],
+      "symbols": [
+        "hPa"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "kPa",
+      "symbol": "kPa",
+      "dimension": [
+        -1,
+        1,
+        -2,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1000",
+      "names": [
+        "kilopascal",
+        "kilopascals"
+      ],
+      "symbols": [
+        "kPa"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "MPa",
+      "symbol": "MPa",
+      "dimension": [
+        -1,
+        1,
+        -2,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1000000",
+      "names": [
+        "megapascal",
+        "megapascals"
+      ],
+      "symbols": [
+        "MPa"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "GPa",
+      "symbol": "GPa",
+      "dimension": [
+        -1,
+        1,
+        -2,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1000000000",
+      "names": [
+        "gigapascal",
+        "gigapascals"
+      ],
+      "symbols": [
+        "GPa"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "J",
+      "symbol": "J",
+      "dimension": [
+        2,
+        1,
+        -2,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1",
+      "names": [
+        "joule",
+        "joules"
+      ],
+      "symbols": [
+        "J"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "uJ",
+      "symbol": "uJ",
+      "dimension": [
+        2,
+        1,
+        -2,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/1000000",
+      "names": [
+        "microjoule",
+        "microjoules"
+      ],
+      "symbols": [
+        "uJ",
+        "µJ",
+        "μJ"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "mJ",
+      "symbol": "mJ",
+      "dimension": [
+        2,
+        1,
+        -2,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/1000",
+      "names": [
+        "millijoule",
+        "millijoules"
+      ],
+      "symbols": [
+        "mJ"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "kJ",
+      "symbol": "kJ",
+      "dimension": [
+        2,
+        1,
+        -2,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1000",
+      "names": [
+        "kilojoule",
+        "kilojoules"
+      ],
+      "symbols": [
+        "kJ"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "MJ",
+      "symbol": "MJ",
+      "dimension": [
+        2,
+        1,
+        -2,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1000000",
+      "names": [
+        "megajoule",
+        "megajoules"
+      ],
+      "symbols": [
+        "MJ"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "GJ",
+      "symbol": "GJ",
+      "dimension": [
+        2,
+        1,
+        -2,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1000000000",
+      "names": [
+        "gigajoule",
+        "gigajoules"
+      ],
+      "symbols": [
+        "GJ"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "TJ",
+      "symbol": "TJ",
+      "dimension": [
+        2,
+        1,
+        -2,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1000000000000",
+      "names": [
+        "terajoule",
+        "terajoules"
+      ],
+      "symbols": [
+        "TJ"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "W",
+      "symbol": "W",
+      "dimension": [
+        2,
+        1,
+        -3,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1",
+      "names": [
+        "watt",
+        "watts"
+      ],
+      "symbols": [
+        "W"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "pW",
+      "symbol": "pW",
+      "dimension": [
+        2,
+        1,
+        -3,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/1000000000000",
+      "names": [
+        "picowatt",
+        "picowatts"
+      ],
+      "symbols": [
+        "pW"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "nW",
+      "symbol": "nW",
+      "dimension": [
+        2,
+        1,
+        -3,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/1000000000",
+      "names": [
+        "nanowatt",
+        "nanowatts"
+      ],
+      "symbols": [
+        "nW"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "uW",
+      "symbol": "uW",
+      "dimension": [
+        2,
+        1,
+        -3,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/1000000",
+      "names": [
+        "microwatt",
+        "microwatts"
+      ],
+      "symbols": [
+        "uW",
+        "µW",
+        "μW"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "mW",
+      "symbol": "mW",
+      "dimension": [
+        2,
+        1,
+        -3,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/1000",
+      "names": [
+        "milliwatt",
+        "milliwatts"
+      ],
+      "symbols": [
+        "mW"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "kW",
+      "symbol": "kW",
+      "dimension": [
+        2,
+        1,
+        -3,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1000",
+      "names": [
+        "kilowatt",
+        "kilowatts"
+      ],
+      "symbols": [
+        "kW"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "MW",
+      "symbol": "MW",
+      "dimension": [
+        2,
+        1,
+        -3,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1000000",
+      "names": [
+        "megawatt",
+        "megawatts"
+      ],
+      "symbols": [
+        "MW"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "GW",
+      "symbol": "GW",
+      "dimension": [
+        2,
+        1,
+        -3,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1000000000",
+      "names": [
+        "gigawatt",
+        "gigawatts"
+      ],
+      "symbols": [
+        "GW"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "TW",
+      "symbol": "TW",
+      "dimension": [
+        2,
+        1,
+        -3,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1000000000000",
+      "names": [
+        "terawatt",
+        "terawatts"
+      ],
+      "symbols": [
+        "TW"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "Hz",
+      "symbol": "Hz",
+      "dimension": [
+        0,
+        0,
+        -1,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1",
+      "names": [
+        "hertz",
+        "hertzs"
+      ],
+      "symbols": [
+        "Hz"
+      ],
+      "source": "si",
+      "kind": "frequency"
+    },
+    {
+      "id": "mHz",
+      "symbol": "mHz",
+      "dimension": [
+        0,
+        0,
+        -1,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/1000",
+      "names": [
+        "millihertz",
+        "millihertzs"
+      ],
+      "symbols": [
+        "mHz"
+      ],
+      "source": "si",
+      "kind": "frequency"
+    },
+    {
+      "id": "kHz",
+      "symbol": "kHz",
+      "dimension": [
+        0,
+        0,
+        -1,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1000",
+      "names": [
+        "kilohertz",
+        "kilohertzs"
+      ],
+      "symbols": [
+        "kHz"
+      ],
+      "source": "si",
+      "kind": "frequency"
+    },
+    {
+      "id": "MHz",
+      "symbol": "MHz",
+      "dimension": [
+        0,
+        0,
+        -1,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1000000",
+      "names": [
+        "megahertz",
+        "megahertzs"
+      ],
+      "symbols": [
+        "MHz"
+      ],
+      "source": "si",
+      "kind": "frequency"
+    },
+    {
+      "id": "GHz",
+      "symbol": "GHz",
+      "dimension": [
+        0,
+        0,
+        -1,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1000000000",
+      "names": [
+        "gigahertz",
+        "gigahertzs"
+      ],
+      "symbols": [
+        "GHz"
+      ],
+      "source": "si",
+      "kind": "frequency"
+    },
+    {
+      "id": "THz",
+      "symbol": "THz",
+      "dimension": [
+        0,
+        0,
+        -1,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1000000000000",
+      "names": [
+        "terahertz",
+        "terahertzs"
+      ],
+      "symbols": [
+        "THz"
+      ],
+      "source": "si",
+      "kind": "frequency"
+    },
+    {
+      "id": "A",
+      "symbol": "A",
+      "dimension": [
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1",
+      "names": [
+        "ampere",
+        "amperes",
+        "amp"
+      ],
+      "symbols": [
+        "A"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "pA",
+      "symbol": "pA",
+      "dimension": [
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/1000000000000",
+      "names": [
+        "picoampere",
+        "picoamperes",
+        "picoamp",
+        "picoamps"
+      ],
+      "symbols": [
+        "pA"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "nA",
+      "symbol": "nA",
+      "dimension": [
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/1000000000",
+      "names": [
+        "nanoampere",
+        "nanoamperes",
+        "nanoamp",
+        "nanoamps"
+      ],
+      "symbols": [
+        "nA"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "uA",
+      "symbol": "uA",
+      "dimension": [
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/1000000",
+      "names": [
+        "microampere",
+        "microamperes",
+        "microamp",
+        "microamps"
+      ],
+      "symbols": [
+        "uA",
+        "µA",
+        "μA"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "mA",
+      "symbol": "mA",
+      "dimension": [
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/1000",
+      "names": [
+        "milliampere",
+        "milliamperes",
+        "milliamp",
+        "milliamps"
+      ],
+      "symbols": [
+        "mA"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "kA",
+      "symbol": "kA",
+      "dimension": [
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1000",
+      "names": [
+        "kiloampere",
+        "kiloamperes",
+        "kiloamp",
+        "kiloamps"
+      ],
+      "symbols": [
+        "kA"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "V",
+      "symbol": "V",
+      "dimension": [
+        2,
+        1,
+        -3,
+        -1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1",
+      "names": [
+        "volt",
+        "volts"
+      ],
+      "symbols": [
+        "V"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "uV",
+      "symbol": "uV",
+      "dimension": [
+        2,
+        1,
+        -3,
+        -1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/1000000",
+      "names": [
+        "microvolt",
+        "microvolts"
+      ],
+      "symbols": [
+        "uV",
+        "µV",
+        "μV"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "mV",
+      "symbol": "mV",
+      "dimension": [
+        2,
+        1,
+        -3,
+        -1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/1000",
+      "names": [
+        "millivolt",
+        "millivolts"
+      ],
+      "symbols": [
+        "mV"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "kV",
+      "symbol": "kV",
+      "dimension": [
+        2,
+        1,
+        -3,
+        -1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1000",
+      "names": [
+        "kilovolt",
+        "kilovolts"
+      ],
+      "symbols": [
+        "kV"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "MV",
+      "symbol": "MV",
+      "dimension": [
+        2,
+        1,
+        -3,
+        -1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1000000",
+      "names": [
+        "megavolt",
+        "megavolts"
+      ],
+      "symbols": [
+        "MV"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "ohm",
+      "symbol": "ohm",
+      "dimension": [
+        2,
+        1,
+        -3,
+        -2,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1",
+      "names": [
+        "ohm",
+        "ohms"
+      ],
+      "symbols": [
+        "ohm",
+        "Ω"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "mohm",
+      "symbol": "mohm",
+      "dimension": [
+        2,
+        1,
+        -3,
+        -2,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/1000",
+      "names": [
+        "milliohm",
+        "milliohms"
+      ],
+      "symbols": [
+        "mohm",
+        "mΩ"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "kohm",
+      "symbol": "kohm",
+      "dimension": [
+        2,
+        1,
+        -3,
+        -2,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1000",
+      "names": [
+        "kiloohm",
+        "kiloohms"
+      ],
+      "symbols": [
+        "kohm",
+        "kΩ"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "Mohm",
+      "symbol": "Mohm",
+      "dimension": [
+        2,
+        1,
+        -3,
+        -2,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1000000",
+      "names": [
+        "megaohm",
+        "megaohms"
+      ],
+      "symbols": [
+        "Mohm",
+        "MΩ"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "F",
+      "symbol": "F",
+      "dimension": [
+        -2,
+        -1,
+        4,
+        2,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1",
+      "names": [
+        "farad",
+        "farads"
+      ],
+      "symbols": [
+        "F"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "pF",
+      "symbol": "pF",
+      "dimension": [
+        -2,
+        -1,
+        4,
+        2,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/1000000000000",
+      "names": [
+        "picofarad",
+        "picofarads"
+      ],
+      "symbols": [
+        "pF"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "nF",
+      "symbol": "nF",
+      "dimension": [
+        -2,
+        -1,
+        4,
+        2,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/1000000000",
+      "names": [
+        "nanofarad",
+        "nanofarads"
+      ],
+      "symbols": [
+        "nF"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "uF",
+      "symbol": "uF",
+      "dimension": [
+        -2,
+        -1,
+        4,
+        2,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/1000000",
+      "names": [
+        "microfarad",
+        "microfarads"
+      ],
+      "symbols": [
+        "uF",
+        "µF",
+        "μF"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "mF",
+      "symbol": "mF",
+      "dimension": [
+        -2,
+        -1,
+        4,
+        2,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/1000",
+      "names": [
+        "millifarad",
+        "millifarads"
+      ],
+      "symbols": [
+        "mF"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "C",
+      "symbol": "C",
+      "dimension": [
+        0,
+        0,
+        1,
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1",
+      "names": [
+        "coulomb",
+        "coulombs"
+      ],
+      "symbols": [
+        "C"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "uC",
+      "symbol": "uC",
+      "dimension": [
+        0,
+        0,
+        1,
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/1000000",
+      "names": [
+        "microcoulomb",
+        "microcoulombs"
+      ],
+      "symbols": [
+        "uC",
+        "µC",
+        "μC"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "mC",
+      "symbol": "mC",
+      "dimension": [
+        0,
+        0,
+        1,
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/1000",
+      "names": [
+        "millicoulomb",
+        "millicoulombs"
+      ],
+      "symbols": [
+        "mC"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "kC",
+      "symbol": "kC",
+      "dimension": [
+        0,
+        0,
+        1,
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1000",
+      "names": [
+        "kilocoulomb",
+        "kilocoulombs"
+      ],
+      "symbols": [
+        "kC"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "H",
+      "symbol": "H",
+      "dimension": [
+        2,
+        1,
+        -2,
+        -2,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1",
+      "names": [
+        "henry",
+        "henrys"
+      ],
+      "symbols": [
+        "H"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "uH",
+      "symbol": "uH",
+      "dimension": [
+        2,
+        1,
+        -2,
+        -2,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/1000000",
+      "names": [
+        "microhenry",
+        "microhenrys"
+      ],
+      "symbols": [
+        "uH",
+        "µH",
+        "μH"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "mH",
+      "symbol": "mH",
+      "dimension": [
+        2,
+        1,
+        -2,
+        -2,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/1000",
+      "names": [
+        "millihenry",
+        "millihenrys"
+      ],
+      "symbols": [
+        "mH"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "Wb",
+      "symbol": "Wb",
+      "dimension": [
+        2,
+        1,
+        -2,
+        -1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1",
+      "names": [
+        "weber",
+        "webers"
+      ],
+      "symbols": [
+        "Wb"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "uWb",
+      "symbol": "uWb",
+      "dimension": [
+        2,
+        1,
+        -2,
+        -1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/1000000",
+      "names": [
+        "microweber",
+        "microwebers"
+      ],
+      "symbols": [
+        "uWb",
+        "µWb",
+        "μWb"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "mWb",
+      "symbol": "mWb",
+      "dimension": [
+        2,
+        1,
+        -2,
+        -1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/1000",
+      "names": [
+        "milliweber",
+        "milliwebers"
+      ],
+      "symbols": [
+        "mWb"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "T",
+      "symbol": "T",
+      "dimension": [
+        0,
+        1,
+        -2,
+        -1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1",
+      "names": [
+        "tesla",
+        "teslas"
+      ],
+      "symbols": [
+        "T"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "uT",
+      "symbol": "uT",
+      "dimension": [
+        0,
+        1,
+        -2,
+        -1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/1000000",
+      "names": [
+        "microtesla",
+        "microteslas"
+      ],
+      "symbols": [
+        "uT",
+        "µT",
+        "μT"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "mT",
+      "symbol": "mT",
+      "dimension": [
+        0,
+        1,
+        -2,
+        -1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/1000",
+      "names": [
+        "millitesla",
+        "milliteslas"
+      ],
+      "symbols": [
+        "mT"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "S",
+      "symbol": "S",
+      "dimension": [
+        -2,
+        -1,
+        3,
+        2,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1",
+      "names": [
+        "siemens",
+        "siemenss"
+      ],
+      "symbols": [
+        "S"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "uS",
+      "symbol": "uS",
+      "dimension": [
+        -2,
+        -1,
+        3,
+        2,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/1000000",
+      "names": [
+        "microsiemens",
+        "microsiemenss"
+      ],
+      "symbols": [
+        "uS",
+        "µS",
+        "μS"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "mS",
+      "symbol": "mS",
+      "dimension": [
+        -2,
+        -1,
+        3,
+        2,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/1000",
+      "names": [
+        "millisiemens",
+        "millisiemenss"
+      ],
+      "symbols": [
+        "mS"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "mol",
+      "symbol": "mol",
+      "dimension": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0
+      ],
+      "factor": "1",
+      "names": [
+        "mole",
+        "moles"
+      ],
+      "symbols": [
+        "mol"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "nmol",
+      "symbol": "nmol",
+      "dimension": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0
+      ],
+      "factor": "1/1000000000",
+      "names": [
+        "nanomole",
+        "nanomoles"
+      ],
+      "symbols": [
+        "nmol"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "umol",
+      "symbol": "umol",
+      "dimension": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0
+      ],
+      "factor": "1/1000000",
+      "names": [
+        "micromole",
+        "micromoles"
+      ],
+      "symbols": [
+        "umol",
+        "µmol",
+        "μmol"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "mmol",
+      "symbol": "mmol",
+      "dimension": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0
+      ],
+      "factor": "1/1000",
+      "names": [
+        "millimole",
+        "millimoles"
+      ],
+      "symbols": [
+        "mmol"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "kmol",
+      "symbol": "kmol",
+      "dimension": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0
+      ],
+      "factor": "1000",
+      "names": [
+        "kilomole",
+        "kilomoles"
+      ],
+      "symbols": [
+        "kmol"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "cd",
+      "symbol": "cd",
+      "dimension": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0
+      ],
+      "factor": "1",
+      "names": [
+        "candela",
+        "candelas"
+      ],
+      "symbols": [
+        "cd"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "in",
+      "symbol": "in",
+      "dimension": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "0.0254",
+      "names": [
+        "inch",
+        "inches"
+      ],
+      "symbols": [
+        "in"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "ft",
+      "symbol": "ft",
+      "dimension": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "0.3048",
+      "names": [
+        "foot",
+        "feet"
+      ],
+      "symbols": [
+        "ft"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "yd",
+      "symbol": "yd",
+      "dimension": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "0.9144",
+      "names": [
+        "yard",
+        "yards"
+      ],
+      "symbols": [
+        "yd"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "mi",
+      "symbol": "mi",
+      "dimension": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1609.344",
+      "names": [
+        "mile",
+        "miles"
+      ],
+      "symbols": [
+        "mi"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "nmi",
+      "symbol": "nmi",
+      "dimension": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1852",
+      "names": [
+        "nauticalmile",
+        "nauticalmiles"
+      ],
+      "symbols": [
+        "nmi"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "mil",
+      "symbol": "mil",
+      "dimension": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "0.0000254",
+      "names": [
+        "thou"
+      ],
+      "symbols": [
+        "mil"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "fathom",
+      "symbol": "fathom",
+      "dimension": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1.8288",
+      "names": [
+        "fathoms"
+      ],
+      "symbols": [
+        "fathom"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "chain",
+      "symbol": "chain",
+      "dimension": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "20.1168",
+      "names": [
+        "chains"
+      ],
+      "symbols": [
+        "chain"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "furlong",
+      "symbol": "furlong",
+      "dimension": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "201.168",
+      "names": [
+        "furlongs"
+      ],
+      "symbols": [
+        "furlong"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "rod",
+      "symbol": "rod",
+      "dimension": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "5.0292",
+      "names": [
+        "rods"
+      ],
+      "symbols": [
+        "rod"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "hand",
+      "symbol": "hand",
+      "dimension": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "0.1016",
+      "names": [
+        "hands"
+      ],
+      "symbols": [
+        "hand"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "min",
+      "symbol": "min",
+      "dimension": [
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "60",
+      "names": [
+        "minute",
+        "minutes"
+      ],
+      "symbols": [
+        "min"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "h",
+      "symbol": "h",
+      "dimension": [
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "3600",
+      "names": [
+        "hour",
+        "hours",
+        "hr"
+      ],
+      "symbols": [
+        "h"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "day",
+      "symbol": "day",
+      "dimension": [
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "86400",
+      "names": [
+        "days"
+      ],
+      "symbols": [
+        "day"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "week",
+      "symbol": "week",
+      "dimension": [
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "604800",
+      "names": [
+        "weeks"
+      ],
+      "symbols": [
+        "week"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "fortnight",
+      "symbol": "fortnight",
+      "dimension": [
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1209600",
+      "names": [
+        "fortnights"
+      ],
+      "symbols": [
+        "fortnight"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "julianyear",
+      "symbol": "julianyear",
+      "dimension": [
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "31557600",
+      "names": [
+        "julianyears"
+      ],
+      "symbols": [
+        "julianyear"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "t",
+      "symbol": "t",
+      "dimension": [
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1000",
+      "names": [
+        "tonne",
+        "tonnes",
+        "metricton"
+      ],
+      "symbols": [
+        "t"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "lb",
+      "symbol": "lb",
+      "dimension": [
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "0.45359237",
+      "names": [
+        "pound",
+        "pounds",
+        "lbs"
+      ],
+      "symbols": [
+        "lb"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "oz",
+      "symbol": "oz",
+      "dimension": [
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "0.028349523125",
+      "names": [
+        "ounce",
+        "ounces"
+      ],
+      "symbols": [
+        "oz"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "stone",
+      "symbol": "stone",
+      "dimension": [
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "6.35029318",
+      "names": [
+        "stones"
+      ],
+      "symbols": [
+        "stone"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "shortton",
+      "symbol": "shortton",
+      "dimension": [
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "907.18474",
+      "names": [
+        "shorttons"
+      ],
+      "symbols": [
+        "shortton"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "longton",
+      "symbol": "longton",
+      "dimension": [
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1016.0469088",
+      "names": [
+        "longtons"
+      ],
+      "symbols": [
+        "longton"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "grain",
+      "symbol": "grain",
+      "dimension": [
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "0.00006479891",
+      "names": [
+        "grains"
+      ],
+      "symbols": [
+        "grain"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "dram",
+      "symbol": "dram",
+      "dimension": [
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "0.0017718451953125",
+      "names": [
+        "drams"
+      ],
+      "symbols": [
+        "dram"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "ozt",
+      "symbol": "ozt",
+      "dimension": [
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "0.0311034768",
+      "names": [
+        "troyounce",
+        "troyounces"
+      ],
+      "symbols": [
+        "ozt"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "ct",
+      "symbol": "ct",
+      "dimension": [
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "0.0002",
+      "names": [
+        "carat",
+        "carats"
+      ],
+      "symbols": [
+        "ct"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "ha",
+      "symbol": "ha",
+      "dimension": [
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "10000",
+      "names": [
+        "hectare",
+        "hectares"
+      ],
+      "symbols": [
+        "ha"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "acre",
+      "symbol": "acre",
+      "dimension": [
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "4046.8564224",
+      "names": [
+        "acres"
+      ],
+      "symbols": [
+        "acre"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "barn",
+      "symbol": "barn",
+      "dimension": [
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/10000000000000000000000000000",
+      "names": [
+        "barns"
+      ],
+      "symbols": [
+        "barn"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "gal",
+      "symbol": "gal",
+      "dimension": [
+        3,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "0.003785411784",
+      "names": [
+        "gallon",
+        "gallons",
+        "usgallon"
+      ],
+      "symbols": [
+        "gal"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "qt",
+      "symbol": "qt",
+      "dimension": [
+        3,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "0.000946352946",
+      "names": [
+        "quart",
+        "quarts"
+      ],
+      "symbols": [
+        "qt"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "pt",
+      "symbol": "pt",
+      "dimension": [
+        3,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "0.000473176473",
+      "names": [
+        "pint",
+        "pints"
+      ],
+      "symbols": [
+        "pt"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "cup",
+      "symbol": "cup",
+      "dimension": [
+        3,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "0.0002365882365",
+      "names": [
+        "cups"
+      ],
+      "symbols": [
+        "cup"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "floz",
+      "symbol": "floz",
+      "dimension": [
+        3,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "0.0000295735295625",
+      "names": [
+        "fluidounce",
+        "fluidounces"
+      ],
+      "symbols": [
+        "floz"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "tbsp",
+      "symbol": "tbsp",
+      "dimension": [
+        3,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "0.00001478676478125",
+      "names": [
+        "tablespoon",
+        "tablespoons"
+      ],
+      "symbols": [
+        "tbsp"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "tsp",
+      "symbol": "tsp",
+      "dimension": [
+        3,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "0.00000492892159375",
+      "names": [
+        "teaspoon",
+        "teaspoons"
+      ],
+      "symbols": [
+        "tsp"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "impgal",
+      "symbol": "impgal",
+      "dimension": [
+        3,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "0.00454609",
+      "names": [
+        "imperialgallon",
+        "imperialgallons"
+      ],
+      "symbols": [
+        "impgal"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "impqt",
+      "symbol": "impqt",
+      "dimension": [
+        3,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "0.0011365225",
+      "names": [
+        "imperialquart"
+      ],
+      "symbols": [
+        "impqt"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "imppt",
+      "symbol": "imppt",
+      "dimension": [
+        3,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "0.00056826125",
+      "names": [
+        "imperialpint"
+      ],
+      "symbols": [
+        "imppt"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "impfloz",
+      "symbol": "impfloz",
+      "dimension": [
+        3,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "0.0000284130625",
+      "names": [
+        "imperialfluidounce"
+      ],
+      "symbols": [
+        "impfloz"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "bbl",
+      "symbol": "bbl",
+      "dimension": [
+        3,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "0.158987294928",
+      "names": [
+        "oilbarrel",
+        "oilbarrels"
+      ],
+      "symbols": [
+        "bbl"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "bushel",
+      "symbol": "bushel",
+      "dimension": [
+        3,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "0.03523907016688",
+      "names": [
+        "usbushel",
+        "bushels"
+      ],
+      "symbols": [
+        "bushel"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "impbushel",
+      "symbol": "impbushel",
+      "dimension": [
+        3,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "0.03636872",
+      "names": [
+        "imperialbushel"
+      ],
+      "symbols": [
+        "impbushel"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "mpg",
+      "symbol": "mpg",
+      "dimension": [
+        -2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1609.344/0.003785411784",
+      "names": [
+        "milespergallon",
+        "milespergallonus"
+      ],
+      "symbols": [
+        "mpg",
+        "mpgus"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "mpguk",
+      "symbol": "mpg uk",
+      "dimension": [
+        -2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1609.344/0.00454609",
+      "names": [
+        "milespergallonuk",
+        "milespergallonimperial"
+      ],
+      "symbols": [
+        "mpguk",
+        "mpgimp"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "l100km",
+      "symbol": "l/100km",
+      "dimension": [
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/100000000",
+      "names": [
+        "litresper100km",
+        "litresper100kilometres"
+      ],
+      "symbols": [
+        "l/100km",
+        "l100km",
+        "L100km"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "mph",
+      "symbol": "mph",
+      "dimension": [
+        1,
+        0,
+        -1,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1397/3125",
+      "names": [
+        "milesperhour"
+      ],
+      "symbols": [
+        "mph"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "kn",
+      "symbol": "kn",
+      "dimension": [
+        1,
+        0,
+        -1,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "463/900",
+      "names": [
+        "knot",
+        "knots"
+      ],
+      "symbols": [
+        "kn"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "kph",
+      "symbol": "kph",
+      "dimension": [
+        1,
+        0,
+        -1,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "5/18",
+      "names": [
+        "kilometresperhour",
+        "kilometersperhour"
+      ],
+      "symbols": [
+        "kph"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "K",
+      "symbol": "K",
+      "dimension": [
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0
+      ],
+      "factor": "1",
+      "names": [
+        "kelvin",
+        "kelvins"
+      ],
+      "symbols": [
+        "K",
+        "K"
+      ],
+      "source": "temperature",
+      "offset": "0",
+      "point": true
+    },
+    {
+      "id": "deltaK",
+      "symbol": "deltaK",
+      "dimension": [
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0
+      ],
+      "factor": "1",
+      "names": [],
+      "symbols": [
+        "deltaK"
+      ],
+      "source": "temperature"
+    },
+    {
+      "id": "degC",
+      "symbol": "°C",
+      "dimension": [
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0
+      ],
+      "factor": "1",
+      "names": [
+        "celsius"
+      ],
+      "symbols": [
+        "°C",
+        "degC"
+      ],
+      "source": "temperature",
+      "offset": "273.15",
+      "point": true
+    },
+    {
+      "id": "deltaC",
+      "symbol": "deltaC",
+      "dimension": [
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0
+      ],
+      "factor": "1",
+      "names": [],
+      "symbols": [
+        "deltaC"
+      ],
+      "source": "temperature"
+    },
+    {
+      "id": "degF",
+      "symbol": "°F",
+      "dimension": [
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0
+      ],
+      "factor": "5/9",
+      "names": [
+        "fahrenheit"
+      ],
+      "symbols": [
+        "°F",
+        "degF"
+      ],
+      "source": "temperature",
+      "offset": "45967/180",
+      "point": true
+    },
+    {
+      "id": "deltaF",
+      "symbol": "deltaF",
+      "dimension": [
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0
+      ],
+      "factor": "5/9",
+      "names": [],
+      "symbols": [
+        "deltaF"
+      ],
+      "source": "temperature"
+    },
+    {
+      "id": "degR",
+      "symbol": "°R",
+      "dimension": [
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0
+      ],
+      "factor": "5/9",
+      "names": [
+        "rankine"
+      ],
+      "symbols": [
+        "°R",
+        "degR"
+      ],
+      "source": "temperature",
+      "offset": "0",
+      "point": true
+    },
+    {
+      "id": "deltaR",
+      "symbol": "deltaR",
+      "dimension": [
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0
+      ],
+      "factor": "5/9",
+      "names": [],
+      "symbols": [
+        "deltaR"
+      ],
+      "source": "temperature"
+    },
+    {
+      "id": "atm",
+      "symbol": "atm",
+      "dimension": [
+        -1,
+        1,
+        -2,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "101325",
+      "names": [
+        "atmosphere",
+        "atmospheres"
+      ],
+      "symbols": [
+        "atm"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "bar",
+      "symbol": "bar",
+      "dimension": [
+        -1,
+        1,
+        -2,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "100000",
+      "names": [
+        "bars"
+      ],
+      "symbols": [
+        "bar"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "mbar",
+      "symbol": "mbar",
+      "dimension": [
+        -1,
+        1,
+        -2,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "100",
+      "names": [
+        "millibar",
+        "millibars"
+      ],
+      "symbols": [
+        "mbar"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "torr",
+      "symbol": "Torr",
+      "dimension": [
+        -1,
+        1,
+        -2,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "20265/152",
+      "names": [
+        "torr"
+      ],
+      "symbols": [
+        "Torr"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "psi",
+      "symbol": "psi",
+      "dimension": [
+        -1,
+        1,
+        -2,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "8896443230521/1290320000",
+      "names": [
+        "poundspersquareinch"
+      ],
+      "symbols": [
+        "psi"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "Wh",
+      "symbol": "Wh",
+      "dimension": [
+        2,
+        1,
+        -2,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "3600",
+      "names": [
+        "watthour",
+        "watthours"
+      ],
+      "symbols": [
+        "Wh"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "kWh",
+      "symbol": "kWh",
+      "dimension": [
+        2,
+        1,
+        -2,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "3600000",
+      "names": [
+        "kilowatthour",
+        "kilowatthours"
+      ],
+      "symbols": [
+        "kWh"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "cal",
+      "symbol": "cal",
+      "dimension": [
+        2,
+        1,
+        -2,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "4.184",
+      "names": [
+        "calorie",
+        "calories"
+      ],
+      "symbols": [
+        "cal"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "kcal",
+      "symbol": "kcal",
+      "dimension": [
+        2,
+        1,
+        -2,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "4184",
+      "names": [
+        "kilocalorie",
+        "kilocalories"
+      ],
+      "symbols": [
+        "kcal"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "erg",
+      "symbol": "erg",
+      "dimension": [
+        2,
+        1,
+        -2,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "0.0000001",
+      "names": [
+        "ergs"
+      ],
+      "symbols": [
+        "erg"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "eV",
+      "symbol": "eV",
+      "dimension": [
+        2,
+        1,
+        -2,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1602176634/10000000000000000000000000000",
+      "names": [
+        "electronvolt",
+        "electronvolts"
+      ],
+      "symbols": [
+        "eV"
+      ],
+      "source": "si"
+    },
+    {
+      "id": "lbf",
+      "symbol": "lbf",
+      "dimension": [
+        1,
+        1,
+        -2,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "4.4482216152605",
+      "names": [
+        "poundforce"
+      ],
+      "symbols": [
+        "lbf"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "kgf",
+      "symbol": "kgf",
+      "dimension": [
+        1,
+        1,
+        -2,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "9.80665",
+      "names": [
+        "kilogramforce"
+      ],
+      "symbols": [
+        "kgf"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "dyn",
+      "symbol": "dyn",
+      "dimension": [
+        1,
+        1,
+        -2,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "0.00001",
+      "names": [
+        "dyne",
+        "dynes"
+      ],
+      "symbols": [
+        "dyn"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "g0",
+      "symbol": "g0",
+      "dimension": [
+        1,
+        0,
+        -2,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "9.80665",
+      "names": [
+        "standardgravity"
+      ],
+      "symbols": [
+        "g0"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "Gy",
+      "symbol": "Gy",
+      "dimension": [
+        2,
+        0,
+        -2,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1",
+      "names": [
+        "gray",
+        "grays"
+      ],
+      "symbols": [
+        "Gy"
+      ],
+      "source": "si",
+      "kind": "absorbedDose"
+    },
+    {
+      "id": "uGy",
+      "symbol": "uGy",
+      "dimension": [
+        2,
+        0,
+        -2,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/1000000",
+      "names": [
+        "microgray",
+        "micrograys"
+      ],
+      "symbols": [
+        "uGy",
+        "µGy",
+        "μGy"
+      ],
+      "source": "si",
+      "kind": "absorbedDose"
+    },
+    {
+      "id": "mGy",
+      "symbol": "mGy",
+      "dimension": [
+        2,
+        0,
+        -2,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/1000",
+      "names": [
+        "milligray",
+        "milligrays"
+      ],
+      "symbols": [
+        "mGy"
+      ],
+      "source": "si",
+      "kind": "absorbedDose"
+    },
+    {
+      "id": "Sv",
+      "symbol": "Sv",
+      "dimension": [
+        2,
+        0,
+        -2,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1",
+      "names": [
+        "sievert",
+        "sieverts"
+      ],
+      "symbols": [
+        "Sv"
+      ],
+      "source": "si",
+      "kind": "equivalentDose"
+    },
+    {
+      "id": "uSv",
+      "symbol": "uSv",
+      "dimension": [
+        2,
+        0,
+        -2,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/1000000",
+      "names": [
+        "microsievert",
+        "microsieverts"
+      ],
+      "symbols": [
+        "uSv",
+        "µSv",
+        "μSv"
+      ],
+      "source": "si",
+      "kind": "equivalentDose"
+    },
+    {
+      "id": "mSv",
+      "symbol": "mSv",
+      "dimension": [
+        2,
+        0,
+        -2,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1/1000",
+      "names": [
+        "millisievert",
+        "millisieverts"
+      ],
+      "symbols": [
+        "mSv"
+      ],
+      "source": "si",
+      "kind": "equivalentDose"
+    },
+    {
+      "id": "radDose",
+      "symbol": "radDose",
+      "dimension": [
+        2,
+        0,
+        -2,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "0.01",
+      "names": [
+        "raddose"
+      ],
+      "symbols": [
+        "radDose"
+      ],
+      "source": "nist",
+      "kind": "absorbedDose"
+    },
+    {
+      "id": "rem",
+      "symbol": "rem",
+      "dimension": [
+        2,
+        0,
+        -2,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "0.01",
+      "names": [],
+      "symbols": [
+        "rem"
+      ],
+      "source": "nist",
+      "kind": "equivalentDose"
+    },
+    {
+      "id": "Bq",
+      "symbol": "Bq",
+      "dimension": [
+        0,
+        0,
+        -1,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "1",
+      "names": [
+        "becquerel",
+        "becquerels"
+      ],
+      "symbols": [
+        "Bq"
+      ],
+      "source": "nist",
+      "kind": "activity"
+    },
+    {
+      "id": "G",
+      "symbol": "G",
+      "dimension": [
+        0,
+        1,
+        -2,
+        -1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "0.0001",
+      "names": [
+        "gauss"
+      ],
+      "symbols": [
+        "G"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "Mx",
+      "symbol": "Mx",
+      "dimension": [
+        2,
+        1,
+        -2,
+        -1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "0.00000001",
+      "names": [
+        "maxwell",
+        "maxwells"
+      ],
+      "symbols": [
+        "Mx"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "P",
+      "symbol": "P",
+      "dimension": [
+        -1,
+        1,
+        -1,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "0.1",
+      "names": [
+        "poise"
+      ],
+      "symbols": [
+        "P"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "St",
+      "symbol": "St",
+      "dimension": [
+        2,
+        0,
+        -1,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "factor": "0.0001",
+      "names": [
+        "stokes"
+      ],
+      "symbols": [
+        "St"
+      ],
+      "source": "nist"
+    },
+    {
+      "id": "bit",
+      "symbol": "bit",
+      "dimension": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "factor": "1",
+      "names": [
+        "bit",
+        "bits"
+      ],
+      "symbols": [
+        "bit"
+      ],
+      "source": "binary"
+    },
+    {
+      "id": "kbit",
+      "symbol": "kbit",
+      "dimension": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "factor": "1000",
+      "names": [
+        "kilobit",
+        "kilobits"
+      ],
+      "symbols": [
+        "kbit"
+      ],
+      "source": "binary"
+    },
+    {
+      "id": "Mbit",
+      "symbol": "Mbit",
+      "dimension": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "factor": "1000000",
+      "names": [
+        "megabit",
+        "megabits"
+      ],
+      "symbols": [
+        "Mbit"
+      ],
+      "source": "binary"
+    },
+    {
+      "id": "Gbit",
+      "symbol": "Gbit",
+      "dimension": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "factor": "1000000000",
+      "names": [
+        "gigabit",
+        "gigabits"
+      ],
+      "symbols": [
+        "Gbit"
+      ],
+      "source": "binary"
+    },
+    {
+      "id": "Tbit",
+      "symbol": "Tbit",
+      "dimension": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "factor": "1000000000000",
+      "names": [
+        "terabit",
+        "terabits"
+      ],
+      "symbols": [
+        "Tbit"
+      ],
+      "source": "binary"
+    },
+    {
+      "id": "Pbit",
+      "symbol": "Pbit",
+      "dimension": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "factor": "1000000000000000",
+      "names": [
+        "petabit",
+        "petabits"
+      ],
+      "symbols": [
+        "Pbit"
+      ],
+      "source": "binary"
+    },
+    {
+      "id": "Ebit",
+      "symbol": "Ebit",
+      "dimension": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "factor": "1000000000000000000",
+      "names": [
+        "exabit",
+        "exabits"
+      ],
+      "symbols": [
+        "Ebit"
+      ],
+      "source": "binary"
+    },
+    {
+      "id": "Kibit",
+      "symbol": "Kibit",
+      "dimension": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "factor": "1024",
+      "names": [
+        "kibibit",
+        "kibibits"
+      ],
+      "symbols": [
+        "Kibit"
+      ],
+      "source": "binary"
+    },
+    {
+      "id": "Mibit",
+      "symbol": "Mibit",
+      "dimension": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "factor": "1048576",
+      "names": [
+        "mebibit",
+        "mebibits"
+      ],
+      "symbols": [
+        "Mibit"
+      ],
+      "source": "binary"
+    },
+    {
+      "id": "Gibit",
+      "symbol": "Gibit",
+      "dimension": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "factor": "1073741824",
+      "names": [
+        "gibibit",
+        "gibibits"
+      ],
+      "symbols": [
+        "Gibit"
+      ],
+      "source": "binary"
+    },
+    {
+      "id": "Tibit",
+      "symbol": "Tibit",
+      "dimension": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "factor": "1099511627776",
+      "names": [
+        "tebibit",
+        "tebibits"
+      ],
+      "symbols": [
+        "Tibit"
+      ],
+      "source": "binary"
+    },
+    {
+      "id": "Pibit",
+      "symbol": "Pibit",
+      "dimension": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "factor": "1125899906842624",
+      "names": [
+        "pebibit",
+        "pebibits"
+      ],
+      "symbols": [
+        "Pibit"
+      ],
+      "source": "binary"
+    },
+    {
+      "id": "Eibit",
+      "symbol": "Eibit",
+      "dimension": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "factor": "1152921504606846976",
+      "names": [
+        "exbibit",
+        "exbibits"
+      ],
+      "symbols": [
+        "Eibit"
+      ],
+      "source": "binary"
+    },
+    {
+      "id": "B",
+      "symbol": "B",
+      "dimension": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "factor": "8",
+      "names": [
+        "byte",
+        "bytes"
+      ],
+      "symbols": [
+        "B"
+      ],
+      "source": "binary"
+    },
+    {
+      "id": "kB",
+      "symbol": "kB",
+      "dimension": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "factor": "8000",
+      "names": [
+        "kilobyte",
+        "kilobytes"
+      ],
+      "symbols": [
+        "kB",
+        "KB"
+      ],
+      "source": "binary"
+    },
+    {
+      "id": "MB",
+      "symbol": "MB",
+      "dimension": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "factor": "8000000",
+      "names": [
+        "megabyte",
+        "megabytes"
+      ],
+      "symbols": [
+        "MB"
+      ],
+      "source": "binary"
+    },
+    {
+      "id": "GB",
+      "symbol": "GB",
+      "dimension": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "factor": "8000000000",
+      "names": [
+        "gigabyte",
+        "gigabytes"
+      ],
+      "symbols": [
+        "GB"
+      ],
+      "source": "binary"
+    },
+    {
+      "id": "TB",
+      "symbol": "TB",
+      "dimension": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "factor": "8000000000000",
+      "names": [
+        "terabyte",
+        "terabytes"
+      ],
+      "symbols": [
+        "TB"
+      ],
+      "source": "binary"
+    },
+    {
+      "id": "PB",
+      "symbol": "PB",
+      "dimension": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "factor": "8000000000000000",
+      "names": [
+        "petabyte",
+        "petabytes"
+      ],
+      "symbols": [
+        "PB"
+      ],
+      "source": "binary"
+    },
+    {
+      "id": "EB",
+      "symbol": "EB",
+      "dimension": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "factor": "8000000000000000000",
+      "names": [
+        "exabyte",
+        "exabytes"
+      ],
+      "symbols": [
+        "EB"
+      ],
+      "source": "binary"
+    },
+    {
+      "id": "KiB",
+      "symbol": "KiB",
+      "dimension": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "factor": "8192",
+      "names": [
+        "kibibyte",
+        "kibibytes"
+      ],
+      "symbols": [
+        "KiB"
+      ],
+      "source": "binary"
+    },
+    {
+      "id": "MiB",
+      "symbol": "MiB",
+      "dimension": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "factor": "8388608",
+      "names": [
+        "mebibyte",
+        "mebibytes"
+      ],
+      "symbols": [
+        "MiB"
+      ],
+      "source": "binary"
+    },
+    {
+      "id": "GiB",
+      "symbol": "GiB",
+      "dimension": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "factor": "8589934592",
+      "names": [
+        "gibibyte",
+        "gibibytes"
+      ],
+      "symbols": [
+        "GiB"
+      ],
+      "source": "binary"
+    },
+    {
+      "id": "TiB",
+      "symbol": "TiB",
+      "dimension": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "factor": "8796093022208",
+      "names": [
+        "tebibyte",
+        "tebibytes"
+      ],
+      "symbols": [
+        "TiB"
+      ],
+      "source": "binary"
+    },
+    {
+      "id": "PiB",
+      "symbol": "PiB",
+      "dimension": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "factor": "9007199254740992",
+      "names": [
+        "pebibyte",
+        "pebibytes"
+      ],
+      "symbols": [
+        "PiB"
+      ],
+      "source": "binary"
+    },
+    {
+      "id": "EiB",
+      "symbol": "EiB",
+      "dimension": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "factor": "9223372036854775808",
+      "names": [
+        "exbibyte",
+        "exbibytes"
+      ],
+      "symbols": [
+        "EiB"
+      ],
+      "source": "binary"
+    }
+  ]
+}

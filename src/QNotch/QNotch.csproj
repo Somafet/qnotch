@@ -38,6 +38,9 @@
     <Using Include="System.Threading" />
     <Using Include="System.Threading.Tasks" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <!-- The Calculator module's sheet editor. Its engine is a separate assembly that loads on first use. -->
+    <PackageReference Include="AvalonEdit" Version="6.3.1.120" />
+    <ProjectReference Include="..\QNotch.Calculator.Engine\QNotch.Calculator.Engine.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -69,6 +69,9 @@ jobs:
       - name: Welcome tour checks
         run: dotnet run --project tests/QNotch.OnboardingTests -c Release
 
+      - name: Calculator tab checks
+        run: dotnet run --project tests/QNotch.CalculatorTests -c Release
+
       - name: Windows behavior checks
         run: dotnet run --project tests/QNotch.WindowsTests -c Release -- --conpty
 

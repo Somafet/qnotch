@@ -188,9 +188,9 @@ A local control channel for driving a running instance: read its state, switch t
 | `onboarding` | `close?` | Opens the welcome tour as Settings does, or closes it |
 | `outline` | `window?` | `{ "text" }`: the outline of `panel` (default), `pill`, `settings` or `onboarding`; an error when that window is not shown |
 | `snapshot` | `path`, `window?` | Writes a PNG and its outline to an absolute `path` ending in `.png`; `{ "path" }` |
-| `press` | `id` | Activates the visible, enabled control with that id: clicks a button, flips a toggle, selects a tab or item. Refuses pop-ups, whose menus would block; set them with `key` |
+| `press` | `id`, `button?`, `off?` | Activates the visible, enabled control with that id: clicks a button, flips a toggle, selects a tab or item. `button: middle` runs a control's middle-click action instead (`off: true` releases away from it, which cancels). Refuses pop-ups, whose menus would block; set them with `key` |
 | `type` | `text`, `id?` | Focuses the field `id` (or keeps the current focus) and inserts the text |
-| `key` | `name`, `modifiers?` | Sends a key to QNotch's key window. `name`: `Escape`, `Return`, `Tab`, `Space`, `Up`, `Down`, `Left`, `Right`, `Backspace` (erases backwards: the Mac Delete key), `Delete` (erases forwards) or one character; `modifiers`: any of `ctrl`, `alt`, `shift`, `cmd` (`cmd` maps to the Windows key on Windows) |
+| `key` | `name`, `modifiers?` | Sends a key to QNotch's key window. `name`: `Escape`, `Return`, `Tab`, `F1`, `F2`, `Space`, `Up`, `Down`, `Left`, `Right`, `Backspace` (erases backwards: the Mac Delete key), `Delete` (erases forwards) or one character; `modifiers`: any of `ctrl`, `alt`, `shift`, `cmd` (`cmd` maps to the Windows key on Windows) |
 | `hotkey` | `action` | Runs a global hotkey's action without the OS hotkey: `toggle`, `search`, `game-mode` |
 | `game-mode` | `mode` | `auto`, `on` or `off` for the session |
 | `quit` | | Responds, then quits |

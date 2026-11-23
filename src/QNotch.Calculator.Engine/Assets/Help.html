@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'">
+<title>Calculator help</title>
+<style>
+ :root { color-scheme: light dark; font: 15px/1.5 "Segoe UI Variable Text", "Segoe UI", sans-serif; }
+ body { max-width: 44rem; margin: 2rem auto; padding: 0 1.25rem; }
+ h1 { font-size: 1.5rem; } h2 { font-size: 1.1rem; margin-top: 1.75rem; }
+ code, kbd { font: 0.95em "Cascadia Mono", Consolas, monospace; }
+ table { border-collapse: collapse; } td { padding: 0.15rem 1.25rem 0.15rem 0; vertical-align: top; }
+</style>
+</head>
+<body>
+<h1>QNotch Calculator help</h1>
+
+<h2>Calculating</h2>
+<p>Type one calculation per line. Each result appears on the right of its line and updates as you type.</p>
+<table>
+ <tr><td><code data-example>12 * 3.5</code></td><td>Arithmetic</td></tr>
+ <tr><td><code data-example>price = 40</code></td><td>A variable used by later lines</td></tr>
+ <tr><td><code data-example>price * 3</code></td><td>Lines can refer to earlier variables</td></tr>
+ <tr><td><code data-example>5 km in miles</code></td><td>Units and conversions</td></tr>
+ <tr><td><code data-example>2027-03-01 + 30 days</code></td><td>Dates</td></tr>
+ <tr><td><code data-example>double(x) = x * 2</code></td><td>A function, saved for every sheet</td></tr>
+</table>
+<p>Dice lines roll when you press <kbd>Enter</kbd> at the end of the line, and stay rolled until the dice change. <kbd>Ctrl</kbd>+<kbd>Enter</kbd> rolls the current line again.</p>
+<table>
+ <tr><td><code data-example>10d6 + 4</code></td><td>Dice plus a modifier</td></tr>
+ <tr><td><code data-example>2d20kh1 + 5</code></td><td>Keep the highest (<code>kl</code> lowest; <code>dh</code>/<code>dl</code> drop)</td></tr>
+ <tr><td><code data-example>crit 2d6 + 3</code></td><td>Critical hit: the dice are rolled twice, the modifier added once</td></tr>
+ <tr><td><code data-example>crit! 2d6 + 3</code></td><td>Crunchy critical: the dice at maximum plus a roll</td></tr>
+</table>
+<p>Click a result, or focus it and press <kbd>Enter</kbd>, to copy it. Press <kbd>F1</kbd> on a focused result to see how it was calculated.</p>
+
+<h2>Sheets</h2>
+<table>
+ <tr><td><kbd>Ctrl+N</kbd> or <b>+</b></td><td>New sheet</td></tr>
+ <tr><td><kbd>F2</kbd></td><td>Rename the variable at the cursor everywhere it is used, otherwise the sheet</td></tr>
+ <tr><td><kbd>Ctrl+W</kbd>, middle-click a tab or its <b>x</b></td><td>Close the sheet; Undo brings it back for a few seconds</td></tr>
+ <tr><td><kbd>Ctrl+Tab</kbd>, <kbd>Ctrl+Shift+Tab</kbd></td><td>Next or previous sheet</td></tr>
+ <tr><td>Right-click a tab</td><td>Rename, version history or close</td></tr>
+ <tr><td><kbd>Ctrl+C</kbd> or <kbd>Ctrl+X</kbd> with nothing selected</td><td>Copy or cut the whole line; <kbd>Ctrl+V</kbd> then inserts it as a new line</td></tr>
+ <tr><td><kbd>F1</kbd></td><td>This help</td></tr>
+</table>
+<p>Sheets save automatically. If a save fails, the Calculator says so and keeps the sheet open.</p>
+
+<h2>Settings</h2>
+<p>QNotch Settings, Calculator chooses the workday calendar, currency rates, a default currency, text size and number format. Light and dark follow QNotch. With a default currency, a line such as <code>800 usd</code> shows its converted amount; the line still holds USD for later lines, and a line that names its own target, such as <code>800 usd in eur</code>, keeps it.</p>
+
+<h2>Your data</h2>
+<p>Sheets, functions and settings stay on this computer in the <code>calculator</code> folder of QNotch's data folder. The Calculator needs no account. It uses the network only when you ask it to, or for the daily exchange rate update if you turn that on. Neither sends sheet text or amounts.</p>
+
+</body>
+</html>
