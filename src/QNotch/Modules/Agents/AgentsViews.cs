@@ -180,14 +180,23 @@ internal sealed class AgentsTab : Grid
         _module = module;
         _st = st;
         Margin = new Thickness(19, 2, 19, 0);
-        _empty = Placeholder.Create(AgentsModule.Icon, "No agents running",
-            "T3 Code sessions appear automatically. For Claude Code and Codex outside T3, connect them in Settings, Agents, then start a session.");
+        _empty = Placeholder.Create(AgentsModule.Icon, "No agents running", "");
         if (_empty is Panel p)
         {
             var open = new Button { Content = "Open settings", HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 12, 0, 0), Padding = new Thickness(12, 4, 12, 4) };
             open.Click += (_, _) => module.OpenSettings();
             p.Children.Add(open);
         }
+        // Three cases (AgentsStatus.Empty): nothing connected, connected but no event yet, events have arrived. The files are read when
+        // this changes or the tab shows, not on every render.
+        var texts = ((Panel)_empty).Children.OfType<TextBlock>().Skip(1).ToList(); // the title and the message, after the icon
+        void Empty()
+        {
+            (texts[0].Text, texts[1].Text) = AgentsStatus.Empty(module.ConnectedKinds());
+        }
+        module.HooksChanged += Empty;
+        IsVisibleChanged += (_, e) => { if (e.NewValue is true) Empty(); };
+        Empty();
         Children.Add(new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Focusable = false, Content = _rows });
         Children.Add(_empty);
         st.Changed += Render;
@@ -324,10 +333,11 @@ internal static class AgentsSettings
         intro.Margin = new Thickness(0, -8, 0, 16);
         page.Children.Add(intro);
 
-        // A snapshot shows the default Claude Code row connected and the Codex row not, whatever is installed, without reading either file.
+        // A snapshot shows the default Claude Code row receiving and the Codex row connected and waiting, whatever is installed, without reading either file.
+        var syncs = new List<Action>();
         foreach (var hooks in (readOnly ? ClaudeHooks.Discover().Take(1) : ClaudeHooks.Discover()).Append<HookFile?>(CodexHooks.Find(always: readOnly)).OfType<HookFile>())
         {
-            if (readOnly) hooks.Demo = hooks is CodexHooks ? HookStatus.NotInstalled : HookStatus.Connected;
+            if (readOnly) hooks.Demo = HookStatus.Connected;
             var button = new Button { MinWidth = 96, IsEnabled = !readOnly };
             var row = UiKit.Row(hooks.Title, "", button);
             var hint = (TextBlock)((StackPanel)row.Children[0]).Children[1];
@@ -341,35 +351,37 @@ internal static class AgentsSettings
                 button.Content = connected ? "Disconnect" : status == HookStatus.OtherCopy ? "Use this copy" : "Connect";
                 if (connected) button.ClearValue(FrameworkElement.StyleProperty); // back to the themed implicit style
                 else button.Style = (Style)Application.Current.FindResource("AccentButton");
-                hint.Text = status switch
+                var (text, brush) = status switch
                 {
-                    HookStatus.Connected => hooks.ConnectedHint,
-                    HookStatus.OtherCopy => $"Connected to another copy of QNotch ({detail}).",
-                    HookStatus.Error => $"Could not read {hooks.FileName}: {detail}",
-                    _ => $"Adds hooks to {hooks.ShownPath} and keeps a backup next to it.",
+                    HookStatus.Connected => AgentsStatus.Connected(hooks.Kind, readOnly ? hooks is ClaudeHooks : m.Seen(hooks.Kind)),
+                    HookStatus.OtherCopy => ($"Connected to another copy of QNotch ({detail}).", "WarningBrush"),
+                    HookStatus.Error => ($"Could not read {hooks.FileName}: {detail}", "DangerBrush"),
+                    _ => ($"Adds hooks to {hooks.ShownPath} and keeps a backup next to it.", "TextSecondaryBrush"),
                 };
-                hint.SetResourceReference(TextBlock.ForegroundProperty, status switch
-                {
-                    HookStatus.Connected => "SuccessBrush",
-                    HookStatus.Error => "DangerBrush",
-                    HookStatus.OtherCopy => "WarningBrush",
-                    _ => "TextSecondaryBrush",
-                });
+                hint.Text = text;
+                hint.SetResourceReference(TextBlock.ForegroundProperty, brush);
             }
+            syncs.Add(Sync);
 
             button.Click += async (_, _) =>
             {
-                if (connected) { QNotch.Core.Analytics.Track("agents", "disconnect"); } else { QNotch.Core.Analytics.Track("agents", "connect"); }
+                QNotch.Core.Analytics.Track("agents", connected ? "disconnect" : "connect", target: AgentsStatus.Target(hooks.Kind));
                 button.IsEnabled = false;
                 string? error = null;
                 try { await Task.Run(connected ? hooks.Disconnect : hooks.Connect); }
                 catch (Exception ex) { error = ex.Message; Core.Log.Warn($"Changing {hooks.Title} hooks failed", ex); }
+                if (error is null) m.ConnectionChanged(hooks.Kind); // starts over as waiting; every row reads again
                 Sync();
                 if (error is not null) { hint.Text = $"Could not change {hooks.FileName}: {error}"; hint.SetResourceReference(TextBlock.ForegroundProperty, "DangerBrush"); }
                 button.IsEnabled = true;
             };
             Sync();
         }
+        // The first event can arrive while this page is open: the rows turn from waiting to receiving at once. The page is kept while
+        // Settings shows another section, so an event from then is read when it comes back.
+        void SyncAll() { foreach (var sync in syncs) sync(); }
+        page.Loaded += (_, _) => { m.HooksChanged += SyncAll; SyncAll(); };
+        page.Unloaded += (_, _) => m.HooksChanged -= SyncAll;
 
         page.Children.Add(UiKit.Row("Sound when an agent needs you", "Never in Game mode or while an app uses the microphone. Choose the sound in Settings, Sounds.",
             UiKit.Toggle(cfg.SoundNeedsYou, on => { QNotch.Core.Analytics.Track("settings", "change", target: "agents_sound_needs_you", enabled: on); cfg.SoundNeedsYou = on; m.SaveSettings(); })));

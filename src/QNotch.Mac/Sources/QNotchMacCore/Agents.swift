@@ -6,7 +6,11 @@ import Foundation
 /// Codex `hooks.json`. Ours are recognized by their command (a QNotch executable followed by
 /// `agent`), so Disconnect removes exactly those and leaves the user's hooks and key order alone.
 public struct AgentHookFile {
-    public enum Kind { case claude, codex }
+    /// The raw value is what the agent calls itself in a hook event, and the key of its "has an event arrived" state.
+    public enum Kind: String { case claude, codex
+        /// The analytics target (the fixed catalog).
+        public var target: String { "agents_\(rawValue)" }
+    }
     public enum Status: Equatable { case notInstalled, connected, otherCopy(String), error(String) }
 
     public let kind: Kind
@@ -375,12 +379,57 @@ public struct AgentsSettings: Codable, Equatable {
     public var soundDone = true
     /// What each session's tokens would cost at API list prices, beside its token count.
     public var showCost = true
+    /// Agent kinds (`AgentHookFile.Kind` raw values) a hook has reached since they were last connected. Local: setup codes carry only the sounds and `showCost`.
+    public var seen: Set<String> = []
     public init() {}
-    private enum CodingKeys: String, CodingKey { case soundNeedsYou, soundDone, showCost }
+    private enum CodingKeys: String, CodingKey { case soundNeedsYou, soundDone, showCost, seen }
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         soundNeedsYou = c.value(.soundNeedsYou, true)
         soundDone = c.value(.soundDone, true)
         showCost = c.value(.showCost, true)
+        seen = c.value(.seen, [])
+    }
+
+    /// Sets or clears a kind. False when nothing changed, so a caller saves only on a change, not on every hook.
+    @discardableResult
+    public mutating func markSeen(_ kind: AgentHookFile.Kind, _ value: Bool) -> Bool {
+        value ? seen.insert(kind.rawValue).inserted : seen.remove(kind.rawValue) != nil
+    }
+}
+
+// MARK: - What a connection says
+
+/// What a connected hook file says (Windows AgentsStatus). Writing the hooks is not the end: Codex runs a new or changed hook only once the
+/// user trusts it, and Claude Code sessions that were already open never read the file again. So a connection is waiting until an event of
+/// its kind has arrived. Pure text, so it is testable without AppKit.
+public enum AgentConnectionText {
+    public static let receiving = "Connected. Receiving events."
+    private static let added = "Hooks added. "
+
+    private static func rest(_ kind: AgentHookFile.Kind) -> String {
+        kind == .codex ? "Codex runs them once you trust them: /hooks in the CLI, or Settings, Hooks in the Codex app."
+            : "Waiting for the first event: start a new Claude Code session."
+    }
+
+    /// What the empty tab says each waiting kind needs: the hooks are added, so this is what is left to do.
+    private static func next(_ kind: AgentHookFile.Kind) -> String {
+        kind == .codex ? "Trust the hooks in Codex: /hooks in the CLI, or Settings, Hooks in the Codex app." : "Start a new Claude Code session."
+    }
+
+    /// What a connected hook file says while no event of these kinds has arrived since it was connected.
+    public static func waiting(_ kinds: [AgentHookFile.Kind]) -> String { added + kinds.map(rest).joined(separator: " ") }
+
+    /// What a connected hook file says, and whether it is waiting (warning color) or receiving (success color).
+    public static func connected(_ kind: AgentHookFile.Kind, seen: Bool) -> (text: String, receiving: Bool) {
+        seen ? (receiving, true) : (waiting([kind]), false)
+    }
+
+    /// The Agents tab's placeholder when no session shows, from each connected hook file's kind and whether an event of it arrived.
+    public static func empty(connected: [(kind: AgentHookFile.Kind, seen: Bool)]) -> (title: String, detail: String) {
+        if connected.isEmpty { return ("No agents running", "Connect Claude Code or Codex in Settings, Agents.") }
+        if connected.contains(where: \.seen) { return ("No agents running", "Sessions appear here when Claude Code or Codex is working.") }
+        let kinds = Array(Set(connected.map(\.kind.rawValue))).sorted().compactMap(AgentHookFile.Kind.init)
+        return ("Waiting for the first event", kinds.map(next).joined(separator: " "))
     }
 }

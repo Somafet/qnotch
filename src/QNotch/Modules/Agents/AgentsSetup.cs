@@ -18,6 +18,9 @@ internal static class AgentsSetup
             .Append<HookFile?>(CodexHooks.Find(always: ctx.Demo)).OfType<HookFile>().ToList();
         if (hooks.Count == 0) return null;
         if (ctx.Demo) foreach (var h in hooks) h.Demo = h is CodexHooks ? HookStatus.NotInstalled : HookStatus.Connected; // never reads the files
+        // The module does not exist yet (the tour runs first): the seen state is the one saved in agents.json. The demo's Claude Code is receiving.
+        var config = ctx.Settings.Get<AgentsConfig>(AgentsModule.TabId);
+        bool Seen(HookFile h) => ctx.Demo ? h is ClaudeHooks : config.Seen.Contains(h.Kind);
 
         var status = new TextBlock();
         void Status(string text, string brush)
@@ -39,11 +42,13 @@ internal static class AgentsSetup
         {
             if (lastHint is not null) return;
             var states = hooks.Select(h => (h, h.Check())).ToList();
-            var connected = states.Where(s => s.Item2.Status == HookStatus.Connected).Select(s => s.h.Title).ToList();
+            var connected = states.Where(s => s.Item2.Status == HookStatus.Connected).Select(s => s.h).ToList();
+            var waiting = connected.Where(h => !Seen(h)).Select(h => h.Kind).Distinct().Order().ToList();
             if (states.FirstOrDefault(s => s.Item2.Status == HookStatus.Error) is { h: not null } bad)
                 Status($"Could not read {bad.h.FileName}: {bad.Item2.Detail}", "DangerBrush");
-            else if (connected.Count == hooks.Count) Status("Connected", "SuccessBrush");
-            else if (connected.Count > 0) Status($"{string.Join(", ", connected)} connected", "SuccessBrush");
+            else if (waiting.Count > 0) Status(AgentsStatus.Waiting(waiting), "WarningBrush");
+            else if (connected.Count == hooks.Count) Status(AgentsStatus.Receiving, "SuccessBrush");
+            else if (connected.Count > 0) Status($"{string.Join(", ", connected.Select(h => h.Title))} connected. Receiving events.", "SuccessBrush");
             else if (states.Any(s => s.Item2.Status == HookStatus.OtherCopy)) Status("Connected to another copy of QNotch", "WarningBrush");
             else Status("Not connected. Adds hooks to the agent's settings and keeps a backup.", "TextTertiaryBrush");
         }
@@ -85,16 +90,17 @@ internal static class AgentsSetup
             button.Click += async (_, _) =>
             {
                 if (ctx.Demo) return;
-                QNotch.Core.Analytics.Track("agents", "connect");
+                QNotch.Core.Analytics.Track("agents", "connect", "onboarding", AgentsStatus.Target(hook.Kind));
                 button.IsEnabled = false;
                 string? error = null;
                 try { await Task.Run(hook.Connect); }
                 catch (Exception ex) { error = ex.Message; Core.Log.Warn($"Changing {hook.Title} hooks failed", ex); }
                 Sync();
                 if (error is not null) { lastHint = ""; Status($"Could not change {hook.FileName}: {error}", "DangerBrush"); button.IsEnabled = true; return; }
-                // Same message as Settings, Agents (Codex: trust the hooks once).
-                lastHint = hook.ConnectedHint;
-                Status(hook.ConnectedHint, "SuccessBrush");
+                // Same message as Settings, Agents: the hooks are added, and no event has arrived yet.
+                if (config.MarkSeen(hook.Kind, false)) ctx.Settings.Save(AgentsModule.TabId, config);
+                lastHint = AgentsStatus.Waiting([hook.Kind]);
+                Status(lastHint, "WarningBrush");
                 row?.Success();
             };
         }

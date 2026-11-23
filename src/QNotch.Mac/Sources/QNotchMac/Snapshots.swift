@@ -245,6 +245,12 @@ enum SnapshotViews {
         }
         if let agents = shell.module(AgentsModule.self) {
             for session in agents.board.sessions where session.id.hasPrefix("seed-") { agents.dismiss(session) }
+            // No sessions: the placeholder says what is still missing, from the agents connected on this Mac.
+            shell.open(keyboard: false)
+            shell.selectTab("agents")
+            run.notch("tab-agents-empty")
+            shell.selectTab("home")
+            shell.close(restoreFocus: false)
         }
 
         // Real destination routing, including the transient hidden-card surface, rendered offscreen.

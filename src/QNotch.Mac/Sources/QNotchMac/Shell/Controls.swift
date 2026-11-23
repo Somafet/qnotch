@@ -551,7 +551,7 @@ enum SettingsStyle {
 }
 
 /// A System Settings–style row: title and optional detail on the left, control on the right.
-func settingsRow(_ title: String, detail: String? = nil, control: NSView? = nil, width: CGFloat) -> NSView {
+func settingsRow(_ title: String, detail: String? = nil, control: NSView? = nil, width: CGFloat, detailLabel onDetail: ((NSTextField) -> Void)? = nil) -> NSView {
     let titleLabel = label(title, size: 13)
     var text: [NSView] = [titleLabel]
     let available = SettingsStyle.textWidth(contentWidth: width, control: control)
@@ -560,6 +560,7 @@ func settingsRow(_ title: String, detail: String? = nil, control: NSView? = nil,
         let detailLabel = label(detail, size: 11, color: .secondaryLabelColor)
         detailLabel.preferredMaxLayoutWidth = available
         text.append(detailLabel)
+        onDetail?(detailLabel)
     }
     let left = column(text, spacing: 3)
     left.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)

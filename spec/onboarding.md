@@ -70,7 +70,7 @@ The tour shows each step below in order and leaves out a step that has nothing t
 - One row per enabled feature that has a one-step setup. Each row shows its status (*Not connected* / *Connected as @login* / *Berlin, Germany*) and its action. Without such a feature (for example, GitHub, Weather and Agents are all off), the step is left out.
   - **GitHub**: **Sign in with GitHub** (device flow, below). A secondary **Use a token instead** opens the existing paste box inline.
   - **Weather**: a place search box (the same provider and search as Settings, Weather) that saves the chosen place.
-  - **Agents**: **Connect Claude Code** / **Connect Codex** for each installed agent, using the module's existing Connect action (same file changes, backup and messages as Settings).
+  - **Agents**: **Connect Claude Code** / **Connect Codex** for each installed agent, using the module's existing Connect action (same file changes, backup and messages as Settings). A connected agent reads *Hooks added* in the warning color until an event of it has arrived, then *Connected. Receiving events.* in the success color. Its Connect is recorded with the `onboarding` surface and the agent as target.
 - Rows come from the modules, not the shell. Each module that wants a row provides a static setup factory next to its `ModuleList` entry (Windows: an optional `ModuleInfo` member; Mac: the same idea in `ModuleInfo`). The factory must work before the module is constructed: it uses only static helpers, the settings store and the credential store, and never starts providers. The running module picks up what the row saved when it starts (and on demand, through the same path Settings already uses).
 
 ### 5. `finish`
