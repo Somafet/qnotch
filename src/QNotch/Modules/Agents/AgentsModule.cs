@@ -113,6 +113,16 @@ public sealed class AgentsConfig
 {
     public bool SoundNeedsYou { get; set; } = true;
     public bool SoundDone { get; set; } = true;
+    /// <summary>Agent kinds ("claude", "codex") a hook has reached since they were last connected. Local: setup codes carry only the sounds.</summary>
+    public List<string> Seen { get; set; } = [];
+
+    /// <summary>Sets or clears a kind. False when nothing changed, so a caller saves only on a change.</summary>
+    internal bool MarkSeen(string kind, bool seen)
+    {
+        if (seen == Seen.Contains(kind)) return false;
+        if (seen) Seen.Add(kind); else Seen.Remove(kind);
+        return true;
+    }
 }
 
 /// <summary>One line from the hook (see <see cref="AgentHook"/>).</summary>
@@ -182,6 +192,7 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
         ApplySounds();
         ctx.Shell.TabChanged += _ => { if (Watching) Walk(); };
         Task.Run(Listen);
+        if (!ctx.Diagnostic) Task.Run(UpgradeHooks);
         _t3Watch = new((sessions, window) => _ctx.Bus.Run(() => ApplyT3(sessions, window)));
     }
 
@@ -211,6 +222,45 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
     }
 
     internal void OpenSettings() => _ctx.Shell.OpenSettings(TabId);
+
+    /// <summary>The seen state or the connections changed: the Settings rows and the empty tab read them again. UI thread.</summary>
+    internal event Action? HooksChanged;
+
+    /// <summary>Whether a hook of this kind (claude, codex) arrived since it was last connected.</summary>
+    internal bool Seen(string kind) => _cfg.Seen.Contains(kind);
+
+    /// <summary>A hook arrived. Saves only the first one after a Connect, not every hook.</summary>
+    void EventReceived(string kind)
+    {
+        if (!_cfg.MarkSeen(kind, true)) return;
+        _ctx.Settings.Save(TabId, _cfg);
+        HooksChanged?.Invoke();
+    }
+
+    /// <summary>Connect or Disconnect changed the hook files: that kind waits for its first event again.</summary>
+    internal void ConnectionChanged(string kind)
+    {
+        if (_cfg.MarkSeen(kind, false)) _ctx.Settings.Save(TabId, _cfg);
+        HooksChanged?.Invoke();
+    }
+
+    /// <summary>Each connected hook file's kind and whether an event of it arrived: what the empty tab's text depends on. Reads the files; a snapshot has none.</summary>
+    internal List<(string Kind, bool Seen)> ConnectedKinds() => _ctx.Settings.ReadOnly ? []
+        : ClaudeHooks.Discover().Append<HookFile?>(CodexHooks.Find()).OfType<HookFile>()
+            .Where(h => h.Check().Status == HookStatus.Connected).Select(h => (h.Kind, Seen(h.Kind))).ToList();
+
+    /// <summary>
+    /// A connection from before Claude Code's exec form runs a shell command, which fails without Git Bash. Rewrites those that point at this
+    /// exe, on the thread pool; a failure is only logged.
+    /// </summary>
+    static void UpgradeHooks()
+    {
+        foreach (var h in ClaudeHooks.Discover())
+        {
+            try { if (h.Upgrade()) Log.Info($"Rewrote the {h.Title} hooks in {h.FilePath} to the exec form"); }
+            catch (Exception ex) { Log.Warn($"Rewriting the {h.Title} hooks failed", ex); }
+        }
+    }
 
     internal void SaveSettings()
     {
@@ -308,7 +358,7 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
                 using var reader = new StreamReader(s);
                 var line = await reader.ReadLineAsync(cts.Token);
                 var e = line is null ? null : JsonSerializer.Deserialize<AgentEvent>(line, Json);
-                if (e is { Session.Length: > 0 }) { if (FirstHook(e.Session)) QNotch.Core.Analytics.Track("agents", "cli_hook", "cli"); _ctx.Bus.Run(() => Apply(e)); }
+                if (e is { Session.Length: > 0 }) { if (FirstHook(e.Session)) QNotch.Core.Analytics.Track("agents", "cli_hook", "cli", AgentsStatus.Target(e.Agent)); _ctx.Bus.Run(() => Apply(e)); }
             }
             catch (Exception ex) when (ex is JsonException or OperationCanceledException or IOException) { /* one bad or slow client */ }
             catch (Exception ex) { Log.Warn("Agents event failed", ex); }
@@ -327,6 +377,7 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
 
     void Apply(AgentEvent e)
     {
+        if (e.Agent is "claude" or "codex") EventReceived(e.Agent); // before the T3 branch: it is a hook either way
         var s = _st.Sessions.Find(x => x.Id == e.Session || x.T3Session == e.Session);
         if (s?.T3Thread is not null)
         {

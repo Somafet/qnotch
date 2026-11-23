@@ -167,7 +167,7 @@ public partial class App : Application
         {
             Bus = bus, Settings = _store, Hotkeys = _hotkeys, Shell = shell, Dispatcher = Dispatcher,
             Cards = cards, Tabs = tabs, SettingsSections = sections, Segments = segments, Search = new(), Shortcuts = shortcuts, Sounds = sounds, Demos = demos, QuickActions = quickActions, Drops = drops,
-            Consumers = consumers,
+            Consumers = consumers, Diagnostic = snapDir is not null || _debugControl,
         };
         var built = new List<(string Id, INotchModule Module)>();
         List<INotchModule> Init(IEnumerable<ModuleInfo> list)

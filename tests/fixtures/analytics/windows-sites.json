@@ -7,55 +7,55 @@
   },
   {
     "file": "src/QNotch/Modules/Agents/AgentsModule.cs",
-    "line": 205,
+    "line": 216,
     "module": "agents",
     "action": "show"
   },
   {
     "file": "src/QNotch/Modules/Agents/AgentsModule.cs",
-    "line": 222,
+    "line": 272,
     "module": "agents",
     "action": "dismiss"
   },
   {
     "file": "src/QNotch/Modules/Agents/AgentsModule.cs",
-    "line": 234,
+    "line": 284,
     "module": "agents",
     "action": "stop_process"
   },
   {
     "file": "src/QNotch/Modules/Agents/AgentsModule.cs",
-    "line": 311,
+    "line": 361,
     "module": "agents",
     "action": "cli_hook"
   },
   {
     "file": "src/QNotch/Modules/Agents/AgentsSetup.cs",
-    "line": 88,
+    "line": 93,
     "module": "agents",
     "action": "connect"
   },
   {
     "file": "src/QNotch/Modules/Agents/AgentsViews.cs",
-    "line": 362,
+    "line": 368,
     "module": "agents",
     "action": "disconnect"
   },
   {
     "file": "src/QNotch/Modules/Agents/AgentsViews.cs",
-    "line": 362,
+    "line": 368,
     "module": "agents",
     "action": "connect"
   },
   {
     "file": "src/QNotch/Modules/Agents/AgentsViews.cs",
-    "line": 375,
+    "line": 386,
     "module": "settings",
     "action": "change"
   },
   {
     "file": "src/QNotch/Modules/Agents/AgentsViews.cs",
-    "line": 377,
+    "line": 388,
     "module": "settings",
     "action": "change"
   },

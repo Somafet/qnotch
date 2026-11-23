@@ -219,4 +219,6 @@ public sealed class ModuleContext
     public Registry<DropSourceDescriptor> Drops { get; init; } = new();
     /// <summary>Read-only local consumer snapshots. Register module-owned projections during Initialize.</summary>
     public Core.Consumers.ConsumerRegistry Consumers { get; init; } = new();
+    /// <summary>A --snapshot, --smoke-test, --measure or --debug-control run: nothing may change files outside the app's own data folder.</summary>
+    public bool Diagnostic { get; init; }
 }
