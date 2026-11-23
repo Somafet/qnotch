@@ -207,6 +207,8 @@
     "about",
     "accent",
     "agents",
+    "agents_claude",
+    "agents_codex",
     "agents_show_cost",
     "agents_sound_done",
     "agents_sound_needs_you",

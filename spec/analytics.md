@@ -6,7 +6,7 @@ Every event has a generated UUID, capture timestamp and top-level `distinct_id`.
 
 `requested` means an action was invoked. Dialog cancellation, remote rejection or OS failure may follow; this event never claims completion. A debounced note save records the save attempt, without text. Periodic refresh, provider observations, property bindings, rendered views and timer ticks are not user actions. Passive modules can have feature/presentation settings without their own action events.
 
-Continuous controls record one action per gesture, not per step: volume changes, timer duration changes (a wheel spin through the minutes) and Mac media seeking. Calls less than 1.5 seconds apart belong to the same gesture. Windows `agents/cli_hook` records the first hook of each agent session since the app started, not every hook call. A Mac GitHub sign-in records `cancel_connect` only when a sign-in in progress is cancelled, not when its view closes.
+Continuous controls record one action per gesture, not per step: volume changes, timer duration changes (a wheel spin through the minutes) and Mac media seeking. Calls less than 1.5 seconds apart belong to the same gesture. Windows `agents/cli_hook` records the first hook of each agent session since the app started, not every hook call. `agents/connect`, `agents/disconnect` and `agents/cli_hook` carry the agent as `target`: `agents_claude` or `agents_codex`. The welcome tour's Connect uses the `onboarding` surface on both platforms. A Mac GitHub sign-in records `cancel_connect` only when a sign-in in progress is cancelled, not when its view closes.
 
 ## Lifecycle event
 
@@ -57,7 +57,7 @@ The [source-site inventory](../tests/fixtures/analytics/windows-sites.json) reco
 | Media | Play/pause, next/previous, session choice, seek; no playback or timeline observations |
 | Clipboard | Copy, pin, remove, clear, persistence setting; no captured clipboard observation |
 | AI | Launch/slots, custom apps, provider choices, account selection/rename, explicit usage refresh/scan; background usage polling silent |
-| Agents | Show, dismiss, stop process, hook connect/disconnect, first received CLI hook per agent session; no transcript/tool contents |
+| Agents | Show, dismiss, stop process, hook connect/disconnect and first received CLI hook per agent session, each with the agent (`agents_claude`, `agents_codex`) as target; no transcript/tool contents |
 | Notes | Debounced save attempt; single note on Windows, no fabricated multi-note actions |
 | Files/phone share | Add/drop/open/reveal/remove/clear/export, copy path action, share open/back/start/stop/extend/link copy/select all/none/reveal received; no paths or names |
 | Notifications | Invoke/dismiss/clear/mute, test/token renewal/copy, settings, external command receipt; no automatic alerts/read tracking |
