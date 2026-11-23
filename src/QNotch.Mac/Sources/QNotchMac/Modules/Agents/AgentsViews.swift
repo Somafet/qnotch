@@ -35,7 +35,7 @@ final class AgentsTabView: NSView {
 
     init(module: AgentsModule) {
         self.module = module
-        emptyView = placeholder(symbol: "sparkles", title: "No agents running", detail: "Connect Claude Code or Codex in Settings, Agents.",
+        emptyView = placeholder(symbol: "sparkles", title: "No agents running", detail: AgentConnectionText.empty(connected: []).detail,
                                 action: ("Open Settings", { [weak module] in module?.contextShell?.openSettings(section: "agents") }))
         super.init(frame: .zero)
         list.orientation = .vertical
@@ -68,6 +68,16 @@ final class AgentsTabView: NSView {
         list.arrangedSubviews.forEach { $0.removeFromSuperview() }
         let leftRunning = module.groups.filter(\.group.leftRunning)
         emptyView.isHidden = !module.board.sessions.isEmpty || !leftRunning.isEmpty
+        // Nothing connected, connected but no event yet, events have arrived. The files are read only while this shows.
+        if !emptyView.isHidden, let texts = (emptyView.subviews.first as? NSStackView)?.arrangedSubviews.compactMap({ $0 as? NSTextField }), texts.count == 2 {
+            let empty = AgentConnectionText.empty(connected: module.connectedKinds())
+            texts[0].stringValue = empty.title
+            texts[1].stringValue = empty.detail
+            texts[1].lineBreakMode = .byWordWrapping
+            texts[1].maximumNumberOfLines = 0
+            texts[1].alignment = .center
+            texts[1].preferredMaxLayoutWidth = 520
+        }
         let today = module.today
         let showCost = module.settings.showCost
         header.stringValue = today.tokens == 0 ? "" : showCost ? "Today: \(today.text) at API prices" : "Today: \(AgentUsage.tokens(today.tokens)) tokens"
@@ -187,10 +197,11 @@ extension AgentsModule {
         let rows = Self.connections.map { connection -> NSView in
             let status = Self.status(connection)
             let detail: String
+            var color: NSColor?
             var buttons: [NSView] = []
             switch status {
             case .connected:
-                detail = connection.connectedHint
+                (detail, color) = connectionLine(connection)
                 buttons.append(actionButton("Disconnect") { [weak self] in self?.toggle(connection, false) })
             case .otherCopy(let path):
                 detail = "Connected to another copy of QNotch: \(path)"
@@ -202,7 +213,11 @@ extension AgentsModule {
             case .error(let message):
                 detail = "\(connection.fileName) could not be read: \(message)"
             }
-            return settingsRow(connection.title, detail: detail, control: row(buttons, spacing: 6), width: width)
+            return settingsRow(connection.title, detail: detail, control: row(buttons, spacing: 6), width: width) { [weak self] label in
+                guard let color else { return }
+                label.textColor = color
+                self?.registerConnectionLine(label, for: connection) // the first event turns waiting into receiving while this page is open
+            }
         }
         let needs = ActionSwitch("Sound when an agent needs you", value: settings.soundNeedsYou) { [weak self] value in Analytics.setting("agents_sound_needs_you", enabled: value); self?.set { $0.soundNeedsYou = value } }
         let done = ActionSwitch("Sound when an agent finishes", value: settings.soundDone) { [weak self] value in Analytics.setting("agents_sound_done", enabled: value); self?.set { $0.soundDone = value } }
@@ -222,8 +237,8 @@ extension AgentsModule {
         ], spacing: 22)
     }
 
-    private func toggle(_ connection: Connection, _ on: Bool) { Analytics.record("agents", on ? "connect" : "disconnect");
-        Self.change(connection, connect: on)
+    private func toggle(_ connection: Connection, _ on: Bool) { Analytics.record("agents", on ? "connect" : "disconnect", target: connection.file.kind.target)
+        if Self.change(connection, connect: on) { connectionChanged(connection.file.kind) }
         contextShell?.openSettings(section: "agents")
     }
 
@@ -246,16 +261,18 @@ extension AgentsModule {
     /// The welcome tour's Connect row: Connect for each installed agent (its folder exists).
     static func setupRow(_ context: ModuleSetupContext) -> NSView? {
         let installed = connections.filter { FileManager.default.fileExists(atPath: $0.directory.path) }
-        return installed.isEmpty ? nil : AgentsSetupView(connections: installed)
+        return installed.isEmpty ? nil : AgentsSetupView(connections: installed, context: context)
     }
 }
 
 /// One line per installed agent: its status and Connect (or Use This Copy).
 final class AgentsSetupView: NSStackView {
     private let connections: [AgentsModule.Connection]
+    private let context: ModuleSetupContext
 
-    init(connections: [AgentsModule.Connection]) {
+    init(connections: [AgentsModule.Connection], context: ModuleSetupContext) {
         self.connections = connections
+        self.context = context
         super.init(frame: .zero)
         orientation = .vertical
         alignment = .leading
@@ -271,9 +288,12 @@ final class AgentsSetupView: NSStackView {
         for connection in connections {
             let text: String
             var action: HoverButton?
+            var tone: NSColor?
             switch AgentsModule.status(connection) {
             case .connected:
-                text = connection.connectedHint
+                // Hooks added is not the same as events arriving: orange until one has, then green.
+                let line = AgentConnectionText.connected(connection.file.kind, seen: AgentsModule.seen(connection.file.kind, in: context))
+                (text, tone) = (line.text, line.receiving ? .systemGreen : .systemOrange)
             case .otherCopy:
                 text = "\(connection.title) is connected to another copy of QNotch."
                 action = HoverButton("Use This Copy", style: .plain) { [weak self] in self?.connect(connection) }
@@ -286,8 +306,9 @@ final class AgentsSetupView: NSStackView {
             action?.pressScale = 0.97
             let status = setupStatus(text)
             var views: [NSView] = [status, spacer()]
+            if let tone { status.textColor = tone }
             if connection.title == connected, action == nil {
-                status.textColor = .systemGreen
+                // Connect worked: the check pops, and the line stays orange until an event arrives.
                 let check = symbol("checkmark.circle.fill", size: 13, weight: .semibold, color: .systemGreen)
                 views.insert(check, at: 0)
                 pops.append(check)
@@ -301,8 +322,9 @@ final class AgentsSetupView: NSStackView {
         pops.forEach { Motion.pop($0) }
     }
 
-    private func connect(_ connection: AgentsModule.Connection) { Analytics.withSurface("onboarding") { Analytics.record("agents", "connect") };
+    private func connect(_ connection: AgentsModule.Connection) { Analytics.withSurface("onboarding") { Analytics.record("agents", "connect", target: connection.file.kind.target) };
         let done = AgentsModule.change(connection, connect: true)
+        if done { AgentsModule.connectionChanged(connection.file.kind, in: context) }
         reload(connected: done ? connection.title : nil)
     }
 }

@@ -1,6 +1,12 @@
 import AppKit
 import QNotchMacCore
 
+/// A connected Settings row's status line, kept in step with the module's seen state.
+final class ConnectionLine {
+    let connection: AgentsModule.Connection
+    init(_ connection: AgentsModule.Connection) { self.connection = connection }
+}
+
 /// Live Claude Code and Codex sessions: working, needs you, done (Windows AgentsModule). The agent
 /// runs `QNotch agent` on each event (hooks the user adds with Connect in Settings, Agents), and the
 /// hook sends one line over a per-user socket. Process-exit sources drop sessions whose terminal
@@ -12,10 +18,6 @@ final class AgentsModule: NotchModule {
         let fileName: String
         let file: AgentHookFile
         var path: URL { directory.appendingPathComponent(fileName) }
-        var connectedHint: String {
-            file.kind == .codex ? "Connected. Codex runs the hooks once you trust them: /hooks in the CLI, or Settings, Hooks in the Codex app."
-                : "Connected. Sessions that were already open show up after you restart them."
-        }
     }
 
     private var context: ModuleContext!
@@ -45,6 +47,8 @@ final class AgentsModule: NotchModule {
     private var t3Titles: [String: String] = [:]
     private let codexTitles = CodexTitles()
     private var titlesPending = false
+    /// The status lines of connected rows in Settings, Agents, so the first event turns one from waiting to receiving while the page is open.
+    private let connectionLines = NSMapTable<NSTextField, ConnectionLine>.weakToStrongObjects()
 
     // MARK: Processes
 
@@ -195,6 +199,7 @@ final class AgentsModule: NotchModule {
         let server = NotifyServer { [weak self] line, exchange in
             exchange.answer(Data())
             guard let event = try? JSONDecoder().decode(AgentEvent.self, from: line) else { return }
+            self?.received(event.agent)
             self?.apply(event)
         }
         self.server = server
@@ -233,6 +238,57 @@ final class AgentsModule: NotchModule {
             // Answered in the terminal (or gone): the peek about it goes at once.
             if let id = peekFor, board.sessions.first(where: { $0.id == id })?.status != .needsYou { peek?.end(); peekFor = nil }
         }
+    }
+
+    // MARK: Connection state
+
+    func seen(_ kind: AgentHookFile.Kind) -> Bool { settings.seen.contains(kind.rawValue) }
+
+    /// A hook of this kind arrived over the socket (not a demo session). Saves only the first one after a Connect, not every hook.
+    private func received(_ agent: String) {
+        guard let kind = AgentHookFile.Kind(rawValue: agent), settings.markSeen(kind, true) else { return }
+        context.settings.save("agents", settings)
+        connectionsChanged()
+    }
+
+    /// Connect or Disconnect changed a hook file: that kind waits for its first event again.
+    func connectionChanged(_ kind: AgentHookFile.Kind) {
+        if settings.markSeen(kind, false) { context.settings.save("agents", settings) }
+        connectionsChanged()
+    }
+
+    /// The welcome tour changed a connection, possibly before this module exists: the running module, else the saved file.
+    static func connectionChanged(_ kind: AgentHookFile.Kind, in setup: ModuleSetupContext) {
+        if let module = setup.running() as? AgentsModule { return module.connectionChanged(kind) }
+        var saved = setup.settings.load("agents", default: AgentsSettings())
+        if saved.markSeen(kind, false) { setup.settings.save("agents", saved) }
+    }
+
+    static func seen(_ kind: AgentHookFile.Kind, in setup: ModuleSetupContext) -> Bool {
+        ((setup.running() as? AgentsModule)?.settings ?? setup.settings.load("agents", default: AgentsSettings())).seen.contains(kind.rawValue)
+    }
+
+    /// What a connected row says, and whether it is receiving (green) or waiting (orange).
+    func connectionLine(_ connection: Connection) -> (text: String, color: NSColor) {
+        let line = AgentConnectionText.connected(connection.file.kind, seen: seen(connection.file.kind))
+        return (line.text, line.receiving ? .systemGreen : .systemOrange)
+    }
+
+    /// Each connected hook file's kind and whether an event of it arrived, for the empty tab.
+    func connectedKinds() -> [(kind: AgentHookFile.Kind, seen: Bool)] {
+        Self.connections.filter { Self.status($0) == .connected }.map { ($0.file.kind, seen($0.file.kind)) }
+    }
+
+    func registerConnectionLine(_ label: NSTextField, for connection: Connection) { connectionLines.setObject(ConnectionLine(connection), forKey: label) }
+
+    private func connectionsChanged() {
+        for label in connectionLines.keyEnumerator().allObjects.compactMap({ $0 as? NSTextField }) {
+            guard let line = connectionLines.object(forKey: label) else { continue }
+            let (text, color) = connectionLine(line.connection)
+            label.stringValue = text
+            label.textColor = color
+        }
+        refresh()
     }
 
     // MARK: Usage and titles
