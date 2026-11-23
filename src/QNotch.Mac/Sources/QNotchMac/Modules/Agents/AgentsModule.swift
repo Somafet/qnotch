@@ -169,7 +169,7 @@ final class AgentsModule: NotchModule {
 
     func setVisibility(panel: Bool, activeTab: String) {
         let visible = panel && activeTab == "agents"
-        if visible != tabVisible { tabVisible = visible; if visible { walk() } else { walkTimer?.invalidate(); walkTimer = nil } }
+        if visible != tabVisible { tabVisible = visible; if visible { connectedCache = nil; walk() } else { walkTimer?.invalidate(); walkTimer = nil } }
         if visible, clock == nil {
             // "4m ago" goes stale only while someone looks.
             let timer = Timer(timeInterval: 30, repeats: true) { [weak self] _ in self?.refresh() }
@@ -274,10 +274,15 @@ final class AgentsModule: NotchModule {
         return (line.text, line.receiving ? .systemGreen : .systemOrange)
     }
 
-    /// Each connected hook file's kind and whether an event of it arrived, for the empty tab.
+    /// Each connected hook file's kind and whether an event of it arrived, for the empty tab. The files are read when a connection or
+    /// the seen state changes and when the tab comes on screen, not on every refresh (one every 2 s while the tab shows).
     func connectedKinds() -> [(kind: AgentHookFile.Kind, seen: Bool)] {
-        Self.connections.filter { Self.status($0) == .connected }.map { ($0.file.kind, seen($0.file.kind)) }
+        if let connectedCache { return connectedCache }
+        let kinds = Self.connections.filter { Self.status($0) == .connected }.map { (kind: $0.file.kind, seen: seen($0.file.kind)) }
+        connectedCache = kinds
+        return kinds
     }
+    private var connectedCache: [(kind: AgentHookFile.Kind, seen: Bool)]?
 
     func registerConnectionLine(_ label: NSTextField, for connection: Connection) { connectionLines.setObject(ConnectionLine(connection), forKey: label) }
 
@@ -288,6 +293,7 @@ final class AgentsModule: NotchModule {
             label.stringValue = text
             label.textColor = color
         }
+        connectedCache = nil
         refresh()
     }
 
