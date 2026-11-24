@@ -13,10 +13,14 @@ struct Dimension: Hashable {
     }
     func combine(_ other: Dimension, _ sign: Int) throws -> Dimension { try .from(zip(components, other.components).map { $0 + sign * $1 }) }
     func power(_ exponent: Rational) throws -> Dimension {
-        let values = try components.map { try Rational($0) * exponent }
-        if values.contains(where: { !$0.denominator.isOne || $0.numerator.magnitude > 16 }) {
-            throw CalcError.arithmetic("Quantity power must have bounded integer dimensions")
+        // A plain loop: the map-with-throwing-closure form crashed the Swift 6.0 optimizer (CopyPropagation) in the app build.
+        var powers: [Int] = []
+        powers.reserveCapacity(8)
+        for value in components {
+            let product = try Rational(value) * exponent
+            if !product.denominator.isOne || product.numerator.magnitude > 16 { throw CalcError.arithmetic("Quantity power must have bounded integer dimensions") }
+            powers.append(product.numerator.intValue!)
         }
-        return try .from(values.map { $0.numerator.intValue! })
+        return try .from(powers)
     }
 }

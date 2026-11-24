@@ -102,11 +102,12 @@ extension String {
     }
     /// StringComparison.OrdinalIgnoreCase equality.
     func equalsIgnoreCase(_ other: String) -> Bool {
-        if self == other { return true }
         let a = utf16, b = other.utf16
         guard a.count == b.count else { return false }
         return zip(a, b).allSatisfy { $0 == $1 || NetChar.upper($0) == NetChar.upper($1) }
     }
+    /// C# `==` on strings: ordinal, code unit by code unit (Swift `==` treats canonically equivalent strings as equal).
+    func ordinalEquals(_ other: String) -> Bool { utf16.elementsEqual(other.utf16) }
     func startsWithIgnoreCase(_ prefix: String) -> Bool {
         let a = utf16, b = prefix.utf16
         guard a.count >= b.count else { return false }
