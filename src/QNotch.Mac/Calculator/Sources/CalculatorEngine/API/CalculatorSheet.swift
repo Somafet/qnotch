@@ -183,7 +183,14 @@ extension ResultFormat {
 
 /// Evidence lines a step carries beyond its assumption (filled in as the areas that produce evidence are ported).
 enum StepDetails {
-    static func lines(_ step: CalculationStep) -> [String] { [] }
+    static func lines(_ step: CalculationStep) -> [String] {
+        var lines: [String] = []
+        // Amortization rows, worded as C# ExplanationText and the Windows explanation panel print them.
+        for year in step.schedule ?? [] {
+            lines.append("Year \(year.year) (\(year.payments) payments): interest \(year.interest), principal \(year.principal), balance \(year.balance)")
+        }
+        return lines
+    }
 }
 
 /// The host's local zone as engine rules.
