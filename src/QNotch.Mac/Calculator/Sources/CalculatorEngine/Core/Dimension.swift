@@ -12,6 +12,8 @@ struct Dimension: Hashable {
         return Dimension(values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7])
     }
     func combine(_ other: Dimension, _ sign: Int) throws -> Dimension { try .from(zip(components, other.components).map { $0 + sign * $1 }) }
+    /// Not optimized: Swift 6.2.3's CopyPropagation pass fails its ownership check on this function in release builds (compiler crash, signal 6).
+    @_optimize(none)
     func power(_ exponent: Rational) throws -> Dimension {
         let values = try components.map { try Rational($0) * exponent }
         if values.contains(where: { !$0.denominator.isOne || $0.numerator.magnitude > 16 }) {
