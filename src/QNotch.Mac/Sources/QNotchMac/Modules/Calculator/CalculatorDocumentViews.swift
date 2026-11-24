@@ -275,8 +275,7 @@ extension SheetTextView {
     /// The x of a line's last character in this view.
     func endOfLine(_ index: Int) -> CGFloat {
         guard let layoutManager, lineStarts.indices.contains(index) else { return 0 }
-        let text = string as NSString
-        let end = index + 1 < lineStarts.count ? lineStarts[index + 1] - 1 : text.length
+        let end = contentEnd(ofLine: index)
         guard end > lineStarts[index] else { return textContainerOrigin.x }
         let glyphs = layoutManager.glyphRange(forCharacterRange: NSRange(location: end - 1, length: 1), actualCharacterRange: nil)
         guard let container = textContainer else { return 0 }

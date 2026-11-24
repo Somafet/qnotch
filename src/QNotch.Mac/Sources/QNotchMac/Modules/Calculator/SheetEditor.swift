@@ -216,7 +216,8 @@ final class SheetTextView: NSTextView, NSTextViewDelegate, NSTextStorageDelegate
 
     /// The UTF-16 offset where the line's text ends, before its line break (one or two units).
     func contentEnd(ofLine index: Int) -> Int {
-        let text = string as NSString
+        // The storage's own string: bridging `string` per call could copy the whole sheet once per line in the restyle loops.
+        guard let text = textStorage?.mutableString else { return lineStarts[index] }
         let start = lineStarts[index]
         var end = index + 1 < lineStarts.count ? lineStarts[index + 1] : text.length
         while end > start, text.character(at: end - 1) == 0x0A || text.character(at: end - 1) == 0x0D { end -= 1 }
