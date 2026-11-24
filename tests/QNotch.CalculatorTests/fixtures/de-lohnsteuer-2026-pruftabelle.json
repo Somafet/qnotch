@@ -1,0 +1,962 @@
+{
+ "source": "BMF-Schreiben 12.11.2025, IV C 5 - S 2361/00025/016/028, BStBl 2025 I S. 1948, Anlage 1, pages 39-40 (Pruftabelle)",
+ "sourceUrl": "https://www.ihk-muenchen.de/ihk/documents/Recht-Steuern/Steuerrecht/Einkommensteuer/2025-11-12-PAP-2026-anlage-1.pdf",
+ "sourceSha256": "5da38acd544868ddcb0bc7f43030bd7d6ee9aa455dff0f42ad59732634e33a48",
+ "transcription": "Extracted from the PDF text layer by digit pattern, thousand separators removed; 43 rows x 6 classes per table",
+ "general": {
+  "inputs": "LZZ=1, RE4=gross*100 cents, ALV=KRV=PKV=0, KVZ=2.90, PVZ=0 in class II and 1 otherwise, R=0, ZKF=0",
+  "rows": [
+   {
+    "annualGross": 5000,
+    "annualWageTaxByClass": [
+     0,
+     0,
+     0,
+     0,
+     372,
+     558
+    ]
+   },
+   {
+    "annualGross": 7500,
+    "annualWageTaxByClass": [
+     0,
+     0,
+     0,
+     0,
+     647,
+     838
+    ]
+   },
+   {
+    "annualGross": 10000,
+    "annualWageTaxByClass": [
+     0,
+     0,
+     0,
+     0,
+     922,
+     1117
+    ]
+   },
+   {
+    "annualGross": 12500,
+    "annualWageTaxByClass": [
+     0,
+     0,
+     0,
+     0,
+     1197,
+     1397
+    ]
+   },
+   {
+    "annualGross": 15000,
+    "annualWageTaxByClass": [
+     0,
+     0,
+     0,
+     0,
+     1472,
+     1676
+    ]
+   },
+   {
+    "annualGross": 17500,
+    "annualWageTaxByClass": [
+     51,
+     0,
+     0,
+     51,
+     1778,
+     1956
+    ]
+   },
+   {
+    "annualGross": 20000,
+    "annualWageTaxByClass": [
+     380,
+     0,
+     0,
+     380,
+     2234,
+     2766
+    ]
+   },
+   {
+    "annualGross": 22500,
+    "annualWageTaxByClass": [
+     782,
+     32,
+     0,
+     782,
+     3073,
+     3604
+    ]
+   },
+   {
+    "annualGross": 25000,
+    "annualWageTaxByClass": [
+     1251,
+     359,
+     0,
+     1251,
+     3911,
+     4443
+    ]
+   },
+   {
+    "annualGross": 27500,
+    "annualWageTaxByClass": [
+     1742,
+     759,
+     0,
+     1742,
+     4749,
+     5281
+    ]
+   },
+   {
+    "annualGross": 30000,
+    "annualWageTaxByClass": [
+     2248,
+     1230,
+     0,
+     2248,
+     5588,
+     6120
+    ]
+   },
+   {
+    "annualGross": 32500,
+    "annualWageTaxByClass": [
+     2767,
+     1724,
+     0,
+     2767,
+     6426,
+     6952
+    ]
+   },
+   {
+    "annualGross": 35000,
+    "annualWageTaxByClass": [
+     3300,
+     2233,
+     294,
+     3300,
+     7216,
+     7682
+    ]
+   },
+   {
+    "annualGross": 37500,
+    "annualWageTaxByClass": [
+     3847,
+     2756,
+     628,
+     3847,
+     7954,
+     8436
+    ]
+   },
+   {
+    "annualGross": 40000,
+    "annualWageTaxByClass": [
+     4407,
+     3293,
+     1000,
+     4407,
+     8720,
+     9218
+    ]
+   },
+   {
+    "annualGross": 42500,
+    "annualWageTaxByClass": [
+     4982,
+     3843,
+     1406,
+     4982,
+     9512,
+     10030
+    ]
+   },
+   {
+    "annualGross": 45000,
+    "annualWageTaxByClass": [
+     5570,
+     4408,
+     1850,
+     5570,
+     10334,
+     10865
+    ]
+   },
+   {
+    "annualGross": 47500,
+    "annualWageTaxByClass": [
+     6172,
+     4987,
+     2324,
+     6172,
+     11171,
+     11703
+    ]
+   },
+   {
+    "annualGross": 50000,
+    "annualWageTaxByClass": [
+     6788,
+     5580,
+     2810,
+     6788,
+     12010,
+     12542
+    ]
+   },
+   {
+    "annualGross": 52500,
+    "annualWageTaxByClass": [
+     7417,
+     6186,
+     3302,
+     7417,
+     12848,
+     13380
+    ]
+   },
+   {
+    "annualGross": 55000,
+    "annualWageTaxByClass": [
+     8060,
+     6807,
+     3802,
+     8060,
+     13687,
+     14218
+    ]
+   },
+   {
+    "annualGross": 57500,
+    "annualWageTaxByClass": [
+     8718,
+     7442,
+     4308,
+     8718,
+     14525,
+     15057
+    ]
+   },
+   {
+    "annualGross": 60000,
+    "annualWageTaxByClass": [
+     9389,
+     8091,
+     4822,
+     9389,
+     15364,
+     15895
+    ]
+   },
+   {
+    "annualGross": 62500,
+    "annualWageTaxByClass": [
+     10073,
+     8754,
+     5342,
+     10073,
+     16202,
+     16734
+    ]
+   },
+   {
+    "annualGross": 65000,
+    "annualWageTaxByClass": [
+     10772,
+     9430,
+     5870,
+     10772,
+     17040,
+     17572
+    ]
+   },
+   {
+    "annualGross": 67500,
+    "annualWageTaxByClass": [
+     11484,
+     10121,
+     6402,
+     11484,
+     17879,
+     18410
+    ]
+   },
+   {
+    "annualGross": 70000,
+    "annualWageTaxByClass": [
+     12220,
+     10835,
+     6952,
+     12220,
+     18729,
+     19260
+    ]
+   },
+   {
+    "annualGross": 72500,
+    "annualWageTaxByClass": [
+     13062,
+     11647,
+     7574,
+     13062,
+     19681,
+     20213
+    ]
+   },
+   {
+    "annualGross": 75000,
+    "annualWageTaxByClass": [
+     13922,
+     12476,
+     8206,
+     13922,
+     20633,
+     21165
+    ]
+   },
+   {
+    "annualGross": 77500,
+    "annualWageTaxByClass": [
+     14799,
+     13323,
+     8846,
+     14799,
+     21585,
+     22117
+    ]
+   },
+   {
+    "annualGross": 80000,
+    "annualWageTaxByClass": [
+     15694,
+     14188,
+     9496,
+     15694,
+     22538,
+     23070
+    ]
+   },
+   {
+    "annualGross": 82500,
+    "annualWageTaxByClass": [
+     16607,
+     15071,
+     10154,
+     16607,
+     23490,
+     24022
+    ]
+   },
+   {
+    "annualGross": 85000,
+    "annualWageTaxByClass": [
+     17538,
+     15971,
+     10822,
+     17538,
+     24443,
+     24974
+    ]
+   },
+   {
+    "annualGross": 87500,
+    "annualWageTaxByClass": [
+     18486,
+     16890,
+     11498,
+     18486,
+     25395,
+     25927
+    ]
+   },
+   {
+    "annualGross": 90000,
+    "annualWageTaxByClass": [
+     19438,
+     17826,
+     12182,
+     19438,
+     26347,
+     26879
+    ]
+   },
+   {
+    "annualGross": 92500,
+    "annualWageTaxByClass": [
+     20390,
+     18777,
+     12876,
+     20390,
+     27300,
+     27831
+    ]
+   },
+   {
+    "annualGross": 95000,
+    "annualWageTaxByClass": [
+     21343,
+     19729,
+     13580,
+     21343,
+     28252,
+     28784
+    ]
+   },
+   {
+    "annualGross": 97500,
+    "annualWageTaxByClass": [
+     22295,
+     20682,
+     14292,
+     22295,
+     29204,
+     29736
+    ]
+   },
+   {
+    "annualGross": 100000,
+    "annualWageTaxByClass": [
+     23248,
+     21634,
+     15012,
+     23248,
+     30157,
+     30689
+    ]
+   },
+   {
+    "annualGross": 102500,
+    "annualWageTaxByClass": [
+     24243,
+     22629,
+     15774,
+     24243,
+     31152,
+     31684
+    ]
+   },
+   {
+    "annualGross": 105000,
+    "annualWageTaxByClass": [
+     25293,
+     23679,
+     16590,
+     25293,
+     32202,
+     32734
+    ]
+   },
+   {
+    "annualGross": 107500,
+    "annualWageTaxByClass": [
+     26343,
+     24729,
+     17416,
+     26343,
+     33252,
+     33784
+    ]
+   },
+   {
+    "annualGross": 110000,
+    "annualWageTaxByClass": [
+     27393,
+     25779,
+     18252,
+     27393,
+     34302,
+     34834
+    ]
+   }
+  ]
+ },
+ "special": {
+  "inputs": "LZZ=1, RE4=gross*100 cents, ALV=KRV=PKV=1, PKPV=50000 cents in class III, 0 in class VI, 30000 otherwise, R=0, ZKF=0",
+  "rows": [
+   {
+    "annualGross": 5000,
+    "annualWageTaxByClass": [
+     0,
+     0,
+     0,
+     0,
+     18,
+     700
+    ]
+   },
+   {
+    "annualGross": 7500,
+    "annualWageTaxByClass": [
+     0,
+     0,
+     0,
+     0,
+     368,
+     1050
+    ]
+   },
+   {
+    "annualGross": 10000,
+    "annualWageTaxByClass": [
+     0,
+     0,
+     0,
+     0,
+     718,
+     1400
+    ]
+   },
+   {
+    "annualGross": 12500,
+    "annualWageTaxByClass": [
+     0,
+     0,
+     0,
+     0,
+     1068,
+     1750
+    ]
+   },
+   {
+    "annualGross": 15000,
+    "annualWageTaxByClass": [
+     0,
+     0,
+     0,
+     0,
+     1418,
+     2359
+    ]
+   },
+   {
+    "annualGross": 17500,
+    "annualWageTaxByClass": [
+     40,
+     0,
+     0,
+     40,
+     1768,
+     3409
+    ]
+   },
+   {
+    "annualGross": 20000,
+    "annualWageTaxByClass": [
+     461,
+     0,
+     0,
+     461,
+     2415,
+     4459
+    ]
+   },
+   {
+    "annualGross": 22500,
+    "annualWageTaxByClass": [
+     995,
+     153,
+     0,
+     995,
+     3465,
+     5509
+    ]
+   },
+   {
+    "annualGross": 25000,
+    "annualWageTaxByClass": [
+     1604,
+     607,
+     0,
+     1604,
+     4515,
+     6559
+    ]
+   },
+   {
+    "annualGross": 27500,
+    "annualWageTaxByClass": [
+     2234,
+     1173,
+     0,
+     2234,
+     5565,
+     7514
+    ]
+   },
+   {
+    "annualGross": 30000,
+    "annualWageTaxByClass": [
+     2886,
+     1788,
+     0,
+     2886,
+     6615,
+     8460
+    ]
+   },
+   {
+    "annualGross": 32500,
+    "annualWageTaxByClass": [
+     3559,
+     2424,
+     76,
+     3559,
+     7564,
+     9446
+    ]
+   },
+   {
+    "annualGross": 35000,
+    "annualWageTaxByClass": [
+     4254,
+     3083,
+     466,
+     4254,
+     8510,
+     10473
+    ]
+   },
+   {
+    "annualGross": 37500,
+    "annualWageTaxByClass": [
+     4971,
+     3763,
+     914,
+     4971,
+     9498,
+     11523
+    ]
+   },
+   {
+    "annualGross": 40000,
+    "annualWageTaxByClass": [
+     5710,
+     4464,
+     1420,
+     5710,
+     10529,
+     12573
+    ]
+   },
+   {
+    "annualGross": 42500,
+    "annualWageTaxByClass": [
+     6470,
+     5188,
+     1982,
+     6470,
+     11579,
+     13623
+    ]
+   },
+   {
+    "annualGross": 45000,
+    "annualWageTaxByClass": [
+     7252,
+     5932,
+     2584,
+     7252,
+     12629,
+     14673
+    ]
+   },
+   {
+    "annualGross": 47500,
+    "annualWageTaxByClass": [
+     8055,
+     6699,
+     3198,
+     8055,
+     13679,
+     15723
+    ]
+   },
+   {
+    "annualGross": 50000,
+    "annualWageTaxByClass": [
+     8880,
+     7487,
+     3824,
+     8880,
+     14729,
+     16773
+    ]
+   },
+   {
+    "annualGross": 52500,
+    "annualWageTaxByClass": [
+     9727,
+     8297,
+     4458,
+     9727,
+     15779,
+     17823
+    ]
+   },
+   {
+    "annualGross": 55000,
+    "annualWageTaxByClass": [
+     10595,
+     9128,
+     5106,
+     10595,
+     16829,
+     18873
+    ]
+   },
+   {
+    "annualGross": 57500,
+    "annualWageTaxByClass": [
+     11485,
+     9981,
+     5762,
+     11485,
+     17879,
+     19923
+    ]
+   },
+   {
+    "annualGross": 60000,
+    "annualWageTaxByClass": [
+     12396,
+     10856,
+     6430,
+     12396,
+     18929,
+     20973
+    ]
+   },
+   {
+    "annualGross": 62500,
+    "annualWageTaxByClass": [
+     13330,
+     11752,
+     7110,
+     13330,
+     19979,
+     22023
+    ]
+   },
+   {
+    "annualGross": 65000,
+    "annualWageTaxByClass": [
+     14284,
+     12670,
+     7798,
+     14284,
+     21029,
+     23073
+    ]
+   },
+   {
+    "annualGross": 67500,
+    "annualWageTaxByClass": [
+     15261,
+     13610,
+     8500,
+     15261,
+     22079,
+     24123
+    ]
+   },
+   {
+    "annualGross": 70000,
+    "annualWageTaxByClass": [
+     16259,
+     14571,
+     9210,
+     16259,
+     23129,
+     25173
+    ]
+   },
+   {
+    "annualGross": 72500,
+    "annualWageTaxByClass": [
+     17279,
+     15554,
+     9932,
+     17279,
+     24179,
+     26223
+    ]
+   },
+   {
+    "annualGross": 75000,
+    "annualWageTaxByClass": [
+     18320,
+     16559,
+     10666,
+     18320,
+     25229,
+     27273
+    ]
+   },
+   {
+    "annualGross": 77500,
+    "annualWageTaxByClass": [
+     19370,
+     17585,
+     11410,
+     19370,
+     26279,
+     28323
+    ]
+   },
+   {
+    "annualGross": 80000,
+    "annualWageTaxByClass": [
+     20420,
+     18631,
+     12164,
+     20420,
+     27329,
+     29373
+    ]
+   },
+   {
+    "annualGross": 82500,
+    "annualWageTaxByClass": [
+     21470,
+     19681,
+     12930,
+     21470,
+     28379,
+     30423
+    ]
+   },
+   {
+    "annualGross": 85000,
+    "annualWageTaxByClass": [
+     22520,
+     20731,
+     13706,
+     22520,
+     29429,
+     31473
+    ]
+   },
+   {
+    "annualGross": 87500,
+    "annualWageTaxByClass": [
+     23570,
+     21781,
+     14492,
+     23570,
+     30479,
+     32523
+    ]
+   },
+   {
+    "annualGross": 90000,
+    "annualWageTaxByClass": [
+     24620,
+     22831,
+     15290,
+     24620,
+     31529,
+     33573
+    ]
+   },
+   {
+    "annualGross": 92500,
+    "annualWageTaxByClass": [
+     25670,
+     23881,
+     16098,
+     25670,
+     32579,
+     34623
+    ]
+   },
+   {
+    "annualGross": 95000,
+    "annualWageTaxByClass": [
+     26720,
+     24931,
+     16918,
+     26720,
+     33629,
+     35673
+    ]
+   },
+   {
+    "annualGross": 97500,
+    "annualWageTaxByClass": [
+     27770,
+     25981,
+     17748,
+     27770,
+     34679,
+     36723
+    ]
+   },
+   {
+    "annualGross": 100000,
+    "annualWageTaxByClass": [
+     28820,
+     27031,
+     18590,
+     28820,
+     35729,
+     37773
+    ]
+   },
+   {
+    "annualGross": 102500,
+    "annualWageTaxByClass": [
+     29870,
+     28081,
+     19442,
+     29870,
+     36779,
+     38823
+    ]
+   },
+   {
+    "annualGross": 105000,
+    "annualWageTaxByClass": [
+     30920,
+     29131,
+     20304,
+     30920,
+     37829,
+     39873
+    ]
+   },
+   {
+    "annualGross": 107500,
+    "annualWageTaxByClass": [
+     31970,
+     30181,
+     21178,
+     31970,
+     38879,
+     40923
+    ]
+   },
+   {
+    "annualGross": 110000,
+    "annualWageTaxByClass": [
+     33020,
+     31231,
+     22062,
+     33020,
+     39929,
+     41973
+    ]
+   }
+  ]
+ }
+}

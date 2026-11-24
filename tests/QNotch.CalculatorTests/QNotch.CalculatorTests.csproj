@@ -1,0 +1,53 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Calculator module checks: the sheet tab list, and the engine's arithmetic, units, dates, finance, payroll, documents and rate providers. Run with dotnet test. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
+  </ItemGroup>
+  <ItemGroup>
+    <Using Include="Xunit" />
+    <EmbeddedResource Include="fixtures/rounding-v1.json" LogicalName="Calc.RoundingFixtures" />
+    <EmbeddedResource Include="fixtures/number-language-v1.json" LogicalName="Calc.NumberLanguageFixtures" />
+    <EmbeddedResource Include="fixtures/localized-keywords-v1.json" LogicalName="Calc.LocalizedFixtures" />
+    <EmbeddedResource Include="fixtures/radicals-v1.json" LogicalName="Calc.RadicalFixtures" />
+    <EmbeddedResource Include="fixtures/units-v1.json" LogicalName="Calc.UnitFixtures" />
+    <EmbeddedResource Include="fixtures/dates-v1.json" LogicalName="Calc.DateFixtures" />
+    <EmbeddedResource Include="fixtures/time-intervals-v1.json" LogicalName="Calc.TimeFixtures" />
+    <EmbeddedResource Include="fixtures/irr-oracle-v1.json" LogicalName="Calc.IrrOracle" />
+    <EmbeddedResource Include="fixtures/payroll-oracle-v1.json" LogicalName="Calc.PayrollOracle" />
+    <EmbeddedResource Include="fixtures/romanian-payroll-oracle-v1.json" LogicalName="Calc.RomanianPayrollOracle" />
+    <EmbeddedResource Include="fixtures/romanian-tax-oracle-v1.json" LogicalName="Calc.RomanianTaxOracle" />
+    <EmbeddedResource Include="fixtures/german-payroll-oracle-v1.json" LogicalName="Calc.GermanPayrollOracle" />
+    <EmbeddedResource Include="fixtures/de-lohnsteuer-2026-pruftabelle.json" LogicalName="Calc.GermanWageTaxTable" />
+    <EmbeddedResource Include="fixtures/hungarian-payroll-oracle-v1.json" LogicalName="Calc.HungarianPayrollOracle" />
+    <EmbeddedResource Include="fixtures/spec/payroll.md" LogicalName="Calc.PayrollSpec" />
+    <EmbeddedResource Include="fixtures/matrices-v1.json" LogicalName="Calc.MatrixOracle" />
+    <EmbeddedResource Include="fixtures/electrical-v1.json" LogicalName="Calc.ElectricalOracle" />
+    <EmbeddedResource Include="fixtures/developer-rates-v1.json" LogicalName="Calc.RateOracle" />
+    <EmbeddedResource Include="fixtures/uuid-v1.json" LogicalName="Calc.UuidOracle" />
+    <EmbeddedResource Include="fixtures/developer-helpers-v1.json" LogicalName="Calc.DeveloperOracle" />
+    <EmbeddedResource Include="fixtures/text-codecs-v1.json" LogicalName="Calc.TextOracle" />
+    <EmbeddedResource Include="fixtures/networks-v1.json" LogicalName="Calc.NetworkOracle" />
+    <EmbeddedResource Include="fixtures/integers-v1.json" LogicalName="Calc.IntegerOracle" />
+    <EmbeddedResource Include="fixtures/chemistry-practical-v1.json" LogicalName="Calc.ChemistryOracle" />
+    <EmbeddedResource Include="fixtures/ingredient-usda-sr-legacy-2018.csv" LogicalName="Calc.IngredientUsda" />
+    <EmbeddedResource Include="fixtures/spec/payroll-rules.json" LogicalName="Calc.PayrollRules" />
+    <EmbeddedResource Include="fixtures/spec/romanian-tax-rules.json" LogicalName="Calc.RomanianTaxRules" />
+    <EmbeddedResource Include="fixtures/spec/workday-calendars.json" LogicalName="Calc.WorkdayCoverage" />
+    <EmbeddedResource Include="fixtures/ecb-2023-12-29.json" LogicalName="Calc.EcbRecorded" />
+    <EmbeddedResource Include="fixtures/inforeuro-2026-10-01.json" LogicalName="Calc.InforEuroRecorded" />
+    <EmbeddedResource Include="fixtures/inforeuro-official-2026-10.json" LogicalName="Calc.InforEuroOfficial" />
+    <None Include="fixtures/import/*" LinkBase="fixtures/import" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="fixtures/share-links-v1.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/QNotch.Calculator.Engine/QNotch.Calculator.Engine.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,12 @@
+{
+  "version": 3,
+  "appearance": { "theme": "dark", "font": "SF Mono" },
+  "lines": [
+    { "id": "6F1C2E0A-3B4D-4E5F-8A9B-0C1D2E3F4A5B", "text": "# Trip", "answer": "" },
+    { "id": "1A2B3C4D-5E6F-4A8B-9C0D-1E2F3A4B5C6D", "text": "hotel = 3 * 90", "answer": "270" },
+    { "id": "2B3C4D5E-6F7A-4B9C-8D1E-2F3A4B5C6D7E", "text": "train = 45", "answer": "45" },
+    { "id": "3C4D5E6F-7A8B-4C0D-9E2F-3A4B5C6D7E8F", "text": "[1A2B3C4D-5E6F-4A8B-9C0D-1E2F3A4B5C6D] + [2B3C4D5E-6F7A-4B9C-8D1E-2F3A4B5C6D7E]", "answer": "315" },
+    { "id": "4D5E6F7A-8B9C-4D1E-8F3A-4B5C6D7E8F9A", "text": "{3C4D5E6F-7A8B-4C0D-9E2F-3A4B5C6D7E8F} / 2", "answer": "157.5" },
+    { "id": "5E6F7A8B-9C0D-4E2F-9A4B-5C6D7E8F9A0B", "text": "[00000000-0000-4000-8000-000000000000] + 1", "answer": "" }
+  ]
+}

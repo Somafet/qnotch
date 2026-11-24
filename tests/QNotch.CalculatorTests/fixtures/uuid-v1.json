@@ -1,0 +1,1798 @@
+{
+  "model": "Python uuid.UUID v4 network-order input/format cases; not a randomness certification",
+  "seed": 2026103106,
+  "cases": [
+    {
+      "node": "8ee732d6-ab03-f456-05f9-f5ab894f2c09",
+      "value": "e756caa6-0cc4-4641-95a6-4952e48776b0",
+      "networkBytes": "e756caa60cc4464195a64952e48776b0",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "7e2fabe6-062d-ee3c-8982-9aadf332c6c9",
+      "value": "128a8a1d-3cca-44fc-80b8-d079cc9f03f3",
+      "networkBytes": "128a8a1d3cca44fc80b8d079cc9f03f3",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "ef9252b5-61a5-0d77-71b2-be7da26ade87",
+      "value": "d2be09c9-a6d9-448e-8b3b-03acce776415",
+      "networkBytes": "d2be09c9a6d9448e8b3b03acce776415",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "d79509e1-2c4f-4b6e-f38c-a1b6774953ce",
+      "value": "20871050-b399-4b9a-8d50-d9718e290e4a",
+      "networkBytes": "20871050b3994b9a8d50d9718e290e4a",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "4cf2de05-e7f3-d367-9658-3c71cdfe34aa",
+      "value": "81941d77-00de-4954-88c5-a0ff8b6af3f2",
+      "networkBytes": "81941d7700de495488c5a0ff8b6af3f2",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "7d4c1313-aea4-7057-4a56-69527152a629",
+      "value": "d3ac8c9b-5d14-42b9-8f8e-77249fc37c3d",
+      "networkBytes": "d3ac8c9b5d1442b98f8e77249fc37c3d",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "6c76e5b5-6132-4795-26fb-ffa74b106219",
+      "value": "dc8f5481-3817-48a5-b136-e430b29c5efa",
+      "networkBytes": "dc8f5481381748a5b136e430b29c5efa",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "5d172afe-df85-0f26-4dc4-c94eca8cabdf",
+      "value": "91543318-08d4-4d42-b436-5fb80e6bc2c4",
+      "networkBytes": "9154331808d44d42b4365fb80e6bc2c4",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "7fa3701d-605a-dde0-d425-cc5bc0661fb7",
+      "value": "ea082a22-f341-4373-bccb-c7b3d80a2fae",
+      "networkBytes": "ea082a22f3414373bccbc7b3d80a2fae",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "be2cab20-1e2b-dbbe-ec69-855fc0ae4a7a",
+      "value": "7c580b7d-0980-4db4-baf9-25f0b84ae2b5",
+      "networkBytes": "7c580b7d09804db4baf925f0b84ae2b5",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "6b10334b-f506-3c99-ad0c-8f2927350046",
+      "value": "8a843472-c437-4149-9c5b-1dd08bf7aa6a",
+      "networkBytes": "8a843472c43741499c5b1dd08bf7aa6a",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "51272585-f1e7-2ab3-b3a4-935fd02dc3dc",
+      "value": "5eb8deba-8648-4b38-ab17-f44947539107",
+      "networkBytes": "5eb8deba86484b38ab17f44947539107",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "bb777ba5-43ac-a4c6-6f37-8ba7e2a2b08b",
+      "value": "c525b668-b749-4c4d-b8e6-7b96ecc52134",
+      "networkBytes": "c525b668b7494c4db8e67b96ecc52134",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "5b4f4edf-2eff-cb47-7a53-536ad7c9a6e2",
+      "value": "218829a3-95df-49f3-a8a9-560e1cc0ecf2",
+      "networkBytes": "218829a395df49f3a8a9560e1cc0ecf2",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "2989b92a-a3ba-4988-764e-55ab1c635baa",
+      "value": "0eb24b60-dd9b-45f8-b4ae-ea150f7a0dcb",
+      "networkBytes": "0eb24b60dd9b45f8b4aeea150f7a0dcb",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "796fe429-be25-44a5-d16f-ba5f351e986b",
+      "value": "a47cd05e-938e-4340-996b-053ef8d947d6",
+      "networkBytes": "a47cd05e938e4340996b053ef8d947d6",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "986e1ae0-b08b-20c3-2d4b-2e948073b40f",
+      "value": "8566f0eb-40c8-4ead-96da-0897308d1961",
+      "networkBytes": "8566f0eb40c84ead96da0897308d1961",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "ed6610db-94fc-43e2-729a-b767d483c5da",
+      "value": "67e1e839-9363-4b31-8ab9-9c392303d205",
+      "networkBytes": "67e1e83993634b318ab99c392303d205",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "b84a91ff-0c74-b922-4f88-c7b8d09b8fcb",
+      "value": "43542ee2-51bf-49ec-bd8e-07446d516812",
+      "networkBytes": "43542ee251bf49ecbd8e07446d516812",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "c51f6a48-a56d-ff35-1fff-46219bcda5b6",
+      "value": "e8c443ab-454e-41cf-942d-e1a7a04e71db",
+      "networkBytes": "e8c443ab454e41cf942de1a7a04e71db",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "cdec17fb-22dd-e486-eb82-9857ad427a32",
+      "value": "7e1db4a5-e4a1-4c38-9438-cb512a976cda",
+      "networkBytes": "7e1db4a5e4a14c389438cb512a976cda",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "b906e5c5-bea9-6f08-58c8-e04a2cf6a7dd",
+      "value": "2b5cadbf-99ce-4af7-ac82-db7deef2d423",
+      "networkBytes": "2b5cadbf99ce4af7ac82db7deef2d423",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "865cb6e0-0029-7619-4e6d-063e0f3309da",
+      "value": "2a078497-9129-4ba5-ace3-72bb8a8f2cc8",
+      "networkBytes": "2a07849791294ba5ace372bb8a8f2cc8",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "a53b5a73-c8c6-d1f4-4170-5141d8b427c2",
+      "value": "8a7d9b0b-9440-41a6-904a-c6f995fc3a79",
+      "networkBytes": "8a7d9b0b944041a6904ac6f995fc3a79",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "5b78c2f2-a60a-3670-e083-5b67354229b9",
+      "value": "d8481efc-c889-47d5-8074-a5d08d551508",
+      "networkBytes": "d8481efcc88947d58074a5d08d551508",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "d0ea449c-ebb7-785c-8e39-d9a23e52a18c",
+      "value": "3bfac72c-f4b9-42ac-9131-a079db1baaaa",
+      "networkBytes": "3bfac72cf4b942ac9131a079db1baaaa",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "188ed49c-8d94-e656-e124-48d23f857667",
+      "value": "69f2adfe-3f6c-4663-bc22-b7390fa52c17",
+      "networkBytes": "69f2adfe3f6c4663bc22b7390fa52c17",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "6e2df4b5-bee4-ccc1-24e2-dd8a4833496d",
+      "value": "94fc8313-da5a-4f53-b888-d00b58cd1bb5",
+      "networkBytes": "94fc8313da5a4f53b888d00b58cd1bb5",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "d81821c2-6a0c-7202-917d-ad92cccfe1f5",
+      "value": "25fcf5ee-fdde-437c-874f-b67589e52401",
+      "networkBytes": "25fcf5eefdde437c874fb67589e52401",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "74416df1-bd2e-73cf-0310-f02f50aed379",
+      "value": "03f607d7-5e2f-4918-9eeb-e7fb3553c411",
+      "networkBytes": "03f607d75e2f49189eebe7fb3553c411",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "1c17c380-0858-c035-4517-998138e28914",
+      "value": "e635f859-00fa-4640-918f-cb8460e6e77d",
+      "networkBytes": "e635f85900fa4640918fcb8460e6e77d",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "a0487823-a5ca-0c0a-0a28-9384a8a51377",
+      "value": "16159359-e788-46d6-a0e9-edabc691755a",
+      "networkBytes": "16159359e78846d6a0e9edabc691755a",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "6d5913bc-600b-6dd3-d5ce-7dfc68dbea4a",
+      "value": "75bd905f-7a91-4bcf-9f70-b64a24e882cb",
+      "networkBytes": "75bd905f7a914bcf9f70b64a24e882cb",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "639d0aad-921e-e738-7917-c15da13c4b03",
+      "value": "9c17de1b-7d40-4607-8ed9-dc2420bf782b",
+      "networkBytes": "9c17de1b7d4046078ed9dc2420bf782b",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "974ed1b5-73b5-736c-cefb-d556df529e71",
+      "value": "1cd662cf-701c-4ff7-9224-085948cbf254",
+      "networkBytes": "1cd662cf701c4ff79224085948cbf254",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "55292fc2-6fcc-6305-dcbd-041b92b3f55f",
+      "value": "3bb7c557-f030-432f-adab-eb6a7f1a599a",
+      "networkBytes": "3bb7c557f030432fadabeb6a7f1a599a",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "cc4d4a67-da7a-4bb4-48d6-c7d57996f2eb",
+      "value": "1cc9dd60-acfa-4bda-a895-167049250b87",
+      "networkBytes": "1cc9dd60acfa4bdaa895167049250b87",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "9944c008-dfc3-2130-bae1-0fbb864f7107",
+      "value": "14599168-dbbe-4f3c-b06e-e52bd4ab8c21",
+      "networkBytes": "14599168dbbe4f3cb06ee52bd4ab8c21",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "69915627-231a-30a0-ffc1-0abe76fa8c97",
+      "value": "2a09f0c9-ec80-4c03-9879-16af3c319ad0",
+      "networkBytes": "2a09f0c9ec804c03987916af3c319ad0",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "6d6d14c7-2d3d-2930-bc6e-efee6a017563",
+      "value": "9e00f0d4-d0f2-430b-bd97-a6b0ecf58706",
+      "networkBytes": "9e00f0d4d0f2430bbd97a6b0ecf58706",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "619fc0f6-81b6-038e-aed1-860a301f6e8a",
+      "value": "ad3af8ee-c964-48be-82cf-887ed5306b28",
+      "networkBytes": "ad3af8eec96448be82cf887ed5306b28",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "c15f9109-42c2-c269-8287-92f245bb5a7c",
+      "value": "94720162-b285-4ef2-9adc-ee9020eb7d6a",
+      "networkBytes": "94720162b2854ef29adcee9020eb7d6a",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "3e5d7b7f-c910-9823-4b4e-60b10d59c88a",
+      "value": "cbb4740d-759f-44e0-891b-ec8a4b4cd0fd",
+      "networkBytes": "cbb4740d759f44e0891bec8a4b4cd0fd",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "d701fe37-658a-2148-4877-4a81f63e948e",
+      "value": "16cd89ba-5a7f-4efa-8d7c-e2d0e56eacd3",
+      "networkBytes": "16cd89ba5a7f4efa8d7ce2d0e56eacd3",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "33fc6648-57ca-5e1c-54bd-30240dedb12d",
+      "value": "6b69bcdd-5483-42b1-95b7-2de3af871a25",
+      "networkBytes": "6b69bcdd548342b195b72de3af871a25",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "58463f54-9c1d-153b-65a2-19dee69e7be9",
+      "value": "2fe388d9-088a-4791-b44b-962fb3e6c6b1",
+      "networkBytes": "2fe388d9088a4791b44b962fb3e6c6b1",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "7f5c7a93-50ee-5a27-ccdd-6962e99c48e6",
+      "value": "c60f6f68-cc67-42b7-a389-0d331f123d57",
+      "networkBytes": "c60f6f68cc6742b7a3890d331f123d57",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "67e4107b-b1a7-722d-60c0-fd3a1187339d",
+      "value": "a82132f0-3692-4775-accf-af855835dae0",
+      "networkBytes": "a82132f036924775accfaf855835dae0",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "4b19126a-c4d4-a055-091d-804a4089149d",
+      "value": "819c90b5-2428-4ae5-b081-f6684b0f0172",
+      "networkBytes": "819c90b524284ae5b081f6684b0f0172",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "e3a8a081-eb53-de42-fe53-f517e6e6a119",
+      "value": "7c571680-c634-43db-a2d1-83a580438d98",
+      "networkBytes": "7c571680c63443dba2d183a580438d98",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "cee09386-0a2f-a5ef-b294-a835e2467b88",
+      "value": "4db8a08c-e5ae-4aab-b026-7c0c869dc5c3",
+      "networkBytes": "4db8a08ce5ae4aabb0267c0c869dc5c3",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "3d50dd04-1124-fc36-c915-fd33a1101ebc",
+      "value": "c15cbc8d-8f25-4c24-9705-610530f527fd",
+      "networkBytes": "c15cbc8d8f254c249705610530f527fd",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "e8e6c6f7-02d4-3750-5446-0fd145e57650",
+      "value": "b2cde444-aa4f-415b-9b71-ea90d5785876",
+      "networkBytes": "b2cde444aa4f415b9b71ea90d5785876",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "78526466-eeda-0692-aa17-af69f75800f8",
+      "value": "82b36a43-823a-41d7-8ef8-f8a98e2ea645",
+      "networkBytes": "82b36a43823a41d78ef8f8a98e2ea645",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "16f2cb4f-39be-a59e-a1d5-c04d764835c3",
+      "value": "4e44e764-90fd-4885-9d91-1919bc185a72",
+      "networkBytes": "4e44e76490fd48859d911919bc185a72",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "d1d582fb-d693-683b-842a-8f74bb99df06",
+      "value": "1db08237-d70c-4c07-ae86-f58397a86c8f",
+      "networkBytes": "1db08237d70c4c07ae86f58397a86c8f",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "c5af03cb-2774-1a68-c2f7-b99e889f9b09",
+      "value": "57f6e9dc-8295-4730-8b13-1474af0d7422",
+      "networkBytes": "57f6e9dc829547308b131474af0d7422",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "a5d4860e-0ce4-a3a9-1cf2-27c68d413a0a",
+      "value": "d1d0d39a-bbda-425a-9796-ba8de73d4d21",
+      "networkBytes": "d1d0d39abbda425a9796ba8de73d4d21",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "d33d9e13-e673-3730-bf63-eec1a45f4d3f",
+      "value": "2dd1fcbf-5be7-4268-bb6f-cc9354ecb164",
+      "networkBytes": "2dd1fcbf5be74268bb6fcc9354ecb164",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "eed713ef-f01b-aab8-d566-f8d8a868ac57",
+      "value": "0e2d2b82-b550-4774-ac17-75157c278745",
+      "networkBytes": "0e2d2b82b5504774ac1775157c278745",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "82a41ae5-ae63-360d-3bc8-933eb50a29b9",
+      "value": "21575493-e190-414d-bd2f-822d74e7670d",
+      "networkBytes": "21575493e190414dbd2f822d74e7670d",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "c6781896-8059-7b8e-de29-97d12d1a8168",
+      "value": "bdabced3-7ffe-4bf7-a7c5-f014170925d6",
+      "networkBytes": "bdabced37ffe4bf7a7c5f014170925d6",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "2b533b6c-c51d-61a8-2e75-4f0497c8b306",
+      "value": "39a88b65-def7-4696-988c-1df2559413ce",
+      "networkBytes": "39a88b65def74696988c1df2559413ce",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "331160e8-58f5-5612-4024-0a233bab6016",
+      "value": "ef9079e9-4c25-4fcb-b523-ad5b997ad140",
+      "networkBytes": "ef9079e94c254fcbb523ad5b997ad140",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "37e74a11-8485-b290-322e-598fdffeb668",
+      "value": "92af9749-4379-4c31-a39e-d224f8c4f987",
+      "networkBytes": "92af974943794c31a39ed224f8c4f987",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "5d4737d3-2cc5-fd94-57b2-762e372260a7",
+      "value": "756640e5-c08d-43f5-b65e-b6a8ed406b3a",
+      "networkBytes": "756640e5c08d43f5b65eb6a8ed406b3a",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "644e39c5-5401-0ab6-1ee3-0da20a2a0c22",
+      "value": "993315c5-ce79-4c01-be54-c8ed2db3c9b0",
+      "networkBytes": "993315c5ce794c01be54c8ed2db3c9b0",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "8bbdd328-90dc-2efa-43a7-d4dff3cfc965",
+      "value": "b86fbfae-9a97-4ec3-a4dd-6293c2a6fa9b",
+      "networkBytes": "b86fbfae9a974ec3a4dd6293c2a6fa9b",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "3458bd95-e37e-9cca-82be-8246decf1907",
+      "value": "b0c1fd5f-8d25-41b6-ab0c-d91c473d3f0c",
+      "networkBytes": "b0c1fd5f8d2541b6ab0cd91c473d3f0c",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "8fd56f3a-7c69-93cb-db05-3a9c1dd52c5f",
+      "value": "eb105b2a-74f7-432a-a24e-076bc634fb41",
+      "networkBytes": "eb105b2a74f7432aa24e076bc634fb41",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "b348c65a-70d1-aaa5-3886-08c1e0c76226",
+      "value": "184870f1-732c-49e5-8892-20966303cf67",
+      "networkBytes": "184870f1732c49e5889220966303cf67",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "aac051c8-967f-d62c-4bee-ff86d84a7cb8",
+      "value": "4dfe79ed-85d0-4b0a-a3c4-34747a493b9b",
+      "networkBytes": "4dfe79ed85d04b0aa3c434747a493b9b",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "9968a002-7fd0-8a9c-f607-f0c6496d6d8f",
+      "value": "4bc65d17-3084-46bc-b645-75edb9f63b7c",
+      "networkBytes": "4bc65d17308446bcb64575edb9f63b7c",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "eef42c1f-7747-a308-0b7f-e8cae6a27b81",
+      "value": "57bc910d-1a48-4842-9418-afb2b6d9ffcc",
+      "networkBytes": "57bc910d1a4848429418afb2b6d9ffcc",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "301834c0-50d1-5b04-5375-89b7002ae640",
+      "value": "abec3ac2-4273-40f7-a12e-afdffee2c602",
+      "networkBytes": "abec3ac2427340f7a12eafdffee2c602",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "da52c6ff-4daf-16cb-1b7a-089c3e1e5f94",
+      "value": "25b9f0a2-9ea7-4fee-a64d-409f3031c722",
+      "networkBytes": "25b9f0a29ea74feea64d409f3031c722",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "775d0202-5bf4-73a2-d8a1-f77a0096d53a",
+      "value": "4563240b-1961-417a-acf1-18ea437679aa",
+      "networkBytes": "4563240b1961417aacf118ea437679aa",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "ed36835e-1652-16a6-c65b-f26efbcc7028",
+      "value": "21e2cc6e-ea26-4ec0-b599-7b21bb437c8b",
+      "networkBytes": "21e2cc6eea264ec0b5997b21bb437c8b",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "0c78fdcd-1dcc-1060-1e18-98025bb05564",
+      "value": "4bda641f-1ca1-4ae4-89a4-a64017f1bdd3",
+      "networkBytes": "4bda641f1ca14ae489a4a64017f1bdd3",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "81a28f18-d987-3f19-6133-de147a70f6b9",
+      "value": "a1eef0d5-2579-43fd-a9ff-08ec354b2b0d",
+      "networkBytes": "a1eef0d5257943fda9ff08ec354b2b0d",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "1f769999-6cb3-6424-28fa-86a5a4f315c9",
+      "value": "c3cc1c19-d942-4d27-8c69-28595049fe1a",
+      "networkBytes": "c3cc1c19d9424d278c6928595049fe1a",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "70163d42-d1ce-0e63-a788-c50e9404360b",
+      "value": "47b99600-f8ae-40dc-a9c6-bf79784cbcbb",
+      "networkBytes": "47b99600f8ae40dca9c6bf79784cbcbb",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "9ce6e530-81a3-9f33-cb97-677489c66db7",
+      "value": "ff49466c-085f-4a2b-9071-72e346f6263c",
+      "networkBytes": "ff49466c085f4a2b907172e346f6263c",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "5234a2af-10da-4b95-cfba-01ce4df0d7c3",
+      "value": "8170efe1-14ba-4fa3-a134-53dae2e9f9a2",
+      "networkBytes": "8170efe114ba4fa3a13453dae2e9f9a2",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "5a397d39-2ad4-c875-a590-78013dc26afb",
+      "value": "1a002335-22c7-4498-9acf-64ba44406223",
+      "networkBytes": "1a00233522c744989acf64ba44406223",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "2d2e7e5e-fe2d-56b7-5463-0a1862f02644",
+      "value": "82d35882-7971-437d-b6c6-ac9dd3da13fc",
+      "networkBytes": "82d358827971437db6c6ac9dd3da13fc",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "b09c5ccd-0f43-953d-84c5-fac05fad0b0d",
+      "value": "7d0b986d-67c4-4986-a282-1937ed90cef8",
+      "networkBytes": "7d0b986d67c44986a2821937ed90cef8",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "bd5cde96-16d6-a4c0-3e6f-63e8626616e9",
+      "value": "838ce87e-c3b2-41c3-bee7-27aea4876726",
+      "networkBytes": "838ce87ec3b241c3bee727aea4876726",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "90fff0fa-d20b-7208-ead0-ada8432707f4",
+      "value": "85589dc7-3b58-42bb-86a6-230346c66f35",
+      "networkBytes": "85589dc73b5842bb86a6230346c66f35",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "ef167d98-a96b-d3cf-6a18-42e01ee42a2c",
+      "value": "5c4cd86b-c542-4d41-bbd3-94f070bed05f",
+      "networkBytes": "5c4cd86bc5424d41bbd394f070bed05f",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "b71996c4-6b45-70ae-b9b8-97ab6d0cf230",
+      "value": "1fbc56c5-5fc3-42ce-b4b0-7852d231b4cb",
+      "networkBytes": "1fbc56c55fc342ceb4b07852d231b4cb",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "5b082b90-40a6-9c3b-d708-1dc1f1f10a6e",
+      "value": "c8ff2f85-32a3-40e3-9604-0ad384c16b8c",
+      "networkBytes": "c8ff2f8532a340e396040ad384c16b8c",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "a3d8de42-d823-ae13-c6e8-7ed4dfbae071",
+      "value": "952c9764-e230-47b0-9cf3-2950e84f5c28",
+      "networkBytes": "952c9764e23047b09cf32950e84f5c28",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "2fc10e1f-6aaa-c087-4a11-bbe1bab8145d",
+      "value": "ed3b1f76-2a24-498f-aafa-8cfaf373b7d3",
+      "networkBytes": "ed3b1f762a24498faafa8cfaf373b7d3",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "e2855f40-3381-7fbf-a930-2b1fce8600b7",
+      "value": "0af920b0-bf2d-4b6c-9972-da07deac6e29",
+      "networkBytes": "0af920b0bf2d4b6c9972da07deac6e29",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "d7f985af-c984-56be-acca-310c962eb895",
+      "value": "7e49becb-56dc-4b86-b3a0-de1e904dfda0",
+      "networkBytes": "7e49becb56dc4b86b3a0de1e904dfda0",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "10655921-65d9-8ed4-c35f-3ff20c591e68",
+      "value": "0c5c7dbe-b2b9-42bc-8588-5191a2cf473b",
+      "networkBytes": "0c5c7dbeb2b942bc85885191a2cf473b",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "2eb4eea6-cfcb-9c00-b4c8-a026eb806623",
+      "value": "db249fd0-79e4-4512-b47d-02bf56682703",
+      "networkBytes": "db249fd079e44512b47d02bf56682703",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "bf20f680-0ccb-9bdb-7c76-620e6510913a",
+      "value": "8da025bf-7a82-404e-a277-e31a4ec0e151",
+      "networkBytes": "8da025bf7a82404ea277e31a4ec0e151",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "b59190e7-61d6-2e97-42cc-520243dcd946",
+      "value": "68d6af9e-037c-4f4f-8d12-ae49be94bd1d",
+      "networkBytes": "68d6af9e037c4f4f8d12ae49be94bd1d",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "06c63f3c-065c-631b-319f-983830cd28f5",
+      "value": "2a1be883-1998-47d3-b9ad-18f370785031",
+      "networkBytes": "2a1be883199847d3b9ad18f370785031",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "ab4bb1e4-c8f2-7224-17a3-173f74b248ec",
+      "value": "1d22a446-1e17-4720-9c75-54895be353fe",
+      "networkBytes": "1d22a4461e1747209c7554895be353fe",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "5486c93f-dd87-b1ea-83c9-20505877784d",
+      "value": "b22e53fb-c177-44b5-9e40-1044dec940f8",
+      "networkBytes": "b22e53fbc17744b59e401044dec940f8",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "45a7505e-4227-38a5-78ad-72adb0c4fc16",
+      "value": "6f552ec0-6cde-467c-8376-3779e055e5c2",
+      "networkBytes": "6f552ec06cde467c83763779e055e5c2",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "750d4573-7525-410f-3781-01c5defb1477",
+      "value": "e1811b70-3808-4973-975f-012cd98c17a1",
+      "networkBytes": "e1811b7038084973975f012cd98c17a1",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "376db0b5-f6f6-d0f8-319f-f69f69dcaaaa",
+      "value": "990acefd-4e44-4ba6-937d-0478414a5f85",
+      "networkBytes": "990acefd4e444ba6937d0478414a5f85",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "e180bca5-b9be-d4eb-4c86-71d6d1730faf",
+      "value": "3d110aaa-5acd-48af-a037-e11dfece218e",
+      "networkBytes": "3d110aaa5acd48afa037e11dfece218e",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "970e25a4-88fe-268b-356f-a06713754155",
+      "value": "aa2971a3-50a4-4ff7-bed6-53c1ebe8fc86",
+      "networkBytes": "aa2971a350a44ff7bed653c1ebe8fc86",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "f5cf1d6a-1701-2815-5b60-0d83405bec3d",
+      "value": "ae406cb9-f9d7-4bd7-a75c-e953af751ee3",
+      "networkBytes": "ae406cb9f9d74bd7a75ce953af751ee3",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "327c4eaa-a74f-4d12-f2d3-00a903b4e08d",
+      "value": "c5929b48-3621-46e0-b52e-5f689002b653",
+      "networkBytes": "c5929b48362146e0b52e5f689002b653",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "48aee27d-7282-c312-14b4-c92c86dbc8dd",
+      "value": "c7ef51f0-6a13-47bb-8147-dbd02aeda68d",
+      "networkBytes": "c7ef51f06a1347bb8147dbd02aeda68d",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "1244d3a6-18eb-de02-1543-50480a028744",
+      "value": "78ecdb4d-4eb8-4eef-a28d-bce4e684cfaf",
+      "networkBytes": "78ecdb4d4eb84eefa28dbce4e684cfaf",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "cee5a3c4-fe7b-cbb4-f115-38f0e52c8998",
+      "value": "5425c8e1-cc26-4373-b98d-c7b9c743cdbc",
+      "networkBytes": "5425c8e1cc264373b98dc7b9c743cdbc",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "e1e93339-5876-34df-b154-b613d9a688e5",
+      "value": "295adaff-f7bb-4c16-aa42-a56ccc8e11b9",
+      "networkBytes": "295adafff7bb4c16aa42a56ccc8e11b9",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "dc597b2e-dba9-dee4-feb4-240fb8008e41",
+      "value": "7069d8fe-34ef-4dd3-919f-ec80e0ca7b23",
+      "networkBytes": "7069d8fe34ef4dd3919fec80e0ca7b23",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "e8b2e871-a387-248f-6755-e4e92b1bf541",
+      "value": "6019f984-146d-4f39-921f-15ae395470c6",
+      "networkBytes": "6019f984146d4f39921f15ae395470c6",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "73ef3e1a-f9f8-76e7-1481-36ae76de8ae0",
+      "value": "f33bfda7-983c-4a4f-9e50-775b5487f280",
+      "networkBytes": "f33bfda7983c4a4f9e50775b5487f280",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "49f78652-8482-39b1-edd7-b8a6ac827708",
+      "value": "aef3093f-6f29-4e36-9c17-0e3c3aef0a99",
+      "networkBytes": "aef3093f6f294e369c170e3c3aef0a99",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "2ad45086-e175-db3a-5c72-11e4c8b4272b",
+      "value": "50d88bf9-abd2-4286-8311-4794ab320145",
+      "networkBytes": "50d88bf9abd2428683114794ab320145",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "956affc8-eeda-3888-a7bc-f60d4b910e0d",
+      "value": "62dba436-4306-4a21-a922-a7f91122e20c",
+      "networkBytes": "62dba43643064a21a922a7f91122e20c",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "1210f788-e76b-b3df-19ec-dfdc1f1e0609",
+      "value": "2d8bfcfd-f3bd-410f-96cf-6c883046b1dd",
+      "networkBytes": "2d8bfcfdf3bd410f96cf6c883046b1dd",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "f3cd97c8-f264-2de3-e1c8-18d25695962c",
+      "value": "6164a19c-efc4-4096-8401-f5d146910eca",
+      "networkBytes": "6164a19cefc440968401f5d146910eca",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "2d50dcef-9d86-33d6-8dfa-1aea534a40a6",
+      "value": "d0d57670-6bbc-426f-ab20-52d70f00ba6f",
+      "networkBytes": "d0d576706bbc426fab2052d70f00ba6f",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "969833f0-be96-8cef-966c-72cf33b4456b",
+      "value": "a637e402-3645-4e7e-ad59-48eae8f95a50",
+      "networkBytes": "a637e40236454e7ead5948eae8f95a50",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "2452d422-c03d-6c00-4b3d-e264b16c154a",
+      "value": "29ea0b3b-a20d-4556-99c9-e7bd24f3aed0",
+      "networkBytes": "29ea0b3ba20d455699c9e7bd24f3aed0",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "3b55e848-99da-0ffa-1bfd-17263b79a31d",
+      "value": "295bace0-140b-47e0-8385-a22124a594d0",
+      "networkBytes": "295bace0140b47e08385a22124a594d0",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "6313623f-dfb8-a116-3c12-42a1892d5a6e",
+      "value": "5aa4d934-0877-4a0e-9ab4-8800e7fd72b8",
+      "networkBytes": "5aa4d93408774a0e9ab48800e7fd72b8",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "dd06ce10-b89d-daae-43ba-135713c8dc0c",
+      "value": "f34111f3-9591-4f57-905c-0a26259acb1c",
+      "networkBytes": "f34111f395914f57905c0a26259acb1c",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "4ed6b3a2-2ed0-5139-4142-39f5b69572a3",
+      "value": "950a81e3-2a11-4d12-aebd-58e6aa849102",
+      "networkBytes": "950a81e32a114d12aebd58e6aa849102",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "dc2fea05-a581-a928-2839-42d0e9fbc4de",
+      "value": "ef138261-0750-40dc-a530-914fd7cb8a4d",
+      "networkBytes": "ef138261075040dca530914fd7cb8a4d",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "a4aabd52-e366-81b7-7ee5-76b0dea3eca2",
+      "value": "6b2e5924-a8c0-497a-b231-5b2a5ce4d738",
+      "networkBytes": "6b2e5924a8c0497ab2315b2a5ce4d738",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "0e597f01-4a7f-51a1-8e6a-e142a6a194de",
+      "value": "9b4f6328-8587-494b-b8ce-b39a65358553",
+      "networkBytes": "9b4f63288587494bb8ceb39a65358553",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "fef47afd-6ae2-6a3e-3d77-7b3a3b62394c",
+      "value": "2b59e26c-6502-48e9-9beb-ec39c7bd5e0c",
+      "networkBytes": "2b59e26c650248e99bebec39c7bd5e0c",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "55d14e1e-5b0e-5cd6-f555-31ec2be33663",
+      "value": "ce9c4c9c-1a6d-4187-bd7e-b62349876953",
+      "networkBytes": "ce9c4c9c1a6d4187bd7eb62349876953",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "40c11175-a652-47de-8b86-c3c4bb632b59",
+      "value": "99926c6a-1286-4d27-8436-bd123b631842",
+      "networkBytes": "99926c6a12864d278436bd123b631842",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "3e3e4a89-bccd-a888-958f-400ac4f5d456",
+      "value": "440264de-5a2e-43f9-849b-6dcd0957e2b5",
+      "networkBytes": "440264de5a2e43f9849b6dcd0957e2b5",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "a2ca7d13-1dea-d4db-6dde-ac34562d4d3d",
+      "value": "e18e3d8f-2de1-46b6-b378-c7817f34b542",
+      "networkBytes": "e18e3d8f2de146b6b378c7817f34b542",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "2bc552f1-9562-2ebe-22ca-d091bdade098",
+      "value": "bce9dbf5-8db6-41ff-9b38-49e42aed0cda",
+      "networkBytes": "bce9dbf58db641ff9b3849e42aed0cda",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "7f46a891-f0f2-582d-e621-cefe8cfe345d",
+      "value": "5aa1c7ad-fdf3-41da-8c7d-5159cc1e6dca",
+      "networkBytes": "5aa1c7adfdf341da8c7d5159cc1e6dca",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "5f0c9e62-cada-4145-390c-de5a5f573a40",
+      "value": "d49fd7d4-ba4a-47bf-a1b3-a39a1b26de1a",
+      "networkBytes": "d49fd7d4ba4a47bfa1b3a39a1b26de1a",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "ba957f82-400f-966a-d4d8-28a66e7a80f9",
+      "value": "e01b504a-3c3a-4b36-be44-5732a305f24a",
+      "networkBytes": "e01b504a3c3a4b36be445732a305f24a",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "cf318f36-1aed-a3de-697f-7254b80f6508",
+      "value": "6e5d5bdc-5dc7-4ebd-9809-5562936523fe",
+      "networkBytes": "6e5d5bdc5dc74ebd98095562936523fe",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "37ed7ba1-5fc4-deb7-7dc5-2a69a6771783",
+      "value": "476bc642-f6d5-4744-b7d0-d317ce33e6c4",
+      "networkBytes": "476bc642f6d54744b7d0d317ce33e6c4",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "afe6df39-1455-7295-ae6a-fb933df4096d",
+      "value": "ee2fc9e5-ac35-4ed8-b764-53417559c32f",
+      "networkBytes": "ee2fc9e5ac354ed8b76453417559c32f",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "20ef71a7-7aaf-f18c-388e-26014fe17dd2",
+      "value": "ac335ced-cdf1-4bb5-baf4-42cbc58c3d37",
+      "networkBytes": "ac335cedcdf14bb5baf442cbc58c3d37",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "64f6aafb-20a9-aba1-2a99-513760ccb63e",
+      "value": "96f3dff1-3fe1-4091-a4e0-421d0f3a7aa0",
+      "networkBytes": "96f3dff13fe14091a4e0421d0f3a7aa0",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "600fdca8-3eb3-ef72-28b0-73c9d10a179a",
+      "value": "933568e8-9ed8-4e80-b81c-05e5f79b4c93",
+      "networkBytes": "933568e89ed84e80b81c05e5f79b4c93",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "3c3679ae-8bad-dce0-3bef-f0384ce65f7b",
+      "value": "e107b9a8-e432-4ac5-a4c8-7de7daaa9d6a",
+      "networkBytes": "e107b9a8e4324ac5a4c87de7daaa9d6a",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "3c73f7d4-39d8-80b4-c2a1-655ea65edc08",
+      "value": "f10f9399-b4a6-4b98-9072-08961bc05243",
+      "networkBytes": "f10f9399b4a64b98907208961bc05243",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "f03ad037-c52e-929b-110a-52a24f3c6742",
+      "value": "d34bc5f9-4f6a-4957-87a3-3a258d3d180e",
+      "networkBytes": "d34bc5f94f6a495787a33a258d3d180e",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "8fd48a76-5df3-bdfd-c6e5-d1b358b3fafd",
+      "value": "274d0472-5388-4b04-93ed-1048ba67521d",
+      "networkBytes": "274d047253884b0493ed1048ba67521d",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "3fec061c-283f-4f05-adb9-d8e31676c554",
+      "value": "f614383d-5790-4e38-98c7-ee477c561c44",
+      "networkBytes": "f614383d57904e3898c7ee477c561c44",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "ea918c10-2c2a-13f1-7213-d2444e4bc995",
+      "value": "8aef7df7-a602-47ab-b186-0fe3ccd9f2ff",
+      "networkBytes": "8aef7df7a60247abb1860fe3ccd9f2ff",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "322ae2c1-1991-ac12-9d7c-6c785cb34406",
+      "value": "4d8320cb-1978-4573-8bb3-980e7cb883a1",
+      "networkBytes": "4d8320cb197845738bb3980e7cb883a1",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "fdf02080-4697-3c0a-e0da-d8f7c2f114bd",
+      "value": "00a2871f-6c1a-4768-b8c8-ea43692e5929",
+      "networkBytes": "00a2871f6c1a4768b8c8ea43692e5929",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "31991e59-fdc5-cbce-1026-fc27f34d3ac9",
+      "value": "398f5dec-db36-47e0-9d21-27e7c87ed42a",
+      "networkBytes": "398f5decdb3647e09d2127e7c87ed42a",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "36e51b89-5910-c243-6189-0a913ed1dbf7",
+      "value": "aacc52dc-00de-41b4-86d7-247b2657254a",
+      "networkBytes": "aacc52dc00de41b486d7247b2657254a",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "987088de-1294-f063-c996-f0a8c40cf640",
+      "value": "edc09c48-ee26-478a-b7a0-8aafd3102b86",
+      "networkBytes": "edc09c48ee26478ab7a08aafd3102b86",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "2f0d391e-0e9b-02e8-f4ee-972adc6cc5d2",
+      "value": "9af600f9-cdab-448f-b3f6-b25b8cf99839",
+      "networkBytes": "9af600f9cdab448fb3f6b25b8cf99839",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "4414d8c6-8d18-ecbf-79e8-7abf483cd2db",
+      "value": "a60ab4ab-a1a3-4fcd-92a6-868b15530d4c",
+      "networkBytes": "a60ab4aba1a34fcd92a6868b15530d4c",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "c2d69920-73ec-6f3a-3f41-98324819c84d",
+      "value": "eecb3055-3199-4ebf-9092-08874a843825",
+      "networkBytes": "eecb305531994ebf909208874a843825",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "be047902-64f9-2d60-95d7-62c6e3a37675",
+      "value": "269cd3f8-f01d-449e-8a83-0b29c66f89dc",
+      "networkBytes": "269cd3f8f01d449e8a830b29c66f89dc",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "f06b9cab-e8a4-c9e0-9898-f4c4d6aa1a9a",
+      "value": "04e4659c-75b8-4e7b-95a3-bf130feae232",
+      "networkBytes": "04e4659c75b84e7b95a3bf130feae232",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "a0d8241c-30ff-c406-f7bb-d77609e66fca",
+      "value": "d40dcc6b-b6e9-4b8d-8905-2ee378e85270",
+      "networkBytes": "d40dcc6bb6e94b8d89052ee378e85270",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "fae4d5c4-1ed4-219b-5b51-c75e15d5decf",
+      "value": "2a820346-f2c2-4de8-8c83-e027fed26baa",
+      "networkBytes": "2a820346f2c24de88c83e027fed26baa",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "6b3b1014-0cb9-3bff-edbb-0aa809c9b3e1",
+      "value": "07019ad4-626b-4998-9b1d-194f178d8b6c",
+      "networkBytes": "07019ad4626b49989b1d194f178d8b6c",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "f6c6b803-9126-8c5d-e1c2-1e1bab567331",
+      "value": "6dd06c8e-b8e3-4547-b74a-862cd7c133ff",
+      "networkBytes": "6dd06c8eb8e34547b74a862cd7c133ff",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "f35e855e-ed45-0ca3-19ad-fbbb8d8d0bfb",
+      "value": "60787ada-3041-4e30-a885-f47d375aa4a1",
+      "networkBytes": "60787ada30414e30a885f47d375aa4a1",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "73b4c42b-d3de-5872-c852-de7bec67629a",
+      "value": "701d2998-a90b-4ef8-824e-08553b0c4336",
+      "networkBytes": "701d2998a90b4ef8824e08553b0c4336",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "bc12c641-374b-01e1-d3f0-4a657224bf3e",
+      "value": "a22e6440-b0c4-4d27-ae07-41c62b3006f8",
+      "networkBytes": "a22e6440b0c44d27ae0741c62b3006f8",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "42d37110-f2bb-d620-c2a4-61b69fa8a572",
+      "value": "83d58695-9c10-4c06-b732-12843a0f3b8d",
+      "networkBytes": "83d586959c104c06b73212843a0f3b8d",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "df42d5c0-19b7-011c-79f2-1a8ecca90a43",
+      "value": "c771eadf-1015-4240-9b60-23cc3fc5e0e8",
+      "networkBytes": "c771eadf101542409b6023cc3fc5e0e8",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "49ee0b6c-67b2-5be6-0378-666fed884f27",
+      "value": "14344ac0-3e5b-492a-993f-21e814a867dc",
+      "networkBytes": "14344ac03e5b492a993f21e814a867dc",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "db9d4edb-db81-1624-4b51-270b25275480",
+      "value": "a54ff876-cd1d-4f17-adc6-7dd813566d01",
+      "networkBytes": "a54ff876cd1d4f17adc67dd813566d01",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "9c17165e-25a4-cddb-319b-df8060b9fffb",
+      "value": "e297f4a5-ab58-4667-a0c2-57c31f9a17e7",
+      "networkBytes": "e297f4a5ab584667a0c257c31f9a17e7",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "b78074fb-7dfd-e967-4014-d22a910df299",
+      "value": "919e2e9f-808f-4da0-9b44-e762f855361f",
+      "networkBytes": "919e2e9f808f4da09b44e762f855361f",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "70970685-ad69-c3d2-c61d-f9e886ffb76e",
+      "value": "74a1bdbd-5b5d-4379-8858-8ace862fae1f",
+      "networkBytes": "74a1bdbd5b5d437988588ace862fae1f",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "e3e4c12d-dea5-eade-f4e3-cec9f404a152",
+      "value": "e57b9e7e-73c2-4450-a6c3-73a23f10cce8",
+      "networkBytes": "e57b9e7e73c24450a6c373a23f10cce8",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "f737e3dc-0996-1f1e-a632-bf282e6990c1",
+      "value": "b5c708aa-1c47-4576-bf7e-4fcf1bd86c70",
+      "networkBytes": "b5c708aa1c474576bf7e4fcf1bd86c70",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "c8dd9b52-d884-ce10-503b-3f786a1b1ba2",
+      "value": "fd124f86-b99c-456c-93ea-3e1ef686aa51",
+      "networkBytes": "fd124f86b99c456c93ea3e1ef686aa51",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "c8a9590a-fb0f-285e-a0b1-b72b741ec27a",
+      "value": "4bbd5ed9-4c7c-48ad-b323-304c9b88167d",
+      "networkBytes": "4bbd5ed94c7c48adb323304c9b88167d",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "ab53f6dc-c277-e61c-0613-9faef226c18a",
+      "value": "bff7cdcd-e094-4153-85cb-4e09af5fc1ee",
+      "networkBytes": "bff7cdcde094415385cb4e09af5fc1ee",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "0dd4ebaf-7bc2-dd3d-6594-20909b8ce010",
+      "value": "516a08c6-52b0-419b-b144-01094c81d045",
+      "networkBytes": "516a08c652b0419bb14401094c81d045",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "90882340-9d14-540e-398d-ba75a29d7226",
+      "value": "84810097-0247-490c-9f63-882e5013a416",
+      "networkBytes": "848100970247490c9f63882e5013a416",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "ba76899c-8d6c-06a4-26b6-70625c86cdec",
+      "value": "04a758cd-1953-470b-8bf0-71ca4f4f288d",
+      "networkBytes": "04a758cd1953470b8bf071ca4f4f288d",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "412762f8-b9cf-8a6c-4140-6d2ef48009e2",
+      "value": "cffbbc83-05cd-46f8-a2be-cc7e1fe469ba",
+      "networkBytes": "cffbbc8305cd46f8a2becc7e1fe469ba",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "1f14deae-fe91-2f63-85d2-20feeee3d72c",
+      "value": "d8a4631b-ad0c-48c5-bd08-68b8f3c63310",
+      "networkBytes": "d8a4631bad0c48c5bd0868b8f3c63310",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "f8ed77ae-5cb0-0b58-ff45-4de2d85b2165",
+      "value": "02add073-6956-47b6-aab0-85b6adb56e57",
+      "networkBytes": "02add073695647b6aab085b6adb56e57",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "7352fd62-e24e-b98b-93f7-4feb9fb6dcc0",
+      "value": "814aa6bf-08c1-43ac-b760-77869b4172e2",
+      "networkBytes": "814aa6bf08c143acb76077869b4172e2",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "dd4cfaa4-e64b-a374-73b3-5307d172c7b2",
+      "value": "0c2c9294-9d5c-4e51-876e-277f7c025792",
+      "networkBytes": "0c2c92949d5c4e51876e277f7c025792",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "537d8ff3-d01e-722c-3854-12be60baf8ca",
+      "value": "9b473b77-c547-4601-a883-fe32f154ed98",
+      "networkBytes": "9b473b77c5474601a883fe32f154ed98",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "3c26f998-b91b-c64d-338b-114a17b3c257",
+      "value": "07b86554-f970-4eff-aed3-12b5d314ea30",
+      "networkBytes": "07b86554f9704effaed312b5d314ea30",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "780febb8-d9b9-287a-60d6-cc28bb4cbbdc",
+      "value": "76fc00ba-5517-4f3f-8163-4a419c803f86",
+      "networkBytes": "76fc00ba55174f3f81634a419c803f86",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "86c7b999-e3c6-0aee-c08f-66a2fe77cb4d",
+      "value": "0e624fa8-7c70-450b-9f6b-2c66b1dc4311",
+      "networkBytes": "0e624fa87c70450b9f6b2c66b1dc4311",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "b59393c1-9e82-b9e4-998f-0dcc1bc0c0a2",
+      "value": "11b69d5b-4287-4989-8979-42be3725a51a",
+      "networkBytes": "11b69d5b42874989897942be3725a51a",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "321f01fd-4c2b-6297-dda9-15a973eb29a2",
+      "value": "33e142ec-8e9e-4031-b510-c12e1d09ab00",
+      "networkBytes": "33e142ec8e9e4031b510c12e1d09ab00",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "4c1db267-1357-61d5-3332-1e4f1a832570",
+      "value": "e8a919d7-4580-49ce-8ae2-fd119f2b7a22",
+      "networkBytes": "e8a919d7458049ce8ae2fd119f2b7a22",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "cdadfe82-3439-5bf7-82ff-8837cf12f67d",
+      "value": "6e765696-5141-4d94-8e78-04221a0a6d04",
+      "networkBytes": "6e76569651414d948e7804221a0a6d04",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "458960b2-9f15-cd3e-a6c0-0a82b1fe7629",
+      "value": "a2074464-2b4a-4e2d-98e8-8432d22e8194",
+      "networkBytes": "a20744642b4a4e2d98e88432d22e8194",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "daa792d3-180e-e41b-1481-2764365216a0",
+      "value": "7feb60f0-0e06-47b5-88eb-2b460e0ea889",
+      "networkBytes": "7feb60f00e0647b588eb2b460e0ea889",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "d1138b98-b057-701e-6084-00fdfdbb58f1",
+      "value": "7e0254ec-553a-40da-bfba-816f938bd84c",
+      "networkBytes": "7e0254ec553a40dabfba816f938bd84c",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "31c4c70e-7635-3969-f71a-43c7a205cfb0",
+      "value": "e79692cd-4b1b-417f-95e4-6d9d825125c6",
+      "networkBytes": "e79692cd4b1b417f95e46d9d825125c6",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "4dd6a7b0-7fa6-b8d0-320d-61cc5e07e303",
+      "value": "4c7129ca-f477-4fec-9a7a-14b6bb39bcc3",
+      "networkBytes": "4c7129caf4774fec9a7a14b6bb39bcc3",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "19bf1057-f32d-e4ed-fa4a-3c59eda5513c",
+      "value": "6ddd1df3-a6b0-4f7c-9c17-ab42238dd034",
+      "networkBytes": "6ddd1df3a6b04f7c9c17ab42238dd034",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "11ed7114-e704-af94-6d80-2c723043601d",
+      "value": "491fea4a-3488-4b18-9415-d1e33d4eff4c",
+      "networkBytes": "491fea4a34884b189415d1e33d4eff4c",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "bdc02c71-2a98-d7db-904b-1293dc394679",
+      "value": "9b49ffe9-fcee-4175-b043-3286c1cda86a",
+      "networkBytes": "9b49ffe9fcee4175b0433286c1cda86a",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "7b88d4e6-871c-7746-97ec-5b3eaaff2ad5",
+      "value": "4317ced3-0e1b-4446-b8fd-aff3ee2db3a7",
+      "networkBytes": "4317ced30e1b4446b8fdaff3ee2db3a7",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "97bd0166-beda-9e0f-fa13-a02ef5006a12",
+      "value": "7f5bdac4-4fea-4760-a362-92b49ae7f6f6",
+      "networkBytes": "7f5bdac44fea4760a36292b49ae7f6f6",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "f35cc41c-ff24-8376-b597-8b5e3576724b",
+      "value": "d3fbb778-c98d-4361-a70c-c9c3d0986775",
+      "networkBytes": "d3fbb778c98d4361a70cc9c3d0986775",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "914ea3ec-e9cd-8527-9c43-7624f8f8f3df",
+      "value": "729a2de8-40e6-489e-8921-f9079b8f6afc",
+      "networkBytes": "729a2de840e6489e8921f9079b8f6afc",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "2fd1fa7c-9335-e47d-779e-59682fa393b0",
+      "value": "4cfaf560-8f0c-4e5e-8ea2-7415bd677441",
+      "networkBytes": "4cfaf5608f0c4e5e8ea27415bd677441",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "71793288-94d0-b4b5-5ac6-c6e1f2b5cabc",
+      "value": "0901a512-b2bd-451e-b433-506dce5b5d1c",
+      "networkBytes": "0901a512b2bd451eb433506dce5b5d1c",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "72545471-80a1-71bc-cf2f-adb6294bf77f",
+      "value": "9a5e6137-8c6a-42d8-ae2c-5b5c2bcfada7",
+      "networkBytes": "9a5e61378c6a42d8ae2c5b5c2bcfada7",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "4653f855-7a32-9d7c-7a29-92f5d9216f13",
+      "value": "9b44ad06-b239-4e60-b66b-21da74433017",
+      "networkBytes": "9b44ad06b2394e60b66b21da74433017",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "abdbfa70-48f2-3101-730f-3389e3b42c18",
+      "value": "6caec85a-e0a9-4d20-9d4a-d2c91abded68",
+      "networkBytes": "6caec85ae0a94d209d4ad2c91abded68",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "5d3a882e-22e9-78d6-7982-dde562dba1b2",
+      "value": "726bb754-8fa4-451d-b9d5-6f3e19f26f13",
+      "networkBytes": "726bb7548fa4451db9d56f3e19f26f13",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "d7dfa101-3e40-9c3a-b9a2-def20eb70b25",
+      "value": "30c3f63c-6995-443f-90a5-fbbfcae25d1d",
+      "networkBytes": "30c3f63c6995443f90a5fbbfcae25d1d",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "250552ed-6d16-90be-65b2-a01410d994ea",
+      "value": "003c9fae-908f-4c8a-9cd7-385ad1389acc",
+      "networkBytes": "003c9fae908f4c8a9cd7385ad1389acc",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "aa479714-1774-a82d-5ebc-f95343b1973b",
+      "value": "b0c53bf6-db19-4590-bf78-270e5152c6f6",
+      "networkBytes": "b0c53bf6db194590bf78270e5152c6f6",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "e02a1d56-6910-0baa-9abe-c3b91447be20",
+      "value": "736533ef-323b-4c0b-bc37-d053b20db364",
+      "networkBytes": "736533ef323b4c0bbc37d053b20db364",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "990a10e9-5b6d-52c0-81c0-80b07e34fd83",
+      "value": "fe55b1be-6973-42c1-81f8-e8014a218b25",
+      "networkBytes": "fe55b1be697342c181f8e8014a218b25",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "1eddcdd6-b728-0521-0d9f-c2f92adcf990",
+      "value": "dea90084-dd2b-4ad9-a113-ab54d73a9dc9",
+      "networkBytes": "dea90084dd2b4ad9a113ab54d73a9dc9",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "a441565c-3f5a-97ec-6b22-b8f697376a45",
+      "value": "e9b7bb3a-b811-4821-8aae-eed127b9c5ef",
+      "networkBytes": "e9b7bb3ab81148218aaeeed127b9c5ef",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "62fba979-c5ff-3b97-e844-b6a72c708a42",
+      "value": "329d7bff-c0c2-4ae9-a0a2-39fca3050da3",
+      "networkBytes": "329d7bffc0c24ae9a0a239fca3050da3",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "dbff8390-0a82-56c2-7bd8-a8b2603004e4",
+      "value": "fb42385c-4bb5-4399-9e39-70a0e937e230",
+      "networkBytes": "fb42385c4bb543999e3970a0e937e230",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "df0f13d7-9a7d-3187-1289-386f05c582fa",
+      "value": "d520290c-bc49-430a-9ccd-7d937eb03aa6",
+      "networkBytes": "d520290cbc49430a9ccd7d937eb03aa6",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "5362ec9a-1edf-dffd-f2fe-64525937cfcd",
+      "value": "4a8cb58f-3a06-4f40-8ae9-8c84f7cfa0dd",
+      "networkBytes": "4a8cb58f3a064f408ae98c84f7cfa0dd",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "e67a4a4e-635f-34e8-1410-81952415cca2",
+      "value": "8c56a2c1-4f4a-441a-ae25-cae90d61a835",
+      "networkBytes": "8c56a2c14f4a441aae25cae90d61a835",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "ce9c1823-784c-dfca-20e4-62c9cf7e93dd",
+      "value": "c0c0f760-1cc0-4c1d-b91a-e094e8be0e90",
+      "networkBytes": "c0c0f7601cc04c1db91ae094e8be0e90",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "d6715922-c005-edc5-8cb9-e440bda67099",
+      "value": "6004bc31-cd19-4d4c-aedd-61228cb8f5b1",
+      "networkBytes": "6004bc31cd194d4caedd61228cb8f5b1",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "dc9402aa-adc5-64e6-4f24-3db90b8f5a0a",
+      "value": "4992d565-5318-4345-8817-fe4abbf57064",
+      "networkBytes": "4992d565531843458817fe4abbf57064",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "46ca1920-8346-2272-3b91-bd284fbdba77",
+      "value": "dc06e72a-148c-402c-9754-181a3252d84d",
+      "networkBytes": "dc06e72a148c402c9754181a3252d84d",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "82285f16-2be6-0586-584d-a51317b4da43",
+      "value": "185b0029-be71-414a-b121-439da1073251",
+      "networkBytes": "185b0029be71414ab121439da1073251",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "d50cc9b2-b534-9f15-dde8-73edfb846b73",
+      "value": "bce6998c-fe37-44db-a3f4-358056fe56a8",
+      "networkBytes": "bce6998cfe3744dba3f4358056fe56a8",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "4ec53305-1f10-9d15-0aa7-22564a1fcd11",
+      "value": "0a860146-3390-49e9-8325-33e33b32a998",
+      "networkBytes": "0a860146339049e9832533e33b32a998",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "bb383d5b-ab47-8501-f725-f5cb41b8659d",
+      "value": "2c1eb996-4eff-4c49-a2c7-327ef9133b22",
+      "networkBytes": "2c1eb9964eff4c49a2c7327ef9133b22",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "5fe246d5-b193-e47f-7ba1-14ffee3aca35",
+      "value": "c7299913-4fcf-4c52-a270-dada03e53c85",
+      "networkBytes": "c72999134fcf4c52a270dada03e53c85",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "99d092f0-c004-71f0-3e2e-4e6437ed809b",
+      "value": "ff99e561-9997-4bd3-a3dd-46b565f91957",
+      "networkBytes": "ff99e56199974bd3a3dd46b565f91957",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "b960424a-bc5c-f823-5e71-c682cc6e59e3",
+      "value": "6e620c5d-53da-4132-9149-f3438eb4ef49",
+      "networkBytes": "6e620c5d53da41329149f3438eb4ef49",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "aaf171ac-6fc7-7998-887d-34f4935b001c",
+      "value": "7f44c3f9-9104-45ca-ae24-844a5329d845",
+      "networkBytes": "7f44c3f9910445caae24844a5329d845",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "90698368-92b3-bb69-994a-f19f306ebaa1",
+      "value": "d57935c4-2697-4d15-88c5-4bc9da87abd8",
+      "networkBytes": "d57935c426974d1588c54bc9da87abd8",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "77f5bb3e-529c-da22-0c52-d2158c05fcc3",
+      "value": "dbc28bc1-5e56-44ea-a8fb-c4d41241c4a6",
+      "networkBytes": "dbc28bc15e5644eaa8fbc4d41241c4a6",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "6cb985b3-4261-6cf7-22e8-efd4d4c39555",
+      "value": "a83b9d1b-c91e-4e45-a24f-98b6c583a65a",
+      "networkBytes": "a83b9d1bc91e4e45a24f98b6c583a65a",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "9a55058f-9d65-9af8-98c2-13a96da799c6",
+      "value": "65b2c05d-dcc9-4aa0-a6d4-3040e0295e35",
+      "networkBytes": "65b2c05ddcc94aa0a6d43040e0295e35",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "29d89893-0c64-eace-2895-227823245f3e",
+      "value": "4237425c-2844-404f-b647-542fa8020779",
+      "networkBytes": "4237425c2844404fb647542fa8020779",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "a98cda5c-5eca-54cf-d240-18e03fcf1e4b",
+      "value": "be4e3da6-c53f-40f7-b3e5-a85fcae58abc",
+      "networkBytes": "be4e3da6c53f40f7b3e5a85fcae58abc",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "a93aa397-3aa0-5fb9-3517-5f0250b78564",
+      "value": "bfa4c3b5-1ac3-4592-aa5f-5b48fb94f7d5",
+      "networkBytes": "bfa4c3b51ac34592aa5f5b48fb94f7d5",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "026954a2-09ab-f56d-b25e-7c4380c49cda",
+      "value": "58f8071a-0ab6-4570-95b7-3e39ad6dcde4",
+      "networkBytes": "58f8071a0ab6457095b73e39ad6dcde4",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "51841e0a-bbe0-06bf-a7f9-a9c32f7c30da",
+      "value": "370a1e00-5fa9-4257-929b-2c0fc565748e",
+      "networkBytes": "370a1e005fa94257929b2c0fc565748e",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "5edc11a8-d0d9-3cb5-3a03-6129ebce054b",
+      "value": "85bfc7cb-8162-4ccc-83c6-0b8257908f2b",
+      "networkBytes": "85bfc7cb81624ccc83c60b8257908f2b",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "ceea0f69-a255-a20a-0de2-bbc468bdf185",
+      "value": "fc8a3c02-51f8-4348-8602-baed67fcfeb9",
+      "networkBytes": "fc8a3c0251f843488602baed67fcfeb9",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "b87d5feb-9656-ed16-509d-f7613e340d68",
+      "value": "d1ca1749-c971-4528-8210-c4bca477ff26",
+      "networkBytes": "d1ca1749c97145288210c4bca477ff26",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "bfafaf07-1401-e51c-e7d4-1266a97cd04b",
+      "value": "f973dff5-c79f-4db4-9a9c-7e1136cdc297",
+      "networkBytes": "f973dff5c79f4db49a9c7e1136cdc297",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "3080867e-4cb1-1645-583c-5795c7100e43",
+      "value": "acb3c442-173c-4f4e-978e-f5af6fccbc27",
+      "networkBytes": "acb3c442173c4f4e978ef5af6fccbc27",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "09744efe-a5b7-1fc2-9338-54fb2a5ce4f3",
+      "value": "49990f54-4e13-45fd-a90b-26385cb0a5e2",
+      "networkBytes": "49990f544e1345fda90b26385cb0a5e2",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    },
+    {
+      "node": "91ccc7e1-d74b-c5f9-f87f-b8d026753f7f",
+      "value": "1ce9235e-3a21-4299-ae0c-a4a08b3e20e6",
+      "networkBytes": "1ce9235e3a214299ae0ca4a08b3e20e6",
+      "version": 4,
+      "variant": "specified in RFC 4122"
+    }
+  ]
+}
