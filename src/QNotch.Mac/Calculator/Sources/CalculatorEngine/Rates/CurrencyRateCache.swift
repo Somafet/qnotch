@@ -88,7 +88,7 @@ final class CurrencyRateCache {
         if CurrencyRateCache.isFile(filePath) {
             let current = try CurrencyRateCache.readAll(filePath)
             if current.count <= CurrencyRateCache.maxBytes, let root = try? JSONNode.parse(current, maxDepth: 10), // A successful new download may replace a corrupt disposable cache.
-               case .object(let properties) = root, let version = properties.first(where: { $0.0 == "Version" })?.1 {
+               case .object(let properties) = root, let version = properties.last(where: { $0.0 == "Version" })?.1 { // TryGetProperty: the last duplicate
                 if case .number(let text) = version, Int32(text) == 1 {} else { throw CurrencyRateCacheVersionError(message: "Future rate-cache version preserved") }
             }
         }
@@ -141,6 +141,8 @@ final class CurrencyRateCache {
     /// JsonSerializer.Deserialize<CacheDocument>: case-sensitive names, unknown properties ignored, a repeated property's
     /// last value wins, absent values take their defaults; JSON null or a wrong value type is a JsonException.
     private static func deserialize(_ bytes: Data) throws -> CacheDocument? {
+        // Deserialize(byte[]) reads with Utf8JsonReader, which does not skip a UTF-8 byte order mark (JSONNode.parse does).
+        if bytes.starts(with: [0xEF, 0xBB, 0xBF]) { throw JSONFault() }
         guard let root = try? JSONNode.parse(bytes, maxDepth: 10) else { throw JSONFault() }
         if case .null = root { return nil }
         var document = CacheDocument()
@@ -191,39 +193,56 @@ final class CurrencyRateCache {
         guard case .string(let text) = node, let date = EcbRateClient.parseDate(text) else { throw JSONFault() }
         return date
     }
-    /// ISO 8601 `yyyy-MM-ddTHH:mm[:ss[.fraction]]` with `Z` or `±HH:mm`. (System.Text.Json also reads a missing
-    /// offset as host-local time; QNotch never writes one, so it is rejected here like other malformed values.)
+    /// System.Text.Json's DateTimeOffset reading (ISO 8601-1 extended profile): `yyyy-MM-dd[THH:mm[:ss[.fraction]]]`
+    /// with an optional `Z`, `±HH:mm` or `±HH` offset. A missing offset means host-local time, as in .NET.
     static func parseInstant(_ text: String) -> Instant? {
         let u = text.units
         func digits(_ start: Int, _ count: Int) -> Int? {
             guard start + count <= u.count, u[start..<(start + count)].allSatisfy(NetChar.isAsciiDigit) else { return nil }
             return Int(text.netSubstring(start, count))
         }
-        guard u.count >= 16, let date = EcbRateClient.parseDate(text.netSubstring(0, 10)), u[10] == 0x54,
-              let hour = digits(11, 2), u[13] == 0x3A, let minute = digits(14, 2), hour < 24, minute < 60 else { return nil }
-        var index = 16, second = 0, fraction: Int64 = 0
-        if index < u.count && u[index] == 0x3A {
-            guard let value = digits(index + 1, 2), value < 60 else { return nil }
-            second = value; index += 3
-            if index < u.count && u[index] == 0x2E {
-                index += 1; let start = index
-                while index < u.count && NetChar.isAsciiDigit(u[index]) { index += 1 }
-                if index == start || index - start > 16 { return nil }
-                let digits = text.netSubstring(start, min(7, index - start)).padding(toLength: 7, withPad: "0", startingAt: 0)
-                fraction = Int64(digits)!
+        guard u.count >= 10, let date = EcbRateClient.parseDate(text.netSubstring(0, 10)) else { return nil }
+        var index = 10, hour = 0, minute = 0, second = 0, fraction: Int64 = 0
+        if index < u.count && u[index] == 0x54 {
+            guard let h = digits(11, 2), u.count > 13, u[13] == 0x3A, let m = digits(14, 2), h < 24, m < 60 else { return nil }
+            hour = h; minute = m; index = 16
+            if index < u.count && u[index] == 0x3A {
+                guard let value = digits(index + 1, 2), value < 60 else { return nil }
+                second = value; index += 3
+                if index < u.count && u[index] == 0x2E {
+                    index += 1; let start = index
+                    while index < u.count && NetChar.isAsciiDigit(u[index]) { index += 1 }
+                    if index == start || index - start > 16 { return nil }
+                    fraction = Int64(text.netSubstring(start, min(7, index - start)).padding(toLength: 7, withPad: "0", startingAt: 0))!
+                }
             }
         }
-        var offset = 0
-        if index < u.count && u[index] == 0x5A { index += 1 }
+        var offset: Int?
+        if index < u.count && u[index] == 0x5A { offset = 0; index += 1 }
         else if index < u.count && (u[index] == 0x2B || u[index] == 0x2D) {
-            guard let hours = digits(index + 1, 2), index + 3 < u.count, u[index + 3] == 0x3A, let minutes = digits(index + 4, 2), hours <= 14, minutes < 60 else { return nil }
-            offset = (hours * 60 + minutes) * (u[index] == 0x2D ? -1 : 1); index += 6
-        } else { return nil }
+            let sign = u[index] == 0x2D ? -1 : 1
+            guard let hours = digits(index + 1, 2), hours <= 14 else { return nil }
+            var minutes = 0
+            if index + 3 < u.count {
+                guard u[index + 3] == 0x3A, let value = digits(index + 4, 2), value < 60 else { return nil }
+                minutes = value; index += 6
+            } else { index += 3 }
+            offset = sign * (hours * 60 + minutes)
+        }
         if index != u.count { return nil }
         let local = Int64(date.dayNumber) * Ticks.perDay + Int64(hour) * Ticks.perHour + Int64(minute) * Ticks.perMinute + Int64(second) * Ticks.perSecond + fraction
-        let utc = local - Int64(offset) * Ticks.perMinute
+        let minutes = offset ?? hostOffsetMinutes(local)
+        let utc = local - Int64(minutes) * Ticks.perMinute
         if utc < 0 || utc > Ticks.maxDateTime { return nil }
         return Instant(unixTicks: utc - Ticks.unixEpoch)
+    }
+    /// The host zone's UTC offset at a local wall-clock time (TimeZoneInfo.Local in C#). Only an offset-less cached
+    /// timestamp needs it; QNotch itself always writes "+00:00".
+    private static func hostOffsetMinutes(_ localTicks: Int64) -> Int {
+        let wall = Double(localTicks - Ticks.unixEpoch) / Double(Ticks.perSecond)
+        let zone = TimeZone.current
+        let guess = Date(timeIntervalSince1970: wall - Double(zone.secondsFromGMT(for: Date(timeIntervalSince1970: wall))))
+        return zone.secondsFromGMT(for: guess) / 60
     }
 
     // MARK: Files (.NET File/FileStream semantics on Unix)

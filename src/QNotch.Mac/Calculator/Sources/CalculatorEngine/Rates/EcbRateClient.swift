@@ -115,6 +115,8 @@ final class EcbRateClient {
     static func parse(_ bytes: Data, _ requested: DateOnly?, _ retrievedAt: Instant, _ utcOffsetSeconds: Int, _ provider: String, _ firstDate: DateOnly, _ maximumAgeDays: Int) throws -> CurrencyRateSnapshot {
         if bytes.count > maxResponseBytes { throw CalcError.invalidData("Currency response exceeds size limit") }
         do {
+            // JsonDocument.Parse(ReadOnlyMemory<byte>) does not skip a UTF-8 byte order mark (JSONNode.parse does).
+            if bytes.starts(with: [0xEF, 0xBB, 0xBF]) { throw ResponseFault() }
             guard let root = try? JSONNode.parse(bytes, maxDepth: 8) else { throw ResponseFault() }
             guard case .array(let rows) = root else { throw CalcError.invalidData("Expected ECB rate rows") }
             // JsonElement.GetProperty / GetString: a missing property or a non-string value is a fault; JSON null reads as nil.
