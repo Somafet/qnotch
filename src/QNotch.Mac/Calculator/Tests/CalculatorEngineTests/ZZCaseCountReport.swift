@@ -23,6 +23,8 @@ final class ZZCaseCountReport: XCTestCase {
                 var selector = NSStringFromSelector(method_getName(methods[m]))
                 // A throwing test is exported as testNameAndReturnError:.
                 if selector.hasSuffix("AndReturnError:") { selector = String(selector.dropLast("AndReturnError:".count)) }
+                // An async test is exported as testNameWithCompletionHandler:.
+                if selector.hasSuffix("WithCompletionHandler:") { selector = String(selector.dropLast("WithCompletionHandler:".count)) }
                 guard selector.hasPrefix("test"), !selector.contains(":") else { continue }
                 // Swift records rows under the method name with "()" (#function).
                 total += rows[selector + "()"] ?? 1
