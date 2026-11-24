@@ -115,9 +115,9 @@ final class PayrollTests: XCTestCase {
         func rate(_ name: String) throws -> NetDecimal { try NetDecimal.parse(try rates.property(name).string())! / NetDecimal(100) }
         func ceiling(_ name: String) throws -> NetDecimal { NetDecimal(try ceilings.property(name).int()) }
         let high = try evidence(try last("200000 gross in DE for 2026")).german!
-        XCTAssertEqual(try (try ceiling("pensionAndUnemployment") * rate("pension")).rounded(2, awayFromZero: true), high.pension)
-        XCTAssertEqual(try (try ceiling("healthAndCare") * (try rate("healthGeneral") + (try rate("healthSurchargeDefaultFull") / NetDecimal(2)))).rounded(2, awayFromZero: true), high.health)
-        XCTAssertEqual(try (try ceiling("healthAndCare") * (try rate("care") + rate("childlessCareSurcharge"))).rounded(2, awayFromZero: true), high.care)
+        XCTAssertEqual((try ceiling("pensionAndUnemployment") * rate("pension")).rounded(2, awayFromZero: true), high.pension)
+        XCTAssertEqual((try ceiling("healthAndCare") * (try rate("healthGeneral") + (try rate("healthSurchargeDefaultFull") / NetDecimal(2)))).rounded(2, awayFromZero: true), high.health)
+        XCTAssertEqual((try ceiling("healthAndCare") * (try rate("care") + rate("childlessCareSurcharge"))).rounded(2, awayFromZero: true), high.care)
         let hu = try PayrollTest.single(models) { try $0.property("id").string() == "HU-atalanyado-2026-v1" }
         XCTAssertEqual(HungarianPayrollRules.taxFreeIncome, try hu.property("taxFreeIncome").int64())
         XCTAssertEqual(HungarianPayrollRules.revenueCeiling, try hu.property("revenueCeiling").int64())

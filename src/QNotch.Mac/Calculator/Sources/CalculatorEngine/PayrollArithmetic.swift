@@ -28,7 +28,7 @@ struct PayrollResult {
     init(_ value: SheetValue, _ assumption: String, _ evidence: PayrollEvidence) { self.value = value; self.assumption = assumption; self.evidence = evidence }
 }
 
-extension EarningsPeriod {
+fileprivate extension EarningsPeriod {
     /// `period.ToString().ToLowerInvariant()`.
     var lowerName: String {
         switch self { case .hour: return "hour"; case .day: return "day"; case .month: return "month"; case .year: return "year" }

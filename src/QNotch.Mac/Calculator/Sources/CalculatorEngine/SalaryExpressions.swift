@@ -28,7 +28,7 @@ final class SalaryExpression: Expression {
 
 /// C# `int.TryParse(text, out value)` (NumberStyles.Integer): optional surrounding white space and one leading sign,
 /// ASCII digits, within Int32.
-func netInt32TryParse(_ text: String) -> Int? {
+private func netInt32TryParse(_ text: String) -> Int? {
     var units = text.units[...]
     func white(_ c: UInt16) -> Bool { c == 0x20 || (c >= 0x09 && c <= 0x0D) }
     while let first = units.first, white(first) { units = units.dropFirst() }

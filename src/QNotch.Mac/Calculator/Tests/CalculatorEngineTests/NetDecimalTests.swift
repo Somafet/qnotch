@@ -121,10 +121,10 @@ final class NetDecimalTests: XCTestCase {
             let p = operation.split(separator: " ").map(String.init)
             let actual: String
             switch p[0] {
-            case "+": actual = try (try value(p[1]) + value(p[2])).description
-            case "-": actual = try (try value(p[1]) - value(p[2])).description
-            case "*": actual = try (try value(p[1]) * value(p[2])).description
-            case "/": actual = try (try value(p[1]) / value(p[2])).description
+            case "+": actual = (try value(p[1]) + value(p[2])).description
+            case "-": actual = (try value(p[1]) - value(p[2])).description
+            case "*": actual = (try value(p[1]) * value(p[2])).description
+            case "/": actual = (try value(p[1]) / value(p[2])).description
             case "trunc": actual = try value(p[1]).truncated.description
             case "round": actual = try value(p[1]).rounded(Int(p[2])!).description
             case "roundaway": actual = try value(p[1]).rounded(Int(p[2])!, awayFromZero: true).description
