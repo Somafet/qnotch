@@ -92,17 +92,18 @@ public sealed class SheetTabList
     }
 
     /// <summary>Hides a sheet and starts or extends the undo window. Closing the active sheet activates <paramref name="next"/>, or its
-    /// nearest neighbor when none is given. Null when the sheet cannot be closed.</summary>
-    public ClosedSheet? Close(Guid id, DateTimeOffset now, Guid? next = null)
+    /// nearest neighbor when none is given. <paramref name="wasActive"/> makes Undo bring the sheet back in front even though another
+    /// sheet was activated just before the close. Null when the sheet cannot be closed.</summary>
+    public ClosedSheet? Close(Guid id, DateTimeOffset now, Guid? next = null, bool wasActive = false)
     {
         if (CanClose(id) != CloseVerdict.Allowed) return null;
-        var wasActive = id == ActiveId;
-        var successor = wasActive ? next ?? NeighborsOf(id).First() : ActiveId;
-        if (wasActive && (successor == id || _closedIds.Contains(successor) || !Contains(successor))) return null;
+        var active = id == ActiveId;
+        var successor = active ? next ?? NeighborsOf(id).First() : ActiveId;
+        if (active && (successor == id || _closedIds.Contains(successor) || !Contains(successor))) return null;
         var position = 0;
         var visible = Visible;
         for (var i = 0; i < visible.Count; i++) if (visible[i].Id == id) { position = i; break; }
-        var closed = new ClosedSheet(id, visible[position].Name, position, wasActive);
+        var closed = new ClosedSheet(id, visible[position].Name, position, active || wasActive);
         _closed.Add(closed);
         _closedIds.Add(id);
         _visible = null;

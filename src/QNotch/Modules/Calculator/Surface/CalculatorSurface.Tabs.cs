@@ -49,7 +49,7 @@ public partial class CalculatorSurface
         if (overlayClose is not null) return false;
         switch (tabList.CanClose(id))
         {
-            case CloseVerdict.LastSheet: ShowNotice(T["keepOneSheet"]); return false;
+            case CloseVerdict.LastSheet: return CloseLastSheet(id);
             case CloseVerdict.Unknown: return false;
         }
         if (id == document.Id)
@@ -67,6 +67,34 @@ public partial class CalculatorSurface
             KeepClosedEditor(id);
             Tabs.ShowKeepingPlace(tabList.Visible, tabList.ActiveId);
         }
+        ArmCloseTimer();
+        ShowClosedNotice();
+        return true;
+    }
+
+    /// <summary>The last sheet and the empty one that replaced it, while the close can still be undone.</summary>
+    private (Guid Closed, Guid Fresh)? replacedLastSheet;
+
+    /// <summary>Closing the only sheet opens an empty one in its place, the same as closing the last tab in a browser. Undo brings the
+    /// closed sheet back in front and drops the empty one if nothing was typed into it.</summary>
+    private bool CloseLastSheet(Guid id)
+    {
+        if (id != document.Id) return false;
+        if (!tabList.CanCreate) { ShowNotice(T.Format("sheetLimitPending", SheetTabList.MaxSheets)); return false; }
+        if (compositionActive) { SaveState.Text = T["finishTextInput"]; return false; }
+        if (!Save()) return false;
+        CaptureHistory(true);
+        var fresh = Guid.Empty;
+        if (!TryStorageAction(() =>
+        {
+            var next = store.Create(tabList.UniqueName(number => T.Format("newSheetName", number)));
+            fresh = next.ActiveSheetId;
+            ActivateSheet(next, store.Open(fresh));
+        })) return false;
+        if (tabList.Close(id, DateTimeOffset.UtcNow, wasActive: true) is null) return false;
+        KeepClosedEditor(id);
+        replacedLastSheet = (id, fresh);
+        Tabs.Show(tabList.Visible, tabList.ActiveId);
         ArmCloseTimer();
         ShowClosedNotice();
         return true;
@@ -154,6 +182,7 @@ public partial class CalculatorSurface
         if (due.Count == 0) { if (!everything) ArmCloseTimer(); return; }
         foreach (var sheet in due)
         {
+            if (replacedLastSheet?.Closed == sheet.Id) replacedLastSheet = null;
             closedEditors.Remove(sheet.Id, out var editor);
             if (editor is not null) uuidSessions.Remove(editor);
             positions.Remove(sheet.Id);
@@ -174,11 +203,22 @@ public partial class CalculatorSurface
         RestoreClosedEditor(sheet.Id);
         ArmCloseTimer();
         if (tabList.Closed.Count > 0) ShowClosedNotice(); else HideNotice();
-        if (sheet.WasActive) SwitchSheet(sheet.Id);
+        // The empty sheet that stood in for the last one goes again, unless the user started using it.
+        var unused = replacedLastSheet is { } replaced && replaced.Closed == sheet.Id && replaced.Fresh == document.Id && Editor.Text.Length == 0 ? replaced.Fresh : (Guid?)null;
+        if (replacedLastSheet?.Closed == sheet.Id) replacedLastSheet = null;
+        if (sheet.WasActive && SwitchSheet(sheet.Id) && unused is { } fresh) DropUnusedSheet(fresh);
         tabList.SetActive(document.Id);
         Tabs.Show(tabList.Visible, tabList.ActiveId);
         Tabs.Reveal(sheet.Id);
         return true;
+    }
+
+    private void DropUnusedSheet(Guid id)
+    {
+        if (!TryStorageAction(() => workspace = store.DeleteMany([id]))) return;
+        if (editors.Remove(id, out var editor)) { uuidSessions.Remove(editor); editorOrder.Remove(id); }
+        positions.Remove(id);
+        RefreshSheets();
     }
 
     // ---------- the note at the bottom of the card ----------
@@ -250,7 +290,7 @@ public partial class CalculatorSurface
         menu.Items.Add(MenuEntry(T["renameMenu"], () => RenameSheet(id), "F2"));
         menu.Items.Add(MenuEntry(T["historyMenu"], () => { if (SwitchSheet(id)) ShowHistory(this, new()); }));
         menu.Items.Add(new Separator());
-        menu.Items.Add(MenuEntry(T["closeSheet"], () => CloseSheet(id), "Ctrl+W", tabList.CanClose(id) == CloseVerdict.Allowed));
+        menu.Items.Add(MenuEntry(T["closeSheet"], () => CloseSheet(id), "Ctrl+W", tabList.CanClose(id) != CloseVerdict.Unknown));
         menu.IsOpen = true;
     }
 
@@ -265,7 +305,7 @@ public partial class CalculatorSurface
         menu.Items.Add(new Separator());
         menu.Items.Add(MenuEntry(T["renameMenu"], () => RenameSheet(document.Id), "F2"));
         menu.Items.Add(MenuEntry(T["historyMenu"], () => ShowHistory(this, new())));
-        menu.Items.Add(MenuEntry(T["closeSheet"], () => CloseSheet(document.Id), "Ctrl+W", tabList.CanClose(document.Id) == CloseVerdict.Allowed));
+        menu.Items.Add(MenuEntry(T["closeSheet"], () => CloseSheet(document.Id), "Ctrl+W", tabList.CanClose(document.Id) != CloseVerdict.Unknown));
         menu.Items.Add(new Separator());
         menu.Items.Add(MenuEntry(T["help"], ShowHelp, "F1"));
         menu.Items.Add(MenuEntry(T["settings"], () => host.OpenSettings()));

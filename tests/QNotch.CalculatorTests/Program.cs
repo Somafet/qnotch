@@ -51,6 +51,17 @@ Test("the last visible sheet cannot be closed", () =>
     Assert(list.Close(Id(1), t0) is null);
     Assert(Names(list) == "1" && list.ActiveId == Id(1));
 });
+Test("the last sheet closes once a replacement is in front, and undo brings it back in front", () =>
+{
+    // The surface creates an empty sheet first, then closes the old one as a tab that was in front.
+    var list = List(1);
+    list.Update([.. Sheets(2)], Id(2));
+    var closed = list.Close(Id(1), t0, wasActive: true);
+    Assert(closed is { WasActive: true, Position: 0 });
+    Assert(Names(list) == "2" && list.ActiveId == Id(2));
+    Assert(list.Undo(t0)?.Id == Id(1));
+    Assert(list.ActiveId == Id(1) && Names(list) == "1,2");
+});
 Test("closing all but one quickly stops at one", () =>
 {
     var list = List(6, 2);

@@ -11,9 +11,10 @@
    <Setter Property="ToolTipService.InitialShowDelay" Value="400"/><Setter Property="ToolTipService.BetweenShowDelay" Value="300"/><Setter Property="ToolTipService.ShowDuration" Value="2147483647"/>
    <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Button">
     <Grid Background="Transparent">
-     <!-- The pill marks the value, not the gutter. Its content overhangs by the inset to keep the source line's height. -->
-     <Border x:Name="Surface" HorizontalAlignment="Right" Margin="0,3" Padding="6.5,0" BorderThickness="1.5" BorderBrush="Transparent" CornerRadius="6">
-     <DockPanel LastChildFill="False" Margin="0,-4.5">
+     <!-- The pill marks the value, not the gutter. It reaches a little past the source line so the text sits inside it with room on
+          every side, the same on every row. -->
+     <Border x:Name="Surface" HorizontalAlignment="Right" Margin="0,-2" Padding="7,0" BorderThickness="1.5" BorderBrush="Transparent" CornerRadius="6">
+     <DockPanel LastChildFill="False" VerticalAlignment="Center">
       <TextBlock x:Name="CopiedMark" DockPanel.Dock="Left" Text="&#xE73E;" FontFamily="{DynamicResource IconFont}" FontSize="13" FontWeight="Normal" Foreground="{TemplateBinding Foreground}" Margin="0,0,8,0" VerticalAlignment="Center" Visibility="Collapsed"/>
       <Grid DockPanel.Dock="Right" VerticalAlignment="Center">
        <ContentPresenter x:Name="Value" RenderTransformOrigin="1,0.5"><ContentPresenter.RenderTransform><ScaleTransform/></ContentPresenter.RenderTransform></ContentPresenter>

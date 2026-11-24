@@ -16,8 +16,11 @@ public partial class CalculatorSurface
     private ResultFormat resultFormat = ResultFormat.Default;
     /// <summary>Presentation of one result under the current display preferences; values and copies stay canonical.</summary>
     private string Shown(LineResult answer) => answer.Value is { } value ? QNotch.Modules.Calculator.SheetDisplay.Present(answer, value, resultFormat).Answer : ResultFormatter.Format(answer, resultFormat);
+    /// <summary>Results follow the Windows regional format until the user picks another. Calc's own default was plain digits; inside
+    /// QNotch, which already formats everything the system's way, plain is just one of the choices.</summary>
+    private const string DefaultNumberStyle = "system";
     private static ResultFormat FormatFor(PreferencesDocument value) =>
-        new(value.DecimalPlaces, NumberStyle.FromId(value.NumberStyle, CultureInfo.CurrentCulture));
+        new(value.DecimalPlaces, NumberStyle.FromId(value.NumberStyle ?? DefaultNumberStyle, CultureInfo.CurrentCulture));
 
     private void ApplyPreferences()
     {
@@ -57,10 +60,10 @@ public partial class CalculatorSurface
     private static IEnumerable<(string, int)> TextSizeChoices() => FontSizes.Select(size => (size.ToString(CultureInfo.InvariantCulture), size));
     private static PreferencesDocument WithFontSize(PreferencesDocument saved, int size) => saved with { FontSize = size == DefaultFontSize ? null : size };
     private static IEnumerable<(string, int?)> DecimalPlaceChoices() => DecimalChoices.Select(places => (places?.ToString(CultureInfo.InvariantCulture) ?? T["automatic"], places));
-    private static IEnumerable<(string, string?)> NumberStyleChoices() => NumberStyle.PresetIds.Select(id =>
+    private static IEnumerable<(string, string?)> NumberStyleChoices() => NumberStyle.PresetIds.OrderBy(id => id != DefaultNumberStyle).Select(id =>
     {
         var example = NumberStyle.FromId(id, CultureInfo.CurrentCulture).Example;
-        return (id == "system" ? T.Format("systemFormat", example) : example, id == "plain" ? null : id);
+        return (id == DefaultNumberStyle ? T.Format("systemFormat", example) : example, id == DefaultNumberStyle ? null : id);
     });
     private bool CommitPreference(Func<PreferencesDocument, PreferencesDocument> change)
     {
