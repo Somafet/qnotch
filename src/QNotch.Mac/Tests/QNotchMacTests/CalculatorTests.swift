@@ -504,6 +504,24 @@ final class CalculatorSearchTests: XCTestCase {
         wait(for: [arrived], timeout: 10)
         XCTAssertEqual(search.find("1+2").map(\.title), ["3"])
     }
+
+    /// Evaluations run in order on a thread with a main-thread-sized stack (a GCD worker's 512 KB overflowed in debug builds).
+    func testEvaluationsRunInOrderOnALargeStack() {
+        let thread = CalculatorThread(name: "test")
+        let done = expectation(description: "ran")
+        let lock = NSLock()
+        var order: [Int] = []
+        var stack = 0
+        for index in 0..<3 {
+            thread.async {
+                lock.lock(); order.append(index); stack = Thread.current.stackSize; lock.unlock()
+                if index == 2 { done.fulfill() }
+            }
+        }
+        wait(for: [done], timeout: 5)
+        XCTAssertEqual(order, [0, 1, 2])
+        XCTAssertGreaterThanOrEqual(stack, CalculatorThread.stackSize)
+    }
 }
 
 /// The page itself: pills beside lines, copying, the editor's geometry and the strip.

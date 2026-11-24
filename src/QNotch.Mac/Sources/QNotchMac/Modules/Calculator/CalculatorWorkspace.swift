@@ -6,7 +6,7 @@ import CalculatorEngine
 final class CalculatorEvaluator {
     enum Outcome { case done(CalculatorEvaluation), failed(String) }
 
-    private let queue = DispatchQueue(label: "qnotch.calculator.sheet", qos: .userInitiated)
+    private let queue = CalculatorThread(name: "qnotch.calculator.sheet")
     private var sessions: [UUID: CalculatorSheet] = [:]
     private var recent: [UUID] = []
     private var cancellation: CalculatorCancellation?

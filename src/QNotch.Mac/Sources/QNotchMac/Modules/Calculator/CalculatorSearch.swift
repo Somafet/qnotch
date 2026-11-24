@@ -10,7 +10,7 @@ final class CalculatorSearch {
 
     private static let maxRemembered = 32
     private static let timeLimit: TimeInterval = 2
-    private let queue = DispatchQueue(label: "qnotch.calculator.search", qos: .userInitiated)
+    private let queue = CalculatorThread(name: "qnotch.calculator.search")
     private var engine: CalculatorQuick?
     private var answers: [String: Answer?] = [:]
     private var order: [String] = []
