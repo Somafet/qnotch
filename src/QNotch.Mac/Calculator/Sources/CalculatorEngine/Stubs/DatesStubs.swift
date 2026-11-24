@@ -34,11 +34,3 @@ final class WorkdayArithmetic {
     func shift(_ origin: DateOnly, _ period: WorkdayPeriod) throws -> SheetValue { throw notPorted("working days") }
     func binary(_ operation: String, _ left: SheetValue, _ right: SheetValue) throws -> SheetValue { throw notPorted("working days") }
 }
-/// The embedded TZDB rules (NodaTime's TZDB 2026f in C#).
-enum Tzdb {
-    static let provider: TimeZoneProvider = UnportedZones()
-    private final class UnportedZones: TimeZoneProvider {
-        var versionId: String { ZoneCatalog.manifestVersion }
-        func zone(_ id: String) -> ZoneRules? { nil }
-    }
-}
