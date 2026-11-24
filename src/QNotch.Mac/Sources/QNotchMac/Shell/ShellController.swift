@@ -987,6 +987,11 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         }
     }
 
+    func searchResultsChanged() {
+        guard activeTab == "search" else { return }
+        searchView?.refreshResults()
+    }
+
     private func typeToSearch(_ text: String) {
         guard searchAvailable, state.acceptsKeyboard else { return }
         selectTab("search")

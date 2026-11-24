@@ -179,6 +179,9 @@ protocol ModuleShell: AnyObject {
     func actionsChanged()
     /// A segment became visible, hidden, or changed width.
     func segmentsChanged()
+    /// A search source has a new answer for the query on screen (one calculated off the main thread):
+    /// Search asks the sources again, keeping the selected result where it still exists.
+    func searchResultsChanged()
 }
 
 struct ModuleContext {
@@ -211,6 +214,10 @@ protocol NotchModule: AnyObject {
     func systemDidWake()
     func stop()
 }
+
+/// A control with a browser-style middle-click action (a sheet tab closes). The debug channel's
+/// `press --button middle` runs it as a press and a release, inside or away from the control.
+protocol MiddleClickTarget: NSView { func middleClick(releasedInside: Bool) }
 
 /// Tab content that restores its own input focus when explicitly opened with the keyboard.
 protocol PanelKeyboardContent: AnyObject { func focusKeyboard() }

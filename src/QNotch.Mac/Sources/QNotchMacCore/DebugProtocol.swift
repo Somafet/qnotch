@@ -175,7 +175,9 @@ public enum DebugCLI {
           onboarding [--close true]         Opens the welcome tour as Settings does, or closes it
           outline [--window panel|pill|settings|onboarding]
           snapshot --path /abs/x.png [--window …]   Writes the PNG and its outline (x.txt)
-          press --id ID                     Clicks, flips or selects the visible, enabled control
+          press --id ID [--button middle [--off true]]
+                                            Clicks, flips or selects the visible, enabled control;
+                                            middle runs its middle-click action (off releases away from it)
           type --text TEXT [--id ID]        Focuses the field (or keeps the focus) and inserts the text
           key --name NAME [--modifiers ctrl,alt,shift,cmd]
                                             Escape, Return, Tab, Space, Up, Down, Left, Right, Backspace, Delete or one character
