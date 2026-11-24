@@ -12,6 +12,14 @@ final class CalculatorAPITests: XCTestCase {
         XCTAssertTrue(result.lines[2].isBlank); XCTAssertNotNil(result.lines[3].error)
         XCTAssertFalse(result.lines[1].explanation.isEmpty)
     }
+    func testAmortizationRowsReachTheStepDetails() throws {
+        let line = try CalculatorSheet().evaluate("amortize 3000 at 0% for 30 months", format: CalculatorFormat(locale: Locale(identifier: "en_US"))).lines[0]
+        XCTAssertEqual(line.explanation.first { !$0.details.isEmpty }?.details, [
+            "Year 1 (12 payments): interest 0, principal 1200, balance 1800",
+            "Year 2 (12 payments): interest 0, principal 1200, balance 600",
+            "Year 3 (6 payments): interest 0, principal 600, balance 0",
+        ])
+    }
     func testFixedDecimalsAndStyleFollowTheFormat() throws {
         let format = CalculatorFormat(styleId: "period", decimalPlaces: 2, locale: Locale(identifier: "en_US"))
         XCTAssertEqual(try CalculatorSheet().evaluate("1234567/3", format: format).lines[0].answer, "411.522,33")
