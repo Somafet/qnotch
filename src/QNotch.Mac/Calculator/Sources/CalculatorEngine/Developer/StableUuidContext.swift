@@ -27,7 +27,8 @@ final class StableUuidContext {
     private let statements: [UUID]
     private var dice: [UUID: DiceBinding] = [:]
     private var diceKeys: [UUID: String] = [:]
-    private var bindings: [UUID: [String: UUID]] = [:]
+    /// Sites are keyed by code units (C# StringComparer.Ordinal).
+    private var bindings: [UUID: NetDictionary<String, UUID>] = [:]
     private var keys: [UUID: String] = [:]
 
     init(_ statementIds: [UUID], _ values: [UuidBinding], _ rolls: [DiceBinding]? = nil) throws {
@@ -44,21 +45,20 @@ final class StableUuidContext {
             }
             characters += binding.site.netLength
             if characters > StableUuidContext.maxSiteCharacters { throw CalcError.argument("Invalid or excessive UUID bindings") }
-            if bindings[binding.statement]?[binding.site] != nil { throw CalcError.argument("Duplicate UUID binding") }
-            bindings[binding.statement, default: [:]][binding.site] = binding.value
+            if bindings[binding.statement, default: NetDictionary()].tryAdd(binding.site, binding.value) == false { throw CalcError.argument("Duplicate UUID binding") }
         }
         var faces = 0
         for roll in rolls ?? [] {
             faces += roll.faces.count
             guard dice.count < StableUuidContext.maxDiceBindings, ids.contains(roll.statement), faces <= StableUuidContext.maxDiceFaces,
-                  let formula = try DiceSyntax.tryParse(roll.formula), formula.notation == roll.formula, formula.fits(roll.faces), dice[roll.statement] == nil else {
+                  let formula = try DiceSyntax.tryParse(roll.formula), formula.notation.ordinalEquals(roll.formula), formula.fits(roll.faces), dice[roll.statement] == nil else {
                 throw CalcError.argument("Invalid or excessive dice rolls")
             }
             dice[roll.statement] = roll
             diceKeys[roll.statement] = roll.formula + "=" + roll.faces.map(String.init).joined(separator: ",")
         }
         for (statement, row) in bindings {
-            keys[statement] = sha256Hex(row.keys.sorted { String.ordinalCompare($0, $1) < 0 }.map { $0 + "=" + row[$0]!.dashed }.joined(separator: "\n"))
+            keys[statement] = sha256Hex(row.stableSorted { String.ordinalCompare($0.key, $1.key) < 0 }.map { $0.key + "=" + $0.value.dashed }.joined(separator: "\n"))
         }
     }
     static func isVersion4(_ value: UUID) -> Bool {
