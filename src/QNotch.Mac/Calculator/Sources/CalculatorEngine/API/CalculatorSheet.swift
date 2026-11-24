@@ -35,6 +35,10 @@ public struct CalculatorLineResult: Hashable, Sendable {
     public let explanation: [CalculatorStep]
     /// Zero-based lines this line reads.
     public let dependencies: [Int]
+    /// What the value adds below the steps (integer words, text, networks, colours, figures…) and "Uses L…".
+    public let valueDetails: [String]
+    /// The whole explanation as plain text (C# ExplanationText.Render), for copying.
+    public let explanationText: String
     /// True for an empty, heading or prose line: nothing to show.
     public var isBlank: Bool { answer.isEmpty && error == nil && pending == nil }
 }
@@ -173,7 +177,8 @@ enum CalculatorPresentation {
         }
         return CalculatorLineResult(line: result.line, answer: answer, copy: copy, exact: result.display, error: result.error, pending: result.pending,
                                     isDeclaration: result.isDeclaration, isAggregate: result.isAggregate, hasValue: result.value != nil && !result.isDeclaration,
-                                    kind: result.value?.kind.rawValue, explanation: result.explanation.map(step), dependencies: result.dependencies)
+                                    kind: result.value?.kind.rawValue, explanation: result.explanation.map(step), dependencies: result.dependencies,
+                                    valueDetails: (try? ExplanationText.valueLines(result)) ?? [], explanationText: (try? ExplanationText.render(result)) ?? "")
     }
     static func step(_ step: CalculationStep) -> CalculatorStep {
         CalculatorStep(operation: step.operation, operands: step.operands, result: step.result, assumption: step.assumption, details: StepDetails.lines(step))
@@ -184,15 +189,11 @@ extension ResultFormat {
     func with(places: Int?) -> ResultFormat { var copy = self; copy.decimalPlaces = places; return copy }
 }
 
-/// Evidence lines a step carries beyond its assumption (filled in as the areas that produce evidence are ported).
+/// Evidence lines a step carries beyond its assumption (C# ExplanationText): payroll breakdowns before the assumption,
+/// text-transform, chemistry and amortization evidence after it. The UI shows the payroll lines above the assumption.
 enum StepDetails {
     static func lines(_ step: CalculationStep) -> [String] {
-        var lines: [String] = []
-        // Amortization rows, worded as C# ExplanationText and the Windows explanation panel print them.
-        for year in step.schedule ?? [] {
-            lines.append("Year \(year.year) (\(year.payments) payments): interest \(year.interest), principal \(year.principal), balance \(year.balance)")
-        }
-        return lines
+        (step.payroll.map(PayrollBreakdownText.lines) ?? []) + ExplanationText.evidenceLines(step)
     }
 }
 

@@ -76,18 +76,6 @@ final class HungarianPayrollTests: XCTestCase {
         XCTAssertEqual("678000", try last("600000 gross in HU for 2026 in employer cost").display)
     }
 
-    /// The payroll part of C# `ExplanationText.Render` (each step's header, its breakdown lines, then its assumption).
-    /// ExplanationText belongs to the shared explanation surface, which this area does not port.
-    private func renderedExplanation(_ answer: LineResult) -> String {
-        var text = ""
-        for step in answer.explanation {
-            text += step.operation + "(" + step.operands.joined(separator: ", ") + ") = " + step.result + "\n"
-            if let payroll = step.payroll { for line in PayrollBreakdownText.lines(payroll) { text += line + "\n" } }
-            if let assumption = step.assumption { text += assumption + "\n" }
-        }
-        return text
-    }
-
     func testBreakdownShowsSplitPeriodAndMonths() throws {
         let flat = try evidence(try last("600000 HUF/month gross in HU for 2026 with átalányadó"))
         XCTAssertEqual("SZJA 303 480 · TB járulék 716 616 · szocho 503 568 · net 5 676 336 HUF per year\nAnswer is per month", PayrollBreakdownText.summary(flat))
@@ -99,7 +87,7 @@ final class HungarianPayrollTests: XCTestCase {
         XCTAssertEqual("SZJA 10 002 · TB járulék 111 000 · net 478 998 HUF per month\nAnswer is per month", PayrollBreakdownText.summary(employee))
         XCTAssertTrue(PayrollBreakdownText.lines(employee).contains("  Deductions 121 002 HUF (20.2% of gross); net 478 998 HUF a month, 5 747 976 HUF a year"))
         XCTAssertTrue(try evidence(try last("600000 gross in HU for 2026")).hungarian!.months.isEmpty)
-        let cli = renderedExplanation(try last("7000000 gross in HU for 2026 with átalányadó"))
+        let cli = try ExplanationText.render(try last("7000000 gross in HU for 2026 with átalányadó"))
         XCTAssertTrue(cli.netIndexOf("Breakdown for 2026") < cli.netIndexOf("Hungarian átalányadó revenue to net"))
         XCTAssertNil(PayrollBreakdownText.summary(try evidence(try last("60000 gross in DE for 2026", context.with { $0.payrollRegion = "DE" }))))
         XCTAssertNil(PayrollBreakdownText.rows(try evidence(try last("60000 gross in DE for 2026", context.with { $0.payrollRegion = "DE" }))))
