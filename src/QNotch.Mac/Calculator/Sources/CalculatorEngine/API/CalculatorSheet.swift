@@ -92,6 +92,8 @@ public struct CalculatorEvaluation: Sendable {
     public let hasMoney: Bool
     /// Lines an untagged whole-sheet total reads.
     public let totalMembers: [Int]
+    /// The rate dates the sheet asked for (nil = the latest rates), for the rates menu and downloads.
+    public let currencyRequests: [CalculatorDay?]
 }
 
 /// A sheet's evaluation session (C# SheetEvaluationSession): re-evaluating an edited sheet reuses unchanged lines.
@@ -109,7 +111,8 @@ public final class CalculatorSheet: @unchecked Sendable {
         return CalculatorEvaluation(lines: evaluation.results.map { CalculatorPresentation.line($0, resultFormat) },
                                     usesCurrentDate: evaluation.usesCurrentDate, usesCurrentInstant: evaluation.usesCurrentInstant,
                                     requiresSecondRefresh: evaluation.requiresSecondRefresh, usesCurrencyRates: evaluation.usesCurrencyRates,
-                                    hasMoney: evaluation.hasMoney, totalMembers: evaluation.totalMembers)
+                                    hasMoney: evaluation.hasMoney, totalMembers: evaluation.totalMembers,
+                                    currencyRequests: evaluation.currencyRequests.map { $0.date.map(CalculatorDay.init) })
     }
 
     /// Sheet limits (C# SheetEvaluator).
