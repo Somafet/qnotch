@@ -1,0 +1,1 @@
+{"Version":3,"Definitions":[{"Name":"f","Parameters":["x"],"Body":"x\u002B1"},{"Name":"area","Parameters":["w","h"],"Body":"w*h"},{"Name":"constant","Parameters":[],"Body":"7 \u20AC"}]}

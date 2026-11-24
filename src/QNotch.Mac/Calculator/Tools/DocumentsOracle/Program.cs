@@ -12,6 +12,10 @@
 // Regenerate from the repository root with:
 //   dotnet run -c Release --project src/QNotch.Mac/Calculator/Tools/DocumentsOracle -- tests/fixtures/calculator/documents
 // The workspace and sync folders contain fresh random identities on every run; commit them together with manifest.json.
+//
+// The reverse check reads a Mac-written workspace and sync folder with the C# stores:
+//   CALC_WRITE_MAC_DOCUMENTS=/tmp/mac-documents swift test --filter DocumentCompatibilityTests   (writes data/ and sync/)
+//   dotnet run -c Release --project src/QNotch.Mac/Calculator/Tools/DocumentsOracle -- verify /tmp/mac-documents/data /tmp/mac-documents/sync
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
@@ -19,7 +23,8 @@ using System.Text.Json.Nodes;
 using Calc.Core;
 using Calc.Documents;
 
-if (args.Length != 1) { Console.Error.WriteLine("usage: DocumentsOracle <output folder>"); return 1; }
+if (args.Length == 3 && args[0] == "verify") return Verify(args[1], args[2]);
+if (args.Length != 1) { Console.Error.WriteLine("usage: DocumentsOracle <output folder> | DocumentsOracle verify <data folder> <sync folder>"); return 1; }
 var output = Path.GetFullPath(args[0]);
 if (Directory.Exists(output)) Directory.Delete(output, true);
 Directory.CreateDirectory(output);
@@ -176,6 +181,46 @@ File.WriteAllText(Path.Combine(output, "manifest.json"),
     manifest.ToJsonString(new JsonSerializerOptions { WriteIndented = true, IndentSize = 1, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }).Replace("\r\n", "\n") + "\n", new UTF8Encoding(false));
 Console.WriteLine($"Wrote {cases.Length} JSON cases, a workspace, a sync folder and a legacy sheet to {output}");
 return 0;
+
+// The reverse direction: the C# stores read a data folder and sync folder the Mac engine wrote (DocumentCompatibilityTests writes one
+// when CALC_WRITE_MAC_DOCUMENTS names a folder). Prints what C# sees; any recovery, skipped version or unreadable sync file fails.
+static int Verify(string data, string folder)
+{
+    var problems = new List<string>();
+    using var store = new WorkspaceStore(data);
+    var loaded = store.Load();
+    if (loaded.Recovered || loaded.Migrated) problems.Add("catalog recovered or migrated");
+    Console.WriteLine($"workspace: {loaded.Workspace.Sheets.Length} sheets, active {loaded.Workspace.ActiveSheetId:N}, dark {loaded.Workspace.Dark}");
+    foreach (var entry in loaded.Workspace.Sheets)
+    {
+        var sheet = store.Open(entry.Id);
+        if (sheet.Recovered) problems.Add("sheet recovered: " + entry.Name);
+        var history = store.LoadVersions(entry.Id);
+        if (history.Skipped > 0) problems.Add($"{history.Skipped} versions skipped: {entry.Name}");
+        Console.WriteLine($"  {entry.Name}: v{sheet.Document.Version} {JsonSerializer.Serialize(sheet.Document.Source)}, {sheet.FunctionReceipts!.Count} receipts, " +
+            $"{history.Versions.Count} versions [{string.Join(", ", history.Versions.Select(v => JsonSerializer.Serialize(v.Sheet.Source)))}]" +
+            (sheet.Document.GeneratedUuids is { } u ? $", {u.Statements.Length} statements, {u.Bindings.Length} bindings, {u.Dice?.Length ?? 0} rolls" : ""));
+    }
+    var functions = store.LoadFunctions();
+    if (store.FunctionsRecovered) problems.Add("functions recovered");
+    Console.WriteLine("functions: " + string.Join(", ", functions.Definitions.Select(d => d.Name + "(" + string.Join(",", d.Parameters) + ")=" + d.Body)));
+    var preferences = store.LoadPreferences();
+    if (store.PreferencesRecovered) problems.Add("preferences recovered");
+    Console.WriteLine("preferences: " + JsonSerializer.Serialize(preferences));
+    var sync = new FolderSync(store, "Verifier");
+    var snapshot = sync.Scan(folder);
+    foreach (var entry in snapshot.Canonical.Values.OrderBy(e => e.SheetId))
+    {
+        if (entry.State != SyncFileState.Ready) problems.Add($"sync file {entry.SheetId:N} is {entry.State}: {entry.Problem}");
+        Console.WriteLine($"sync {entry.SheetId:N}: {entry.State} {(entry.File is { } f ? (f.Deleted ? "tombstone" : JsonSerializer.Serialize(f.Name)) + " by " + f.Device + " at " + f.SavedAt.ToString("O") : "")}");
+    }
+    FolderSync.SetFolder(data, folder); // Same folder: keeps the Mac's bases.
+    var report = sync.Synchronize(sync.Scan(folder));
+    Console.WriteLine($"pass: {report.Status}, published {report.Published}, imported {report.Imported}, updated {report.Updated}, conflicts {report.Conflicts}, failed {report.Failed}");
+    if (report.Status != SyncStatus.Synchronized || report.Published + report.Imported + report.Updated + report.Conflicts + report.Failed > 0) problems.Add("sync pass changed something");
+    foreach (var problem in problems) Console.Error.WriteLine("PROBLEM: " + problem);
+    return problems.Count == 0 ? 0 : 2;
+}
 
 static void Copy(string from, string to)
 {

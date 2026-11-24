@@ -1,0 +1,119 @@
+{
+ "format": "Written by Tools/DocumentsOracle with the C# engine; regenerate, do not edit.",
+ "hashes": [
+  {
+   "name": "",
+   "source": "",
+   "case": null,
+   "hash": "390FEABC786E369E55B904251D643B52B52B691C60EB74A498EF7C6DF993BF12"
+  },
+  {
+   "name": "Sheet",
+   "source": "price = 120\ndiscount = 15%\nprice * discount\nprice * (1 - discount)",
+   "case": null,
+   "hash": "60ACEE45DB87D90007074FD858FCAC04F7CD7D5E584DAC029CDF7EE3FEEF368D"
+  },
+  {
+   "name": "Reise 日本",
+   "source": "price = 120 \"q\" \\ / <b>&amp;</b> 'a'+`b` \u0001\u001F\u007F é € 日本 \uD83D\uDE00\ttab\r\nnext",
+   "case": null,
+   "hash": "7A2C6560C2A46E4A3E3E03E68EAF1D9EA4CD11ACE9B4266959A0111814B3E81A"
+  },
+  {
+   "name": "Sheet",
+   "source": "uuid\nf(1)",
+   "case": "uuids",
+   "hash": "43FB91A29D2EEABCB63629D67A2450DD1BE623744A29D43699AE31ADF6FCA716"
+  },
+  {
+   "name": "Sheet",
+   "source": "uuid\n2d6+3",
+   "case": "dice",
+   "hash": "7A95FA195FCA750E19E8B6FB150AF29A624FF404787F14AF5C5FCA13343E9A7A"
+  },
+  {
+   "name": "S",
+   "source": "x",
+   "case": "statement",
+   "hash": "AAA34573B98B31C28D7AAEE5F2273A56D1FDCA514225C030A37CCC1BD57EE624"
+  }
+ ],
+ "workspace": {
+  "active": "107f781ce632412cbc80f81adbe6014b",
+  "dark": true,
+  "sheets": [
+   {
+    "id": "355e737d43bd44808a327f0791783a59",
+    "name": "Sheet",
+    "version": 1,
+    "source": "f(2) * 10",
+    "receipts": 0,
+    "versions": [
+     {
+      "hash": "8E351C63D56CD5E58C47E837CEE8A2410363F503127FA1F3A59F800B48DA9DC3",
+      "ticks": 639290484000000042,
+      "source": "f(2) * 10",
+      "receipts": 0
+     },
+     {
+      "hash": "E1EF41C5FF9026938ADF20EFFD741B3D4F168EB1C3A95AB137180754F193D527",
+      "ticks": 639290448000000000,
+      "source": "f(x)=x+1\nf(2)\nprice = 120 \"q\" \\ / <b>&amp;</b> 'a'+`b` \u0001\u001F\u007F é € 日本 \uD83D\uDE00\ttab\r\nnext",
+      "receipts": 1
+     }
+    ]
+   },
+   {
+    "id": "107f781ce632412cbc80f81adbe6014b",
+    "name": "Reise 日本 \uD83D\uDE00 <&>",
+    "version": 2,
+    "source": "uuid\nid = uuid",
+    "receipts": 0,
+    "versions": []
+   }
+  ],
+  "deleted": "18579db5d12646b6a62c91ec92fd7552",
+  "functions": [
+   {
+    "name": "f",
+    "body": "x+1"
+   }
+  ],
+  "functionsVersion": 1,
+  "sync": [
+   {
+    "sheet": "107f781ce632412cbc80f81adbe6014b",
+    "revision": "a6033b72b14f4d03bbe5697c69a53d21",
+    "deleted": false,
+    "name": "Reise 日本 \uD83D\uDE00 <&>",
+    "source": "uuid\nid = uuid",
+    "hash": "8130D3D049B3E51F04F37D6175F9CE548FD57D4615EB9E29850BBC109C60E052",
+    "ancestors": 0
+   },
+   {
+    "sheet": "18579db5d12646b6a62c91ec92fd7552",
+    "revision": "9348849af15d40b094feb94ad8a5c7b5",
+    "deleted": true,
+    "name": "",
+    "source": "",
+    "hash": "390FEABC786E369E55B904251D643B52B52B691C60EB74A498EF7C6DF993BF12",
+    "ancestors": 1
+   },
+   {
+    "sheet": "355e737d43bd44808a327f0791783a59",
+    "revision": "f1ec9b74317040e58f57a1ab47753df1",
+    "deleted": false,
+    "name": "Sheet",
+    "source": "f(2) * 10",
+    "hash": "724160635B7D67DF7AC1DE0081C88D4A1F7F05EEB896ADEC1706A6DAE0C424C3",
+    "ancestors": 0
+   }
+  ]
+ },
+ "syncFolder": "/tmp/qnotch-documents-oracle/sync",
+ "legacy": {
+  "id": "9ae5ef4ed4d34a77b2ff8eb16fbf35c7",
+  "source": "// \uD83D\uDE00 日本語\n120*15%",
+  "dark": true
+ }
+}
