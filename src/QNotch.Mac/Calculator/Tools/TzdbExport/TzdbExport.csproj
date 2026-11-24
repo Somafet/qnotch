@@ -1,0 +1,14 @@
+<!-- Dev tool: exports NodaTime's embedded TZDB rules for the Swift engine and checks them. Never shipped and not part of QNotch.sln. -->
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Must match src/QNotch.Calculator.Engine: the Swift rules reproduce this package's TZDB. -->
+    <PackageReference Include="NodaTime" Version="3.3.7" />
+  </ItemGroup>
+</Project>

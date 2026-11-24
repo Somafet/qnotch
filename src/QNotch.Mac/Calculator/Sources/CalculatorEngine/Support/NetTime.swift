@@ -183,9 +183,6 @@ struct Instant: Hashable, Comparable {
     var utcDateTime: NetDateTime? { NetDateTime.checked(unixTicks + Ticks.unixEpoch) }
 }
 
-/// One way a zone maps a local date and time: the offset in seconds that applies.
-struct ZoneMapping { let offsetSeconds: Int }
-
 /// NodaTime.DateTimeZone: offsets for instants and the candidate offsets for a local time.
 protocol ZoneRules: AnyObject {
     var id: String { get }
@@ -196,21 +193,28 @@ protocol ZoneRules: AnyObject {
     func mapLocal(_ local: Int64) -> [Int]
 }
 
-/// DateTimeZone.Utc and DateTimeZone.ForOffset.
+/// NodaTime's FixedDateTimeZone: DateTimeZone.Utc, DateTimeZone.ForOffset, and TZDB's fixed zones (Etc/GMT+2, …).
+/// Unlike other zones, fixed zones compare by value in C# (FixedDateTimeZone overrides Equals: offset, id, name).
 final class FixedZone: ZoneRules {
     let id: String
     let offset: Int
     static let utc = FixedZone(offset: 0)
-    init(offset: Int) {
-        self.offset = offset
-        if offset == 0 { id = "UTC" }
-        else {
-            let m = abs(offset)
-            id = "UTC" + (offset < 0 ? "-" : "+") + pad(m / 3600, 2) + ":" + pad(m / 60 % 60, 2) + (m % 60 == 0 ? "" : ":" + pad(m % 60, 2))
-        }
+    /// DateTimeZone.ForOffset: id "UTC", or "UTC±HH", "UTC±HH:mm", "UTC±HH:mm:ss" (FixedDateTimeZone.MakeId).
+    convenience init(offset: Int) {
+        let m = abs(offset), h = m / 3600, minutes = m % 3600 / 60, seconds = m % 60
+        let text = minutes == 0 && seconds == 0 ? pad(h, 2) : seconds == 0 ? pad(h, 2) + ":" + pad(minutes, 2) : pad(h, 2) + ":" + pad(minutes, 2) + ":" + pad(seconds, 2)
+        self.init(id: offset == 0 ? "UTC" : (offset < 0 ? "UTC-" : "UTC+") + text, offset: offset)
     }
+    init(id: String, offset: Int) { self.id = id; self.offset = offset }
     func offsetSeconds(at instant: Instant) -> Int { offset }
     func mapLocal(_ local: Int64) -> [Int] { [offset] }
+}
+
+/// C#'s DateTimeZone equality: reference identity, except fixed zones, which compare by offset and id.
+func sameZone(_ a: ZoneRules, _ b: ZoneRules) -> Bool {
+    if a === b { return true }
+    if let a = a as? FixedZone, let b = b as? FixedZone { return a.offset == b.offset && a.id == b.id }
+    return false
 }
 
 extension ZoneRules {

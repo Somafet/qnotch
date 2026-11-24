@@ -147,7 +147,7 @@ final class GeneratedUuidSession {
             }
         }
     }
-    private func roll(_ line: Int, _ again: Bool, _ formulas: [Int: DiceFormula]) throws -> DiceBinding? {
+    private func roll(_ line: Int, _ again: Bool, _ formulas: NetDictionary<Int, DiceFormula>) throws -> DiceBinding? {
         guard line >= 0 && line < statements.count, let formula = formulas[line] else { return nil }
         let row = statements[line]
         if !again, let held = row.dice, held.formula.ordinalEquals(formula.notation), formula.fits(held.faces) { return nil }
@@ -228,8 +228,8 @@ final class GeneratedUuidSession {
             let oldText = old[start..<end], newText = new[next.start(line)..<next.contentEnd(line)]
             if oldText != newText {
                 if !statements[i].hasState { continue }
-                guard let identity = UuidSyntax.expressionIdentity(String(units: oldText)),
-                      let other = UuidSyntax.expressionIdentity(String(units: newText)), identity.ordinalEquals(other) else { continue }
+                guard let identity = try UuidSyntax.expressionIdentity(String(units: oldText)),
+                      let other = try UuidSyntax.expressionIdentity(String(units: newText)), identity.ordinalEquals(other) else { continue }
             }
             ids[line] = statements[i]
         }

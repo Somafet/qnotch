@@ -52,9 +52,14 @@ dev-time oracle only: nothing in the app may call or bundle it.
   property order), because Mac and Windows share folders.
 - **Dates.** `DateOnly`, `TimeOnly`, `NetDateTime` (DateTime ticks), `Instant` (NodaTime, Unix ticks), `ZoneRules`
   (`Support/NetTime.swift`). Never use Foundation `Date`/`Calendar`/`TimeZone` for engine semantics.
+  IANA zones come from `Tzdb.provider` (`Support/Tzdb.swift`): NodaTime's own zone algorithms over
+  `Resources/Tzdb.txt`, which `Tools/TzdbExport` exports from the NodaTime package the C# engine pins. When that
+  package changes, regenerate `Tzdb.txt` and `Tests/CalculatorEngineTests/Vectors/TzdbCheck.txt` with the tool
+  (`ResourceTests` fails until the versions agree; `TimeZoneRulesTests` compares every zone with NodaTime).
 - **Records.** C# records → Swift structs, or final classes with value `==` when shared by reference; `with { … }` →
   a copy helper. Expression nodes are final classes conforming to `Expression` and list their operands in `children`
   (same order as C# `ExpressionEvaluation.Children`).
 - **Resources.** The engine's JSON catalogs are copied byte for byte into `Sources/CalculatorEngine/Resources/`
-  (`ResourceTests` checks they match the C# originals). Load with `CalculatorEngine.resource(name)`.
+  (`ResourceTests` checks they match the C# originals); `Tzdb.txt` is generated instead (see Dates). Load with
+  `CalculatorEngine.resource(name)`.
 - No new package dependencies. No network access from tests.
