@@ -33,7 +33,7 @@ public partial class CalculatorSurface
         var name = workspace.Sheets.FirstOrDefault(sheet => sheet.Id == document.Id)?.Name ?? "Sheet";
         var source = Editor.Text;
         // Results belong to the text they were computed for; a sheet mid-evaluation shares its source without stale answers.
-        var results = answers.Count == new SourceLineMap(source).Count ? answers : [];
+        var results = FreshResults(source);
         var snapshot = ShareLink.Capture(name, source, results, QNotch.Theme.ThemeManager.IsDark, DateOnly.FromDateTime(DateTime.Now), Explain);
         return ShareLink.Create(viewer, snapshot);
     }

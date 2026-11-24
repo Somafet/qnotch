@@ -22,7 +22,12 @@ public partial class CalculatorSurface : UserControl
     private SheetDocument document;
     private readonly DispatcherTimer saveTimer = new() { Interval = TimeSpan.FromMilliseconds(500) };
     private CancellationTokenSource? evaluation;
+    // What the result column shows, one per current line. While an edit is being evaluated, lines around it
+    // keep the last evaluation's results (CarriedResults) instead of the whole column blinking empty.
     private IReadOnlyList<LineResult> answers = [];
+    // The last finished evaluation and the text it was for. Share and export use only these, never carried results.
+    private IReadOnlyList<LineResult> evaluatedAnswers = [];
+    private string evaluatedSource = "";
     private bool ready;
     private bool dirty;
     private bool closedDown;
@@ -136,7 +141,7 @@ public partial class CalculatorSurface : UserControl
         dirty = true; UpdatePlaceholder(); DiceLayer.Dismiss();
         usesCurrentDate = false; usesCurrentInstant = false; usesLocalTimeZone = false; requiresSecondRefresh = false; StopDateSchedule();
         usesCurrencyRates = false; currencyRequests = []; StopCurrencySchedule(true); UpdateCurrencyStatus();
-        answers = []; ClearResults();
+        CarryResults();
         if (compositionActive) { evaluationDeferred = true; saveTimer.Stop(); return; }
         evaluationDeferred = false;
         saveTimer.Stop(); saveTimer.Start();
@@ -173,7 +178,7 @@ public partial class CalculatorSurface : UserControl
             }
             var values = evaluated.Results;
             if (current != revision) return;
-            answers = values; Editor.ShowWorksheet(values);
+            answers = evaluatedAnswers = values; evaluatedSource = source; Editor.ShowWorksheet(values);
             AdoptCurrencyEvaluation(evaluated);
             usesCurrentDate = evaluated.UsesCurrentDate; usesCurrentInstant = evaluated.UsesCurrentInstant;
             usesLocalTimeZone = evaluated.UsesLocalTimeZone; requiresSecondRefresh = evaluated.RequiresSecondRefresh;
@@ -189,7 +194,7 @@ public partial class CalculatorSurface : UserControl
         {
             if (current == revision)
             {
-                answers = []; Editor.ShowWorksheet([]); DrawResults(); SaveState.Text = e.Message;
+                ForgetResults(); Editor.ShowWorksheet([]); DrawResults(); SaveState.Text = e.Message;
                 QNotch.Core.Log.Warn("Calculator: sheet not calculated", e);
             }
         }

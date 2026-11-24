@@ -25,7 +25,7 @@ public partial class CalculatorSurface
     {
         await pending;
         var title = workspace.Sheets.FirstOrDefault(sheet => sheet.Id == document.Id)?.Name ?? "Sheet";
-        return SheetExport.Create(title, Editor.Text, answers, resultFormat);
+        return SheetExport.Create(title, Editor.Text, FreshResults(Editor.Text), resultFormat);
     }
 
     private async void ShowShare(object sender, RoutedEventArgs e)

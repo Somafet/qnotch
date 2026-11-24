@@ -14,6 +14,10 @@ The Calculator module is a port of the Calc notepad calculator, hosted as a pane
 
 Nothing loads at startup. The engine and the workspace load the first time the Calculator tab or its Settings page shows, and the engine alone when Search first sees a calculation. Search uses saved functions only when the workspace is already open. While hidden the view keeps no timers, except the one-shot undo window after a close. Sheets are saved in `calculator\`. Help, the third-party notices and the static share viewer are embedded and written there when first used, so `QNotch.exe` stays a single file.
 
+## Results
+
+Every edit is evaluated off the UI thread with no debounce; a newer edit cancels the older run. Until the new results arrive, `CalculatorSurface.CarryResults` keeps the last results for the lines before and after the edited block (`Calc.Documents.CarriedResults`, shifted by lines added or removed), and the edited lines show none, so the column never blinks empty while typing. Share, export and share links use only results evaluated for exactly the current text. A failed evaluation or a sheet switch carries nothing over.
+
 ## Tabs
 
 `SheetTabList` is the UI-free state, checked by `tests/QNotch.CalculatorTests`. A closed sheet leaves the strip at once and stays in the store until its undo window ends, or until QNotch quits, so a crash in that window loses nothing. It keeps its name and counts toward the 256 sheet limit until then. All waiting closes share one deadline, moved on by each close and undo.
