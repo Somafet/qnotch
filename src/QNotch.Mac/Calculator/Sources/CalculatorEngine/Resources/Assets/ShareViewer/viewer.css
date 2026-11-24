@@ -1,0 +1,87 @@
+/* Colours match the Windows sheet (MainWindow.Appearance.cs). System fonts only. */
+:root {
+  --background: #F3F3F3; --foreground: #2B2D2A; --result: #06717D; --muted: #696C67;
+  --hover: rgba(0, 0, 0, .06); --pressed: rgba(0, 0, 0, .1); --divider: #E2E2E2; --tag: #8B621B;
+  --s0: #06717D; --s1: #8B621B; --s2: #5B6FB5; --s3: #A2465B; --s4: #4F8A3C; --s5: #7A5BA6; --s6: #B26A1F; --s7: #696C67;
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  --background: #202020; --foreground: #E8E6E1; --result: #79D4DE; --muted: #9C9A95;
+  --hover: rgba(255, 255, 255, .08); --pressed: rgba(255, 255, 255, .13); --divider: #3D3D3D; --tag: #DDB46C;
+  --s0: #79D4DE; --s1: #DDB46C; --s2: #9DB0F0; --s3: #E88AA0; --s4: #9ACB86; --s5: #C3A6EC; --s6: #F0A866; --s7: #9C9A95;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body {
+  margin: 0; min-height: 100vh; background: var(--background); color: var(--foreground);
+  font: 15px/1.6 "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Roboto, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+.header, main { max-width: 1138px; margin: 0 auto; padding: 0 28px; }
+.header { display: flex; align-items: baseline; gap: 12px; padding-top: 16px; padding-bottom: 8px; }
+h1 { margin: 0; font-size: 15px; font-weight: 600; overflow-wrap: anywhere; }
+time { color: var(--muted); font-size: 12px; white-space: nowrap; }
+.notice { color: var(--muted); }
+a { color: inherit; text-decoration-color: var(--muted); text-underline-offset: 2px; }
+.lines { list-style: none; margin: 0; padding: 0 0 32px; }
+
+/* Wide: the source column and a right-aligned result column, as in the app. */
+.line { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 24px; align-items: start; min-height: 1.6em; }
+.source { white-space: pre-wrap; overflow-wrap: anywhere; min-width: 0; }
+.answer { justify-self: end; max-width: min(28rem, 45vw); text-align: right; overflow-wrap: break-word; }
+.result {
+  display: inline; margin: 0 -6px; padding: 0 6px; border: 1.5px solid transparent; border-radius: 6px;
+  font: inherit; font-weight: 600; color: var(--result); background: transparent; text-align: right;
+}
+.result.error { font-weight: 400; font-size: 13px; color: var(--muted); }
+button.result { cursor: pointer; text-decoration: underline dotted; text-decoration-thickness: 1px; text-underline-offset: 4px; -webkit-tap-highlight-color: transparent; }
+@media (hover: hover) { button.result:hover { background: var(--hover); } }
+button.result:active { background: var(--pressed); }
+button.result:focus-visible { outline: none; border-color: var(--result); }
+.explanation, .figure { grid-column: 1 / -1; }
+.explanation {
+  margin: 4px 0 10px; padding: 10px 12px; border-left: 2px solid var(--divider);
+  white-space: pre-wrap; overflow-wrap: anywhere; color: var(--muted); font-size: 13px;
+}
+.explanation[hidden] { display: none; }
+
+.figure { margin: 6px 0 12px; font-size: 11px; color: var(--muted); }
+.bar-row, .legend li { display: grid; grid-template-columns: minmax(3rem, 10rem) minmax(0, 1fr) auto; gap: 10px; align-items: center; }
+.bar-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar-value { color: var(--foreground); white-space: nowrap; }
+.bar-track { height: 10px; }
+.bar { display: block; height: 100%; min-width: 2px; border-radius: 4px; background: var(--result); }
+.bar.negative { background: var(--tag); }
+.figure-pie { display: flex; gap: 20px; align-items: center; }
+.pie-chart { width: 112px; height: 112px; flex: none; }
+.legend { list-style: none; margin: 0; padding: 0; flex: 0 1 22rem; min-width: 0; }
+.legend li { grid-template-columns: 10px minmax(0, 1fr) auto; }
+.swatch { width: 10px; height: 10px; border-radius: 3px; background: currentColor; }
+.slice-0 { color: var(--s0); fill: var(--s0); } .slice-1 { color: var(--s1); fill: var(--s1); } .slice-2 { color: var(--s2); fill: var(--s2); }
+.slice-3 { color: var(--s3); fill: var(--s3); } .slice-4 { color: var(--s4); fill: var(--s4); } .slice-5 { color: var(--s5); fill: var(--s5); }
+.slice-6 { color: var(--s6); fill: var(--s6); } .slice-7 { color: var(--s7); fill: var(--s7); }
+.plot { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: 120px auto; column-gap: 8px; }
+.plot-y { display: flex; flex-direction: column; justify-content: space-between; text-align: right; }
+.plot-area { width: 100%; height: 120px; overflow: visible; }
+.plot-x { grid-column: 2; display: flex; justify-content: space-between; gap: 8px; }
+.stroke { fill: none; stroke: var(--result); stroke-width: 2; vector-effect: non-scaling-stroke; stroke-linejoin: round; stroke-linecap: round; }
+.dot { fill: var(--result); }
+.rule { stroke: var(--divider); stroke-width: 1; vector-effect: non-scaling-stroke; }
+
+/* Phones: a row wraps only when source and result do not fit together, so a long line's result reflows below its input. */
+@media (max-width: 600px) {
+  .header, main { padding: 0 16px; }
+  .header { padding-top: max(12px, env(safe-area-inset-top)); }
+  .line { display: flex; flex-wrap: wrap; column-gap: 16px; padding: 2px 0; }
+  .source { flex: 1 1 auto; }
+  .answer { flex: 0 1 auto; margin-left: auto; max-width: 100%; }
+  .explanation, .figure { flex: 1 0 100%; }
+  .answer { overflow-wrap: anywhere; }
+  button.result { display: inline-block; min-height: 32px; }
+  .bar-row { grid-template-columns: minmax(2.5rem, 6rem) minmax(0, 1fr) auto; }
+}
+@media (forced-colors: active) {
+  .result, .bar, .stroke, .dot { forced-color-adjust: auto; }
+  button.result { border-color: ButtonText; }
+}
