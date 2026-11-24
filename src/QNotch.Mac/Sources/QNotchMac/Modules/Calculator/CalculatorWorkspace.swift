@@ -20,7 +20,7 @@ final class CalculatorEvaluator {
     init(synchronous: Bool) { self.synchronous = synchronous }
 
     func evaluate(sheet id: UUID, source: String, environment: CalculatorEnvironment, format: CalculatorFormat,
-                  functions: CalculatorFunctions?, inBackground: Bool = false, done: @escaping (Outcome) -> Void) {
+                  functions: CalculatorFunctions?, rates: CalculatorRates? = nil, inBackground: Bool = false, done: @escaping (Outcome) -> Void) {
         cancellation?.cancel()
         let token = CalculatorCancellation()
         cancellation = token
@@ -28,7 +28,7 @@ final class CalculatorEvaluator {
         let current = revision
         let session = self.session(id)
         func run() -> Outcome? {
-            do { return .done(try session.evaluate(source, environment: environment, format: format, functions: functions, cancel: token)) }
+            do { return .done(try session.evaluate(source, environment: environment, format: format, functions: functions, rates: rates, cancel: token)) }
             catch { return token.isCancelled ? nil : .failed(error.localizedDescription) }
         }
         if synchronous, !inBackground {
@@ -96,6 +96,8 @@ final class CalculatorWorkspace {
         case preferences
         /// The sheet came on screen or left it.
         case visibility
+        /// The rates button, its menu or the rates settings have something new to say.
+        case rates
     }
     enum TabChange: Equatable { case refreshed, closed(UUID, keepingPlace: Bool), restored(UUID), created(UUID), renamed(UUID) }
     struct Notice: Equatable {
@@ -108,6 +110,8 @@ final class CalculatorWorkspace {
     let documents: CalculatorDocuments
     let tabs: CalculatorTabState
     let evaluator: CalculatorEvaluator
+    /// The exchange-rate cache, downloads and the automatic download.
+    let currencies: CalculatorCurrencies
     private(set) var activeID: UUID
     /// The text of the sheet in front, saved or not.
     private(set) var source: String
@@ -142,14 +146,24 @@ final class CalculatorWorkspace {
     static let saveDelay: TimeInterval = 0.5
     static let noticeSeconds: TimeInterval = 2.5
 
-    init(documents: CalculatorDocuments, tabs: CalculatorTabState, synchronous: Bool) {
+    /// `ratesDirectory` is where the rate cache lives (`<data root>/calculator`); without one, or `offlineRates`, rates are
+    /// never read, written or downloaded.
+    init(documents: CalculatorDocuments, tabs: CalculatorTabState, synchronous: Bool, ratesDirectory: URL? = nil, offlineRates: Bool = true) {
         self.documents = documents
         self.tabs = tabs
         evaluator = CalculatorEvaluator(synchronous: synchronous)
+        currencies = CalculatorCurrencies(directory: ratesDirectory, offline: offlineRates)
         activeID = documents.activeSheetID
         source = (try? documents.source(of: documents.activeSheetID)) ?? ""
         format = Self.format(documents.preferences)
         refreshTabs()
+        currencies.changed = { [weak self] in self?.notify(.rates) }
+        currencies.ratesChanged = { [weak self] in self?.ratesChanged() }
+        currencies.conditions = { [weak self] in
+            guard let self else { return CalculatorCurrencies.Conditions() }
+            return CalculatorCurrencies.Conditions(enabled: self.documents.preferences.autoCurrencyRates, visible: self.visible && !self.closedDown,
+                                                   composing: self.composing)
+        }
         evaluate()
     }
 
@@ -177,6 +191,9 @@ final class CalculatorWorkspace {
     }
 
     var preferences: CalculatorPreferences { documents.preferences }
+    /// What the sheet shows: the saved preferences, or a Settings choice being looked at (Windows ApplyDisplay preview).
+    var displayed: CalculatorPreferences { displayPreview ?? documents.preferences }
+    private(set) var displayPreview: CalculatorPreferences?
     var activeName: String { documents.sheets.first { $0.id == activeID }?.name ?? "" }
 
     // MARK: Editing and evaluation
@@ -187,6 +204,7 @@ final class CalculatorWorkspace {
         source = text
         dirty = true
         self.composing = composing
+        currencies.editing()
         if composing {
             evaluationDeferred = true
             saveTask?.cancel()
@@ -202,11 +220,18 @@ final class CalculatorWorkspace {
         guard !closedDown else { return }
         let id = activeID, text = source
         let evaluatedAt = now(), zone = TimeZone.current
+        let rates = currencies.rates
         evaluator.evaluate(sheet: id, source: text, environment: environment(at: evaluatedAt, zone: zone), format: format,
-                           functions: documents.functions, inBackground: typing && typingInBackground) { [weak self] outcome in
+                           functions: documents.functions, rates: rates, inBackground: typing && typingInBackground) { [weak self] outcome in
             guard let self, self.activeID == id else { return }
             switch outcome {
             case .done(let evaluation):
+                // The first sheet that converts money reads the rate cache, then evaluates again with it (Windows
+                // EnsureCurrencyCache): its lines never show "no rates" for a moment.
+                if evaluation.usesCurrencyRates, rates == nil, !self.currencies.isReady {
+                    self.currencies.ensureLoaded { [weak self] in self?.evaluate() }
+                    return
+                }
                 self.lines = evaluation.lines
                 self.evaluation = evaluation
                 if self.status == CalculatorText.finishTextInput { self.setStatus("") }
@@ -220,6 +245,11 @@ final class CalculatorWorkspace {
             self.evaluatedZone = zone.identifier
             self.deliveries += 1
             self.refreshDateSchedule()
+            if case .done(let evaluation) = outcome {
+                self.currencies.adopt(uses: evaluation.usesCurrencyRates, requests: evaluation.currencyRequests)
+            } else {
+                self.currencies.adopt(uses: false, requests: [])
+            }
             self.notify(.results)
         }
     }
@@ -308,6 +338,7 @@ final class CalculatorWorkspace {
         documents.flush()
         closedDown = true
         evaluator.cancel()
+        currencies.shutdown()
         for task in [saveTask, closeTask, noticeTask] { task?.cancel() }
         stopDateSchedule()
         observers.removeAll()
@@ -559,16 +590,55 @@ final class CalculatorWorkspace {
 
     // MARK: Preferences
 
+    /// Shows a text size or result format while its Settings choice is highlighted, without saving it; nil ends the preview.
+    func preview(_ change: ((inout CalculatorPreferences) -> Void)?) {
+        guard !closedDown else { return }
+        let next: CalculatorPreferences? = change.map { change in
+            var preferences = documents.preferences
+            change(&preferences)
+            return preferences
+        }
+        guard next != displayPreview else { return }
+        displayPreview = next
+        applyDisplayed()
+    }
+
+    private func applyDisplayed() {
+        let shown = Self.format(displayed)
+        let reformat = shown != format
+        format = shown
+        notify(.preferences)
+        if reformat { if composing { evaluationDeferred = true } else { evaluate() } }
+    }
+
     func updatePreferences(_ change: (inout CalculatorPreferences) -> Void) {
+        displayPreview = nil
+        let before = documents.preferences
         do { try documents.updatePreferences(change) } catch {
             setStatus(CalculatorText.settingsUnavailable)
-            notify(.preferences)
+            applyDisplayed()
             return
         }
-        format = Self.format(documents.preferences)
+        let after = documents.preferences
+        if after.autoCurrencyRates != before.autoCurrencyRates { currencies.preferencesChanged(automatic: after.autoCurrencyRates) }
+        // Only what changes answers evaluates again: not the text size or the automatic download, nor a format a preview
+        // already shows.
+        let evaluates = Self.format(after) != format || after.defaultCurrency != before.defaultCurrency || after.workdayRegion != before.workdayRegion
+        format = Self.format(after)
         notify(.preferences)
+        guard evaluates else { return }
         if composing { evaluationDeferred = true } else { evaluate() }
     }
+
+    /// Downloaded rates replaced the cached ones: the sheet in front evaluates with them, and Search forgets its answers.
+    private func ratesChanged() {
+        rates?()
+        guard !closedDown else { return }
+        if composing { evaluationDeferred = true } else { evaluate() }
+    }
+
+    /// Called after the rates change (the module tells Search).
+    var rates: (() -> Void)?
 
     // MARK: Visibility and the date refresh
 
@@ -577,11 +647,15 @@ final class CalculatorWorkspace {
         guard visible != value, !closedDown else { return }
         visible = value
         if value { dateClockChanged() } else { stopDateSchedule() }
+        currencies.visibilityChanged(value)
         notify(.visibility)
     }
 
     /// Wake, clock and time zone changes.
     func dateClockChanged() {
+        // A day later the cached rates may be stale and the automatic download due.
+        currencies.refreshSchedule()
+        if currencies.uses { notify(.rates) }
         stopDateSchedule()
         guard visible, let evaluation, evaluation.usesCurrentDate || evaluation.usesCurrentInstant else { return }
         if composing { evaluationDeferred = true; return }

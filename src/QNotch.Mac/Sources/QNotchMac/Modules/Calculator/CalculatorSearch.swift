@@ -18,6 +18,8 @@ final class CalculatorSearch {
     private var latest: String?
     /// The saved functions, read only when the workspace is already open.
     var functions: () -> CalculatorFunctions? = { nil }
+    /// The cached exchange rates, read only when the workspace has already read them.
+    var rates: () -> CalculatorRates? = { nil }
     /// An answer arrived for the query Search is showing.
     var answered: (() -> Void)?
     /// Copies a chosen answer and closes the panel.
@@ -55,7 +57,7 @@ final class CalculatorSearch {
         let token = CalculatorCancellation()
         pending = token
         latest = query
-        let functions = functions()
+        let functions = functions(), rates = rates()
         // Off the main thread: the first use of a code path can be slow, so a run that takes too long is no answer.
         DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + Self.timeLimit) { token.cancel() }
         queue.async { [weak self] in
@@ -66,7 +68,7 @@ final class CalculatorSearch {
                 self.engine = engine
             }
             let format = CalculatorFormat(styleId: CalculatorPreferences.defaultNumberStyle)
-            let result = self.engine?.answer(query, format: format, functions: functions, cancel: token)
+            let result = self.engine?.answer(query, format: format, functions: functions, rates: rates, cancel: token)
             let timedOut = token.isCancelled
             DispatchQueue.main.async {
                 guard self.pending === token, self.latest == query else { return }

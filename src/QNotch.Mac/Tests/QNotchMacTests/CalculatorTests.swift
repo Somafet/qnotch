@@ -592,9 +592,108 @@ final class CalculatorViewTests: XCTestCase {
         let page = CalculatorSettingsView.page(workspace)
         let text = Outline.text(for: page)
         for id in ["calculator-settings-workday", "calculator-settings-text-size", "calculator-settings-decimal-places",
-                   "calculator-settings-number-format", "calculator-settings-default-currency"] {
+                   "calculator-settings-number-format", "calculator-settings-default-currency", "calculator-settings-download-latest",
+                   "calculator-settings-download-monthly", "calculator-settings-auto-rates", "calculator-settings-rate-source"] {
             XCTAssertTrue(text.contains("#" + id), id)
         }
         XCTAssertTrue(Outline.unnamedControls(in: text).isEmpty, text)
+    }
+}
+
+/// The rates button, its menu and the automatic download (Windows CalculatorSurface.Currencies). Every run is offline.
+final class CalculatorRatesTests: XCTestCase {
+    private func day(_ year: Int, _ month: Int, _ day: Int) -> CalculatorDay { CalculatorDay(year: year, month: month, day: day)! }
+    private func status(downloading: Bool = false, warning: String? = nil, requests: [CalculatorDay?]? = nil, latest: CalculatorRateText.Snapshot?,
+                        historical: [CalculatorDay: CalculatorRateText.Snapshot] = [:]) -> String {
+        CalculatorRateText.status(downloading: downloading, warning: warning, uses: requests != nil, requests: requests ?? [], latest: latest,
+                                  historical: historical, today: day(2026, 11, 24))
+    }
+    private func workspace(_ source: String) -> CalculatorWorkspace {
+        let documents = InMemoryCalculatorDocuments(sheets: [(name: "Sheet", source: source)])
+        try? documents.updatePreferences { $0.numberStyle = "plain" }
+        return CalculatorWorkspace(documents: documents, tabs: CalculatorTabList(), synchronous: true)
+    }
+
+    func testTheStatusNamesTheSourceAndHowOldTheRatesAre() {
+        let daily = CalculatorRateText.Snapshot(isMonthly: false, asOf: day(2026, 11, 21))
+        XCTAssertEqual(status(latest: daily), "ECB · 21 Nov")
+        XCTAssertEqual(status(latest: CalculatorRateText.Snapshot(isMonthly: false, asOf: day(2026, 11, 20))), "ECB · stale 20 Nov")
+        XCTAssertEqual(status(latest: CalculatorRateText.Snapshot(isMonthly: true, asOf: day(2026, 11, 1))), "EU monthly · Nov 2026")
+        XCTAssertEqual(status(latest: CalculatorRateText.Snapshot(isMonthly: true, asOf: day(2026, 10, 1))), "EU monthly · stale Oct 2026")
+        XCTAssertEqual(status(latest: nil), "Rates unavailable")
+        XCTAssertEqual(status(latest: nil, historical: [day(2026, 1, 5): daily]), "ECB · history cached")
+        XCTAssertEqual(status(downloading: true, latest: daily), "Downloading rates…")
+        XCTAssertEqual(status(warning: "Downloaded rates in memory; cache save failed", latest: daily), "ECB · not saved")
+    }
+
+    func testTheStatusFollowsTheDatesTheSheetAsksFor() {
+        let latest = CalculatorRateText.Snapshot(isMonthly: false, asOf: day(2026, 11, 21))
+        let history = [day(2025, 1, 6): CalculatorRateText.Snapshot(isMonthly: false, asOf: day(2025, 1, 6)),
+                       day(2025, 1, 5): CalculatorRateText.Snapshot(isMonthly: false, asOf: day(2025, 1, 3))]
+        XCTAssertEqual(status(requests: [nil], latest: latest, historical: history), "ECB · 21 Nov")
+        XCTAssertEqual(status(requests: [day(2025, 1, 6)], latest: latest, historical: history), "ECB · 2025-01-06")
+        XCTAssertEqual(status(requests: [day(2025, 1, 6), day(2025, 1, 5)], latest: latest, historical: history), "ECB · multiple dates")
+        XCTAssertEqual(status(requests: [nil, day(2025, 1, 6)], latest: latest, historical: history), "ECB · mixed dates")
+        XCTAssertEqual(status(requests: [day(2024, 2, 2)], latest: latest, historical: history), "History unavailable")
+        XCTAssertEqual(status(requests: [nil], latest: nil), "Rates unavailable")
+    }
+
+    func testASheetThatConvertsMoneyShowsTheRatesButtonAndMenu() throws {
+        let page = CalculatorTabView(workspace: workspace("100 EUR in USD\n50 EUR in USD on 2025-01-06"), shell: nil)
+        page.frame = NSRect(x: 0, y: 0, width: 676, height: 300)
+        page.layoutSubtreeIfNeeded()
+        let currencies = page.workspace.currencies
+        XCTAssertTrue(currencies.uses)
+        XCTAssertFalse(page.ratesButton.isHidden)
+        XCTAssertEqual(page.ratesButton.text, "Rates unavailable")
+        XCTAssertEqual(page.ratesButton.accessibilityLabel(), "Currency reference rates: Rates unavailable")
+        page.showRatesMenu()
+        let menu = try XCTUnwrap(page.overlayContent as? RatesMenuCard)
+        XCTAssertEqual(menu.entries.map(\.id), ["calculator-rates-status", "calculator-rates-latest", "calculator-rates-monthly", "calculator-rates-history",
+                                                "calculator-rates-auto", "calculator-rates-source"])
+        XCTAssertEqual(menu.entries[3].title, "Download historical dates (1)")
+        XCTAssertEqual(menu.entries[3].tip, "Network: api.frankfurter.dev receives these dates and base EUR only: 2025-01-06")
+        XCTAssertEqual(menu.entries[4].kind, .check(false))
+        let plain = CalculatorTabView(workspace: workspace("2 + 2"), shell: nil)
+        XCTAssertTrue(plain.ratesButton.isHidden, "a sheet without money conversions has no rates button")
+    }
+
+    func testTheAutomaticDownloadWaitsForPermissionAVisibleSheetAndIdleTyping() {
+        let workspace = workspace("100 EUR in USD")
+        workspace.setVisible(true)
+        XCTAssertFalse(workspace.currencies.hasSchedule, "nothing downloads unless allowed")
+        let delivered = workspace.deliveries
+        workspace.updatePreferences { $0.autoCurrencyRates = true }
+        XCTAssertEqual(workspace.deliveries, delivered, "allowing downloads changes no answer")
+        XCTAssertTrue(workspace.currencies.hasSchedule)
+        workspace.edit("100 EUR in USD ", composing: true)
+        XCTAssertFalse(workspace.currencies.hasSchedule, "composing stops it")
+        workspace.edit("100 EUR in USD")
+        XCTAssertTrue(workspace.currencies.hasSchedule)
+        workspace.setVisible(false)
+        XCTAssertFalse(workspace.currencies.hasSchedule, "hidden: no timer")
+        workspace.setVisible(true)
+        workspace.edit("2 + 2")
+        XCTAssertFalse(workspace.currencies.hasSchedule, "a sheet that needs no latest rates downloads nothing")
+        workspace.shutdown()
+    }
+
+    func testADisplayChoiceIsPreviewedWithoutSavingIt() {
+        let workspace = workspace("1/3")
+        XCTAssertEqual(workspace.lines.first?.answer, "≈ 0.3333")
+        workspace.preview { $0.decimalPlaces = 2 }
+        XCTAssertEqual(workspace.lines.first?.answer, "0.33")
+        XCTAssertNil(workspace.preferences.decimalPlaces)
+        workspace.preview { $0.fontSize = 20 }
+        XCTAssertEqual(workspace.displayed.resolvedFontSize, 20)
+        XCTAssertEqual(workspace.lines.first?.answer, "≈ 0.3333", "a preview replaces the one before")
+        workspace.preview(nil)
+        XCTAssertEqual(workspace.displayed.resolvedFontSize, CalculatorPreferences.defaultFontSize)
+        workspace.preview { $0.decimalPlaces = 1 }
+        let delivered = workspace.deliveries
+        workspace.updatePreferences { $0.decimalPlaces = 1 }
+        XCTAssertEqual(workspace.deliveries, delivered, "committing what the preview shows evaluates nothing again")
+        XCTAssertEqual(workspace.lines.first?.answer, "0.3")
+        XCTAssertNil(workspace.displayPreview)
     }
 }

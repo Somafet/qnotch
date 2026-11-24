@@ -69,6 +69,8 @@ final class CalculatorTabView: NSView, SheetEditorHost, ResultPillHost, SheetTab
     let strip = SheetTabStrip()
     let status = line("", size: 11, color: Palette.textSecondary)
     let more = HoverButton(symbol: "ellipsis", style: .icon, symbolSize: 13, label: CalculatorText.sheets) {}
+    /// What the sheet converts money with; shown only while it does (Windows CurrencyRatesAction).
+    let ratesButton = HoverButton("", style: .plain, label: CalculatorText.currencyRates) {}
     let card = FillView(fill: Palette.card, stroke: Palette.stroke, radius: 14)
     let scroll = SheetScrollView()
     let results = ResultsColumn()
@@ -101,7 +103,13 @@ final class CalculatorTabView: NSView, SheetEditorHost, ResultPillHost, SheetTab
         status.identifier = NSUserInterfaceItemIdentifier("calculator-status")
         status.alignment = .right
         status.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        for view in [strip, status, more, card, notice, overlay] as [NSView] { addSubview(view) }
+        ratesButton.identifier = NSUserInterfaceItemIdentifier("calculator-rates")
+        ratesButton.font = .systemFont(ofSize: 11, weight: .medium)
+        ratesButton.padding = NSSize(width: 8, height: 3)
+        ratesButton.refusesFirstResponder = true
+        ratesButton.handler = { [weak self] in self?.showRatesMenu() }
+        ratesButton.isHidden = true
+        for view in [strip, status, ratesButton, more, card, notice, overlay] as [NSView] { addSubview(view) }
         card.addSubview(scroll)
         card.addSubview(results)
         results.scroll = scroll
@@ -118,6 +126,7 @@ final class CalculatorTabView: NSView, SheetEditorHost, ResultPillHost, SheetTab
         showEditor()
         strip.show(workspace.tabs.visible, active: workspace.activeID)
         refreshStatus()
+        refreshRates()
         refreshNotice(animated: false)
         layoutResults()
     }
@@ -143,9 +152,16 @@ final class CalculatorTabView: NSView, SheetEditorHost, ResultPillHost, SheetTab
         let width = bounds.width
         let header = Self.headerHeight
         more.frame = NSRect(x: width - 30, y: (header - 28) / 2, width: 30, height: 28)
+        var right = more.frame.minX
+        if !ratesButton.isHidden {
+            let size = ratesButton.intrinsicContentSize
+            let ratesWidth = min(190, size.width)
+            ratesButton.frame = NSRect(x: right - 4 - ratesWidth, y: ((header - size.height) / 2).rounded(), width: ratesWidth, height: size.height)
+            right = ratesButton.frame.minX
+        }
         let statusWidth = min(170, ceil(status.intrinsicContentSize.width))
         status.isHidden = status.stringValue.isEmpty
-        let statusX = more.frame.minX - 6 - (status.isHidden ? 0 : statusWidth)
+        let statusX = right - 6 - (status.isHidden ? 0 : statusWidth)
         status.frame = NSRect(x: statusX, y: (header - 14) / 2, width: status.isHidden ? 0 : statusWidth, height: 14)
         strip.frame = NSRect(x: 0, y: 0, width: max(120, statusX - 8), height: header)
         card.frame = NSRect(x: 0, y: header + 6, width: width, height: max(0, bounds.height - header - 6))
@@ -177,7 +193,7 @@ final class CalculatorTabView: NSView, SheetEditorHost, ResultPillHost, SheetTab
         if let current = editor, current.sheetID != id { scrollPositions[current.sheetID] = scroll.contentView.bounds.origin }
         var next = editors[id]
         if next == nil || next?.string != workspace.source {
-            next = SheetTextView(sheetID: id, text: workspace.source, fontSize: CGFloat(workspace.preferences.resolvedFontSize))
+            next = SheetTextView(sheetID: id, text: workspace.source, fontSize: CGFloat(workspace.displayed.resolvedFontSize))
             editors[id] = next
         }
         guard let next else { return }
@@ -229,11 +245,13 @@ final class CalculatorTabView: NSView, SheetEditorHost, ResultPillHost, SheetTab
             refreshNotice(animated: true)
         case .status:
             refreshStatus()
+        case .rates:
+            refreshRates()
         case .visibility:
             // An open card holds the panel open; it belongs to the page on screen.
             if !workspace.visible { closeOverlay(returnFocus: false); hideCard(animated: false) }
         case .preferences:
-            let size = CGFloat(workspace.preferences.resolvedFontSize)
+            let size = CGFloat(workspace.displayed.resolvedFontSize)
             for editor in editors.values { editor.fontSize = size }
             clearPills()
             layoutResults()
@@ -244,6 +262,36 @@ final class CalculatorTabView: NSView, SheetEditorHost, ResultPillHost, SheetTab
         status.stringValue = workspace.status
         status.toolTip = workspace.status.isEmpty ? nil : workspace.status
         needsLayout = true
+    }
+
+    /// The rates button follows the sheet in front; an open rates menu follows a download.
+    private func refreshRates() {
+        let currencies = workspace.currencies
+        let shown = currencies.uses
+        if shown {
+            let status = currencies.status
+            ratesButton.text = status
+            ratesButton.toolTip = currencies.tip
+            ratesButton.setAccessibilityLabel(CalculatorText.currencyRatesName(status))
+        }
+        if ratesButton.isHidden == shown { ratesButton.isHidden = !shown }
+        if let menu = overlay.content as? RatesMenuCard {
+            if shown { menu.show(currencies.menuEntries(automatic: workspace.preferences.autoCurrencyRates)) } else { closeOverlay(returnFocus: true) }
+        }
+        needsLayout = true
+    }
+
+    /// The rates menu, anchored under its button (Windows ShowCurrencyRates).
+    func showRatesMenu() {
+        let currencies = workspace.currencies
+        let menu = RatesMenuCard(entries: currencies.menuEntries(automatic: workspace.preferences.autoCurrencyRates))
+        menu.run = { [weak self] id in
+            guard let self else { return }
+            self.closeOverlay(returnFocus: true)
+            if !currencies.perform(id, workspace: self.workspace), id == CalculatorCurrencies.sourceID { currencies.openSource() }
+        }
+        menu.escape = { [weak self] in self?.closeOverlay(returnFocus: true) }
+        present(menu, width: RatesMenuCard.width, anchor: ratesButton.isHidden ? more : ratesButton, focus: menu)
     }
 
     private func refreshNotice(animated: Bool) {
@@ -277,7 +325,7 @@ final class CalculatorTabView: NSView, SheetEditorHost, ResultPillHost, SheetTab
     private func updateGutter() {
         let wide: Set<String> = ["LocalTimestamp", "ZonedMoment", "Network"]
         var width = Self.baseGutter
-        let font = NSFont.monospacedDigitSystemFont(ofSize: CGFloat(workspace.preferences.resolvedFontSize), weight: .semibold)
+        let font = NSFont.monospacedDigitSystemFont(ofSize: CGFloat(workspace.displayed.resolvedFontSize), weight: .semibold)
         for line in workspace.lines where line.kind.map(wide.contains) == true {
             width = max(width, ceil((CalculatorResultText.shown(line) as NSString).size(withAttributes: [.font: font]).width) + 48)
         }
@@ -308,7 +356,7 @@ final class CalculatorTabView: NSView, SheetEditorHost, ResultPillHost, SheetTab
         guard let range = editor.lines(in: visible) else { return clearPills() }
         let current: [Substring] = workspace.evaluatedSource == workspace.source ? [] : workspace.source.split(separator: "\n", omittingEmptySubsequences: false)
         var keep = Set<Int>()
-        let fontSize = CGFloat(workspace.preferences.resolvedFontSize)
+        let fontSize = CGFloat(workspace.displayed.resolvedFontSize)
         let text = editor.string as NSString
         let starts = editor.lineStarts
         for index in range {
