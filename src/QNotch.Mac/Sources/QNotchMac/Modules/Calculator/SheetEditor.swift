@@ -452,13 +452,22 @@ final class SheetTextView: NSTextView, NSTextViewDelegate, NSTextStorageDelegate
         guard storage.length + ranges.reduce(0, { $0 + size - $1.length }) <= CalculatorSheet.maxCharacters else { NSSound.beep(); return false }
         let caret = min(max(selectedRange().location - target.range.location, 0), target.range.length)
         let shift = ranges.filter { $0.location < target.range.location }.reduce(0) { $0 + size - $1.length }
+        // One replacement of the span from the first to the last occurrence, rebuilt with every name renamed: the same text as
+        // replacing each range, but a single change the host can follow exactly, in an undo group of its own.
+        let span = NSRange(location: ranges[0].location, length: NSMaxRange(ranges[ranges.count - 1]) - ranges[0].location)
+        let original = storage.string as NSString
+        var rebuilt = "", cursor = span.location
+        for range in ranges {
+            rebuilt += original.substring(with: NSRange(location: cursor, length: range.location - cursor)) + replacement
+            cursor = NSMaxRange(range)
+        }
         breakUndoCoalescing()
-        guard shouldChangeText(inRanges: ranges.map { NSValue(range: $0) }, replacementStrings: Array(repeating: replacement, count: ranges.count)) else { return false }
-        storage.beginEditing()
-        for range in ranges.reversed() { storage.replaceCharacters(in: range, with: replacement) }
-        storage.endEditing()
+        ownUndo.beginUndoGrouping()
+        defer { ownUndo.endUndoGrouping(); breakUndoCoalescing() }
+        guard shouldChangeText(in: span, replacementString: rebuilt) else { return false }
+        storage.replaceCharacters(in: span, with: rebuilt)
         didChangeText()
-        breakUndoCoalescing()
+        ownUndo.setActionName(CalculatorText.renameVariable)
         setSelectedRange(NSRange(location: target.range.location + shift + min(caret, size), length: 0))
         return true
     }

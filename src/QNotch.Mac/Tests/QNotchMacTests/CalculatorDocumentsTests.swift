@@ -37,6 +37,31 @@ final class CalculatorDocumentsTests: XCTestCase {
         opened.removeAll { $0 === workspace }
     }
 
+    /// A variable rename after typing is one undo step of its own, and redoes, with the real store saving in between.
+    func testVariableRenameAfterTypingUndoesAloneWithTheStore() throws {
+        let workspace = try open()
+        let page = CalculatorTabView(workspace: workspace, shell: nil)
+        page.frame = NSRect(x: 0, y: 0, width: 676, height: 300)
+        page.layoutSubtreeIfNeeded(); page.layout(); page.layoutResults()
+        let editor = try XCTUnwrap(page.editor)
+        editor.replaceAll(with: "") // a new store's first sheet has starter text
+        for character in "price = 12\nprice * 3" { editor.insertText(String(character), replacementRange: editor.selectedRange()) }
+        RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.05)) // the typing's event ends, closing its undo group, as before a real F2
+        editor.setSelectedRange(NSRange(location: 2, length: 0))
+        page.editorRename()
+        let card = try XCTUnwrap(page.overlayContent as? RenameCard)
+        card.commit?("cost")
+        XCTAssertEqual(editor.string, "cost = 12\ncost * 3")
+        RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.05))
+        workspace.save()
+        RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.8))
+        editor.ownUndo.undo()
+        XCTAssertEqual(editor.string, "price = 12\nprice * 3")
+        RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.05)) // the event's end finds no group of its own left open
+        editor.ownUndo.redo()
+        XCTAssertEqual(editor.string, "cost = 12\ncost * 3")
+    }
+
     func testSheetsPreferencesAndClosesSurviveAQuit() throws {
         var workspace = try open()
         XCTAssertEqual(workspace.source, CalculatorDocumentStore.starterSource, "a first workspace starts like Windows")

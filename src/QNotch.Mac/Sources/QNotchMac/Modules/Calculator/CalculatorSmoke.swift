@@ -239,6 +239,12 @@ enum CalculatorSmoke {
         let shell = run.shell
         let original = "price = 12\nprice * 3"
         guard let editor = page.editor, editor.string == original else { return done(Failure("calculator-rename-variable", "the typed sheet is not in front")) }
+        // Keys here go straight to the panel, so no event ends and the typing's undo group stays open. A real F2 is a new
+        // event; post one through the application so the typing's group closes as it would.
+        if let boundary = NSEvent.otherEvent(with: .applicationDefined, location: .zero, modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime,
+                                              windowNumber: 0, context: nil, subtype: 0, data1: 0, data2: 0) { NSApp.postEvent(boundary, atStart: false) }
+        wait(2, until: { editor.ownUndo.groupingLevel == 0 }) { closed in
+        guard closed else { return done(Failure("calculator-rename-variable", "the typing's undo group stayed open after an event")) }
         shell.panel.makeFirstResponder(editor)
         editor.setSelectedRange(NSRange(location: 2, length: 0))
         key(shell, 120, String(UnicodeScalar(UInt16(NSF2FunctionKey))!))
@@ -254,7 +260,7 @@ enum CalculatorSmoke {
         wait(3, until: { workspace.evaluatedSource == editor.string && page.pillsByLine[1]?.text == "36" }) { ok in
             guard ok else { return done(Failure("calculator-rename-variable", "the renamed sheet did not evaluate to 36")) }
             editor.undoManager?.undo()
-            guard editor.string == original else { return done(Failure("calculator-rename-variable", "one Undo did not bring every occurrence back")) }
+            guard editor.string == original else { return done(Failure("calculator-rename-variable", "one Undo did not bring every occurrence back (\(editor.string.debugDescription))")) }
             run.pass("calculator-rename-variable")
 
             editor.setSelectedRange(NSRange(location: 13, length: 0))
@@ -279,6 +285,7 @@ enum CalculatorSmoke {
                 run.pass("calculator-figure")
                 done(nil)
             }
+        }
         }
     }
 
