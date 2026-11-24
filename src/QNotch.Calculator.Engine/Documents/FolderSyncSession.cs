@@ -143,7 +143,10 @@ public sealed class FolderSyncSession : IDisposable
             {
                 running = false; var rerun = again; again = false; TimeSpan? delay = null;
                 if (!disposed && watcher is null && Folder is not null && report is { Status: not (SyncStatus.FolderUnavailable or SyncStatus.Off) })
+                {
                     WatchLocked(Folder);
+                    rerun |= watcher is not null; // A file that arrived between this pass's scan and the watcher would go unseen.
+                }
                 if (!rerun && report is not null)
                 {
                     if (report.RetrySoon && retries < MaxRetries) { retries++; delay = RetryDelay; }
