@@ -232,14 +232,17 @@ enum NetFile {
 
     // MARK: Contents
 
-    /// Reads a whole file as `new FileStream(path, Open, Read, FileShare.Read)` would: a holder of an exclusive lock makes it fail.
+    /// Reads a whole file as `new FileStream(path, Open, Read, FileShare.Read)` would: a holder of an exclusive lock makes it fail,
+    /// and while it reads, nobody can replace the file. Without `holdLock` (FileShare.Read | FileShare.Delete) the lock is only
+    /// probed, so a concurrent replacement still succeeds.
     /// `limit` refuses a larger file before reading; `changed` is thrown if the file grows while it is read.
-    static func readAll(_ path: String, limit: Int64? = nil, tooLarge: Error? = nil, changed: Error? = nil) throws -> [UInt8] {
+    static func readAll(_ path: String, limit: Int64? = nil, tooLarge: Error? = nil, changed: Error? = nil, holdLock: Bool = true) throws -> [UInt8] {
         let fd = open(path, O_RDONLY)
         if fd < 0 { throw error(errno, path) }
         defer { close(fd) }
         if flock(fd, LOCK_SH | LOCK_NB) != 0 { throw error(errno, path) }
-        defer { flock(fd, LOCK_UN) }
+        if !holdLock { flock(fd, LOCK_UN) }
+        defer { if holdLock { flock(fd, LOCK_UN) } }
         var info = stat()
         if fstat(fd, &info) != 0 { throw error(errno, path) }
         if info.st_mode & S_IFMT == S_IFDIR { throw DocumentError.unauthorized("Access to the path '\(path)' is denied.") }
