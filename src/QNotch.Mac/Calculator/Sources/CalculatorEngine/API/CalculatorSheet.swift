@@ -39,6 +39,8 @@ public struct CalculatorLineResult: Hashable, Sendable {
     public let valueDetails: [String]
     /// The whole explanation as plain text (C# ExplanationText.Render), for copying.
     public let explanationText: String
+    /// A plot, chart or table the line holds, for drawing (nil for every other value).
+    public let figure: CalculatorFigure?
     /// True for an empty, heading or prose line: nothing to show.
     public var isBlank: Bool { answer.isEmpty && error == nil && pending == nil }
 }
@@ -182,7 +184,8 @@ enum CalculatorPresentation {
         return CalculatorLineResult(line: result.line, answer: answer, copy: copy, exact: result.display, error: result.error, pending: result.pending,
                                     isDeclaration: result.isDeclaration, isAggregate: result.isAggregate, hasValue: result.value != nil && !result.isDeclaration,
                                     kind: result.value?.kind.rawValue, explanation: result.explanation.map(step), dependencies: result.dependencies,
-                                    valueDetails: (try? ExplanationText.valueLines(result)) ?? [], explanationText: (try? ExplanationText.render(result)) ?? "")
+                                    valueDetails: (try? ExplanationText.valueLines(result)) ?? [], explanationText: (try? ExplanationText.render(result)) ?? "",
+                                    figure: result.value.flatMap(CalculatorFigure.init))
     }
     static func step(_ step: CalculationStep) -> CalculatorStep {
         CalculatorStep(operation: step.operation, operands: step.operands, result: step.result, assumption: step.assumption, details: StepDetails.lines(step))
