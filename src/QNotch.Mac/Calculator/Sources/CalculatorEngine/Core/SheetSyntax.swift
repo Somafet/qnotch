@@ -151,7 +151,7 @@ enum SheetSyntax {
             }
             var practicalPhrase = false
             if !knownPrefix {
-                practicalPhrase = ExpressionParser(tokens, cancellationToken, names).startsHelper() || tokens[0].text.equalsIgnoreCase("grades") ||
+                practicalPhrase = try ExpressionParser(tokens, cancellationToken, names).startsHelper() || tokens[0].text.equalsIgnoreCase("grades") ||
                     tokens.count > 1 && tokens[0].text.equalsIgnoreCase("molar") && tokens[1].text.equalsIgnoreCase("mass")
             }
             let resistorPhrase = !knownPrefix && count >= 3 && tokens.prefix(3).allSatisfy { ResistorColorCatalog.tryGet($0.text) != nil }
