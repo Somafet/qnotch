@@ -91,17 +91,24 @@ final class OverlayTextView: NSTextView {
     override func cancelOperation(_ sender: Any?) { if let escape { escape() } else { super.cancelOperation(sender) } }
 }
 
-/// Renames a sheet (Windows RenameSheet), under its tab.
+/// Renames a sheet under its tab (Windows RenameSheet), or a variable under its name in the sheet (Windows SheetEditor.Rename).
 final class RenameCard: OverlayCard, NSTextFieldDelegate {
+    enum Subject {
+        case sheet, variable
+        var title: String { self == .sheet ? CalculatorText.renameSheet : CalculatorText.renameVariable }
+        var fieldLabel: String { self == .sheet ? CalculatorText.sheetName : CalculatorText.variableName }
+        var fieldID: String { self == .sheet ? "calculator-sheet-name" : "calculator-rename-variable" }
+        var cardID: String { self == .sheet ? "calculator-rename" : "calculator-rename-variable-card" }
+    }
     let field: NSTextField
     private let problem = label("", size: 11, color: .systemRed)
     var commit: ((String) -> Void)?
     var cancel: (() -> Void)?
 
-    init(name: String) {
-        let input = Self.field(placeholder: CalculatorText.sheetName, id: "calculator-sheet-name", label: CalculatorText.sheetName)
+    init(name: String, subject: Subject = .sheet) {
+        let input = Self.field(placeholder: subject.fieldLabel, id: subject.fieldID, label: subject.fieldLabel)
         field = input.field
-        super.init(id: "calculator-rename", label: CalculatorText.renameSheet)
+        super.init(id: subject.cardID, label: subject.title)
         field.stringValue = name
         field.delegate = self
         problem.isHidden = true
@@ -111,10 +118,10 @@ final class RenameCard: OverlayCard, NSTextFieldDelegate {
             guard let self else { return }
             self.commit?(self.field.stringValue)
         }
-        save.identifier = NSUserInterfaceItemIdentifier("calculator-sheet-name-save")
+        save.identifier = NSUserInterfaceItemIdentifier(subject.fieldID + "-save")
         for button in [cancelButton, save] { button.padding = NSSize(width: 14, height: 4) }
         let buttons = row([spacer(), cancelButton, save], spacing: 8)
-        let stack = column([Self.title(CalculatorText.renameSheet), input.box, problem, buttons], spacing: 10)
+        let stack = column([Self.title(subject.title), input.box, problem, buttons], spacing: 10)
         stack.setCustomSpacing(6, after: input.box)
         embed(stack, in: self, inset: NSEdgeInsets(top: 12, left: 14, bottom: 12, right: 14), fill: true)
         for view in [input.box, buttons] { view.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true }
@@ -124,6 +131,8 @@ final class RenameCard: OverlayCard, NSTextFieldDelegate {
     func show(problem text: String) {
         problem.stringValue = text
         problem.isHidden = false
+        NSAccessibility.post(element: problem, notification: .announcementRequested,
+                             userInfo: [.announcement: text, .priority: NSAccessibilityPriorityLevel.high.rawValue])
         field.currentEditor()?.selectAll(nil)
     }
 

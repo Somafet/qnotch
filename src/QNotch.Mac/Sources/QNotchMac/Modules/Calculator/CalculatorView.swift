@@ -81,6 +81,8 @@ final class CalculatorTabView: NSView, SheetEditorHost, ResultPillHost, SheetTab
     private var scrollPositions: [UUID: NSPoint] = [:]
     private(set) var editor: SheetTextView!
     private(set) var pills: [Int: ResultPill] = [:]
+    /// Plots and charts on screen, by line; they live in the editor so they scroll with it.
+    private(set) var figures: [Int: FigureView] = [:]
     private var observation: AnyObject?
     private var hoverTask: DispatchWorkItem?
     private(set) var hoverCard: ResultCardView?
@@ -124,6 +126,7 @@ final class CalculatorTabView: NSView, SheetEditorHost, ResultPillHost, SheetTab
                                                                              object: nil, queue: .main) { [weak self] _ in self?.applyContrast() }
         applyContrast()
         showEditor()
+        showWorksheet()
         strip.show(workspace.tabs.visible, active: workspace.activeID)
         refreshStatus()
         refreshRates()
@@ -224,6 +227,7 @@ final class CalculatorTabView: NSView, SheetEditorHost, ResultPillHost, SheetTab
             closeOverlay(returnFocus: false)
             hideCard(animated: false)
             showEditor()
+            showWorksheet()
             layoutResults()
         case .tabs(let tabChange):
             let stripChange: SheetTabStrip.Change
@@ -239,6 +243,7 @@ final class CalculatorTabView: NSView, SheetEditorHost, ResultPillHost, SheetTab
                 editorOrder.removeAll { $0 == id }
             }
         case .results:
+            showWorksheet()
             updateGutter()
             layoutResults()
         case .notice:
@@ -254,6 +259,7 @@ final class CalculatorTabView: NSView, SheetEditorHost, ResultPillHost, SheetTab
             let size = CGFloat(workspace.displayed.resolvedFontSize)
             for editor in editors.values { editor.fontSize = size }
             clearPills()
+            showWorksheet()
             layoutResults()
         }
     }
@@ -335,10 +341,32 @@ final class CalculatorTabView: NSView, SheetEditorHost, ResultPillHost, SheetTab
         layoutCard()
     }
 
+    /// Figure lines get their room and table lines their columns once results match the text (Windows ShowWorksheet).
+    /// While an edit is still being evaluated the lines keep what they had, moving with their text.
+    private func showWorksheet() {
+        guard let editor, workspace.evaluatedSource == editor.string, workspace.lines.count == editor.lineStarts.count else { return }
+        var layouts: [Int: SheetLineLayout] = [:]
+        for line in workspace.lines {
+            switch line.figure {
+            case .plot?, .chart?:
+                layouts[line.line] = SheetLineLayout(figure: true)
+            case .table(let table)?:
+                guard let stops = editor.tableStops(firstLine: line.line, rows: table.sourceRows, columns: table.columnCount) else { continue }
+                let layout = SheetLineLayout(stops: stops)
+                for row in 0..<table.sourceRows { layouts[line.line + row] = layout }
+            case nil:
+                break
+            }
+        }
+        editor.showWorksheet(layouts)
+    }
+
     private func clearPills() {
         let focused = pills.values.contains { window?.firstResponder === $0 }
         for pill in pills.values { pill.removeFromSuperview() }
         pills.removeAll()
+        for figure in figures.values { figure.removeFromSuperview() }
+        figures.removeAll()
         hideCard(animated: false)
         if focused { window?.makeFirstResponder(editor) }
     }
@@ -356,10 +384,20 @@ final class CalculatorTabView: NSView, SheetEditorHost, ResultPillHost, SheetTab
         guard let range = editor.lines(in: visible) else { return clearPills() }
         let current: [Substring] = workspace.evaluatedSource == workspace.source ? [] : workspace.source.split(separator: "\n", omittingEmptySubsequences: false)
         var keep = Set<Int>()
+        var keepFigures = Set<Int>()
         let fontSize = CGFloat(workspace.displayed.resolvedFontSize)
         let text = editor.string as NSString
         let starts = editor.lineStarts
         for index in range {
+            if let result = workspace.result(forLine: index, of: current), let figure = result.figure, figure.isDrawn,
+               let room = editor.figureRoom(ofLine: index) {
+                keepFigures.insert(index)
+                let view = figures[index] ?? FigureView()
+                if figures[index] == nil { figures[index] = view; editor.addSubview(view) }
+                // Under the results column too, ending where the results end.
+                view.frame = NSRect(x: room.minX, y: room.minY, width: max(0, room.width - 10), height: SheetTextView.figureHeight)
+                view.show(figure)
+            }
             guard let result = workspace.result(forLine: index, of: current), CalculatorResultText.isShown(result),
                   let row = editor.rowRect(ofLine: index) else { continue }
             let top = row.minY - visible.minY
@@ -385,6 +423,10 @@ final class CalculatorTabView: NSView, SheetEditorHost, ResultPillHost, SheetTab
             pill.frame = NSRect(x: results.bounds.width - width, y: top, width: width, height: row.height)
             pill.needsDisplay = true
         }
+        for (index, figure) in figures where !keepFigures.contains(index) {
+            figure.removeFromSuperview()
+            figures[index] = nil
+        }
         for (index, pill) in pills where !keep.contains(index) {
             if window?.firstResponder === pill { window?.makeFirstResponder(editor) }
             if hoverPill === pill { hideCard(animated: false) }
@@ -409,7 +451,10 @@ final class CalculatorTabView: NSView, SheetEditorHost, ResultPillHost, SheetTab
         return false
     }
     func editorCycleSheet(_ direction: Int) { workspace.cycle(direction) }
-    func editorRename() { renameSheet(workspace.activeID) }
+    /// F2: the variable at the caret or selection, otherwise the sheet (Windows RenameAtCaret).
+    func editorRename() {
+        if let target = editor.variableTarget { renameVariable(target) } else { renameSheet(workspace.activeID) }
+    }
     /// ⌥⇥: the result of the caret's line, or the next one below it.
     func editorFocusResult() {
         let line = editor.line(at: editor.selectedRange().location)
@@ -515,7 +560,7 @@ final class CalculatorTabView: NSView, SheetEditorHost, ResultPillHost, SheetTab
 
     /// One in-panel card at a time, anchored below (or above) the control that opened it. Esc or a click
     /// outside closes it and typing returns to the sheet. The panel stays open meanwhile.
-    private func present(_ content: NSView, width: CGFloat, anchor: NSView?, focus: NSView?) {
+    private func present(_ content: NSView, width: CGFloat, anchor: NSView?, rect anchorRect: NSRect? = nil, leading: Bool = false, focus: NSView?) {
         closeOverlay(returnFocus: false)
         hideCard(animated: false)
         content.translatesAutoresizingMaskIntoConstraints = false
@@ -523,9 +568,11 @@ final class CalculatorTabView: NSView, SheetEditorHost, ResultPillHost, SheetTab
         content.widthAnchor.constraint(equalToConstant: width).isActive = true
         let size = NSSize(width: width, height: ceil(content.fittingSize.height))
         var origin: NSPoint
-        if let anchor, anchor.window != nil, !anchor.isHiddenOrHasHiddenAncestor {
-            let frame = anchor.convert(anchor.bounds, to: self)
-            origin = NSPoint(x: frame.maxX - size.width, y: frame.maxY + 4)
+        let anchorFrame: NSRect? = anchorRect ?? anchor.flatMap { anchor in
+            anchor.window != nil && !anchor.isHiddenOrHasHiddenAncestor ? anchor.convert(anchor.bounds, to: self) : nil
+        }
+        if let frame = anchorFrame {
+            origin = NSPoint(x: leading ? frame.minX : frame.maxX - size.width, y: frame.maxY + 4)
             if origin.y + size.height > bounds.height - 4 { origin.y = max(4, frame.minY - 4 - size.height) }
         } else {
             origin = NSPoint(x: (bounds.width - size.width) / 2, y: (bounds.height - size.height) / 2)
@@ -628,6 +675,32 @@ final class CalculatorTabView: NSView, SheetEditorHost, ResultPillHost, SheetTab
         }
         list.escape = { [weak self] in self?.closeOverlay(returnFocus: true) }
         present(list, width: 280, anchor: anchor, focus: list.filter)
+    }
+
+    /// Renames a variable everywhere in the sheet, from a card under its name. Return commits every occurrence as one
+    /// undo step; a taken or invalid name keeps the card open with its reason.
+    func renameVariable(_ target: CalculatorRename.Target) {
+        guard let editor, let layoutManager = editor.layoutManager, let container = editor.textContainer else { return }
+        layoutManager.ensureLayout(for: container)
+        let glyphs = layoutManager.glyphRange(forCharacterRange: target.range, actualCharacterRange: nil)
+        var rect = layoutManager.boundingRect(forGlyphRange: glyphs, in: container).offsetBy(dx: editor.textContainerOrigin.x, dy: editor.textContainerOrigin.y)
+        if let row = editor.rowRect(ofLine: editor.line(at: target.range.location)) { rect.size.height = min(rect.height, row.maxY - rect.minY) }
+        let card = RenameCard(name: target.name, subject: .variable)
+        card.commit = { [weak self, weak card, weak editor] name in
+            guard let self, let card, let editor, editor === self.editor else { return }
+            // The sheet cannot change under the card, but a stale target must never rename the wrong text.
+            guard CalculatorRename.find(in: editor.string, selection: target.range) == target else { self.closeOverlay(returnFocus: true); return }
+            if CalculatorRename.normalize(name) == target.name { self.closeOverlay(returnFocus: true); return }
+            if let problem = CalculatorRename.check(editor.string, renaming: target.name, to: name) {
+                card.show(problem: problem == .taken ? CalculatorText.variableNameTaken : CalculatorText.invalidVariableName)
+                return
+            }
+            self.closeOverlay(returnFocus: true)
+            editor.renameVariable(target, to: name)
+        }
+        card.cancel = { [weak self] in self?.closeOverlay(returnFocus: true) }
+        present(card, width: 300, anchor: nil, rect: editor.convert(rect, to: self), leading: true, focus: card.field)
+        card.field.currentEditor()?.selectAll(nil)
     }
 
     /// Renames this sheet, not whichever is in front by the time the name is confirmed.

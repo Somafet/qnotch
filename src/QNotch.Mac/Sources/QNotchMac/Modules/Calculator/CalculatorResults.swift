@@ -28,7 +28,9 @@ enum CalculatorResultText {
             guard let text = step.assumption, step.operation != "reference" else { return false }
             return !text.hasPrefix("Exact ") && !text.hasPrefix("Explicit ")
         }?.assumption
-        let note = assumption.map { $0.components(separatedBy: "; ").prefix(2).joined(separator: ", ") } ?? ""
+        var note = assumption.map { $0.components(separatedBy: "; ").prefix(2).joined(separator: ", ") } ?? ""
+        // A plot, chart or table says what it shows.
+        if let figure = line.figure { note = figure.summary }
         let sources = line.dependencies.isEmpty ? "" : CalculatorText.uses(line.dependencies)
         return (note, sources)
     }

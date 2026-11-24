@@ -48,6 +48,7 @@ enum CalculatorText {
 
     // Variables and figures
     static let renameVariable = "Rename variable"
+    static let variableName = "Variable name"
     static let variableNameTaken = "Another variable already has this name"
     static let invalidVariableName = "Not a valid variable name"
     static let other = "Other"

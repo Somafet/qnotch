@@ -616,6 +616,119 @@ final class CalculatorViewTests: XCTestCase {
         }
         XCTAssertTrue(Outline.unnamedControls(in: text).isEmpty, text)
     }
+
+    // MARK: Variable rename, whole-line copy and paste, figures and table columns
+
+    func testF2AtAVariableRenamesEveryOccurrenceInOneUndoStep() throws {
+        let page = page("price = 12\nprice * 3\nother = price + 1")
+        let editor = try XCTUnwrap(page.editor)
+        editor.setSelectedRange(NSRange(location: 13, length: 0)) // "pr|ice" on line 2
+        page.editorRename()
+        let card = try XCTUnwrap(page.overlayContent as? RenameCard)
+        XCTAssertEqual(card.identifier?.rawValue, "calculator-rename-variable-card")
+        XCTAssertEqual(card.field.stringValue, "price")
+        card.commit?("other")
+        XCTAssertNotNil(page.overlayContent, "a taken name keeps the card open with its reason")
+        card.commit?("2x")
+        XCTAssertNotNil(page.overlayContent, "an invalid name keeps the card open with its reason")
+        card.commit?("cost")
+        XCTAssertNil(page.overlayContent)
+        XCTAssertEqual(editor.string, "cost = 12\ncost * 3\nother = cost + 1")
+        XCTAssertEqual(editor.selectedRange().location, 12, "the caret stays inside the renamed name")
+        XCTAssertEqual(page.workspace.source, editor.string)
+        RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.01)) // ends the event's undo group
+        editor.ownUndo.undo()
+        XCTAssertEqual(editor.string, "price = 12\nprice * 3\nother = price + 1", "one undo takes every occurrence back")
+    }
+
+    func testF2AwayFromAVariableRenamesTheSheet() throws {
+        let page = page("1 + 2")
+        page.editor.setSelectedRange(NSRange(location: 2, length: 0))
+        page.editorRename()
+        XCTAssertEqual((page.overlayContent as? RenameCard)?.identifier?.rawValue, "calculator-rename")
+    }
+
+    func testCopyWithoutASelectionCopiesTheLineAndPasteDuplicatesIt() throws {
+        let page = page("a = 2\na * 21")
+        let editor = try XCTUnwrap(page.editor)
+        editor.setSelectedRange(NSRange(location: 8, length: 0))
+        XCTAssertTrue(editor.validateUserInterfaceItem(NSMenuItem(title: "", action: #selector(NSText.copy(_:)), keyEquivalent: "")))
+        editor.copy(nil)
+        XCTAssertEqual(CalculatorClipboard.board.string(forType: .string), "a * 21\n")
+        XCTAssertEqual(CalculatorClipboard.board.types?.contains(SheetTextView.wholeLineType), true)
+        editor.paste(nil)
+        XCTAssertEqual(editor.string, "a = 2\na * 21\na * 21")
+        XCTAssertEqual(editor.selectedRange().location, 15, "the caret keeps its place, now on the line below the copy")
+        editor.cut(nil)
+        XCTAssertEqual(editor.string, "a = 2\na * 21", "cut with no selection removes the caret's line")
+        XCTAssertEqual(editor.selectedRange().location, 8)
+        XCTAssertEqual(CalculatorClipboard.board.string(forType: .string), "a * 21\n")
+        XCTAssertEqual(page.workspace.source, editor.string)
+    }
+
+    func testAPlainPasteNormalizesLineBreaksAndCsvTables() throws {
+        let page = page("")
+        let board = CalculatorClipboard.board
+        board.clearContents()
+        board.setString("name,cost\r\nrent,5\r\nfood,7", forType: .string)
+        page.editor.paste(nil)
+        XCTAssertEqual(page.editor.string.components(separatedBy: "\n").first, "name\tcost", page.editor.string)
+        XCTAssertFalse(page.editor.string.contains("\r"))
+    }
+
+    func testPlotsAndChartsDrawUnderTheirLineAndTablesGetColumns() throws {
+        let page = page("plot x^2 from 0 to 2\nbar chart of [10, -20, 30]\nname\tcost\nrent\t5\nfood\t7\npie chart of [1, 3]")
+        page.frame = NSRect(x: 0, y: 0, width: 676, height: 800)
+        page.layoutSubtreeIfNeeded()
+        page.layout()
+        page.layoutResults()
+        let editor = try XCTUnwrap(page.editor)
+        let plot = try XCTUnwrap(page.figures[0]), bars = try XCTUnwrap(page.figures[1]), pie = try XCTUnwrap(page.figures[5])
+        XCTAssertTrue(plot.superview === editor, "figures scroll with the sheet")
+        XCTAssertEqual(plot.accessibilityRole(), .image)
+        XCTAssertTrue(plot.accessibilityLabel()?.hasPrefix("Plot of x^2") == true, plot.accessibilityLabel() ?? "")
+        XCTAssertFalse(plot.accessibilityHelp()?.isEmpty ?? true)
+        XCTAssertTrue(editor.accessibilityChildren()?.contains { ($0 as AnyObject) === plot } == true)
+        XCTAssertNil(plot.hitTest(NSPoint(x: 10, y: 10)), "clicks reach the sheet")
+        let first = try XCTUnwrap(editor.rowRect(ofLine: 0)), second = try XCTUnwrap(editor.rowRect(ofLine: 1))
+        XCTAssertEqual(plot.frame.height, SheetTextView.figureHeight)
+        XCTAssertEqual(plot.frame.minY, first.maxY, accuracy: 1, "the figure hangs right under its text")
+        XCTAssertEqual(second.minY, first.maxY + SheetTextView.figureSpace, accuracy: 1)
+        if let pill = page.pillsByLine[0] { XCTAssertEqual(pill.frame.height, first.height, accuracy: 0.5, "the result keeps its row's height") }
+        // Tabs become columns measured from the cells, the same stops on every row.
+        let stops = try XCTUnwrap(editor.layout(ofLine: 2)?.stops)
+        XCTAssertEqual(stops.count, 2)
+        XCTAssertGreaterThan(stops[1], SheetTextView.columnGap)
+        XCTAssertEqual(editor.layout(ofLine: 4)?.stops, stops)
+        XCTAssertNil(editor.layout(ofLine: 2)?.figure == true ? 1 : nil)
+        // Selection skips the rooms.
+        XCTAssertEqual(editor.figureRooms(in: NSRange(location: 0, length: (editor.string as NSString).length)).count, 3)
+        // Every kind draws, once per value: laying out again (as scrolling does) keeps the same views.
+        for figure in [plot, bars, pie] {
+            let image = try XCTUnwrap(figure.bitmapImageRepForCachingDisplay(in: figure.bounds))
+            figure.cacheDisplay(in: figure.bounds, to: image)
+            XCTAssertGreaterThan(figure.renderCount, 0)
+            figure.needsDisplay = false
+        }
+        page.layoutResults()
+        XCTAssertTrue(page.figures[0] === plot)
+        XCTAssertFalse(plot.needsDisplay, "moving or re-showing the same figure does not redraw it")
+        // Removing the figures gives their room back.
+        editor.type("2 + 2")
+        page.layoutResults()
+        XCTAssertTrue(page.figures.isEmpty)
+        XCTAssertNil(editor.layout(ofLine: 0))
+    }
+
+    func testANewLineAfterAFigureLineDoesNotTakeItsRoom() throws {
+        let page = page("plot x^2 from 0 to 2")
+        let editor = try XCTUnwrap(page.editor)
+        XCTAssertEqual(editor.layout(ofLine: 0)?.figure, true)
+        editor.setSelectedRange(NSRange(location: 20, length: 0))
+        editor.insertText("\nabc", replacementRange: editor.selectedRange())
+        XCTAssertEqual(editor.layout(ofLine: 0)?.figure, true)
+        XCTAssertNil(editor.layout(ofLine: 1))
+    }
 }
 
 /// The rates button, its menu and the automatic download (Windows CalculatorSurface.Currencies). Every run is offline.
