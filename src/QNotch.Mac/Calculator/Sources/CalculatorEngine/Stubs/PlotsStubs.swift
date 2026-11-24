@@ -19,14 +19,32 @@ final class TableValue: IdentityHashable {
     var copyText: String { get throws { try display } }
 }
 final class TableExpression: Expression { let value: TableValue; init(_ value: TableValue) { self.value = value } }
+/// A sampled plot. Without the plots port no plot is ever built; the members are what share links and exports read.
 final class PlotValue: IdentityHashable {
+    static let maxPoints = 512
     var display: String { get throws { throw notPorted("plots") } }
     var copyText: String { get throws { try display } }
+    var lower: Double { 0 }
+    var upper: Double { 0 }
+    var yLower: Double { 0 }
+    var yUpper: Double { 0 }
+    var x: [Double] { [] }
+    var y: [Double] { [] }
+    var segmentStarts: [Int] { [] }
+    var description: String { "" }
+    /// C# `PlotValue.Number`: four significant digits, tiny values shown as 0.
+    static func number(_ value: Double) -> String { NetFormat.double(abs(value) < 1e-12 ? 0 : value, "G4") }
 }
+struct ChartItem: Hashable { let label: String; let magnitude: Double; let display: String }
+/// A chart. Without the plots port no chart is ever built; the members are what share links and exports read.
 final class ChartValue: IdentityHashable {
     var isApproximate: Bool { false }
     var display: String { get throws { throw notPorted("charts") } }
     var copyText: String { get throws { try display } }
+    var kind: ChartKind { .bar }
+    var items: [ChartItem] { [] }
+    var total: String { "" }
+    var description: String { "" }
 }
 enum PlotArithmetic {
     static func plot(_ expression: PlotExpression, _ inputs: [SheetValue], _ math: ExactArithmetic, _ budget: ExecutionBudget, _ token: CancellationToken) throws -> (value: SheetValue, assumption: String) { throw notPorted("plots") }
