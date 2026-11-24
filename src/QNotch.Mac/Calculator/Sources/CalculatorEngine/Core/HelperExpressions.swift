@@ -16,8 +16,10 @@ private let helperHeads: NetHashSet<String> = {
 private let timePerLength = Dimension(-1, 0, 1, 0, 0, 0, 0, 0)
 
 extension ExpressionParser {
-    /// C# StartsHelper: TryHelper succeeds and consumes every token; errors mean no.
-    func startsHelper() -> Bool { (try? tryHelper()).flatMap { $0 } != nil && position == tokens.count }
+    /// C# StartsHelper: TryHelper succeeds and consumes every token; format and arithmetic errors mean no, cancellation and limits propagate.
+    func startsHelper() throws -> Bool {
+        do { return try tryHelper() != nil && position == tokens.count } catch let error as CalcError where error.isFormatOrArithmetic { return false }
+    }
     /// A helper sentence applies only when its complete grammar matches; otherwise the words keep their ordinary meaning as labels, prose or names.
     func tryHelper() throws -> Expression? {
         if position >= tokens.count { return nil }
