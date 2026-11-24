@@ -78,20 +78,24 @@ public sealed class FolderSyncSession : IDisposable
     private void Notified(object sender, FileSystemEventArgs e) => Request();
 
     /// <summary>Coalesces requests: waits for a quiet <see cref="Debounce"/>, but never longer than <see cref="MaxDelay"/> after the first.</summary>
-    public void Request() => Schedule(Debounce, resetRetries: true);
+    public void Request() => Schedule(Debounce, request: true);
 
-    private void Schedule(TimeSpan delay, bool resetRetries)
+    /// <param name="request">A change request, coalesced under <see cref="MaxDelay"/>. A retry or recheck keeps its own delay.</param>
+    private void Schedule(TimeSpan delay, bool request)
     {
         lock (gate)
         {
             if (disposed || Folder is null) return;
-            if (resetRetries) retries = 0;
+            if (request) retries = 0;
             if (running) { again = true; return; }
-            var now = DateTimeOffset.UtcNow;
-            firstRequest ??= now;
             var wait = delay;
-            var latest = firstRequest.Value + MaxDelay - now;
-            if (latest < wait) wait = latest < TimeSpan.Zero ? TimeSpan.Zero : latest;
+            if (request)
+            {
+                var now = DateTimeOffset.UtcNow;
+                firstRequest ??= now;
+                var latest = firstRequest.Value + MaxDelay - now;
+                if (latest < wait) wait = latest < TimeSpan.Zero ? TimeSpan.Zero : latest;
+            }
             timer ??= new Timer(_ => Fire());
             timer.Change(wait, Timeout.InfiniteTimeSpan);
         }
@@ -141,7 +145,7 @@ public sealed class FolderSyncSession : IDisposable
                 else if (!rerun && report is null && retries < MaxRetries) { retries++; delay = RetryDelay; }
             }
             if (rerun) Request();
-            else if (delay is { } d) Schedule(d, resetRetries: false);
+            else if (delay is { } d) Schedule(d, request: false);
         }
     }
 

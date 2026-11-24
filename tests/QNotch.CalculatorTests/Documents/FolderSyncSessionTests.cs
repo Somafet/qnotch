@@ -96,6 +96,22 @@ public sealed class FolderSyncSessionTests : IDisposable
     }
 
     [Fact]
+    public async Task AnIncompleteFileWaitsForItsRecheckInsteadOfRescanningEveryFewSeconds()
+    {
+        using var session = Session();
+        session.SetFolder(Shared);
+        await NextReport();
+        File.WriteAllBytes(Path.Combine(Shared, Guid.NewGuid().ToString("N") + SyncFolderFiles.Extension), []);
+        SyncReport report;
+        do report = await NextReport(); while (report.RecheckAfter is null);
+        Assert.Equal(FolderSync.IncompleteGrace, report.RecheckAfter);
+        var passes = session.Passes;
+        // The 5 s cap is for coalescing change requests; the 10 minute recheck must not be cut to it.
+        await Task.Delay(FolderSyncSession.MaxDelay + TimeSpan.FromSeconds(2));
+        Assert.Equal(passes, session.Passes);
+    }
+
+    [Fact]
     public void DisposeStopsWatcher()
     {
         var session = Session();

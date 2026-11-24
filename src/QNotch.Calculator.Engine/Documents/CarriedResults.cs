@@ -22,6 +22,9 @@ public static class CarriedResults
         while (prefix < old.Count && prefix < now.Count && Same(old, prefix, now, prefix)) prefix++;
         var suffix = 0;
         while (suffix < old.Count - prefix && suffix < now.Count - prefix && Same(old, old.Count - 1 - suffix, now, now.Count - 1 - suffix)) suffix++;
+        // Text cannot tell which of two equal lines was typed: a line inserted above its copy matches the copy's place too.
+        // While the edited block could sit one line higher, that line is edited as well, so no result lands on the wrong line.
+        while (prefix > 0 && (Slides(now, prefix, now.Count - prefix - suffix) || Slides(old, prefix, old.Count - prefix - suffix))) prefix--;
         var carried = new LineResult[now.Count];
         for (var i = 0; i < now.Count; i++)
         {
@@ -30,6 +33,9 @@ public static class CarriedResults
         }
         return carried;
     }
+
+    /// <summary>The block of <paramref name="length"/> lines at <paramref name="start"/> reads the same one line higher.</summary>
+    private static bool Slides(SourceLineMap lines, int start, int length) => length > 0 && Same(lines, start - 1, lines, start + length - 1);
 
     private static bool Same(SourceLineMap a, int lineA, SourceLineMap b, int lineB) =>
         a.Source.AsSpan(a.Start(lineA), a.ContentEnd(lineA) - a.Start(lineA))

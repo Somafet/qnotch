@@ -119,6 +119,24 @@ public sealed class FolderSyncTests : IDisposable
     }
 
     [Fact]
+    public void AFailedStateWriteStillReportsTheSheetsThePassUpdated()
+    {
+        var a = Machine("A"); var b = Machine("B");
+        var id = a.Workspace.ActiveSheetId;
+        Quiesce(a, b);
+        a.Edit(id, "2 + 2"); a.Run(Shared);
+        SyncReport update;
+        // Readable but not replaceable, as when another program holds sync.json open.
+        using (new FileStream(FolderSync.StatePath(b.Data), FileMode.Open, FileAccess.Read, FileShare.Read)) update = b.Run(Shared);
+        Assert.Equal(SyncStatus.Failed, update.Status);
+        // The sheet is already saved locally; the editor must hear about it, or its next save overwrites the synced text.
+        Assert.Equal("2 + 2", b.Source(id));
+        Assert.NotNull(update.Workspace); Assert.Contains(id, update.ChangedSheets);
+        Quiesce(a, b);
+        Assert.Equal("2 + 2", b.Source(id));
+    }
+
+    [Fact]
     public void SameLengthEditWithinOneFileTimeTickIsStillPublished()
     {
         var a = Machine("A");

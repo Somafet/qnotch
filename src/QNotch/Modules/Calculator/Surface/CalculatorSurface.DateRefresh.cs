@@ -88,6 +88,8 @@ public partial class CalculatorSurface
     {
         // The panel hides all the time: a download the user asked for keeps going, only the automatic one stops.
         if (!DateVisible) StopCurrencySchedule(cancelAutomatic: true); else RefreshCurrencySchedule();
-        if (DateVisible) DateClockChanged(); else StopDateSchedule();
+        if (!DateVisible) StopDateSchedule();
+        else if (ratesChangedWhileHidden && ready && !compositionActive) { ratesChangedWhileHidden = false; pending = Evaluate(); }
+        else DateClockChanged();
     }
 }

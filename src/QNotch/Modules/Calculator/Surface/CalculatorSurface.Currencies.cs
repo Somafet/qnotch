@@ -19,6 +19,7 @@ public partial class CalculatorSurface
     private IReadOnlyList<CurrencyRateRequest> currencyRequests = [];
     private DispatcherTimer? currencyTimer;
     private CancellationTokenSource? currencyDownload;
+    private bool ratesChangedWhileHidden;
     private bool currencyDownloadAutomatic;
     private Task currencyDownloadTask = Task.CompletedTask;
     private DateTimeOffset? currencyRetryNotBefore;
@@ -191,6 +192,7 @@ public partial class CalculatorSurface
             UpdateCurrencyStatus();
             if (ready && DateVisible && !compositionActive) pending = Evaluate();
             else if (ready && compositionActive && completed > 0) evaluationDeferred = true;
+            else if (ready && completed > 0) ratesChangedWhileHidden = true; // A download the user asked for can finish after the panel closed.
             RefreshCurrencySchedule();
         }
     }

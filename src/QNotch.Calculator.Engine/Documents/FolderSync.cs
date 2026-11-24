@@ -137,7 +137,8 @@ public sealed class FolderSync
             foreach (var duplicate in snapshot.Duplicates) Guarded(() => Duplicate(duplicate));
             Cleanup();
             foreach (var id in owner.incomplete.Keys.Where(id => !snapshot.Canonical.TryGetValue(id, out var e) || e.State != SyncFileState.Incomplete).ToArray()) owner.incomplete.Remove(id);
-            if (basesChanged) AtomicJson.Write(StatePath(store.DataDirectory), new SyncStateDocument(1, state.Folder, bases.Values.OrderBy(b => b.SheetId).Take(MaxBases).ToArray()));
+            // Sheets this pass already saved must still reach the editor when the state write fails, or its next save overwrites them.
+            if (basesChanged) Guarded(() => AtomicJson.Write(StatePath(store.DataDirectory), new SyncStateDocument(1, state.Folder, bases.Values.OrderBy(b => b.SheetId).Take(MaxBases).ToArray())));
             var status = failed > 0 ? SyncStatus.Failed : waiting + damaged > 0 || retry ? SyncStatus.Waiting : SyncStatus.Synchronized;
             return new(status, workspaceChanged ? workspace : null, changed)
             {
