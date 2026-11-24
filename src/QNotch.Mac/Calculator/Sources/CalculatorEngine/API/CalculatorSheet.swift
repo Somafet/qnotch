@@ -104,6 +104,23 @@ public struct CalculatorEvaluation: Sendable {
     public let totalMembers: [Int]
     /// The rate dates the sheet asked for (nil = the latest rates), for the rates menu and downloads.
     public let currencyRequests: [CalculatorDay?]
+    /// The engine's own results, for exports and share links built from what the sheet shows.
+    let raw: CalculatorRawResults
+    /// True when lines asked for UUIDs the sheet does not hold yet: the host supplies them (`CalculatorGeneratedValues.supply`)
+    /// and evaluates again.
+    public var needsGeneratedValues: Bool { !raw.uuidRequests.isEmpty }
+}
+
+/// The engine's results behind an evaluation. Immutable once built.
+final class CalculatorRawResults: @unchecked Sendable {
+    let results: [LineResult]
+    let format: ResultFormat
+    let uuidRequests: [UuidRequest]
+    let uuids: StableUuidContext?
+    init(_ results: [LineResult], _ format: ResultFormat, _ uuidRequests: [UuidRequest] = [], _ uuids: StableUuidContext? = nil) {
+        self.results = results; self.format = format; self.uuidRequests = uuidRequests; self.uuids = uuids
+    }
+    static let empty = CalculatorRawResults([], .default)
 }
 
 /// A sheet's evaluation session (C# SheetEvaluationSession): re-evaluating an edited sheet reuses unchanged lines.
@@ -114,15 +131,19 @@ public final class CalculatorSheet: @unchecked Sendable {
 
     /// Evaluates `source`. Throws only for whole-sheet limits (over 200,000 characters or 10,000 lines) and cancellation.
     public func evaluate(_ source: String, environment: CalculatorEnvironment = CalculatorEnvironment(), format: CalculatorFormat = CalculatorFormat(),
-                         functions: CalculatorFunctions? = nil, rates: CalculatorRates? = nil, cancel: CalculatorCancellation? = nil) throws -> CalculatorEvaluation {
+                         functions: CalculatorFunctions? = nil, rates: CalculatorRates? = nil, uuids: CalculatorUuidContext? = nil,
+                         cancel: CalculatorCancellation? = nil) throws -> CalculatorEvaluation {
         let library = functions?.library ?? .empty
-        let evaluation = try session.evaluateWithFunctions(source, library, functions?.receipts ?? [], cancel?.token ?? .none, context: environment.context(rates: rates?.book))
+        var context = environment.context(rates: rates?.book)
+        context.uuids = uuids?.context
+        let evaluation = try session.evaluateWithFunctions(source, library, functions?.receipts ?? [], cancel?.token ?? .none, context: context)
         let resultFormat = format.resultFormat
         return CalculatorEvaluation(lines: evaluation.results.map { CalculatorPresentation.line($0, resultFormat) },
                                     usesCurrentDate: evaluation.usesCurrentDate, usesCurrentInstant: evaluation.usesCurrentInstant,
                                     requiresSecondRefresh: evaluation.requiresSecondRefresh, usesCurrencyRates: evaluation.usesCurrencyRates,
                                     hasMoney: evaluation.hasMoney, totalMembers: evaluation.totalMembers,
-                                    currencyRequests: evaluation.currencyRequests.map { $0.date.map(CalculatorDay.init) })
+                                    currencyRequests: evaluation.currencyRequests.map { $0.date.map(CalculatorDay.init) },
+                                    raw: CalculatorRawResults(evaluation.results, resultFormat, evaluation.uuidRequests, uuids?.context))
     }
 
     /// Sheet limits (C# SheetEvaluator).
@@ -144,6 +165,16 @@ public final class CalculatorFunctions: @unchecked Sendable {
     let receipts: [FunctionReceipt]
     init(_ library: FunctionLibrary, _ receipts: [FunctionReceipt]) { self.library = library; self.receipts = receipts }
     public static let empty = CalculatorFunctions(.empty, [])
+    /// No saved functions and no receipts.
+    public var isEmpty: Bool { library.definitions.isEmpty && receipts.isEmpty }
+    /// The saved functions' names, in library order.
+    public var names: [String] { library.definitions.map(\.name) }
+    /// The same library with another sheet's receipts.
+    public func with(receipts other: CalculatorFunctions) -> CalculatorFunctions { CalculatorFunctions(library, other.receipts) }
+    /// The library alone, for one-line answers (Search) that belong to no sheet.
+    public var libraryOnly: CalculatorFunctions { receipts.isEmpty ? self : CalculatorFunctions(library, []) }
+    /// True when both hold the same definitions and receipts.
+    public func matches(_ other: CalculatorFunctions) -> Bool { library.fingerprint == other.library.fingerprint && receipts == other.receipts }
 }
 
 /// Cached exchange rates for money conversion (C# CurrencyRateBook).
