@@ -76,6 +76,8 @@ enum ZoneCatalog {
 }
 
 final class TimestampArithmetic {
+    /// NodaTime's OverflowException message for an instant outside Instant.MinValue…MaxValue.
+    static let instantOverflowMessage = "Operation would overflow range of Instant"
     let context: EvaluationContext, reads: ContextReads
     init(_ context: EvaluationContext, _ reads: ContextReads) { self.context = context; self.reads = reads }
     static func join(_ date: SheetValue, _ time: SheetValue) throws -> SheetValue {
@@ -115,7 +117,10 @@ final class TimestampArithmetic {
         if mapping.isEmpty { throw CalcError.arithmetic("Skipped local time in " + zone.id) }
         if mapping.count == 2 && ambiguity.isEmpty { throw CalcError.arithmetic("Ambiguous local time; specify earlier or later in " + zone.id) }
         let offset = ambiguity == "later" ? mapping[mapping.count - 1] : mapping[0]
-        return .zonedMoment(try ZonedMoment(Instant(unixTicks: local.ticks - Ticks.unixEpoch - Int64(offset) * Ticks.perSecond), zone, version))
+        // ZonedDateTime.ToInstant() throws OverflowException past NodaTime's Instant range (e.g. 9999-12-31T23:00 at UTC-03:00).
+        let instant = local.ticks - Ticks.unixEpoch - Int64(offset) * Ticks.perSecond
+        if !NodaTicks.isInstantInRange(instant) { throw CalcError.arithmetic(TimestampArithmetic.instantOverflowMessage) }
+        return .zonedMoment(try ZonedMoment(Instant(unixTicks: instant), zone, version))
     }
     static func unix(_ value: SheetValue, _ export: Bool) throws -> SheetValue {
         if export { return .number(NumericValue(try Rational(BigInt(try value.moment.instant.unixTicks), BigInt(Ticks.perSecond)))) }
@@ -141,7 +146,9 @@ final class TimestampArithmetic {
             guard let moved = local.addingMonths(period.months * sign)?.addingDays(period.days * sign) else { throw rangeError }
             if stamp.kind == .localTimestamp { return .localTimestamp(LocalTimestamp(moved)) }
             let moment = try stamp.moment
-            return try resolve(moved, moment.zone, moment.ruleVersion)
+            // C# catches the OverflowException here (and only here) as a range error.
+            do { return try resolve(moved, moment.zone, moment.ruleVersion) }
+            catch CalcError.arithmetic(TimestampArithmetic.instantOverflowMessage) { throw rangeError }
         }
         let ticks = try TimeArithmetic.ticks(offset) * BigInt(sign)
         if ticks.magnitude > BigInt(Ticks.maxDateTime) { throw CalcError.arithmetic("Timestamp shift range exceeded") }
@@ -151,8 +158,9 @@ final class TimestampArithmetic {
             return .localTimestamp(LocalTimestamp(moved))
         }
         let moment = try stamp.moment
+        // Instant + Duration throws OverflowException outside NodaTime's Instant range; C# reports a range error.
         let (sum, overflow) = moment.instant.unixTicks.addingReportingOverflow(delta)
-        if overflow { throw rangeError }
+        if overflow || !NodaTicks.isInstantInRange(sum) { throw rangeError }
         return .zonedMoment(try ZonedMoment(Instant(unixTicks: sum), moment.zone, moment.ruleVersion))
     }
 }

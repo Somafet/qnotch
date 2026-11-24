@@ -108,6 +108,8 @@ enum NodaTicks {
     static let beforeMin = Int64.min, afterMax = Int64.max
     static let minDays = -4_371_222, maxDays = 2_932_896
     static func isValid(_ ticks: Int64) -> Bool { ticks != beforeMin && ticks != afterMax }
+    /// Whether Unix ticks lie within Instant.MinValue…MaxValue (day numbers minDays…maxDays).
+    static func isInstantInRange(_ ticks: Int64) -> Bool { ticks >= Int64(minDays) * Ticks.perDay && ticks < Int64(maxDays + 1) * Ticks.perDay }
     /// DaysSinceEpoch (floor), including the sentinels' deliberately invalid day numbers.
     static func days(_ ticks: Int64) -> Int {
         if ticks == beforeMin { return -16_777_216 }
