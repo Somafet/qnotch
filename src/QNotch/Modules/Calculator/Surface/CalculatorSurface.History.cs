@@ -130,6 +130,7 @@ public partial class CalculatorSurface
         Editor.Select(0, 0); Editor.ScrollToHome();
         dirty = false; historyPending = true; saveTimer.Stop();
         SaveState.Text = ""; pending = Evaluate();
+        RequestSync(); // The restored text is saved like an edit, so it reaches the sync folder like one.
         return true;
     }
 }

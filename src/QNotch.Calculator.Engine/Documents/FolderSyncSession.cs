@@ -55,24 +55,30 @@ public sealed class FolderSyncSession : IDisposable
             StopLocked();
             Folder = folder;
             if (folder is null) return;
-            try
-            {
-                watcher = new FileSystemWatcher(folder, "*" + SyncFolderFiles.Extension)
-                {
-                    IncludeSubdirectories = false, InternalBufferSize = 16 * 1024,
-                    NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite | NotifyFilters.Size | NotifyFilters.Attributes,
-                };
-                watcher.Changed += Notified; watcher.Created += Notified; watcher.Deleted += Notified; watcher.Renamed += Notified;
-                watcher.Error += (_, _) => Request(); // Overflow: every pass rescans the whole folder anyway.
-                watcher.EnableRaisingEvents = true;
-                Interlocked.Increment(ref liveWatchers);
-            }
-            catch (Exception e) when (e is ArgumentException or IOException or UnauthorizedAccessException or PlatformNotSupportedException)
-            {
-                watcher?.Dispose(); watcher = null; // Unavailable folder: report it; the next save or start retries.
-            }
+            WatchLocked(folder);
         }
         Request();
+    }
+
+    /// <summary>An unavailable folder gets no watcher; the next pass that finds it available installs one.</summary>
+    private void WatchLocked(string folder)
+    {
+        try
+        {
+            watcher = new FileSystemWatcher(folder, "*" + SyncFolderFiles.Extension)
+            {
+                IncludeSubdirectories = false, InternalBufferSize = 16 * 1024,
+                NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite | NotifyFilters.Size | NotifyFilters.Attributes,
+            };
+            watcher.Changed += Notified; watcher.Created += Notified; watcher.Deleted += Notified; watcher.Renamed += Notified;
+            watcher.Error += (_, _) => Request(); // Overflow: every pass rescans the whole folder anyway.
+            watcher.EnableRaisingEvents = true;
+            Interlocked.Increment(ref liveWatchers);
+        }
+        catch (Exception e) when (e is ArgumentException or IOException or UnauthorizedAccessException or PlatformNotSupportedException)
+        {
+            watcher?.Dispose(); watcher = null; // Unavailable folder: report it; the next save or start retries.
+        }
     }
 
     private void Notified(object sender, FileSystemEventArgs e) => Request();
@@ -133,19 +139,21 @@ public sealed class FolderSyncSession : IDisposable
         }
         finally
         {
-            bool rerun; TimeSpan? delay = null;
             lock (gate)
             {
-                running = false; rerun = again; again = false;
+                running = false; var rerun = again; again = false; TimeSpan? delay = null;
+                if (!disposed && watcher is null && Folder is not null && report is { Status: not (SyncStatus.FolderUnavailable or SyncStatus.Off) })
+                    WatchLocked(Folder);
                 if (!rerun && report is not null)
                 {
                     if (report.RetrySoon && retries < MaxRetries) { retries++; delay = RetryDelay; }
                     else if (report.RecheckAfter is { } after) delay = after + TimeSpan.FromSeconds(1);
                 }
                 else if (!rerun && report is null && retries < MaxRetries) { retries++; delay = RetryDelay; }
+                // Armed under the lock: a change request arriving after this replaces a long recheck, never the other way round.
+                if (rerun) Request();
+                else if (delay is { } d) Schedule(d, request: false);
             }
-            if (rerun) Request();
-            else if (delay is { } d) Schedule(d, request: false);
         }
     }
 

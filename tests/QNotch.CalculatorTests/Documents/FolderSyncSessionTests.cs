@@ -112,6 +112,21 @@ public sealed class FolderSyncSessionTests : IDisposable
     }
 
     [Fact]
+    public async Task AFolderThatWasUnavailableAtStartIsWatchedOnceAPassFindsIt()
+    {
+        using (var first = Session()) { first.SetFolder(Shared); await NextReport(); }
+        Directory.Delete(Shared, true);
+        using var session = Session();
+        session.Start();
+        Assert.False(session.Watching);
+        Assert.Equal(SyncStatus.FolderUnavailable, (await NextReport()).Status);
+        Directory.CreateDirectory(Shared);
+        session.Request(); // A save after the volume came back.
+        Assert.Equal(SyncStatus.Synchronized, (await NextReport()).Status);
+        Assert.True(session.Watching);
+    }
+
+    [Fact]
     public void DisposeStopsWatcher()
     {
         var session = Session();
