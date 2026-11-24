@@ -72,4 +72,23 @@ final class CalculatorAPITests: XCTestCase {
         XCTAssertEqual(table?.text(row: 1, column: 0), "food"); XCTAssertEqual(table?.isNumeric(row: 1, column: 1), true)
         XCTAssertNil(lines.last?.figure)
     }
+    @MainActor
+    func testAnOfflineRateStoreNeverGoesOnlineAndKeepsItsCache() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("calculator-rates-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = CalculatorRateStore(directory: directory, offline: true)
+        await store.load()
+        XCTAssertTrue(store.loaded); XCTAssertNil(store.latest); XCTAssertTrue(store.historical.isEmpty)
+        let today = try XCTUnwrap(CalculatorDay(year: 2026, month: 11, day: 24))
+        let asked = [nil, CalculatorDay(year: 2026, month: 11, day: 20), CalculatorDay(year: 2027, month: 1, day: 1), CalculatorDay(year: 2026, month: 11, day: 20)]
+        XCTAssertEqual(store.missingDates(asked, today: today).map(\.description), ["2026-11-20"])
+        XCTAssertEqual(store.nextAutomaticRefresh(enabled: true, visible: true, composing: false, needsLatest: true, now: Date(timeIntervalSince1970: 100)),
+                       Date(timeIntervalSince1970: 100))
+        XCTAssertNil(store.nextAutomaticRefresh(enabled: true, visible: false, composing: false, needsLatest: true))
+        let changed = await store.download([nil], automatic: false, monthly: false)
+        XCTAssertFalse(changed); XCTAssertFalse(store.isDownloading)
+        XCTAssertEqual(store.warning, "Rates unavailable; cached data retained")
+        XCTAssertNotNil(store.retryNotBefore)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: directory.path))
+    }
 }
