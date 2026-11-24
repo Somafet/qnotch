@@ -1,3 +1,5 @@
+import Foundation
+
 // Stub for the developer area: colours, permissions, aspect ratios, Unicode, integers, networks, text codecs,
 // usage rates, UUIDs and dice.
 
@@ -141,20 +143,78 @@ extension ExpressionParser {
 }
 struct UuidRequest: Hashable { let line: Int, site: String }
 struct DiceRoll { let formula: String; let faces: [Int] }
+/// A document-owned UUID for one generation site of one statement (C# UuidBinding).
+struct UuidBinding: Hashable { let statement: UUID; let site: String; let value: UUID }
+/// A document-owned roll for one statement (C# DiceBinding).
+struct DiceBinding: Hashable { let statement: UUID; let formula: String; let faces: [Int] }
+/// Document-owned statement identities and bindings. The constructor's validation is C#'s; evaluation is not ported yet.
 final class StableUuidContext {
-    static let maxBindings = 4096
+    static let maxBindings = 1024
+    static let maxSiteCharacters = 64000
+    static let maxDiceBindings = 1024
+    static let maxDiceFaces = 100_000
+    private let statements: [UUID]
+    init(_ statementIds: [UUID], _ values: [UuidBinding], _ rolls: [DiceBinding] = []) throws {
+        statements = Array(statementIds.prefix(SheetEvaluator.maxLines + 1))
+        let ids = Set(statements)
+        if statements.isEmpty || statements.count > SheetEvaluator.maxLines || ids.contains(.netEmpty) || ids.count != statements.count {
+            throw CalcError.argument("Invalid UUID statement identities")
+        }
+        var count = 0, characters = 0
+        var seen = Set<[UInt16]>() // Ordinal (code-unit) site keys per statement, as C#'s StringComparer.Ordinal dictionary.
+        for binding in values {
+            count += 1; characters += binding.site.netLength
+            if count > StableUuidContext.maxBindings || !ids.contains(binding.statement) || !StableUuidContext.validSite(binding.site) ||
+                !StableUuidContext.isVersion4(binding.value) || characters > StableUuidContext.maxSiteCharacters {
+                throw CalcError.argument("Invalid or excessive UUID bindings")
+            }
+            if !seen.insert(Array(binding.statement.netN.utf16) + [0] + Array(binding.site.utf16)).inserted { throw CalcError.argument("Duplicate UUID binding") }
+        }
+        var faces = 0
+        var rolled = Set<UUID>()
+        for roll in rolls {
+            faces += roll.faces.count
+            guard rolled.count < StableUuidContext.maxDiceBindings, ids.contains(roll.statement), faces <= StableUuidContext.maxDiceFaces,
+                  let formula = try? DiceSyntax.tryParse(roll.formula), formula.notation == roll.formula, formula.fits(roll.faces),
+                  rolled.insert(roll.statement).inserted else { throw CalcError.argument("Invalid or excessive dice rolls") }
+        }
+    }
+    static func isVersion4(_ value: UUID) -> Bool { let text = Array(value.netN.utf8); return text[12] == UInt8(ascii: "4") && Array("89ab".utf8).contains(text[16]) }
+    static func validSite(_ site: String?) -> Bool {
+        guard let site, (1...8192).contains(site.netLength) else { return false }
+        return !site.utf16.contains(0) && !site.utf16.contains(10) && !site.utf16.contains(13)
+    }
+    func statement(_ line: Int) throws -> UUID {
+        guard line >= 0 && line < statements.count else { throw CalcError.argument("Specified argument was out of the range of valid values. (Parameter 'line')") }
+        return statements[line]
+    }
     func resolve(_ line: Int, _ path: String, _ site: Int, _ reads: ContextReads) throws -> String { throw notPorted("UUIDs") }
     func dice(_ line: Int) -> DiceRoll? { nil }
     func key(_ line: Int) -> String? { nil }
     func diceKey(_ line: Int) -> String? { nil }
 }
+enum UuidSyntax {
+    /// Formatting and annotations do not change a generated expression's identity (C#'s body; dice parsing is still a stub).
+    static func expressionIdentity(_ source: String) -> String? {
+        do {
+            let line = try SheetSyntax.scan(source)
+            if line.error != nil || line.boundary || line.directive != nil || line.text.isEmpty { return nil }
+            if let dice = try DiceSyntax.tryParse(line.text) { return "dice:" + dice.notation }
+            return try FunctionLibrary.canonical(FunctionDefinition(name: "_", parameters: [], body: line.text))
+        } catch let e as CalcError where e.isFormatOrArithmetic { return nil } catch { return nil }
+    }
+}
 final class DiceFormula {
     var notation: String { "" }
-    func fits(_ faces: [Int]) -> Bool { false }
+    var sides: [Int] { [] }
+    func fits(_ faces: [Int]?) -> Bool { false }
 }
 final class DiceExpression: Expression { let formula: DiceFormula; init(_ formula: DiceFormula) { self.formula = formula } }
 enum DiceSyntax {
     static func tryParse(_ text: String, _ names: NetHashSet<String>) throws -> DiceFormula? { nil }
+    static func tryParse(_ text: String) throws -> DiceFormula? { try tryParse(text, NetHashSet<String>.ignoringCase()) }
+    /// The dice formula on each source line.
+    static func formulas(_ source: String, _ token: CancellationToken = .none) throws -> [Int: DiceFormula] { [:] }
     static func preview(_ formula: DiceFormula) throws -> (preview: String, steps: [CalculationStep]) { throw notPorted("dice") }
     static func total(_ formula: DiceFormula, _ faces: [Int]) throws -> (total: Int64, steps: [CalculationStep]) { throw notPorted("dice") }
 }

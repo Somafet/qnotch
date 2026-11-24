@@ -17,6 +17,7 @@ final class HolidaySet: IdentityHashable {
 }
 final class WorkdayCalendar {
     static let ruleVersion = "2026-10-31"
+    static let supportedRegions = ["DE", "US", "WEEKDAYS"]
     let scope = "", firstYear = 0, lastYear = 0
     let customHolidays = HolidaySet.empty
     init(_ region: String?, _ custom: HolidaySet?) throws { throw notPorted("working days") }
