@@ -192,15 +192,14 @@ final class CalculatorDocumentsTests: XCTestCase {
         XCTAssertTrue(first.setSyncFolder(folder))
         XCTAssertTrue(second.setSyncFolder(folder))
         XCTAssertEqual(first.syncFolder?.lastPathComponent, "Synced")
-        let arrived = expectation(description: "the first sheet reaches the second workspace")
-        func check() {
-            if second.documents.sheets.count >= 2 { arrived.fulfill(); return }
-            second.requestSync()
+        // The sessions apply on the main queue: run it until the first sheet reaches the second workspace.
+        let deadline = Date().addingTimeInterval(30)
+        while second.documents.sheets.count < 2, Date() < deadline {
             first.requestSync()
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25, execute: check)
+            second.requestSync()
+            RunLoop.main.run(until: Date().addingTimeInterval(0.25))
         }
-        check()
-        wait(for: [arrived], timeout: 30)
+        XCTAssertGreaterThanOrEqual(second.documents.sheets.count, 2)
         let files = try FileManager.default.contentsOfDirectory(atPath: folder.path).filter { $0.hasSuffix(CalculatorSyncSession.fileExtension) }
         XCTAssertGreaterThanOrEqual(files.count, 2)
         XCTAssertTrue(second.setSyncFolder(nil))
