@@ -7,13 +7,18 @@
 struct NetDictionary<Key: Hashable, Value>: Sequence {
     private struct Entry { var key: Key; var value: Value; var used: Bool }
     private var entries: [Entry] = []
-    private var index: [Key: Int] = [:]
+    private var index: [AnyHashable: Int] = [:]
     private var freeList: [Int] = []
     private let normalize: ((Key) -> Key)?
 
     init(normalize: ((Key) -> Key)? = nil) { self.normalize = normalize }
 
-    @inline(__always) private func identity(_ key: Key) -> Key { normalize?(key) ?? key }
+    /// C# hashes strings by UTF-16 code units; Swift's String equality is canonical, so string keys go through OrdinalString.
+    @inline(__always) private func identity(_ key: Key) -> AnyHashable {
+        let normalized = normalize?(key) ?? key
+        if let text = normalized as? String { return AnyHashable(OrdinalString(text)) }
+        return AnyHashable(normalized)
+    }
     var count: Int { index.count }
     var isEmpty: Bool { index.isEmpty }
     func containsKey(_ key: Key) -> Bool { index[identity(key)] != nil }
@@ -36,7 +41,7 @@ struct NetDictionary<Key: Hashable, Value>: Sequence {
         if index[id] != nil { return false }
         insert(key, id, value); return true
     }
-    private mutating func insert(_ key: Key, _ id: Key, _ value: Value) {
+    private mutating func insert(_ key: Key, _ id: AnyHashable, _ value: Value) {
         if let free = freeList.popLast() { entries[free] = Entry(key: key, value: value, used: true); index[id] = free }
         else { index[id] = entries.count; entries.append(Entry(key: key, value: value, used: true)) }
     }
@@ -90,4 +95,10 @@ extension NetHashSet where Element == String {
     /// `new HashSet<string>(StringComparer.OrdinalIgnoreCase)`.
     static func ignoringCase<S: Sequence>(_ items: S) -> NetHashSet where S.Element == String { NetHashSet(items, normalize: { $0.ordinalKey }) }
     static func ignoringCase() -> NetHashSet { NetHashSet(normalize: { $0.ordinalKey }) }
+}
+
+/// A string compared and hashed by its UTF-16 code units (C# ordinal semantics).
+struct OrdinalString: Hashable {
+    let units: [UInt16]
+    init(_ text: String) { units = Array(text.utf16) }
 }

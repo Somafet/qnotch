@@ -40,7 +40,9 @@ dev-time oracle only: nothing in the app may call or bundle it.
 - **Strings are UTF-16.** C# indexes, lengths and limits count UTF-16 code units. Use `netLength`, `units` ([UInt16]),
   `netSubstring`, `netSplit`, `netTrim`, `netLower/netUpper` (invariant simple case mapping), `equalsIgnoreCase`,
   `NetChar.isLetter/isDigit/isWhiteSpace/category` (Support/NetString.swift). In scanning loops convert once to `[UInt16]`;
-  never index `String.utf16` repeatedly or split it as a view (that is quadratic).
+  never index `String.utf16` repeatedly or split it as a view (that is quadratic). Swift's `==` and `Hashable` on
+  `String` use canonical Unicode equivalence, C# compares code units: use `ordinalEquals`, `OrdinalString` keys, or
+  `NetDictionary`/`NetHashSet` (which key strings by code units) wherever decomposed and composed text must differ.
 - **Ordering.** C# `Dictionary`/`HashSet` enumerate in insertion order (with freed slots reused); use `NetDictionary`/`NetHashSet`
   wherever order can reach output or control flow, and `.ignoringCase()` for `StringComparer.OrdinalIgnoreCase`.
   LINQ `OrderBy` is stable: use `stableSorted`. `StringComparer.Ordinal` ordering is `String.ordinalCompare`.
