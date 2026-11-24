@@ -254,7 +254,7 @@ internal sealed class HungarianSalaryArithmetic(ExecutionBudget budget,Cancellat
         var detail=flat?FlatDetail(expression,origin,profile,result,F,Q):EmployeeDetail(expression,origin,profile,result,F,Q);
         detail+=(convertedRounding?$"; converted input rounded half up to {input.ToString(CultureInfo.InvariantCulture)} whole HUF per {(flat?"year":"month")}":"")+(expression.Inverse?$"; lowest whole-forint {(flat?"revenue":"gross")} producing the exact net, verified by recomputing; other amounts may produce the same rounded net":"")+
             (approximate?"; upstream amount is approximate":"; exact represented amount")+
-            (money.Provenance is { } provenance?"; "+provenance+"; generic Calc conversion, not a statutory MNB conversion":"");
+            (money.Provenance is { } provenance?"; "+provenance+"; generic exchange-rate conversion, not a statutory MNB conversion":"");
         if(expression.OutputPeriod is { } target)
         {
             var rate=hadPeriod?output:new SheetValue(new EarningsValue(output,flat?EarningsPeriod.Year:EarningsPeriod.Month));

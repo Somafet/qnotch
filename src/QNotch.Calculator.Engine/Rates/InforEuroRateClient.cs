@@ -11,7 +11,7 @@ public sealed class InforEuroRateClient(HttpClient client)
     public const string Provider = CurrencyRateSnapshot.MonthlyEuProvider;
     public const string Source = "https://commission.europa.eu/funding-and-tenders/procedures-guidelines-tenders/information-contractors-and-beneficiaries/exchange-rate-inforeuro_en";
     public const string Terms = "https://commission.europa.eu/legal-notice_en";
-    public const string Attribution = "Monthly accounting rates © European Union, CC BY 4.0; retrieved through Frankfurter and converted to exact cross rates by Calc";
+    public const string Attribution = "Monthly accounting rates © European Union, CC BY 4.0; retrieved through Frankfurter and converted to exact cross rates by QNotch";
     public static readonly DateOnly FirstDate = new(1994,3,1);
     /// <summary>A monthly rate is dated the first day of its month; a later requested day keeps that month's rate.</summary>
     public const int MaximumAgeDays = 62;

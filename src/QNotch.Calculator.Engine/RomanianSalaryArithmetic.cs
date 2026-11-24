@@ -150,7 +150,7 @@ internal sealed class RomanianSalaryArithmetic(ExecutionBudget budget,Cancellati
             (period==EarningsPeriod.Year?"; annual output is twelve identical months under the selected month's rules, not a mixed-rule calendar-year settlement":"; bare amounts default to monthly RON model units")+
             (expression.Inverse?"; lowest whole-leu gross among all deduction/relief intervals, verified by exact forward net; other gross amounts may produce the same rounded net":"")+
             (approximate?"; upstream input is approximate":"; exact represented input")+
-            (money.Provenance is { } provenance?"; "+provenance+"; generic Calc conversion, not statutory BNR payroll conversion":"");
+            (money.Provenance is { } provenance?"; "+provenance+"; generic exchange-rate conversion, not statutory BNR payroll conversion":"");
         if(expression.OutputPeriod is { } target)
         {
             var rate=hadPeriod?output:new SheetValue(new EarningsValue(output,EarningsPeriod.Month));

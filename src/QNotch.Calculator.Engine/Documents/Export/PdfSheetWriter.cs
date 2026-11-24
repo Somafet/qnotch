@@ -137,7 +137,7 @@ public static class PdfSheetWriter
         pdf.Set(resources, $"<< /ProcSet [/PDF /Text /ImageC] /Font << {fontEntries}>>{xobjects} >>");
         pdf.Set(pagesId, $"<< /Type /Pages /Kids [{string.Join(' ', pageIds.Select(PdfWriter.Ref))}] /Count {pageIds.Count} >>");
         pdf.Set(catalog, $"<< /Type /Catalog /Pages {PdfWriter.Ref(pagesId)} /ViewerPreferences << /DisplayDocTitle true >> >>");
-        var info = pdf.Add($"<< /Title {PdfWriter.TextString(title)} /Producer {PdfWriter.TextString("Calc")} >>");
+        var info = pdf.Add($"<< /Title {PdfWriter.TextString(title)} /Producer {PdfWriter.TextString("QNotch")} >>");
         return new(pdf.Finish(catalog, info), pageIds.Count, missing);
     }
 

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "status": "Calc aliases for current exact arithmetic; not a native-speaker-reviewed translation set.",
+  "status": "Calculator aliases for current exact arithmetic; not a native-speaker-reviewed translation set.",
   "languages": [
     { "code": "en", "unspaced": false, "keywords": {
       "Of": ["of"], "Sum": ["sum"], "Average": ["average"], "Double": ["double", "twice"], "Half": ["half"],

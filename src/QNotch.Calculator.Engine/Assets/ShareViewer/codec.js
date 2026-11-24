@@ -36,10 +36,10 @@
 
   // Streams the inflation and stops as soon as the output passes the limit, so a small link cannot expand without bound.
   async function inflate(bytes, limit) {
-    if (typeof DecompressionStream !== 'function') throw new ShareError('This browser cannot open Calc links');
+    if (typeof DecompressionStream !== 'function') throw new ShareError('This browser cannot open shared calculator sheets');
     let stream;
     try { stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw')); }
-    catch { throw new ShareError('This browser cannot open Calc links'); }
+    catch { throw new ShareError('This browser cannot open shared calculator sheets'); }
     const reader = stream.getReader();
     const chunks = [];
     let total = 0;

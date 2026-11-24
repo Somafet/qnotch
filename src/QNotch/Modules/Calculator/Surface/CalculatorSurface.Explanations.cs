@@ -36,7 +36,7 @@ public partial class CalculatorSurface
             note = note.Length > 0 ? profile + "\n" + note : profile;
         }
         if (answer.Value is { Kind: SheetValueKind.UptimeBudget } uptime)
-            note = (uptime.UptimeBudget.DefaultInterval ? "Calc mean month: 30.4375 elapsed days" : "Explicit elapsed reporting interval") + "\nPreview rounded to seconds; exact budget retained";
+            note = (uptime.UptimeBudget.DefaultInterval ? "Mean month: 30.4375 elapsed days" : "Explicit elapsed reporting interval") + "\nPreview rounded to seconds; exact budget retained";
         if (answer.Value is { Kind: SheetValueKind.UsageCount }) note = "Estimated usage; no tokenizer or requests run";
         if (answer.Value is { Kind: SheetValueKind.UsagePrice }) note = "Supplied flat unit price; excludes billing tiers and tax";
         if (answer.Value is { Kind: SheetValueKind.Text } uuid && Guid.TryParseExact(uuid.Text.Value, "D", out _)) note = uuid.Text.Value + "\nCopies complete UUID";

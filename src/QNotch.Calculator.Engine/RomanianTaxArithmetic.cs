@@ -115,7 +115,7 @@ internal sealed class RomanianTaxArithmetic(ExecutionBudget budget,CancellationT
             if(!number.IsRational || number.Unit is not null || number.IsPercentage || number.IsApproximate || number.Scalar.Numerator.Sign<0 || Compare(number.Scalar,new(100000,1))>0)
                 throw new ArithmeticException("Eligible 2026 micro profile requires explicit annual linked-group turnover of 0–100000 EUR; threshold exit needs quarterly profit-tax treatment");
             total=returned=Multiply(taxable,new(1,100)); charges.Add(new("Micro-company turnover tax",total));
-            scope="Eligible Romanian 2026 micro regime asserted, including employment, ownership, filings and exclusions; Article 53 tax bases supplied for one quarter or up to four quarters; annual linked-group turnover declared "+number.Scalar+" EUR using the statutory prior-year-end valuation, not a live Calc rate; this is company tax only, with no inferred distributable profit, dividends, payroll, credits or threshold-exit switch";
+            scope="Eligible Romanian 2026 micro regime asserted, including employment, ownership, filings and exclusions; Article 53 tax bases supplied for one quarter or up to four quarters; annual linked-group turnover declared "+number.Scalar+" EUR using the statutory prior-year-end valuation, not a live exchange rate; this is company tax only, with no inferred distributable profit, dividends, payroll, credits or threshold-exit switch";
             sources=[Code,Oug89,"https://static.anaf.ro/static/3/Cluj/20260402144800_cj_micro_02apr2026.pdf"];
         }
         else if(key is "dividendtaxro" or "dividendcashro")

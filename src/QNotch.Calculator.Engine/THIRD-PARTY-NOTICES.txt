@@ -249,7 +249,7 @@ Contains public sector information licensed under the Open Government Licence v3
 Sources: https://www.gov.uk/guidance/rates-and-thresholds-for-employers-2026-to-2027
 https://www.gov.uk/income-tax-rates
 Licence: https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/
-Calc implements an annualized standard-case arithmetic model; no HMRC endorsement is implied.
+QNotch implements an annualized standard-case arithmetic model; no HMRC endorsement is implied.
 
 European Commission InforEuro monthly accounting rates (optional download)
 (c) European Union, 1995-2026. Reused under Creative Commons Attribution 4.0 International (CC BY 4.0),
@@ -261,5 +261,5 @@ stored as exact rationals and combined into cross rates; test fixtures keep only
 German wage-tax program 2026 (Bundesministerium der Finanzen)
 Programmablaufplan fuer die maschinelle Berechnung der vom Arbeitslohn einzubehaltenden Lohnsteuer 2026,
 BMF-Schreiben 12.11.2025, BStBl 2025 I S. 1948; pseudo-code Lohnsteuer2026.xml retained as a test fixture.
-Assessed by Calc as official works (section 5 UrhG), not a legal opinion. Calc's C# port is independent code;
+Assessed by QNotch as official works (section 5 UrhG), not a legal opinion. QNotch's C# port is independent code;
 no BMF endorsement is implied.

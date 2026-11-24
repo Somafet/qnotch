@@ -82,7 +82,7 @@ public sealed class FolderSync
         if (string.IsNullOrWhiteSpace(folder) || !Path.IsPathFullyQualified(folder)) throw new InvalidDataException("Choose a full folder path");
         var full = Path.TrimEndingDirectorySeparator(Path.GetFullPath(folder));
         var data = Path.TrimEndingDirectorySeparator(Path.GetFullPath(dataDirectory));
-        if (SameFolder(full, data) || Inside(full, data) || Inside(data, full)) throw new InvalidDataException("Choose a folder outside Calc's own data folder");
+        if (SameFolder(full, data) || Inside(full, data) || Inside(data, full)) throw new InvalidDataException("Choose a folder outside the calculator's own data folder");
         return full;
     }
     private static bool SameFolder(string a, string b) => string.Equals(Path.TrimEndingDirectorySeparator(Path.GetFullPath(a)), Path.TrimEndingDirectorySeparator(Path.GetFullPath(b)), StringComparison.OrdinalIgnoreCase);
@@ -288,7 +288,7 @@ public sealed class FolderSync
         private bool SetAsideIfAbandoned(Guid id, SyncFolderEntry entry)
         {
             if (entry.State == SyncFileState.Locked) { retry = true; waiting++; return false; }
-            if (entry.State != SyncFileState.Incomplete) { waiting++; problem ??= entry.State == SyncFileState.Placeholder ? "Waiting for download" : "Sync file from a newer Calc"; return false; }
+            if (entry.State != SyncFileState.Incomplete) { waiting++; problem ??= entry.State == SyncFileState.Placeholder ? "Waiting for download" : "Sync file from a newer QNotch"; return false; }
             if (!owner.incomplete.TryGetValue(id, out var seen) || seen.Ticks != entry.Ticks || seen.Length != entry.Length)
                 owner.incomplete[id] = seen = (entry.Ticks, entry.Length, now);
             if (now - seen.Since < IncompleteGrace)

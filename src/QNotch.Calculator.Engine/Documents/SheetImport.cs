@@ -141,9 +141,9 @@ public static class SheetImport
         {
             foreach (var result in SheetEvaluator.Evaluate(source, limit.Token))
             {
-                if (result.Error is { } error) notices.Add(new(result.Line + 1, $"Calc cannot evaluate this line ({error}); kept as written"));
+                if (result.Error is { } error) notices.Add(new(result.Line + 1, $"The calculator cannot evaluate this line ({error}); kept as written"));
                 else if (result.Value is null && !result.IsDeclaration && result.Line < lines.Length && LooksCalculated(lines[result.Line]))
-                    notices.Add(new(result.Line + 1, "No result in Calc; kept as written"));
+                    notices.Add(new(result.Line + 1, "No result; kept as written"));
             }
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
@@ -160,7 +160,7 @@ public static class SheetImport
             || SourceKeywords.Contains(trimmed.TrimEnd(':').ToLowerInvariant());
     }
 
-    /// <summary>Soulver's documented plain-text reference form "line3" becomes Calc's "L3". Physical numbering is preserved because
+    /// <summary>Soulver's documented plain-text reference form "line3" becomes the calculator's "L3". Physical numbering is preserved because
     /// the import never adds or removes lines. Headings, // comments and quoted text are left alone.</summary>
     internal static string TranslateLineWords(string source, List<ImportNotice> notices)
     {
