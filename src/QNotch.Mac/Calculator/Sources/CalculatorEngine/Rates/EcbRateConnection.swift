@@ -12,6 +12,8 @@ final class EcbRateConnection {
     func fetchInforEuro(_ date: DateOnly?, now: Instant, utcOffsetSeconds: Int = 0, token: CancellationToken = .none) async throws -> CurrencyRateSnapshot {
         try await EcbRateConnection.reachable { try await InforEuroRateClient(transport).fetch(date, now: now, utcOffsetSeconds: utcOffsetSeconds, token: token) }
     }
+    /// C# Dispose: ends the URLSession transport (a session keeps its delegate alive until invalidated).
+    func close() { (transport as? URLSessionRateTransport)?.close() }
     /// C# turns HttpRequestException (no response at all) into IOException("Currency provider unreachable").
     private static func reachable(_ body: () async throws -> CurrencyRateSnapshot) async throws -> CurrencyRateSnapshot {
         do { return try await body() } catch let error as URLError {
@@ -30,6 +32,8 @@ final class URLSessionRateTransport: NSObject, CurrencyRateTransport, URLSession
         configuration.urlCredentialStorage = nil; configuration.urlCache = nil; configuration.requestCachePolicy = .reloadIgnoringLocalAndRemoteCacheData
         return URLSession(configuration: configuration, delegate: self, delegateQueue: nil)
     }()
+    /// Cancels any request in flight and releases the session.
+    func close() { session.invalidateAndCancel() }
     func get(_ url: URL, accept: String, token: CancellationToken) async throws -> CurrencyRateHTTPResponse {
         var request = URLRequest(url: url); request.httpMethod = "GET"; request.setValue(accept, forHTTPHeaderField: "Accept")
         let (bytes, response) = try await session.bytes(for: request)

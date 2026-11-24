@@ -12,10 +12,10 @@ final class FakeRateTransport: CurrencyRateTransport {
 }
 
 /// An async [Theory]: one row per element, counted like `theory`.
-func asyncTheory<T>(_ rows: [T], file: StaticString = #filePath, line: UInt = #line, _ body: (T) async throws -> Void) async {
+func asyncTheory<T>(_ rows: [T], file: StaticString = #filePath, line: UInt = #line, function: String = #function, _ body: (T) async throws -> Void) async {
     for row in rows {
         do { try await body(row) } catch { XCTFail("\(row): \(error)", file: file, line: line) }
-        CaseCounter.record(file: "\(file)")
+        CaseCounter.record(file: "\(file)", function: function)
     }
 }
 
