@@ -48,9 +48,9 @@ final class ExplanationCard: OverlayCard {
     let close = HoverButton(CalculatorText.close, style: .plain, label: CalculatorText.close) {}
     var escape: (() -> Void)? { didSet { text.escape = escape } }
 
-    init(text value: String) {
-        super.init(id: "calculator-explanation-card", label: CalculatorText.explanation)
-        let title = Self.title(CalculatorText.explanation)
+    init(text value: String, title heading: String = CalculatorText.explanation, id: String = "calculator-explanation-card") {
+        super.init(id: id, label: heading)
+        let title = Self.title(heading)
         let scroll = NSScrollView()
         scroll.drawsBackground = false
         scroll.hasVerticalScroller = true

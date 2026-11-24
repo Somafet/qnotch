@@ -9,6 +9,15 @@ protocol SheetEditorHost: AnyObject {
     func editorRename()
     func editorFocusResult()
     func editorTextChanged(_ editor: SheetTextView)
+    /// Before a change of `range`: true starts a new undo step for it (it moves lines holding UUIDs or rolls).
+    func editorWillChange(_ editor: SheetTextView, range: NSRange) -> Bool
+    /// A dice line was submitted: Return on it (`again` false) or ⌘Return (`again` true). Zero-based line.
+    func editorRoll(_ editor: SheetTextView, line: Int, again: Bool)
+}
+
+extension SheetEditorHost {
+    func editorWillChange(_ editor: SheetTextView, range: NSRange) -> Bool { false }
+    func editorRoll(_ editor: SheetTextView, line: Int, again: Bool) {}
 }
 
 extension NSAttributedString.Key {
@@ -80,6 +89,8 @@ final class SheetTextView: NSTextView, NSTextViewDelegate, NSTextStorageDelegate
     /// Width kept free on the right for the results column.
     var reserved: CGFloat = 220 { didSet { if oldValue != reserved { updateContainer() } } }
     var fontSize: CGFloat { didSet { if oldValue != fontSize { restyle(NSRange(location: 0, length: textStorage?.length ?? 0)) } } }
+    /// The change being made (range of the old text, inserted length) until the host takes it in `editorTextChanged`.
+    private(set) var pendingChange: (range: NSRange, length: Int)?
     /// UTF-16 offsets of each line start; rebuilt on every change.
     private(set) var lineStarts: [Int] = [0]
 
@@ -559,12 +570,34 @@ final class SheetTextView: NSTextView, NSTextViewDelegate, NSTextStorageDelegate
     func textView(_ textView: NSTextView, shouldChangeTextIn affectedCharRange: NSRange, replacementString: String?) -> Bool {
         let length = (textStorage?.length ?? 0) - affectedCharRange.length + (replacementString?.utf16.count ?? 0)
         if length > CalculatorSheet.maxCharacters { NSSound.beep(); return false }
+        if host?.editorWillChange(self, range: affectedCharRange) == true { breakUndoCoalescing() }
+        pendingChange = (affectedCharRange, replacementString?.utf16.count ?? 0)
         return true
     }
 
     func textDidChange(_ notification: Notification) {
         rebuildLineStarts()
         host?.editorTextChanged(self)
+        pendingChange = nil
+    }
+
+    /// Replaces the whole text as one undo step (a restored version).
+    func replaceAllUndoably(with text: String) {
+        let all = NSRange(location: 0, length: textStorage?.length ?? 0)
+        breakUndoCoalescing()
+        guard shouldChangeText(in: all, replacementString: text) else { return }
+        textStorage?.replaceCharacters(in: all, with: text)
+        didChangeText()
+        breakUndoCoalescing()
+        setSelectedRange(NSRange(location: 0, length: 0))
+        scrollToBeginningOfDocument(nil)
+    }
+
+    /// Return keeps inserting its line break; the line the caret just left is then submitted (Windows SheetEditor.Dice).
+    override func insertNewline(_ sender: Any?) {
+        super.insertNewline(sender)
+        let current = line(at: selectedRange().location)
+        if current > 0, !hasMarkedText() { host?.editorRoll(self, line: current - 1, again: false) }
     }
 
     func replaceAll(with text: String) {
@@ -588,6 +621,10 @@ final class SheetTextView: NSTextView, NSTextViewDelegate, NSTextStorageDelegate
         guard window?.firstResponder === self else { return super.performKeyEquivalent(with: event) }
         let modifiers = event.modifierFlags.intersection([.command, .shift, .option, .control])
         let key = event.charactersIgnoringModifiers?.lowercased()
+        if modifiers == .command, event.keyCode == 36 || event.keyCode == 76 {
+            host?.editorRoll(self, line: line(at: selectedRange().location), again: true) // ⌘Return rolls again.
+            return true
+        }
         if modifiers == [.command, .shift], key == "z" { if ownUndo.canRedo { ownUndo.redo() } else { NSSound.beep() }; return true }
         if modifiers == .command, key == "f" { performTextFinderAction(menuItem(.showFindInterface)); return true }
         // Whole-line copy, cut and every paste go through this view, whichever menu is in front.

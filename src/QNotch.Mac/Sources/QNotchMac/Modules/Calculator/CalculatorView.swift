@@ -65,17 +65,22 @@ final class CalculatorTabView: NSView, SheetEditorHost, ResultPillHost, SheetTab
     static let baseGutter: CGFloat = 220
 
     let workspace: CalculatorWorkspace
-    private weak var shell: ModuleShell?
+    private(set) weak var shell: ModuleShell?
     let strip = SheetTabStrip()
     let status = line("", size: 11, color: Palette.textSecondary)
     let more = HoverButton(symbol: "ellipsis", style: .icon, symbolSize: 13, label: CalculatorText.sheets) {}
     /// What the sheet converts money with; shown only while it does (Windows CurrencyRatesAction).
     let ratesButton = HoverButton("", style: .plain, label: CalculatorText.currencyRates) {}
+    /// Copies, exports, print and the share link (Windows Share); shown with the saved workspace.
+    let shareButton = HoverButton(symbol: "square.and.arrow.up", style: .icon, symbolSize: 13, label: CalculatorText.share) {}
+    /// Dice in the air over the sheet; nil until a roll plays.
+    var diceLayer: DiceTossView?
+    var replacingText = false
     let card = FillView(fill: Palette.card, stroke: Palette.stroke, radius: 14)
     let scroll = SheetScrollView()
     let results = ResultsColumn()
     let notice = NoticeBar()
-    private let overlay = OverlayLayer()
+    fileprivate let overlay = OverlayLayer()
     private var editors: [UUID: SheetTextView] = [:]
     private var editorOrder: [UUID] = []
     private var scrollPositions: [UUID: NSPoint] = [:]
@@ -111,7 +116,8 @@ final class CalculatorTabView: NSView, SheetEditorHost, ResultPillHost, SheetTab
         ratesButton.refusesFirstResponder = true
         ratesButton.handler = { [weak self] in self?.showRatesMenu() }
         ratesButton.isHidden = true
-        for view in [strip, status, ratesButton, more, card, notice, overlay] as [NSView] { addSubview(view) }
+        configureShare()
+        for view in [strip, status, ratesButton, shareButton, more, card, notice, overlay] as [NSView] { addSubview(view) }
         card.addSubview(scroll)
         card.addSubview(results)
         results.scroll = scroll
@@ -156,13 +162,17 @@ final class CalculatorTabView: NSView, SheetEditorHost, ResultPillHost, SheetTab
         let header = Self.headerHeight
         more.frame = NSRect(x: width - 30, y: (header - 28) / 2, width: 30, height: 28)
         var right = more.frame.minX
+        if !shareButton.isHidden {
+            shareButton.frame = NSRect(x: right - 28, y: (header - 28) / 2, width: 28, height: 28)
+            right = shareButton.frame.minX
+        }
         if !ratesButton.isHidden {
             let size = ratesButton.intrinsicContentSize
             let ratesWidth = min(190, size.width)
             ratesButton.frame = NSRect(x: right - 4 - ratesWidth, y: ((header - size.height) / 2).rounded(), width: ratesWidth, height: size.height)
             right = ratesButton.frame.minX
         }
-        let statusWidth = min(170, ceil(status.intrinsicContentSize.width))
+        let statusWidth = min(170, ceil((status.stringValue as NSString).size(withAttributes: [.font: status.font ?? NSFont.systemFont(ofSize: 11)]).width) + 6)
         status.isHidden = status.stringValue.isEmpty
         let statusX = right - 6 - (status.isHidden ? 0 : statusWidth)
         status.frame = NSRect(x: statusX, y: (header - 14) / 2, width: status.isHidden ? 0 : statusWidth, height: 14)
@@ -200,6 +210,7 @@ final class CalculatorTabView: NSView, SheetEditorHost, ResultPillHost, SheetTab
             editors[id] = next
         }
         guard let next else { return }
+        next.isEditable = !workspace.unavailable
         next.host = self
         editorOrder.removeAll { $0 == id }
         editorOrder.append(id)
@@ -255,6 +266,12 @@ final class CalculatorTabView: NSView, SheetEditorHost, ResultPillHost, SheetTab
         case .visibility:
             // An open card holds the panel open; it belongs to the page on screen.
             if !workspace.visible { closeOverlay(returnFocus: false); hideCard(animated: false) }
+        case .replaced:
+            replaceEditorText()
+        case .rolled(let roll):
+            playRoll(roll)
+        case .documents:
+            break
         case .preferences:
             let size = CGFloat(workspace.displayed.resolvedFontSize)
             for editor in editors.values { editor.fontSize = size }
@@ -462,10 +479,19 @@ final class CalculatorTabView: NSView, SheetEditorHost, ResultPillHost, SheetTab
         window?.makeFirstResponder(target)
     }
     func editorTextChanged(_ editor: SheetTextView) {
-        guard editor === self.editor else { return }
+        guard editor === self.editor, !replacingText else { return }
         hideCard(animated: false)
-        workspace.edit(editor.string, composing: editor.hasMarkedText())
+        dismissDice()
+        workspace.edit(editor.string, composing: editor.hasMarkedText(), change: editor.pendingChange, undo: editor.undoManager)
         layoutResults()
+    }
+    func editorWillChange(_ editor: SheetTextView, range: NSRange) -> Bool {
+        guard editor === self.editor, !replacingText, !(editor.undoManager?.isUndoing ?? false), !(editor.undoManager?.isRedoing ?? false) else { return false }
+        return workspace.willEdit(range)
+    }
+    func editorRoll(_ editor: SheetTextView, line: Int, again: Bool) {
+        guard editor === self.editor else { return }
+        workspace.roll(line: line, again: again)
     }
 
     // MARK: ResultPillHost
@@ -560,7 +586,7 @@ final class CalculatorTabView: NSView, SheetEditorHost, ResultPillHost, SheetTab
 
     /// One in-panel card at a time, anchored below (or above) the control that opened it. Esc or a click
     /// outside closes it and typing returns to the sheet. The panel stays open meanwhile.
-    private func present(_ content: NSView, width: CGFloat, anchor: NSView?, rect anchorRect: NSRect? = nil, leading: Bool = false, focus: NSView?) {
+    func present(_ content: NSView, width: CGFloat, anchor: NSView?, rect anchorRect: NSRect? = nil, leading: Bool = false, focus: NSView?) {
         closeOverlay(returnFocus: false)
         hideCard(animated: false)
         content.translatesAutoresizingMaskIntoConstraints = false
@@ -605,7 +631,7 @@ final class CalculatorTabView: NSView, SheetEditorHost, ResultPillHost, SheetTab
 
     // MARK: Menus
 
-    private func item(_ title: String, key: String = "", modifiers: NSEvent.ModifierFlags = .command, _ action: @escaping () -> Void) -> NSMenuItem {
+    func item(_ title: String, key: String = "", modifiers: NSEvent.ModifierFlags = .command, _ action: @escaping () -> Void) -> NSMenuItem {
         let item = NSMenuItem(title: title, action: #selector(ClosureTarget.run), keyEquivalent: key)
         item.keyEquivalentModifierMask = modifiers
         let target = ClosureTarget(action)
@@ -615,7 +641,7 @@ final class CalculatorTabView: NSView, SheetEditorHost, ResultPillHost, SheetTab
     }
 
     /// Menus keep the panel open while they track.
-    private func popUp(_ menu: NSMenu, at point: NSPoint) {
+    func popUp(_ menu: NSMenu, at point: NSPoint) {
         let hold = shell?.holdOpen()
         menu.popUp(positioning: nil, at: point, in: self)
         withExtendedLifetime(hold) {}
@@ -628,12 +654,15 @@ final class CalculatorTabView: NSView, SheetEditorHost, ResultPillHost, SheetTab
         let new = item(CalculatorText.newSheet, key: "t") { [weak self] in self?.newSheet() }
         new.isEnabled = workspace.tabs.canCreate
         menu.addItem(new)
+        if workspace.keepsDocuments { menu.addItem(item(CalculatorText.importMenu, key: "o") { [weak self] in self?.chooseImport() }) }
         menu.addItem(.separator())
         menu.addItem(item(CalculatorText.renameMenu) { [weak self] in guard let self else { return }; self.renameSheet(self.workspace.activeID) })
+        if workspace.keepsDocuments { menu.addItem(item(CalculatorText.historyMenu) { [weak self] in self?.showHistory() }) }
         let close = item(CalculatorText.closeSheet, key: "w") { [weak self] in guard let self else { return }; self.workspace.close(self.workspace.activeID) }
         close.isEnabled = workspace.tabs.canClose(workspace.activeID) != .unknown
         menu.addItem(close)
         menu.addItem(.separator())
+        if workspace.keepsDocuments { menu.addItem(item(CalculatorText.help, key: "?") { [weak self] in self?.workspace.openHelp() }) }
         menu.addItem(item(CalculatorText.settings) { [weak self] in self?.shell?.openSettings(section: CalculatorModule.id) })
         popUp(menu, at: NSPoint(x: more.frame.maxX - menu.size.width, y: more.frame.maxY + 4))
     }
@@ -658,6 +687,12 @@ final class CalculatorTabView: NSView, SheetEditorHost, ResultPillHost, SheetTab
         let menu = NSMenu()
         menu.autoenablesItems = false
         menu.addItem(item(CalculatorText.renameMenu) { [weak self] in self?.renameSheet(id) })
+        if workspace.keepsDocuments {
+            menu.addItem(item(CalculatorText.historyMenu) { [weak self] in
+                guard let self else { return }
+                if self.workspace.switchTo(id) { self.showHistory() }
+            })
+        }
         menu.addItem(.separator())
         let close = item(CalculatorText.closeSheet, key: id == workspace.activeID ? "w" : "") { [weak self] in self?.workspace.close(id) }
         close.isEnabled = workspace.tabs.canClose(id) != .unknown
@@ -729,6 +764,7 @@ final class CalculatorTabView: NSView, SheetEditorHost, ResultPillHost, SheetTab
             workspace.close(workspace.activeID)
             return true
         }
+        if documentKeyEquivalent(modifiers: modifiers, key: key) { return true }
         return super.performKeyEquivalent(with: event)
     }
 

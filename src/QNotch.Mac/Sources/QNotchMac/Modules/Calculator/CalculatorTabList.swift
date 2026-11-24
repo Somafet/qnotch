@@ -1,4 +1,5 @@
 import Foundation
+import CalculatorEngine
 
 /// One sheet as the tab strip shows it (C# SheetTab).
 struct CalculatorTab: Equatable {
@@ -22,7 +23,7 @@ enum CalculatorCloseVerdict { case allowed, unknown, lastSheet }
 /// documents until its undo window ends, keeps its name and counts toward the sheet limit. All waiting closes
 /// share one deadline, moved on by every close and undo. Main thread only.
 ///
-/// The documents port supplies the real list; until then `CalculatorTabList` below implements it.
+/// `CalculatorTabList` below implements it over the engine's SheetTabList.
 protocol CalculatorTabState: AnyObject {
     var activeID: UUID { get }
     /// When the waiting closes become real deletes; nil while nothing waits.
@@ -60,123 +61,49 @@ extension CalculatorTabState {
     @discardableResult func close(_ id: UUID, now: Date) -> CalculatorClosedSheet? { close(id, now: now, next: nil, wasActive: false) }
 }
 
-/// A line-for-line port of the C# SheetTabList, used until the documents port provides its own.
+/// The engine's SheetTabList (CalculatorSheetTabs) behind the app's tab state.
 final class CalculatorTabList: CalculatorTabState {
-    static let undoWindow: TimeInterval = 8
-    static let maxSheets = 256
+    static let undoWindow: TimeInterval = CalculatorSheetTabs.undoWindow
+    static let maxSheets = CalculatorSheetTabs.maxSheets
 
-    private var all: [CalculatorTab] = []
-    private var closedSheets: [CalculatorClosedSheet] = []
-    private var closedIDs: Set<UUID> = []
+    private let list = CalculatorSheetTabs()
     private var cachedVisible: [CalculatorTab]?
-    private(set) var activeID = UUID()
-    private(set) var dueAt: Date?
 
+    var activeID: UUID { list.activeID }
+    var dueAt: Date? { list.dueAt }
     var visible: [CalculatorTab] {
         if let cachedVisible { return cachedVisible }
-        let tabs = all.filter { !closedIDs.contains($0.id) }
+        let tabs = list.visible.map { CalculatorTab(id: $0.id, name: $0.name) }
         cachedVisible = tabs
         return tabs
     }
-    var closed: [CalculatorClosedSheet] { closedSheets }
-    var lastClosed: CalculatorClosedSheet? { closedSheets.last }
-    var totalCount: Int { all.count }
-    var canCreate: Bool { all.count < Self.maxSheets }
-    func isClosed(_ id: UUID) -> Bool { closedIDs.contains(id) }
-    func contains(_ id: UUID) -> Bool { all.contains { $0.id == id } }
+    var closed: [CalculatorClosedSheet] { list.closed.map(Self.closed) }
+    var lastClosed: CalculatorClosedSheet? { list.lastClosed.map(Self.closed) }
+    var totalCount: Int { list.totalCount }
+    var canCreate: Bool { list.canCreate }
+    func isClosed(_ id: UUID) -> Bool { list.isClosed(id) }
+    func contains(_ id: UUID) -> Bool { list.contains(id) }
+
+    private static func closed(_ sheet: CalculatorSheetTabs.Closed) -> CalculatorClosedSheet {
+        CalculatorClosedSheet(id: sheet.id, name: sheet.name, position: sheet.position, wasActive: sheet.wasActive)
+    }
+    private func changed<T>(_ value: T) -> T { cachedVisible = nil; return value }
 
     func update(_ catalog: [CalculatorTab], active: UUID) {
-        all = catalog
+        list.update(catalog.map { CalculatorSheetTabs.Tab(id: $0.id, name: $0.name) }, active: active)
         cachedVisible = nil
-        let present = Set(all.map(\.id))
-        let before = closedSheets.count
-        closedSheets.removeAll { !present.contains($0.id) }
-        if closedSheets.count != before {
-            closedIDs.formIntersection(present)
-            if closedSheets.isEmpty { dueAt = nil }
-        }
-        // Sync removed every other sheet while this one waited for its delete: it is now the last sheet, so it stays.
-        if !closedSheets.isEmpty, visible.isEmpty, let last = closedSheets.popLast() {
-            closedIDs.remove(last.id)
-            cachedVisible = nil
-            if closedSheets.isEmpty { dueAt = nil }
-        }
-        activeID = active
-        if closedIDs.contains(activeID) || !present.contains(activeID) { activeID = visible.first?.id ?? active }
     }
-
-    @discardableResult
-    func setActive(_ id: UUID) -> Bool {
-        guard !closedIDs.contains(id), contains(id) else { return false }
-        activeID = id
-        return true
-    }
-
+    @discardableResult func setActive(_ id: UUID) -> Bool { list.setActive(id) }
     func canClose(_ id: UUID) -> CalculatorCloseVerdict {
-        if closedIDs.contains(id) || !contains(id) { return .unknown }
-        return visible.count <= 1 ? .lastSheet : .allowed
+        switch list.canClose(id) { case .allowed: .allowed; case .unknown: .unknown; case .lastSheet: .lastSheet }
     }
-
-    func neighbors(of id: UUID) -> [UUID] {
-        let tabs = visible
-        guard let index = tabs.firstIndex(where: { $0.id == id }) else { return [] }
-        var result: [UUID] = []
-        for distance in 1..<max(1, tabs.count) {
-            if index + distance < tabs.count { result.append(tabs[index + distance].id) }
-            if index - distance >= 0 { result.append(tabs[index - distance].id) }
-        }
-        return result
-    }
-
+    func neighbors(of id: UUID) -> [UUID] { list.neighbors(of: id) }
     @discardableResult
     func close(_ id: UUID, now: Date, next: UUID?, wasActive: Bool) -> CalculatorClosedSheet? {
-        guard canClose(id) == .allowed else { return nil }
-        let active = id == activeID
-        guard let successor = active ? next ?? neighbors(of: id).first : activeID else { return nil }
-        if active, successor == id || closedIDs.contains(successor) || !contains(successor) { return nil }
-        let tabs = visible
-        let position = tabs.firstIndex { $0.id == id } ?? 0
-        let sheet = CalculatorClosedSheet(id: id, name: tabs[position].name, position: position, wasActive: active || wasActive)
-        closedSheets.append(sheet)
-        closedIDs.insert(id)
-        cachedVisible = nil
-        activeID = successor
-        dueAt = now.addingTimeInterval(Self.undoWindow)
-        return sheet
+        changed(list.close(id, now: now, next: next, wasActive: wasActive).map(Self.closed))
     }
-
-    @discardableResult
-    func undo(now: Date) -> CalculatorClosedSheet? {
-        guard let sheet = closedSheets.popLast() else { return nil }
-        closedIDs.remove(sheet.id)
-        cachedVisible = nil
-        if sheet.wasActive { activeID = sheet.id }
-        dueAt = closedSheets.isEmpty ? nil : now.addingTimeInterval(Self.undoWindow)
-        return sheet
-    }
-
-    func takeExpired(now: Date) -> [CalculatorClosedSheet] {
-        guard let dueAt, now >= dueAt else { return [] }
-        return takeAll()
-    }
-
-    func takeAll() -> [CalculatorClosedSheet] {
-        let taken = closedSheets
-        closedSheets.removeAll()
-        closedIDs.removeAll()
-        dueAt = nil
-        if !taken.isEmpty {
-            let gone = Set(taken.map(\.id))
-            all.removeAll { gone.contains($0.id) }
-            cachedVisible = nil
-        }
-        return taken
-    }
-
-    func uniqueName(_ format: (Int) -> String) -> String {
-        let used = Set(all.map(\.name))
-        var number = 1
-        while used.contains(format(number)) { number += 1 }
-        return format(number)
-    }
+    @discardableResult func undo(now: Date) -> CalculatorClosedSheet? { changed(list.undo(now: now).map(Self.closed)) }
+    func takeExpired(now: Date) -> [CalculatorClosedSheet] { changed(list.takeExpired(now: now).map(Self.closed)) }
+    func takeAll() -> [CalculatorClosedSheet] { changed(list.takeAll().map(Self.closed)) }
+    func uniqueName(_ format: (Int) -> String) -> String { list.uniqueName(format) }
 }

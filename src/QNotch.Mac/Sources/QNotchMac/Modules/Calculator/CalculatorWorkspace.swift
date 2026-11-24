@@ -20,7 +20,8 @@ final class CalculatorEvaluator {
     init(synchronous: Bool) { self.synchronous = synchronous }
 
     func evaluate(sheet id: UUID, source: String, environment: CalculatorEnvironment, format: CalculatorFormat,
-                  functions: CalculatorFunctions?, rates: CalculatorRates? = nil, inBackground: Bool = false, done: @escaping (Outcome) -> Void) {
+                  functions: CalculatorFunctions?, rates: CalculatorRates? = nil, uuids: CalculatorUuidContext? = nil, inBackground: Bool = false,
+                  done: @escaping (Outcome) -> Void) {
         cancellation?.cancel()
         let token = CalculatorCancellation()
         cancellation = token
@@ -28,7 +29,7 @@ final class CalculatorEvaluator {
         let current = revision
         let session = self.session(id)
         func run() -> Outcome? {
-            do { return .done(try session.evaluate(source, environment: environment, format: format, functions: functions, rates: rates, cancel: token)) }
+            do { return .done(try session.evaluate(source, environment: environment, format: format, functions: functions, rates: rates, uuids: uuids, cancel: token)) }
             catch { return token.isCancelled ? nil : .failed(error.localizedDescription) }
         }
         if synchronous, !inBackground {
@@ -98,6 +99,12 @@ final class CalculatorWorkspace {
         case visibility
         /// The rates button, its menu or the rates settings have something new to say.
         case rates
+        /// The sheet in front got new text in place (a restored version): the editor takes it as one undo step.
+        case replaced
+        /// A dice line was rolled and its result is on screen: the toss can play.
+        case rolled(CalculatorDiceRoll)
+        /// The sync folder, its status or the saved functions changed (Settings and Search follow).
+        case documents
     }
     enum TabChange: Equatable { case refreshed, closed(UUID, keepingPlace: Bool), restored(UUID), created(UUID), renamed(UUID) }
     struct Notice: Equatable {
@@ -114,8 +121,8 @@ final class CalculatorWorkspace {
     let currencies: CalculatorCurrencies
     private(set) var activeID: UUID
     /// The text of the sheet in front, saved or not.
-    private(set) var source: String
-    private(set) var dirty = false
+    var source: String
+    var dirty = false
     /// The latest results and the source they belong to.
     private(set) var lines: [CalculatorLineResult] = []
     private(set) var evaluatedSource = ""
@@ -137,7 +144,31 @@ final class CalculatorWorkspace {
     private var dateTask: DispatchWorkItem?
     private var clockObservers: [NSObjectProtocol] = []
     private var observers: [UUID: (Change) -> Void] = [:]
-    private var closedDown = false
+    private(set) var closedDown = false
+    /// A restored version's identities and receipts before and after, until the editor's undo step takes them.
+    var pendingRestore: (before: CalculatorGeneratedCheckpoint, receipts: CalculatorFunctions?, after: CalculatorFunctions?)?
+    /// The UUIDs and rolls of the sheet in front, and of recent sheets whose editors keep their undo (four, like the editors).
+    var generated: CalculatorGeneratedValues
+    var generatedCache: [UUID: CalculatorGeneratedValues] = [:]
+    var generatedOrder: [UUID] = []
+    /// Receipts an undone restore brought back; the next save writes them with the text (Windows restoredReceipts).
+    var restoredReceipts: CalculatorFunctions?
+    /// Saved since the last version was kept (Windows historyPending), and whether keeping one failed.
+    var historyPending = false
+    var historyFailed = false
+    /// The sheet in front could not be read: it shows read-only until another sheet is chosen.
+    private(set) var unavailable = false
+    /// Before-edit identities of a change that touches lines holding UUIDs or rolls (see `willEdit`).
+    var editCheckpoint: CalculatorGeneratedCheckpoint?
+    /// A roll waiting for its evaluation, then shown (Windows rollShowing).
+    var rollShowing: CalculatorDiceRoll?
+    /// The folder sync session; nil while sync is off (Windows syncSession).
+    var syncSession: CalculatorSyncSession?
+    var applyingSync = false
+    var syncMessage: (text: String, sticky: Bool)?
+    var importing = false
+    /// Saved functions or sync changed: the module tells Search.
+    var documentsChanged: (() -> Void)?
     /// The clock; tests move it.
     var now: () -> Date = Date.init
     /// Typing evaluates off the main thread even in a synchronous workspace (diagnostic runs check that path).
@@ -154,8 +185,17 @@ final class CalculatorWorkspace {
         evaluator = CalculatorEvaluator(synchronous: synchronous)
         currencies = CalculatorCurrencies(directory: ratesDirectory, offline: offlineRates)
         activeID = documents.activeSheetID
-        source = (try? documents.source(of: documents.activeSheetID)) ?? ""
+        let opened = (documents as? StoredCalculatorDocuments)?.openedActive ?? (try? documents.open(documents.activeSheetID))
+        source = opened?.source ?? ""
+        generated = opened?.generated ?? CalculatorGeneratedValues(source: "")
         format = Self.format(documents.preferences)
+        if opened == nil {
+            unavailable = true
+            status = CalculatorText.sheetUnavailable
+        } else if opened?.recovered == true || (documents as? StoredCalculatorDocuments)?.opened.recovered == true {
+            status = CalculatorText.recoveredBackup
+        }
+        remember(generated, for: activeID)
         refreshTabs()
         currencies.changed = { [weak self] in self?.notify(.rates) }
         currencies.ratesChanged = { [weak self] in self?.ratesChanged() }
@@ -165,6 +205,7 @@ final class CalculatorWorkspace {
                                                    composing: self.composing)
         }
         evaluate()
+        startSync()
     }
 
     deinit {
@@ -186,7 +227,7 @@ final class CalculatorWorkspace {
         return Token { [weak self] in self?.observers[id] = nil }
     }
 
-    private func notify(_ change: Change) {
+    func notify(_ change: Change) {
         for handler in Array(observers.values) { handler(change) }
     }
 
@@ -199,8 +240,9 @@ final class CalculatorWorkspace {
     // MARK: Editing and evaluation
 
     /// The editor's text changed. Composing (an input method's marked text) defers evaluation and saving.
-    func edit(_ text: String, composing: Bool = false) {
-        guard !closedDown else { return }
+    func edit(_ text: String, composing: Bool = false, change: (range: NSRange, length: Int)? = nil, undo: UndoManager? = nil) {
+        guard !closedDown, !unavailable else { return }
+        followIdentities(text, change: change, undo: undo)
         source = text
         dirty = true
         self.composing = composing
@@ -216,14 +258,27 @@ final class CalculatorWorkspace {
         evaluate(typing: true)
     }
 
-    func evaluate(typing: Bool = false) {
+    func evaluate(typing: Bool = false, supplied: Bool = false) {
         guard !closedDown else { return }
         let id = activeID, text = source
         let evaluatedAt = now(), zone = TimeZone.current
         let rates = currencies.rates
+        let functions = documents.functions
+        // The first `uuid` turns generated values on: the sheet is saved with them (Windows ReadUuidContext).
+        let uuids = generated.source == text ? generated.context(for: text, functions: functions) : (context: nil, enabled: false)
+        if uuids.enabled { dirty = true; if !composing { scheduleSave() } }
         evaluator.evaluate(sheet: id, source: text, environment: environment(at: evaluatedAt, zone: zone), format: format,
-                           functions: documents.functions, rates: rates, inBackground: typing && typingInBackground) { [weak self] outcome in
+                           functions: functions, rates: rates, uuids: uuids.context, inBackground: typing && typingInBackground) { [weak self] outcome in
             guard let self, self.activeID == id else { return }
+            if case .done(let evaluation) = outcome, evaluation.needsGeneratedValues, self.source == text {
+                // New `uuid` lines get their values, then the sheet evaluates again with them (Windows Evaluate).
+                if !supplied, (try? self.generated.supply(evaluation)) != nil {
+                    self.dirty = true
+                    if !self.composing { self.scheduleSave() }
+                    self.evaluate(supplied: true)
+                    return
+                }
+            }
             switch outcome {
             case .done(let evaluation):
                 // The first sheet that converts money reads the rate cache, then evaluates again with it (Windows
@@ -251,6 +306,7 @@ final class CalculatorWorkspace {
                 self.currencies.adopt(uses: false, requests: [])
             }
             self.notify(.results)
+            self.showRoll()
         }
     }
 
@@ -297,7 +353,7 @@ final class CalculatorWorkspace {
 
     // MARK: Saving
 
-    private func scheduleSave() {
+    func scheduleSave() {
         saveTask?.cancel()
         let task = DispatchWorkItem { [weak self] in self?.save() }
         saveTask = task
@@ -310,11 +366,23 @@ final class CalculatorWorkspace {
         saveTask?.cancel()
         saveTask = nil
         if composing { setStatus(CalculatorText.finishTextInput); return false }
-        guard dirty else { return true }
+        guard dirty, !unavailable else { return true }
+        captureHistory(force: false) // Keeps what this save is about to replace.
         do {
-            try documents.save(activeID, source: source)
+            let refresh = try documents.save(activeID, source: source, generated: generated.source == source ? generated : nil, receipts: restoredReceipts)
+            restoredReceipts = nil
+            historyPending = true
             dirty = false
-            if status == CalculatorText.saveFailed { setStatus("") }
+            if [CalculatorText.saveFailed, CalculatorText.recoveredBackup].contains(status) || syncMessage?.sticky == true {
+                syncMessage = nil
+                setStatus(historyState)
+            }
+            requestSync()
+            if refresh {
+                documentsChanged?()
+                notify(.documents)
+                evaluate()
+            }
             return true
         } catch {
             setStatus(CalculatorText.saveFailed)
@@ -326,6 +394,7 @@ final class CalculatorWorkspace {
     func flush() {
         guard !closedDown, !composing else { return }
         save()
+        captureHistory(force: false)
         documents.flush()
     }
 
@@ -334,8 +403,11 @@ final class CalculatorWorkspace {
         guard !closedDown else { return }
         composing = false
         save()
+        captureHistory(force: true)
         commitClosedSheets(everything: true)
         documents.flush()
+        stopSync()
+        documents.close()
         closedDown = true
         evaluator.cancel()
         currencies.shutdown()
@@ -344,7 +416,7 @@ final class CalculatorWorkspace {
         observers.removeAll()
     }
 
-    private func setStatus(_ text: String) {
+    func setStatus(_ text: String) {
         guard status != text else { return }
         status = text
         notify(.status)
@@ -362,21 +434,34 @@ final class CalculatorWorkspace {
 
     private func catalog() -> [CalculatorTab] { documents.sheets.map { CalculatorTab(id: $0.id, name: $0.name) } }
 
-    private func refreshTabs() { tabs.update(catalog(), active: activeID) }
+    func refreshTabs() {
+        tabs.update(catalog(), active: activeID)
+        if !applyingSync { requestSync() } // Catalog edits publish too; nothing while sync is off.
+    }
 
     @discardableResult
-    private func attempt(_ action: () throws -> Void) -> Bool {
+    func attempt(_ action: () throws -> Void, failure: String = CalculatorText.sheetUnavailable) -> Bool {
         do { try action(); return true } catch {
-            setStatus(CalculatorText.sheetUnavailable)
+            setStatus(failure)
             return false
         }
     }
 
-    private func activate(_ id: UUID, source text: String) {
+    /// Puts a sheet in front. Its generated values come from the recent sheet's own (whose editor keeps their undo) when the text
+    /// still matches, otherwise from the file.
+    func activate(_ id: UUID, opened: CalculatorOpenedSheet) {
         evaluator.cancel()
         saveTask?.cancel()
         activeID = id
+        let text = opened.source
         source = text
+        if let kept = generatedCache[id], kept.source == text { generated = kept } else { generated = opened.generated }
+        remember(generated, for: id)
+        unavailable = false
+        restoredReceipts = nil
+        historyPending = false
+        editCheckpoint = nil
+        rollShowing = nil
         dirty = false
         composing = false
         evaluationDeferred = false
@@ -385,7 +470,8 @@ final class CalculatorWorkspace {
         evaluatedSource = ""
         stopDateSchedule()
         refreshTabs()
-        if status == CalculatorText.sheetUnavailable || status == CalculatorText.finishTextInput { setStatus("") }
+        if opened.recovered { setStatus(CalculatorText.recoveredBackup) }
+        else if [CalculatorText.sheetUnavailable, CalculatorText.finishTextInput, CalculatorText.recoveredBackup].contains(status) { setStatus(historyState) }
         notify(.sheet)
         evaluate()
     }
@@ -394,13 +480,14 @@ final class CalculatorWorkspace {
     func switchTo(_ id: UUID) -> Bool {
         if id == activeID { return true }
         guard !tabs.isClosed(id), save() else { refreshTabs(); notify(.tabs(.refreshed)); return false }
-        var text = ""
+        captureHistory(force: true)
+        var opened: CalculatorOpenedSheet?
         let switched = attempt {
-            text = try documents.source(of: id)
+            opened = try documents.open(id) // Validate the sheet before committing the selection.
             try documents.select(id)
         }
-        guard switched else { refreshTabs(); notify(.tabs(.refreshed)); return false }
-        activate(id, source: text)
+        guard switched, let opened else { refreshTabs(); notify(.tabs(.refreshed)); return false }
+        activate(id, opened: opened)
         notify(.tabs(.refreshed))
         return true
     }
@@ -419,9 +506,13 @@ final class CalculatorWorkspace {
             return false
         }
         guard save() else { return false }
-        var created: UUID?
-        guard attempt({ created = try documents.create(name: tabs.uniqueName(CalculatorText.newSheetName), source: "") }), let created else { return false }
-        activate(created, source: "")
+        captureHistory(force: true)
+        var created: UUID?, opened: CalculatorOpenedSheet?
+        guard attempt({
+            created = try documents.create(name: tabs.uniqueName(CalculatorText.newSheetName), source: "")
+            opened = try documents.open(created!)
+        }), let created, let opened else { return false }
+        activate(created, opened: opened)
         notify(.tabs(.created(created)))
         return true
     }
@@ -436,7 +527,9 @@ final class CalculatorWorkspace {
         }
         if id == activeID {
             if composing { setStatus(CalculatorText.finishTextInput); return false }
-            guard save(), closeActive(id) else { return false }
+            guard save() else { return false }
+            captureHistory(force: true)
+            guard closeActive(id) else { return false }
             notify(.tabs(.closed(id, keepingPlace: false)))
         } else {
             guard tabs.close(id, now: now()) != nil else { return false }
@@ -450,10 +543,10 @@ final class CalculatorWorkspace {
     /// Moves to the nearest sheet that can load, then hides this one.
     private func closeActive(_ id: UUID) -> Bool {
         for neighbor in tabs.neighbors(of: id) {
-            guard let text = try? documents.source(of: neighbor) else { continue }
+            guard let opened = try? documents.open(neighbor) else { continue }
             guard tabs.close(id, now: now(), next: neighbor, wasActive: false) != nil else { return false }
             if attempt({ try documents.select(neighbor) }) {
-                activate(neighbor, source: text)
+                activate(neighbor, opened: opened)
                 return true
             }
             tabs.undo(now: now())
@@ -470,9 +563,13 @@ final class CalculatorWorkspace {
         guard tabs.canCreate else { showNotice(CalculatorText.sheetLimitPending(CalculatorTabList.maxSheets)); return false }
         if composing { setStatus(CalculatorText.finishTextInput); return false }
         guard save() else { return false }
-        var fresh: UUID?
-        guard attempt({ fresh = try documents.create(name: tabs.uniqueName(CalculatorText.newSheetName), source: "") }), let fresh else { return false }
-        activate(fresh, source: "")
+        captureHistory(force: true)
+        var fresh: UUID?, opened: CalculatorOpenedSheet?
+        guard attempt({
+            fresh = try documents.create(name: tabs.uniqueName(CalculatorText.newSheetName), source: "")
+            opened = try documents.open(fresh!)
+        }), let fresh, let opened else { return false }
+        activate(fresh, opened: opened)
         guard tabs.close(id, now: now(), next: nil, wasActive: true) != nil else { return false }
         replacedLastSheet = (id, fresh)
         notify(.tabs(.closed(id, keepingPlace: false)))
@@ -503,15 +600,17 @@ final class CalculatorWorkspace {
     private func switchToRestored(_ id: UUID) -> Bool {
         if id == activeID { return true }
         guard save() else { return false }
-        var text = ""
-        guard attempt({ text = try documents.source(of: id); try documents.select(id) }) else { return false }
-        activate(id, source: text)
+        captureHistory(force: true)
+        var opened: CalculatorOpenedSheet?
+        guard attempt({ opened = try documents.open(id); try documents.select(id) }), let opened else { return false }
+        activate(id, opened: opened)
         return true
     }
 
     private func dropUnusedSheet(_ id: UUID) {
         guard attempt({ try documents.delete([id]) }) else { return }
         evaluator.forget(id)
+        forgetGenerated(id)
         refreshTabs()
     }
 
@@ -534,6 +633,7 @@ final class CalculatorWorkspace {
         for sheet in due {
             if replacedLastSheet?.closed == sheet.id { replacedLastSheet = nil }
             evaluator.forget(sheet.id)
+            forgetGenerated(sheet.id)
         }
         // One catalog change for the group. If it fails the sheets stay and show again below; nothing is lost.
         attempt { try documents.delete(due.map(\.id)) }
@@ -552,6 +652,7 @@ final class CalculatorWorkspace {
         if trimmed == documents.sheets.first(where: { $0.id == id })?.name { return nil }
         guard (try? InMemoryCalculatorDocuments.validName(trimmed)) != nil else { return CalculatorText.invalidSheetName }
         if id == activeID, !save() { return CalculatorText.saveFailed }
+        if !CalculatorDocumentStore.isValidName(trimmed) { return CalculatorText.invalidSheetName }
         do { try documents.rename(id, to: trimmed) } catch { return CalculatorText.sheetUnavailable }
         refreshTabs()
         notify(.tabs(.renamed(id)))
@@ -620,6 +721,7 @@ final class CalculatorWorkspace {
             return
         }
         let after = documents.preferences
+        if after.language != before.language { CalculatorText.language = CalculatorInterfaceText.resolve(after.language) }
         if after.autoCurrencyRates != before.autoCurrencyRates { currencies.preferencesChanged(automatic: after.autoCurrencyRates) }
         // Only what changes answers evaluates again: not the text size or the automatic download, nor a format a preview
         // already shows.

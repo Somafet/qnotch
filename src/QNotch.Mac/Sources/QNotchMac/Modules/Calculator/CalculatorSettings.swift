@@ -24,7 +24,7 @@ final class CalculatorSettingsView: NSView {
             guard let workspace else { return self.show(Self.unavailable()) }
             self.workspace = workspace
             self.observation = workspace.observe { [weak self] change in
-                guard change == .preferences || change == .status || change == .rates, let self else { return }
+                guard change == .preferences || change == .status || change == .rates || change == .documents, let self else { return }
                 self.rebuild()
             }
             self.show(Self.page(workspace))
@@ -82,7 +82,7 @@ final class CalculatorSettingsView: NSView {
     static func page(_ workspace: CalculatorWorkspace) -> NSView {
         let width = SettingsController.contentWidth
         let preferences = workspace.preferences
-        let intro = label(CalculatorText.calculatorSettingsIntro, size: 12, color: .secondaryLabelColor)
+        let intro = label(workspace.keepsDocuments ? CalculatorText.savedIntro : CalculatorText.unsavedIntro, size: 12, color: .secondaryLabelColor)
         intro.preferredMaxLayoutWidth = width
 
         // General: the workday calendar (the interface language waits for the catalog's other languages).
@@ -92,7 +92,12 @@ final class CalculatorSettingsView: NSView {
         let workday = choice(CalculatorText.workdayCalendar, id: "calculator-settings-workday", regions, preferences.workdayRegion) { value in
             workspace.updatePreferences { $0.workdayRegion = value }
         }
-        let general = settingsGroup([settingsRow(CalculatorText.workdayCalendar, control: workday, width: width)], header: CalculatorText.general, width: width)
+        let languages = [(CalculatorText.systemLanguage, String?.none)] + CalculatorInterfaceText.languages.map { ($0.name, Optional($0.code)) }
+        let language = choice(CalculatorText.languageSetting, id: "calculator-settings-language", languages, preferences.language) { value in
+            workspace.updatePreferences { $0.language = value }
+        }
+        let general = settingsGroup([settingsRow(CalculatorText.languageSetting, control: language, width: width),
+                                     settingsRow(CalculatorText.workdayCalendar, control: workday, width: width)], header: CalculatorText.general, width: width)
 
         // Appearance.
         // Each display choice previews on the sheet while highlighted (Windows PreviewComboBoxItem).
@@ -135,14 +140,8 @@ final class CalculatorSettingsView: NSView {
         let rates = settingsGroup([settingsRow(CalculatorText.defaultCurrency, detail: CalculatorText.defaultCurrencyTip, control: currency, width: width)]
                                   + rateRows(workspace, width: width), header: CalculatorText.currencyRates, width: width)
 
-        let coming = settingsGroup([
-            settingsRow(CalculatorText.comingSaved, detail: CalculatorText.comingSavedTip, width: width),
-            settingsRow(CalculatorText.comingSync, detail: CalculatorText.comingSyncTip, width: width),
-            settingsRow(CalculatorText.comingShare, detail: CalculatorText.comingShareTip, width: width),
-            settingsRow(CalculatorText.comingLanguage, detail: CalculatorText.comingLanguageTip, width: width)
-        ], header: CalculatorText.comingTitle, width: width)
-
-        var views: [NSView] = [intro, general, appearance, rates, coming]
+        var views: [NSView] = [intro, general, appearance, rates]
+        if workspace.keepsDocuments { views += [syncGroup(workspace, width: width), aboutGroup(workspace, width: width)] }
         if !workspace.status.isEmpty, workspace.status == CalculatorText.settingsUnavailable {
             let problem = label(workspace.status, size: 12, color: .systemRed)
             views.insert(problem, at: 1)
@@ -150,6 +149,60 @@ final class CalculatorSettingsView: NSView {
         let stack = column(views, spacing: 22)
         stack.setCustomSpacing(16, after: intro)
         return stack
+    }
+
+    private static func button(_ id: String, _ title: String, enabled: Bool = true, tip: String? = nil, _ action: @escaping () -> Void) -> NSButton {
+        let button = NSButton(title: title, target: nil, action: nil)
+        button.bezelStyle = .rounded
+        button.controlSize = .small
+        button.isEnabled = enabled
+        button.toolTip = tip
+        button.identifier = NSUserInterfaceItemIdentifier(id)
+        button.onAction(action)
+        return button
+    }
+
+    /// Off: one row to choose a folder. On: the folder with Change and Stop (Windows SyncGroup).
+    private static func syncGroup(_ workspace: CalculatorWorkspace, width: CGFloat) -> NSView {
+        let rows: [NSView]
+        if let folder = workspace.syncFolder {
+            let actions = row([button("calculator-settings-sync-change", CalculatorText.changeFolder) { chooseSyncFolder(workspace) },
+                               button("calculator-settings-sync-stop", CalculatorText.stopSyncing, tip: CalculatorText.stopSyncingTip) { workspace.setSyncFolder(nil) }],
+                              spacing: 6)
+            let status = workspace.syncMessage?.text
+            rows = [settingsRow((folder.path as NSString).abbreviatingWithTildeInPath, detail: status, control: actions, width: width) {
+                $0.identifier = NSUserInterfaceItemIdentifier("calculator-settings-sync-folder")
+            }]
+        } else {
+            rows = [settingsRow(CalculatorText.syncFolderTip, control: button("calculator-settings-sync-choose", CalculatorText.chooseFolder) { chooseSyncFolder(workspace) },
+                                width: width)]
+        }
+        return settingsGroup(rows, header: CalculatorText.syncFolder, width: width)
+    }
+
+    /// The folder panel, starting in the current folder or iCloud Drive (Windows starts in OneDrive).
+    private static func chooseSyncFolder(_ workspace: CalculatorWorkspace) {
+        guard !Runtime.diagnostics else { return }
+        let panel = NSOpenPanel()
+        panel.title = CalculatorText.chooseSyncFolder
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.canCreateDirectories = true
+        panel.allowsMultipleSelection = false
+        let iCloud = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Mobile Documents/com~apple~CloudDocs", isDirectory: true)
+        if let current = workspace.syncFolder { panel.directoryURL = current }
+        else if FileManager.default.fileExists(atPath: iCloud.path) { panel.directoryURL = iCloud }
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        workspace.setSyncFolder(url)
+    }
+
+    /// Help and the third-party notices, opened in the browser from the data folder (Windows AboutGroup).
+    private static func aboutGroup(_ workspace: CalculatorWorkspace, width: CGFloat) -> NSView {
+        settingsGroup([
+            settingsRow(CalculatorText.help, detail: "⌘?", control: button("calculator-settings-help", CalculatorText.openLink) { workspace.openHelp() }, width: width),
+            settingsRow(CalculatorText.thirdPartyNotices, detail: CalculatorText.thirdPartyNoticesTip,
+                        control: button("calculator-settings-notices", CalculatorText.openLink) { workspace.openNotices() }, width: width)
+        ], header: CalculatorText.about, width: width)
     }
 
     /// The rates rows: the status with the latest download (or Cancel), monthly and historical downloads, the automatic

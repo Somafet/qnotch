@@ -2,9 +2,11 @@ import AppKit
 
 /// The Calculator in diagnostic runs: extra snapshot states (`calculator-hover`, `calculator-explanation`,
 /// `calculator-closed`, `calculator-all-sheets`, `calculator-rename`, `calculator-rename-variable`, `calculator-overflow`,
-/// `calculator-figures`, `calculator-rates`) and the smoke checks `calculator-typing`, `calculator-copy`, `calculator-sheets`,
-/// `calculator-last-sheet`, `calculator-rename-variable`, `calculator-line-copy`, `calculator-figure`, `calculator-search`
-/// and `calculator-hidden-idle`. Copies go to a private pasteboard; nothing is written to disk.
+/// `calculator-figures`, `calculator-rates`, `calculator-history`, `calculator-dice`, `calculator-import-report`,
+/// `settings-calculator-sync`) and the smoke checks `calculator-typing`, `calculator-copy`, `calculator-sheets`,
+/// `calculator-last-sheet`, `calculator-rename-variable`, `calculator-line-copy`, `calculator-figure`, `calculator-search`,
+/// `calculator-hidden-idle`, `calculator-persistence`, `calculator-history` and `calculator-import`. Copies go to a private
+/// pasteboard; sheets live in throwaway folders and never in the user's data.
 enum CalculatorSmoke {
     typealias Failure = NativeSmokeTest.Failure
 
@@ -23,7 +25,8 @@ enum CalculatorSmoke {
         let shell = run.shell
         guard shell.module(CalculatorModule.self) != nil,
               run.wants(["calculator-hover", "calculator-explanation", "calculator-closed", "calculator-all-sheets", "calculator-rename",
-                         "calculator-rename-variable", "calculator-overflow", "calculator-figures", "calculator-rates"]) else { return }
+                         "calculator-rename-variable", "calculator-overflow", "calculator-figures", "calculator-rates",
+                         "calculator-history", "calculator-dice", "calculator-import-report", "settings-calculator-sync"]) else { return }
         shell.open(keyboard: false)
         shell.selectTab(CalculatorModule.id)
         guard let page = page(shell) else { return run.fail("calculator-hover", "the Calculator page did not load") }
@@ -79,6 +82,7 @@ enum CalculatorSmoke {
             rates.showRatesMenu()
             run.write("calculator-rates", rates, background: Palette.surface)
         }
+        renderDocuments(run, page: page)
         shell.selectTab("home")
         shell.close(restoreFocus: false)
     }
@@ -94,6 +98,68 @@ enum CalculatorSmoke {
         page.layoutSubtreeIfNeeded()
         page.layoutResults()
         return page
+    }
+
+    /// History, a dice roll, an import report and the sync settings, on the demo's throwaway store.
+    private static func renderDocuments(_ run: SnapshotRun, page: CalculatorTabView) {
+        let workspace = page.workspace
+        guard let documents = workspace.documents as? StoredCalculatorDocuments else { return }
+        // Two saves ten minutes apart keep two versions of the Budget sheet.
+        // Earlier states already saved the sheet once; the clock moves past the five-minute interval.
+        var clock = Date().addingTimeInterval(600)
+        documents.now = { clock }
+        let original = workspace.source
+        workspace.edit(original + "\ntip = 10% of 240")
+        workspace.save()
+        clock += 600
+        workspace.edit(original + "\ntip = 12% of 240")
+        workspace.save()
+        page.editor.replaceAll(with: workspace.source)
+        page.layoutResults()
+        page.showHistory()
+        run.notch("calculator-history")
+        page.closeOverlay(returnFocus: false)
+
+        // A rolled line, its dice at rest beside it, on the short Rent split sheet.
+        if let rent = workspace.tabs.visible.first(where: { $0.name == "Rent split" }) { workspace.switchTo(rent.id) }
+        page.layoutSubtreeIfNeeded()
+        page.editor.replaceAll(with: workspace.source + "\n\nattack = 2d6 + 3")
+        workspace.edit(page.editor.string)
+        page.layoutResults()
+        workspace.roll(line: page.editor.lineStarts.count - 1, again: false)
+        page.layoutResults()
+        run.notch("calculator-dice")
+        page.dismissDice()
+
+        // An import with a file that cannot be read.
+        let files = documents.directory.appendingPathComponent("import-demo", isDirectory: true)
+        try? FileManager.default.createDirectory(at: files, withIntermediateDirectories: true)
+        let groceries = files.appendingPathComponent("Groceries.txt"), broken = files.appendingPathComponent("Budget 2025.slvr")
+        try? "milk = 2.49\nbread = 3.20\nmilk + bread".write(to: groceries, atomically: true, encoding: .utf8)
+        try? "{\"sheet\": ".write(to: broken, atomically: true, encoding: .utf8)
+        page.importFiles([groceries, broken])
+        page.needsLayout = true
+        page.layoutSubtreeIfNeeded()
+        page.layoutResults()
+        run.notch("calculator-import-report")
+        page.closeOverlay(returnFocus: false)
+
+        // Sync settings with a folder chosen.
+        if run.options.includes("settings-calculator-sync") {
+            // Beside the throwaway data folder: a sync folder may not be inside the calculator's own folder.
+            let folder = documents.directory.deletingLastPathComponent().appendingPathComponent("calculator-demo-sync-" + UUID().uuidString, isDirectory: true)
+            defer { try? FileManager.default.removeItem(at: folder) }
+            try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+            workspace.setSyncFolder(folder)
+            let settings = CalculatorSettingsView.page(workspace)
+            let host = NSView(frame: NSRect(x: 0, y: 0, width: SettingsController.contentWidth + 48, height: 10))
+            embed(settings, in: host, inset: NSEdgeInsets(top: 24, left: 24, bottom: 24, right: 24), fill: true)
+            host.frame.size.height = host.fittingSize.height
+            host.appearance = Palette.dark
+            host.layoutSubtreeIfNeeded()
+            run.write("settings-calculator-sync", host, background: .windowBackgroundColor)
+            workspace.setSyncFolder(nil)
+        }
     }
 
     // MARK: Smoke checks
@@ -160,7 +226,7 @@ enum CalculatorSmoke {
                     }
                     shell.close(restoreFocus: false)
                     run.pass("calculator-hidden-idle")
-                    done(nil)
+                    checkDocuments(run, done: done)
                 }
                 }
             }
@@ -278,6 +344,59 @@ enum CalculatorSmoke {
             }
             run.pass("calculator-search")
             done(nil)
+        }
+    }
+
+    /// The real store in its own throwaway folder: what was typed is there after a quit and reopen, a version comes back, and an
+    /// imported file becomes a sheet. Nothing of the user's is read or written.
+    private static func checkDocuments(_ run: SnapshotRun, done: @escaping (Error?) -> Void) {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("qnotch-calculator-smoke-" + UUID().uuidString, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let data = folder.appendingPathComponent("calculator", isDirectory: true)
+        func open() throws -> CalculatorWorkspace {
+            CalculatorWorkspace(documents: try StoredCalculatorDocuments(directory: data), tabs: CalculatorStorage.makeTabState(), synchronous: true)
+        }
+        do {
+            var workspace = try open()
+            workspace.edit("rent = 1450\nrent / 2")
+            workspace.newSheet()
+            workspace.edit("uuid")
+            let value = workspace.lines.first?.answer ?? ""
+            workspace.shutdown()
+            workspace = try open()
+            guard workspace.documents.sheets.count == 2, workspace.source == "uuid", workspace.lines.first?.answer == value, value.count == 36 else {
+                workspace.shutdown()
+                return done(Failure("calculator-persistence", "the sheets, the text or the UUID did not come back after a reopen"))
+            }
+            run.pass("calculator-persistence")
+
+            let documents = workspace.documents as? StoredCalculatorDocuments
+            var clock = Date()
+            documents?.now = { clock }
+            workspace.edit("first = 1")
+            workspace.save()
+            clock += 600
+            workspace.edit("second = 2")
+            workspace.save()
+            guard let version = workspace.loadHistory()?.versions.first(where: { $0.source == "first = 1" }),
+                  workspace.restoreVersion(version, of: workspace.activeID), workspace.source == "first = 1",
+                  (try? workspace.documents.open(workspace.activeID).source) == "first = 1" else {
+                workspace.shutdown()
+                return done(Failure("calculator-history", "an earlier version was not kept or not restored"))
+            }
+            run.pass("calculator-history")
+
+            let file = folder.appendingPathComponent("Groceries.txt")
+            try "milk = 2\nbread = 3\nmilk + bread".write(to: file, atomically: true, encoding: .utf8)
+            var created = 0
+            workspace.importFiles([file]) { count, _ in created = count }
+            let imported = created == 1 && workspace.activeName == "Groceries" && workspace.lines.last?.answer == "5"
+            workspace.shutdown()
+            guard imported else { return done(Failure("calculator-import", "the text file did not become a sheet with its results")) }
+            run.pass("calculator-import")
+            done(nil)
+        } catch {
+            done(Failure("calculator-persistence", "the store did not open: \(error.localizedDescription)"))
         }
     }
 }
