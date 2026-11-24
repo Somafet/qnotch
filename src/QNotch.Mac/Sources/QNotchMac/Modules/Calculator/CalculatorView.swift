@@ -569,7 +569,7 @@ final class CalculatorTabView: NSView, SheetEditorHost, ResultPillHost, SheetTab
         let size = NSSize(width: width, height: ceil(content.fittingSize.height))
         var origin: NSPoint
         let anchorFrame: NSRect? = anchorRect ?? anchor.flatMap { anchor in
-            anchor.window != nil && !anchor.isHiddenOrHasHiddenAncestor ? anchor.convert(anchor.bounds, to: self) : nil
+            anchor.isDescendant(of: self) && !anchor.isHiddenOrHasHiddenAncestor ? anchor.convert(anchor.bounds, to: self) : nil
         }
         if let frame = anchorFrame {
             origin = NSPoint(x: leading ? frame.minX : frame.maxX - size.width, y: frame.maxY + 4)

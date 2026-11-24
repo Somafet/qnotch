@@ -1,8 +1,9 @@
 import AppKit
 
 /// The Calculator in diagnostic runs: extra snapshot states (`calculator-hover`, `calculator-explanation`,
-/// `calculator-closed`, `calculator-all-sheets`, `calculator-rename`, `calculator-overflow`) and the smoke checks
-/// `calculator-typing`, `calculator-copy`, `calculator-sheets`, `calculator-last-sheet`, `calculator-search`
+/// `calculator-closed`, `calculator-all-sheets`, `calculator-rename`, `calculator-rename-variable`, `calculator-overflow`,
+/// `calculator-figures`, `calculator-rates`) and the smoke checks `calculator-typing`, `calculator-copy`, `calculator-sheets`,
+/// `calculator-last-sheet`, `calculator-rename-variable`, `calculator-line-copy`, `calculator-figure`, `calculator-search`
 /// and `calculator-hidden-idle`. Copies go to a private pasteboard; nothing is written to disk.
 enum CalculatorSmoke {
     typealias Failure = NativeSmokeTest.Failure
@@ -21,7 +22,8 @@ enum CalculatorSmoke {
     static func render(_ run: SnapshotRun) {
         let shell = run.shell
         guard shell.module(CalculatorModule.self) != nil,
-              run.wants(["calculator-hover", "calculator-explanation", "calculator-closed", "calculator-all-sheets", "calculator-rename", "calculator-overflow"]) else { return }
+              run.wants(["calculator-hover", "calculator-explanation", "calculator-closed", "calculator-all-sheets", "calculator-rename",
+                         "calculator-rename-variable", "calculator-overflow", "calculator-figures", "calculator-rates"]) else { return }
         shell.open(keyboard: false)
         shell.selectTab(CalculatorModule.id)
         guard let page = page(shell) else { return run.fail("calculator-hover", "the Calculator page did not load") }
@@ -47,6 +49,14 @@ enum CalculatorSmoke {
         page.renameSheet(workspace.activeID)
         run.notch("calculator-rename")
         page.closeOverlay(returnFocus: false)
+        // F2 with the caret in "nights" (line 2 of the demo).
+        let nights = (page.editor.string as NSString).range(of: "nights")
+        if nights.location != NSNotFound {
+            page.editor.setSelectedRange(NSRange(location: nights.location + 2, length: 0))
+            page.editorRename()
+            run.notch("calculator-rename-variable")
+            page.closeOverlay(returnFocus: false)
+        }
         // More sheets than fit: chevrons, the all-sheets button and the tab in front kept in view. A page of its
         // own, so the demo sheets stay as they are.
         if run.options.includes("calculator-overflow") {
@@ -58,8 +68,32 @@ enum CalculatorSmoke {
             overflow.layoutResults()
             run.write("calculator-overflow", overflow, background: Palette.surface)
         }
+        // A plot, a bar chart, table columns and a pie on a taller page of their own.
+        if run.options.includes("calculator-figures") {
+            let figures = detachedPage(source: figureSource, size: NSSize(width: page.bounds.width, height: 720))
+            run.write("calculator-figures", figures, background: Palette.surface)
+        }
+        // The rates menu of a sheet that converts money, offline: no cache, so the rates are unavailable.
+        if run.options.includes("calculator-rates") {
+            let rates = detachedPage(source: "# Trip money\nhotel = 380 EUR\nhotel in USD\n120 GBP in EUR on 2025-01-06", size: page.bounds.size)
+            rates.showRatesMenu()
+            run.write("calculator-rates", rates, background: Palette.surface)
+        }
         shell.selectTab("home")
         shell.close(restoreFocus: false)
+    }
+
+    static let figureSource = "# Monthly costs\nrent = 1450\nfood = 420\ntravel = 310\nbar chart\nplot sin(x) from -6 to 6\nitem\tcost\tshare\nrent\t1450\t66%\nfood\t420\t19%\ntravel\t310\t14%\npie chart of [1450, 420, 310]"
+
+    /// A page with one sheet of its own, so the demo sheets stay as they are.
+    private static func detachedPage(source: String, size: NSSize) -> CalculatorTabView {
+        let documents = InMemoryCalculatorDocuments(sheets: [(name: "Sheet", source: source)])
+        let page = CalculatorTabView(workspace: CalculatorWorkspace(documents: documents, tabs: CalculatorStorage.makeTabState(), synchronous: true), shell: nil)
+        page.frame = NSRect(origin: .zero, size: size)
+        page.appearance = Palette.dark
+        page.layoutSubtreeIfNeeded()
+        page.layoutResults()
+        return page
     }
 
     // MARK: Smoke checks
@@ -113,6 +147,8 @@ enum CalculatorSmoke {
             run.pass("calculator-copy")
             checkSheets(run, page: page, workspace: workspace) { error in
                 if let error { return done(error) }
+                checkEditing(run, page: page, workspace: workspace) { error in
+                if let error { return done(error) }
                 checkSearch(run, module: module) { error in
                     if let error { return done(error) }
                     shell.selectTab(CalculatorModule.id)
@@ -126,6 +162,56 @@ enum CalculatorSmoke {
                     run.pass("calculator-hidden-idle")
                     done(nil)
                 }
+                }
+            }
+        }
+    }
+
+    /// F2 at a variable renames it everywhere in one undo step; ⌘C, ⌘V and ⌘X with no selection copy, duplicate and
+    /// cut the caret's line; a plot draws under its line as an image VoiceOver can read.
+    private static func checkEditing(_ run: SnapshotRun, page: CalculatorTabView, workspace: CalculatorWorkspace, done: @escaping (Error?) -> Void) {
+        let shell = run.shell
+        let original = "price = 12\nprice * 3"
+        guard let editor = page.editor, editor.string == original else { return done(Failure("calculator-rename-variable", "the typed sheet is not in front")) }
+        shell.panel.makeFirstResponder(editor)
+        editor.setSelectedRange(NSRange(location: 2, length: 0))
+        key(shell, 120, String(UnicodeScalar(UInt16(NSF2FunctionKey))!))
+        guard let card = page.overlayContent as? RenameCard, card.identifier?.rawValue == "calculator-rename-variable-card",
+              card.field.stringValue == "price" else {
+            return done(Failure("calculator-rename-variable", "F2 at a variable did not open its rename card"))
+        }
+        card.field.stringValue = "cost"
+        key(shell, 36, "\r")
+        guard page.overlayContent == nil, editor.string == "cost = 12\ncost * 3", shell.panel.firstResponder === editor else {
+            return done(Failure("calculator-rename-variable", "Return did not rename every occurrence and return to the sheet (\(editor.string.debugDescription))"))
+        }
+        wait(3, until: { workspace.evaluatedSource == editor.string && page.pillsByLine[1]?.text == "36" }) { ok in
+            guard ok else { return done(Failure("calculator-rename-variable", "the renamed sheet did not evaluate to 36")) }
+            editor.undoManager?.undo()
+            guard editor.string == original else { return done(Failure("calculator-rename-variable", "one Undo did not bring every occurrence back")) }
+            run.pass("calculator-rename-variable")
+
+            editor.setSelectedRange(NSRange(location: 13, length: 0))
+            key(shell, 8, "c", .command)
+            guard CalculatorClipboard.board.string(forType: .string) == "price * 3\n",
+                  CalculatorClipboard.board.types?.contains(SheetTextView.wholeLineType) == true else {
+                return done(Failure("calculator-line-copy", "⌘C with no selection did not copy the caret's line"))
+            }
+            key(shell, 9, "v", .command)
+            guard editor.string == original + "\nprice * 3" else { return done(Failure("calculator-line-copy", "⌘V did not duplicate the line (\(editor.string.debugDescription))")) }
+            key(shell, 7, "x", .command)
+            guard editor.string == original else { return done(Failure("calculator-line-copy", "⌘X with no selection did not cut the caret's line")) }
+            run.pass("calculator-line-copy")
+
+            editor.type("price = 12\nplot x^2 from 0 to 2")
+            wait(3, until: { page.figures[1] != nil }) { ok in
+                guard ok, let figure = page.figures[1], figure.superview === editor, figure.accessibilityRole() == .image,
+                      figure.accessibilityLabel()?.hasPrefix("Plot of x^2") == true, let row = editor.rowRect(ofLine: 1),
+                      abs(figure.frame.minY - row.maxY) < 1 else {
+                    return done(Failure("calculator-figure", "a plot did not draw under its line as a named image"))
+                }
+                run.pass("calculator-figure")
+                done(nil)
             }
         }
     }
