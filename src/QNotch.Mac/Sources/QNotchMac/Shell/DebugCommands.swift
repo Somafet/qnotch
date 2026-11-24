@@ -115,7 +115,7 @@ final class DebugCommands {
                 return ["path": url.path]
             })
         case "press":
-            try press(try args.required("id", for: command))
+            try press(try args.required("id", for: command), button: try args.string("button"), off: try args.bool("off"))
             return Step()
         case "type":
             try type(try args.required("text", for: command), into: try args.string("id"))
@@ -271,7 +271,13 @@ final class DebugCommands {
         return true
     }
 
-    private func press(_ id: String) throws {
+    private func press(_ id: String, button: String? = nil, off: Bool = false) throws {
+        if let button {
+            guard button == "middle" else { throw Failure("button must be middle") }
+            guard let target = try find(id) as? MiddleClickTarget else { throw Failure("the control with id \(id) has no middle-click action") }
+            target.middleClick(releasedInside: !off)
+            return
+        }
         // The notch itself: a click opens the panel with the keyboard.
         if id == "pill" {
             try requirePanel()

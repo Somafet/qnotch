@@ -16,6 +16,7 @@ final class NotificationMuteTests: XCTestCase {
         func tryOpenPanel(tab: String, linger: TimeInterval) -> Bool { opens += 1; return true }
         func actionsChanged() { actionChanges += 1 }
         func segmentsChanged() {}
+        func searchResultsChanged() {}
         func selectTab(_ id: String) {}
         func summonSearch() {}
         func openSettings() {}
