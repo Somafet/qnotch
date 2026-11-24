@@ -33,12 +33,33 @@ final class CalculatorModule: NotchModule {
             CalculatorSettingsView(module: self)
         })
         registries.searchSources.register(SearchSource(id: Self.id, order: 1) { [weak self] query in self?.search.find(query) ?? [] })
-        search.functions = { [weak self] in self?.workspace?.documents.functions }
+        // Saved functions answer in Search once the workspace is open; Search never opens it just for them.
+        search.functions = { [weak self] in self?.workspace?.documents.functions?.libraryOnly }
         search.rates = { [weak self] in self?.workspace?.currencies.rates }
         search.answered = { [weak self] in self?.shell?.searchResultsChanged() }
         search.run = { [weak self] answer in
             CalculatorClipboard.copy(answer.copy)
             self?.shell?.closePanel()
+        }
+        // Files dragged over the notch: a tile when any of them can become a sheet. Only the names are looked at.
+        registries.dropSources.register(DropSource(id: Self.id, title: CalculatorText.title, glyph: Self.symbol, order: 30) { [weak self] files in
+            guard self != nil, files.contains(where: CalculatorImport.isSupported) else { return [] }
+            return [DropTarget(id: "calculator.import", title: CalculatorText.importAsSheets, glyph: "square.and.arrow.down") { [weak self] files in
+                self?.importDropped(files)
+            }]
+        })
+    }
+
+    /// Opens the Calculator tab and imports every supported file as a new sheet (Windows ImportDropped).
+    func importDropped(_ files: [URL]) {
+        let supported = files.filter(CalculatorImport.isSupported)
+        guard !supported.isEmpty else { return }
+        shell?.selectTab(Self.id)
+        shell?.tryOpenPanel(tab: Self.id, linger: 4)
+        withWorkspace { [weak self] workspace in
+            guard let workspace else { return }
+            self?.host?.load()
+            if let page = self?.host?.page { page.importFiles(supported) } else { workspace.importFiles(supported) { _, _ in } }
         }
     }
 
@@ -60,6 +81,8 @@ final class CalculatorModule: NotchModule {
                                                     ratesDirectory: directory, offlineRates: demo)
                 workspace.typingInBackground = true
                 workspace.rates = { [weak self] in self?.search.forget() }
+                workspace.documentsChanged = { [weak self] in self?.search.forget() }
+                CalculatorText.language = CalculatorInterfaceText.resolve(documents.preferences.language)
                 workspace.setVisible(self.showing)
                 self.workspace = workspace
                 self.search.forget()
