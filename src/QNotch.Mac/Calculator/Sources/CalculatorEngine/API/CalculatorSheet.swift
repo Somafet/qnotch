@@ -65,8 +65,12 @@ public struct CalculatorEnvironment: Sendable {
     public var region: String?
     /// Currency plain monetary results are shown in (display only).
     public var displayCurrency: String?
-    public init(now: Date = Date(), timeZone: TimeZone = .current, region: String? = Locale.current.region?.identifier, displayCurrency: String? = nil) {
-        self.now = now; self.timeZone = timeZone; self.region = region; self.displayCurrency = displayCurrency
+    /// The working-day calendar when it differs from the region (C# PreferencesDocument.WorkdayRegion): "DE", "US", or
+    /// "WEEKDAYS" for weekdays only. Nil uses `region`. Payroll defaults always follow `region`.
+    public var workdayRegion: String?
+    public init(now: Date = Date(), timeZone: TimeZone = .current, region: String? = Locale.current.region?.identifier, displayCurrency: String? = nil,
+                workdayRegion: String? = nil) {
+        self.now = now; self.timeZone = timeZone; self.region = region; self.displayCurrency = displayCurrency; self.workdayRegion = workdayRegion
     }
     func context(rates: CurrencyRateBook?) -> EvaluationContext {
         // Whole seconds, like the Windows host, so a sheet does not change within one second.
@@ -74,7 +78,7 @@ public struct CalculatorEnvironment: Sendable {
         let instant = Instant(unixTicks: unixTicks)
         let offset = Int64(timeZone.secondsFromGMT(for: now))
         let localDay = Int((unixTicks + Ticks.unixEpoch + offset * Ticks.perSecond) / Ticks.perDay)
-        var context = EvaluationContext(today: DateOnly(dayNumber: localDay), now: instant, localZone: CalculatorZones.local(timeZone), workdayRegion: region, currencyRates: rates)
+        var context = EvaluationContext(today: DateOnly(dayNumber: localDay), now: instant, localZone: CalculatorZones.local(timeZone), workdayRegion: workdayRegion ?? region, currencyRates: rates)
         context.payrollRegion = region
         context.displayCurrency = displayCurrency
         return context
