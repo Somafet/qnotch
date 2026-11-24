@@ -30,6 +30,11 @@ analytics_bundle="$binary_dir/QNotchMac_QNotchMac.bundle"
 [[ -f "$analytics_bundle/analytics-config.json" ]] || { echo 'The analytics resource bundle is missing from the Swift build.' >&2; exit 1; }
 mkdir -p "$app/Contents/Resources"
 ditto "$analytics_bundle" "$app/Contents/Resources/QNotchMac_QNotchMac.bundle"
+# The calculator engine's catalogs (units, currencies, time zones, …).
+calculator_bundle="$binary_dir/QNotchCalculator_CalculatorEngine.bundle"
+[[ -d "$calculator_bundle" ]] || { echo 'The calculator resource bundle is missing from the Swift build.' >&2; exit 1; }
+rm -rf "$app/Contents/Resources/QNotchCalculator_CalculatorEngine.bundle"
+ditto "$calculator_bundle" "$app/Contents/Resources/QNotchCalculator_CalculatorEngine.bundle"
 # The release workflow passes the tag's version and a monotonic build number.
 if [[ -n "${QNOTCH_VERSION:-}" ]]; then
     /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $QNOTCH_VERSION" "$app/Contents/Info.plist"
