@@ -232,6 +232,7 @@ enum SnapshotViews {
         }
         if let taildrop = shell.module(TaildropModule.self) { headerFrames += renderTaildropStates(run, taildrop) }
         renderDropScreen(run)
+        CalculatorSmoke.render(run)
         run.log("tab-header-frames", headerFrames)
         if !run.failed { run.pass("tab-headers") }
         shell.selectTab("home")
