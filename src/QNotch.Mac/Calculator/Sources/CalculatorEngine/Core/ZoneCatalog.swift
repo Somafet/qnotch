@@ -6,16 +6,6 @@ protocol TimeZoneProvider: AnyObject {
     func zone(_ id: String) -> ZoneRules?
 }
 
-/// Immutable host-local rules (C# LocalZoneSnapshot).
-final class LocalZoneSnapshot {
-    let version: String
-    let rules: ZoneRules
-    init(_ zone: ZoneRules, version: String) throws {
-        if version.netTrim.isEmpty { throw CalcError.argument("The value cannot be an empty string or composed entirely of whitespace. (Parameter 'version')") }
-        self.version = version; rules = zone
-    }
-}
-
 enum ZoneCatalog {
     private struct Tables { var ids = Set<String>(); var aliases = NetDictionary<String, String>.ignoringCase(); var version = "" }
     private static let tables: Tables = {
