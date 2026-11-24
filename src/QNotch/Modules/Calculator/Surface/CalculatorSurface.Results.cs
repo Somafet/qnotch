@@ -58,6 +58,17 @@ public partial class CalculatorSurface
         if (gutterUpdate?.Status == DispatcherOperationStatus.Pending) return;
         gutterUpdate = Dispatcher.BeginInvoke(DispatcherPriority.Loaded, () => { gutterUpdate = null; DrawResults(); });
     }
+    /// <summary>An edit before its evaluation lands: lines around it keep their results, edited lines show none.</summary>
+    private void CarryResults()
+    {
+        answers = CarriedResults.Map(evaluatedAnswers, evaluatedSource, Editor.Text);
+        RequestGutterLayout();
+    }
+    /// <summary>A failed evaluation or another sheet: nothing is carried into the next edit.</summary>
+    private void ForgetResults() { answers = evaluatedAnswers = []; evaluatedSource = ""; }
+    /// <summary>Results only when they were evaluated for exactly this text.</summary>
+    private IReadOnlyList<LineResult> FreshResults(string source) =>
+        string.Equals(source, evaluatedSource, StringComparison.Ordinal) ? evaluatedAnswers : [];
     private void ClearResults()
     {
         var focused = resultControls.Values.Any(c => c.Button.IsKeyboardFocusWithin);

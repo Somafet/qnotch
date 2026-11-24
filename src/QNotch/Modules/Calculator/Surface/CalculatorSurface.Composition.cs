@@ -24,7 +24,7 @@ public partial class CalculatorSurface
         StopDateSchedule();
         StopCurrencySchedule(true);
         saveTimer.Stop(); evaluation?.Cancel(); revision++;
-        answers = []; ClearResults();
+        CarryResults();
     }
     private void CompositionCompleted(SheetEditor editor)
     {

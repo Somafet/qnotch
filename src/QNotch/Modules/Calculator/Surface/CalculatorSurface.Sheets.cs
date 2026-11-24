@@ -76,7 +76,7 @@ public partial class CalculatorSurface
         if (loaded.Document.Id != document.Id) CloseOverlay(false); // An open history or rename belongs to the sheet it was opened on.
         Editor.CompleteVariableRename(false); // A rename box belongs to the sheet it was opened on.
         positions[document.Id] = (Editor.SelectionStart, Editor.SelectionLength, Editor.VerticalOffset);
-        ready = false; evaluation?.Cancel(); revision++; answers = []; ClearResults();
+        ready = false; evaluation?.Cancel(); revision++; ForgetResults(); ClearResults();
         workspace = next; document = loaded.Document;
         compositionActive = false; evaluationDeferred = false;
         functionReceipts = loaded.FunctionReceipts ?? []; restoredReceipts = null; historyPending = false;
