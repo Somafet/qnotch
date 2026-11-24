@@ -8,7 +8,7 @@ let package = Package(
     platforms: [.macOS(.v13)],
     products: [.library(name: "CalculatorEngine", targets: ["CalculatorEngine"])],
     targets: [
-        .target(name: "CalculatorEngine", resources: [.copy("Resources")]),
+        .target(name: "CalculatorEngine", exclude: ["Stubs/README.md"], resources: [.copy("Resources")]),
         .testTarget(name: "CalculatorEngineTests", dependencies: ["CalculatorEngine"], exclude: ["Vectors"])
     ]
 )
