@@ -102,6 +102,30 @@ final class CalculatorDocumentsTests: XCTestCase {
         XCTAssertEqual(workspace.lines.last?.answer, value)
     }
 
+    func testTheEditorsUndoBringsBackADeletedUuidWithItsValue() throws {
+        let workspace = try open()
+        let page = CalculatorTabView(workspace: workspace, shell: nil)
+        page.frame = NSRect(x: 0, y: 0, width: 676, height: 300)
+        page.layoutSubtreeIfNeeded()
+        let editor = try XCTUnwrap(page.editor)
+        let undo = try XCTUnwrap(editor.undoManager)
+        undo.groupsByEvent = false
+        func step(_ change: () -> Void) { undo.beginUndoGrouping(); change(); undo.endUndoGrouping() }
+        step { editor.type("id = uuid") }
+        let value = try XCTUnwrap(workspace.lines.first?.answer)
+        XCTAssertEqual(value.count, 36)
+        step { editor.setSelectedRange(NSRange(location: 0, length: 0)); editor.insertText("note\n", replacementRange: NSRange(location: 0, length: 0)) }
+        XCTAssertEqual(workspace.lines.last?.answer, value, "a line typed above keeps the value")
+        step { editor.insertText("", replacementRange: NSRange(location: 5, length: 9)) }
+        XCTAssertEqual(workspace.source, "note\n")
+        undo.undo()
+        XCTAssertEqual(workspace.source, "note\nid = uuid")
+        XCTAssertEqual(workspace.lines.last?.answer, value, "Undo restores the deleted line with its value")
+        undo.redo()
+        undo.undo()
+        XCTAssertEqual(workspace.lines.last?.answer, value)
+    }
+
     func testRollingKeepsTheRollUntilRolledAgain() throws {
         let workspace = try open()
         var rolled: [CalculatorDiceRoll] = []
