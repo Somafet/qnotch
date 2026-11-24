@@ -677,13 +677,13 @@ final class CalculatorViewTests: XCTestCase {
     }
 
     func testPlotsAndChartsDrawUnderTheirLineAndTablesGetColumns() throws {
-        let page = page("plot x^2 from 0 to 2\nbar chart of [10, -20, 30]\nname\tcost\nrent\t5\nfood\t7\npie chart of [1, 3]")
-        page.frame = NSRect(x: 0, y: 0, width: 676, height: 800)
+        let page = page("plot x^2 from 0 to 2\nbar chart of [10, -20, 30]\nname\tcost\nrent\t5\nfood\t7\npie chart of [1, 3]\ntrend chart of [3, 5, 4, 8]")
+        page.frame = NSRect(x: 0, y: 0, width: 676, height: 900)
         page.layoutSubtreeIfNeeded()
         page.layout()
         page.layoutResults()
         let editor = try XCTUnwrap(page.editor)
-        let plot = try XCTUnwrap(page.figures[0]), bars = try XCTUnwrap(page.figures[1]), pie = try XCTUnwrap(page.figures[5])
+        let plot = try XCTUnwrap(page.figures[0]), bars = try XCTUnwrap(page.figures[1]), pie = try XCTUnwrap(page.figures[5]), trend = try XCTUnwrap(page.figures[6])
         XCTAssertTrue(plot.superview === editor, "figures scroll with the sheet")
         XCTAssertEqual(plot.accessibilityRole(), .image)
         XCTAssertTrue(plot.accessibilityLabel()?.hasPrefix("Plot of x^2") == true, plot.accessibilityLabel() ?? "")
@@ -702,9 +702,9 @@ final class CalculatorViewTests: XCTestCase {
         XCTAssertEqual(editor.layout(ofLine: 4)?.stops, stops)
         XCTAssertNil(editor.layout(ofLine: 2)?.figure == true ? 1 : nil)
         // Selection skips the rooms.
-        XCTAssertEqual(editor.figureRooms(in: NSRange(location: 0, length: (editor.string as NSString).length)).count, 3)
+        XCTAssertEqual(editor.figureRooms(in: NSRange(location: 0, length: (editor.string as NSString).length)).count, 4)
         // Every kind draws, once per value: laying out again (as scrolling does) keeps the same views.
-        for figure in [plot, bars, pie] {
+        for figure in [plot, bars, pie, trend] {
             let image = try XCTUnwrap(figure.bitmapImageRepForCachingDisplay(in: figure.bounds))
             figure.cacheDisplay(in: figure.bounds, to: image)
             XCTAssertGreaterThan(figure.renderCount, 0)
