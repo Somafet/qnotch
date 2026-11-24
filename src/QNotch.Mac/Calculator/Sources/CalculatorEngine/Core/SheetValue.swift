@@ -133,7 +133,7 @@ enum SheetValue: Hashable, CustomStringConvertible {
             case .plot(let v): return try v.display
             case .chart(let v): return try v.display
             case .table(let v): return try v.display
-            case .practical(let v): return try v.display
+            case .practical(let v): return v.display
             case .complex(let v): return try v.display
             case .prime(let v): return try v.display
             case .equation(let v): return try v.display
@@ -156,7 +156,7 @@ enum SheetValue: Hashable, CustomStringConvertible {
             case .earnings(let v): return try v.display
             case .matrix(let v): return try v.display
             case .resistor(let v): return try v.display
-            case .engineering(let v): return try v.display
+            case .engineering(let v): return v.display
             case .integer(let v): return try v.display
             case .network(let v): return try v.display
             case .text(let v): return v.display
@@ -170,7 +170,7 @@ enum SheetValue: Hashable, CustomStringConvertible {
             case .plot(let v): return try v.copyText
             case .chart(let v): return try v.copyText
             case .table(let v): return try v.copyText
-            case .practical(let v): return try v.copyText
+            case .practical(let v): return v.copyText
             case .complex(let v): return try v.copyText
             case .prime(let v): return try v.copyText
             case .number(let v) where v.useConstantNotation: return try v.with { $0.useConstantNotation = false }.display
@@ -188,7 +188,7 @@ enum SheetValue: Hashable, CustomStringConvertible {
             case .list(let v): return try v.copyText
             case .matrix(let v): return try v.copyText
             case .resistor(let v): return try v.copyText
-            case .engineering(let v): return try v.copyText
+            case .engineering(let v): return v.copyText
             default: return try display
             }
         }
