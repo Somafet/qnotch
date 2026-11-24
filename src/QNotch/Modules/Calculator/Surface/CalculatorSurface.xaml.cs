@@ -141,6 +141,8 @@ public partial class CalculatorSurface : UserControl
         dirty = true; UpdatePlaceholder(); DiceLayer.Dismiss();
         usesCurrentDate = false; usesCurrentInstant = false; usesLocalTimeZone = false; requiresSecondRefresh = false; StopDateSchedule();
         usesCurrencyRates = false; currencyRequests = []; StopCurrencySchedule(true); UpdateCurrencyStatus();
+        // A run for the earlier text must not publish once the text has changed, even before the next run starts (Undo defers it).
+        evaluation?.Cancel(); revision++;
         CarryResults();
         if (compositionActive) { evaluationDeferred = true; saveTimer.Stop(); return; }
         evaluationDeferred = false;

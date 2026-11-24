@@ -54,7 +54,17 @@ public class CarriedResultsTests
         var carried = CarriedResults.Map(Results(2), "a\na", "a\nx\na");
         Assert.Equal(new[] { "r0", null, "r1" }, Shown(carried));
         carried = CarriedResults.Map(Results(2), "a\na", "a\na\na");
-        Assert.Equal(3, carried.Count);
-        Assert.Equal(2, carried.Count(r => r.Error is not null));
+        Assert.Equal(new string?[] { null, null, null }, Shown(carried));
+    }
+
+    [Theory]
+    [InlineData("uuid()\nb", "uuid()\nuuid()\nb", new[] { null, null, "r1" })]  // a copy pasted above or below: either line may be new
+    [InlineData("a\na\nb", "a\nb", new[] { null, "r2" })]                        // one of two equal lines deleted
+    [InlineData("x\na\nb", "x\na\na\nb", new[] { "r0", null, null, "r2" })]      // the ambiguity stops at a different line
+    [InlineData("uuid()\n2d6\nend", "uuid()\n2d6\nuuid()\n2d6\nend", new[] { null, null, null, null, "r2" })] // a two-line block pasted above its copy
+    public void EqualNeighboursNeverCarryAResultOntoTheWrongLine(string evaluated, string source, string?[] expected)
+    {
+        var carried = CarriedResults.Map(Results(new SourceLineMap(evaluated).Count), evaluated, source);
+        Assert.Equal(expected, Shown(carried));
     }
 }

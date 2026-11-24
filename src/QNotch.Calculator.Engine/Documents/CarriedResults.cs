@@ -18,16 +18,25 @@ public static class CarriedResults
         if (string.Equals(source, evaluatedSource, StringComparison.Ordinal)) return results;
         var old = new SourceLineMap(evaluatedSource); var now = new SourceLineMap(source);
         if (results.Count != old.Count) return None;
+        // The common start and the common end, each as long as it goes. Text cannot tell which of two equal lines
+        // was typed (a block pasted above its copy matches both ways), so where they overlap nothing is carried.
         var prefix = 0;
         while (prefix < old.Count && prefix < now.Count && Same(old, prefix, now, prefix)) prefix++;
         var suffix = 0;
-        while (suffix < old.Count - prefix && suffix < now.Count - prefix && Same(old, old.Count - 1 - suffix, now, now.Count - 1 - suffix)) suffix++;
-        var carried = new LineResult[now.Count];
+        while (suffix < old.Count && suffix < now.Count && Same(old, old.Count - 1 - suffix, now, now.Count - 1 - suffix)) suffix++;
+        var claims = new int[old.Count];
+        var mapped = new int?[now.Count];
         for (var i = 0; i < now.Count; i++)
         {
+            int? fromStart = i < prefix ? i : null;
             var fromEnd = now.Count - 1 - i;
-            carried[i] = i < prefix ? results[i] : fromEnd < suffix ? results[old.Count - 1 - fromEnd] : new LineResult(i, null, null);
+            int? fromFinish = fromEnd < suffix ? old.Count - 1 - fromEnd : null;
+            if (fromStart is { } a && fromFinish is { } b && a != b) { claims[a]++; claims[b]++; continue; } // Two places: ambiguous.
+            if ((fromStart ?? fromFinish) is { } line) { mapped[i] = line; claims[line]++; }
         }
+        var carried = new LineResult[now.Count];
+        for (var i = 0; i < now.Count; i++)
+            carried[i] = mapped[i] is { } line && claims[line] == 1 ? results[line] : new LineResult(i, null, null);
         return carried;
     }
 

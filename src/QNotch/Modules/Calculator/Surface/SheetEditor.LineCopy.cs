@@ -99,7 +99,7 @@ public sealed partial class SheetEditor
         var newline = TextUtilities.GetNewLineFromDocument(Document, TextArea.Caret.Line);
         text = TextUtilities.NormalizeNewLines(Calc.Core.TableSyntax.TryNormalizePaste(text), newline);
         if (!text.EndsWith(newline, StringComparison.Ordinal)) text += newline;
-        if (Document.TextLength + text.Length > MaximumCharacters) return true; // Refused like any oversized paste.
+        if (Document.TextLength + text.Length > MaximumCharacters || !FitsLines(0, text)) return true; // Refused like any oversized paste.
         Document.Insert(Document.GetLineByNumber(TextArea.Caret.Line).Offset, text);
         ScrollTo(TextArea.Caret.Line, TextArea.Caret.Column);
         return true;

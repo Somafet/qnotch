@@ -26,6 +26,18 @@ public sealed partial class SheetEditor : TextEditor
         }));
     }
     public const int MaximumCharacters = 200_000;
+    /// <summary>The engine evaluates and saves at most this many lines; an edit past it is refused like one past the character limit.</summary>
+    public const int MaximumLines = Calc.Core.SheetEvaluator.MaxLines;
+    /// <summary>Line breaks in <paramref name="text"/>, counted as the document counts them (CRLF, CR or LF).</summary>
+    internal static int Breaks(string text)
+    {
+        var breaks = 0;
+        for (var i = 0; i < text.Length; i++)
+            if (text[i] == '\r') { breaks++; if (i + 1 < text.Length && text[i + 1] == '\n') i++; }
+            else if (text[i] == '\n') breaks++;
+        return breaks;
+    }
+    private bool FitsLines(int removedBreaks, string inserted) => Document.LineCount - removedBreaks + Breaks(inserted) <= MaximumLines;
     public static readonly DependencyProperty CaretBrushProperty = DependencyProperty.Register(nameof(CaretBrush), typeof(Brush), typeof(SheetEditor),
         new PropertyMetadata(Brushes.Black, (sender, e) => ((SheetEditor)sender).TextArea.Caret.CaretBrush = (Brush)e.NewValue));
     public Brush CaretBrush { get => (Brush)GetValue(CaretBrushProperty); set => SetValue(CaretBrushProperty, value); }
@@ -64,7 +76,7 @@ public sealed partial class SheetEditor : TextEditor
         TextArea.TextEntering += (_, e) =>
         {
             var length = e.Text is "\n" or "\r" or "\r\n" ? TextUtilities.GetNewLineFromDocument(Document, TextArea.Caret.Line).Length : e.Text.Length;
-            if (Document.TextLength - SelectionLength + length > MaximumCharacters) e.Handled = true;
+            if (Document.TextLength - SelectionLength + length > MaximumCharacters || !FitsLines(Breaks(SelectedText), e.Text)) e.Handled = true;
         };
         // A sheet is plain text: Tab replaces the selection instead of indenting every selected line.
         CommandManager.AddPreviewExecutedHandler(TextArea, (_, e) =>
@@ -88,7 +100,7 @@ public sealed partial class SheetEditor : TextEditor
             // Newline normalization can at most halve UTF-16 length (CRLF to LF).
             if (text is null || text.Length > MaximumCharacters * 2) { e.CancelCommand(); return; }
             text = TextUtilities.NormalizeNewLines(Calc.Core.TableSyntax.TryNormalizePaste(text), TextUtilities.GetNewLineFromDocument(Document, TextArea.Caret.Line));
-            if (Document.TextLength - SelectionLength + text.Length > MaximumCharacters) { e.CancelCommand(); return; }
+            if (Document.TextLength - SelectionLength + text.Length > MaximumCharacters || !FitsLines(Breaks(SelectedText), text)) { e.CancelCommand(); return; }
             // Discard code-editor rectangular/whole-line metadata before AvalonEdit applies the paste.
             e.DataObject = new DataObject(DataFormats.UnicodeText, text);
             e.FormatToApply = DataFormats.UnicodeText;
@@ -107,6 +119,8 @@ public sealed partial class SheetEditor : TextEditor
     {
         if (watchedDocument is not null && (long)watchedDocument.TextLength - change.RemovalLength + change.InsertionLength > MaximumCharacters)
             throw new ArgumentException("Sheet exceeds document limit");
+        if (watchedDocument is not null && change.InsertionLength > 0 && watchedDocument.LineCount - Breaks(change.RemovedText.Text) + Breaks(change.InsertedText.Text) > MaximumLines)
+            throw new ArgumentException("Sheet exceeds 10,000 lines");
     }
     public Rect GetRectFromCharacterIndex(int offset)
     {
