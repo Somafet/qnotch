@@ -26,12 +26,16 @@ final class EcbRateConnection {
 /// `CurrencyRateTransport` over an ephemeral URLSession: no cookies, credential store, cache or redirects.
 /// gzip/deflate bodies are decoded by URLSession, as HttpClientHandler.AutomaticDecompression does in C#.
 final class URLSessionRateTransport: NSObject, CurrencyRateTransport, URLSessionTaskDelegate {
-    private lazy var session: URLSession = {
+    /// Created once in `init`, before the transport is shared: a `lazy` session could be created twice by a background
+    /// request and a main-thread `close()` racing on first access, and `close()` would then end the wrong one.
+    private var session: URLSession!
+    override init() {
+        super.init()
         let configuration = URLSessionConfiguration.ephemeral
         configuration.httpCookieStorage = nil; configuration.httpShouldSetCookies = false; configuration.httpCookieAcceptPolicy = .never
         configuration.urlCredentialStorage = nil; configuration.urlCache = nil; configuration.requestCachePolicy = .reloadIgnoringLocalAndRemoteCacheData
-        return URLSession(configuration: configuration, delegate: self, delegateQueue: nil)
-    }()
+        session = URLSession(configuration: configuration, delegate: self, delegateQueue: nil)
+    }
     /// Cancels any request in flight and releases the session.
     func close() { session.invalidateAndCancel() }
     func get(_ url: URL, accept: String, token: CancellationToken) async throws -> CurrencyRateHTTPResponse {

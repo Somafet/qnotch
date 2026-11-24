@@ -59,13 +59,15 @@ extension CalculatorWorkspace {
     /// Undo puts `restoring` back and registers the way forward again.
     func registerIdentities(_ undo: UndoManager, values: CalculatorGeneratedValues, restoring: CalculatorGeneratedCheckpoint, then other: CalculatorGeneratedCheckpoint,
                             receipts: (restore: CalculatorFunctions?, other: CalculatorFunctions?)? = nil) {
-        undo.registerUndo(withTarget: self) { workspace in
+        // The manager owns this handler, so it is captured weakly; a strong capture kept evicted editors' undo history alive.
+        undo.registerUndo(withTarget: self) { [weak undo] workspace in
             values.restore(restoring)
             if let receipts, values === workspace.generated {
                 workspace.restoredReceipts = receipts.restore
                 workspace.dirty = true
                 workspace.scheduleSave()
             }
+            guard let undo else { return }
             workspace.registerIdentities(undo, values: values, restoring: other, then: restoring, receipts: receipts.map { ($0.other, $0.restore) })
         }
     }
@@ -145,6 +147,7 @@ extension CalculatorWorkspace {
         notify(.replaced)
         setStatus("")
         evaluate()
+        requestSync() // The restored text is saved like an edit, so it reaches the sync folder like one.
         return true
     }
 

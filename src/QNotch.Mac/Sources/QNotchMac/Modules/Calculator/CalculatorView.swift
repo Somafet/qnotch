@@ -399,7 +399,7 @@ final class CalculatorTabView: NSView, SheetEditorHost, ResultPillHost, SheetTab
         layoutManager.ensureLayout(for: editor.textContainer!)
         let visible = scroll.contentView.bounds
         guard let range = editor.lines(in: visible) else { return clearPills() }
-        let current: [Substring] = workspace.evaluatedSource == workspace.source ? [] : workspace.source.split(separator: "\n", omittingEmptySubsequences: false)
+        let current: [Substring] = workspace.evaluatedSource == workspace.source ? [] : CalculatorWorkspace.sourceLines(workspace.source)
         var keep = Set<Int>()
         var keepFigures = Set<Int>()
         let fontSize = CGFloat(workspace.displayed.resolvedFontSize)
@@ -484,6 +484,10 @@ final class CalculatorTabView: NSView, SheetEditorHost, ResultPillHost, SheetTab
         dismissDice()
         workspace.edit(editor.string, composing: editor.hasMarkedText(), change: editor.pendingChange, undo: editor.undoManager)
         layoutResults()
+    }
+    func editorCompositionEnded(_ editor: SheetTextView) {
+        guard editor === self.editor else { return }
+        workspace.compositionEnded()
     }
     func editorWillChange(_ editor: SheetTextView, range: NSRange) -> Bool {
         guard editor === self.editor, !replacingText, !(editor.undoManager?.isUndoing ?? false), !(editor.undoManager?.isRedoing ?? false) else { return false }

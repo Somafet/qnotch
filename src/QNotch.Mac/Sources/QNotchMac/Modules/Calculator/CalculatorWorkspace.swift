@@ -322,26 +322,59 @@ final class CalculatorWorkspace {
 
     /// The result to show for `line` of the current text, mapping the latest results across an edit that is
     /// still being evaluated: lines before and after the edited block keep their results; edited lines show none.
+    /// `currentLines` is `sourceLines(source)`.
     func result(forLine index: Int, of currentLines: [Substring]) -> CalculatorLineResult? {
         guard !lines.isEmpty else { return nil }
         if evaluatedSource == source { return index < lines.count ? lines[index] : nil }
-        let old = evaluatedSource.split(separator: "\n", omittingEmptySubsequences: false)
-        guard let mapped = Self.evaluatedLine(for: index, old: old, current: currentLines), mapped < lines.count else { return nil }
+        if carried?.evaluated != evaluatedSource || carried?.current != source {
+            carried = (evaluatedSource, source, Self.evaluatedLines(old: Self.sourceLines(evaluatedSource), current: currentLines))
+        }
+        guard let map = carried?.map, index < map.count, let mapped = map[index], mapped < lines.count else { return nil }
         return lines[mapped]
     }
+    private var carried: (evaluated: String, current: String, map: [Int?])?
 
-    /// The line of the evaluated text that `index` of the current text was before an edit: lines before and
-    /// after the changed block keep their place (shifted by the lines added or removed); changed lines have none.
-    static func evaluatedLine(for index: Int, old: [Substring], current: [Substring]) -> Int? {
-        guard index < current.count else { return nil }
+    /// Lines split as the engine's SourceLineMap splits them: at CRLF, CR or LF. Swift's `"\n"` Character never matches a CRLF.
+    static func sourceLines(_ text: String) -> [Substring] {
+        let scalars = text.unicodeScalars
+        var lines: [Substring] = []
+        var start = scalars.startIndex, i = start
+        while i < scalars.endIndex {
+            let scalar = scalars[i]
+            guard scalar == "\r" || scalar == "\n" else { i = scalars.index(after: i); continue }
+            lines.append(Substring(scalars[start..<i]))
+            var next = scalars.index(after: i)
+            if scalar == "\r", next < scalars.endIndex, scalars[next] == "\n" { next = scalars.index(after: next) }
+            start = next; i = next
+        }
+        lines.append(Substring(scalars[start..<scalars.endIndex]))
+        return lines
+    }
+
+    /// For each line of the current text, the line of the evaluated text it was before an edit: lines before and after the
+    /// changed block keep their place (shifted by the lines added or removed); changed lines have none. The common start and
+    /// end are each taken as far as they go; text cannot tell which of two equal lines was typed (a block pasted above its
+    /// copy matches both ways), so where they overlap nothing is carried (Windows CarriedResults.Map).
+    static func evaluatedLines(old: [Substring], current: [Substring]) -> [Int?] {
         var prefix = 0
         while prefix < old.count, prefix < current.count, old[prefix] == current[prefix] { prefix += 1 }
-        if index < prefix { return index }
         var suffix = 0
-        while suffix < old.count - prefix, suffix < current.count - prefix, old[old.count - 1 - suffix] == current[current.count - 1 - suffix] { suffix += 1 }
-        let fromEnd = current.count - 1 - index
-        guard fromEnd < suffix else { return nil }
-        return old.count - 1 - fromEnd
+        while suffix < old.count, suffix < current.count, old[old.count - 1 - suffix] == current[current.count - 1 - suffix] { suffix += 1 }
+        var claims = [Int](repeating: 0, count: old.count)
+        var mapped = [Int?](repeating: nil, count: current.count)
+        for i in current.indices {
+            let fromStart: Int? = i < prefix ? i : nil
+            let fromEnd = current.count - 1 - i
+            let fromFinish: Int? = fromEnd < suffix ? old.count - 1 - fromEnd : nil
+            if let a = fromStart, let b = fromFinish, a != b { claims[a] += 1; claims[b] += 1; continue } // Two places: ambiguous.
+            if let line = fromStart ?? fromFinish { mapped[i] = line; claims[line] += 1 }
+        }
+        return mapped.map { line in line.flatMap { claims[$0] == 1 ? $0 : nil } }
+    }
+
+    static func evaluatedLine(for index: Int, old: [Substring], current: [Substring]) -> Int? {
+        let map = evaluatedLines(old: old, current: current)
+        return index < map.count ? map[index] : nil
     }
 
     /// Input method composition ended without a text change.
@@ -759,21 +792,24 @@ final class CalculatorWorkspace {
         currencies.refreshSchedule()
         if currencies.uses { notify(.rates) }
         stopDateSchedule()
-        guard visible, let evaluation, evaluation.usesCurrentDate || evaluation.usesCurrentInstant else { return }
+        guard visible, let evaluation, evaluation.usesCurrentDate || evaluation.usesCurrentInstant || evaluation.usesLocalTimeZone else { return }
         if composing { evaluationDeferred = true; return }
         let current = now()
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = .current
-        let dayChanged = !calendar.isDate(evaluatedAt, inSameDayAs: current) || evaluatedZone != TimeZone.current.identifier
+        let zoneChanged = evaluatedZone != TimeZone.current.identifier
+        let dayChanged = !calendar.isDate(evaluatedAt, inSameDayAs: current) || zoneChanged
         let secondChanged = floor(evaluatedAt.timeIntervalSince1970) != floor(current.timeIntervalSince1970)
-        if evaluation.usesCurrentDate && dayChanged || evaluation.usesCurrentInstant && secondChanged { evaluate() } else { refreshDateSchedule() }
+        if evaluation.usesCurrentDate && dayChanged || evaluation.usesCurrentInstant && secondChanged || evaluation.usesLocalTimeZone && zoneChanged { evaluate() }
+        else { refreshDateSchedule() }
     }
 
     /// One deadline: the next second for a running clock, otherwise the next local midnight. Clock and time zone
     /// notifications are observed only meanwhile.
     private func refreshDateSchedule() {
         stopDateSchedule()
-        guard visible, !composing, !closedDown, let evaluation, evaluation.usesCurrentDate || evaluation.usesCurrentInstant else { return }
+        // A local-zone line needs no deadline, only the time zone notification.
+        guard visible, !composing, !closedDown, let evaluation, evaluation.usesCurrentDate || evaluation.usesCurrentInstant || evaluation.usesLocalTimeZone else { return }
         if evaluation.requiresSecondRefresh || evaluation.usesCurrentDate {
             let delay = evaluation.requiresSecondRefresh ? Self.secondDelay(now()) : Self.midnightDelay(now(), zone: .current)
             let task = DispatchWorkItem { [weak self] in self?.dateClockChanged() }

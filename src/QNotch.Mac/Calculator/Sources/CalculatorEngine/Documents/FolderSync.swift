@@ -188,7 +188,8 @@ final class FolderSync {
             for id in owner.incomplete.keys where snapshot.canonical[id].map({ $0.state != .incomplete }) ?? true { owner.incomplete.remove(id) }
             if basesChanged {
                 let ordered = Array(bases.values.sorted { UUID.netLess($0.sheetId, $1.sheetId) }.prefix(FolderSync.maxBases))
-                try AtomicJson.write(FolderSync.statePath(store.dataDirectory), SyncStateDocument(1, configured, ordered))
+                // Sheets this pass already saved must still reach the editor when the state write fails, or its next save overwrites them.
+                try guarded { try AtomicJson.write(FolderSync.statePath(store.dataDirectory), SyncStateDocument(1, configured, ordered)) }
             }
             let status: SyncStatus = failed > 0 ? .failed : waiting + damaged > 0 || retry ? .waiting : .synchronized
             var report = SyncReport(status, workspaceChanged ? workspace : nil, changed)

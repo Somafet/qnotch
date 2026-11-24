@@ -119,6 +119,23 @@ final class FolderSyncTests: XCTestCase {
         XCTAssertEqual("Budget", try a.workspace.sheets.first { $0.id == id }!.name)
     }
 
+    /// Windows: sync.json held open with FileShare.Read. Mac: a shared flock, which reads pass and a replace refuses.
+    func testAFailedStateWriteStillReportsTheSheetsThePassUpdated() throws {
+        let a = try machine("A"), b = try machine("B")
+        let id = try a.workspace.activeSheetId
+        try quiesce([a, b])
+        try a.edit(id, "2 + 2"); _ = try a.run(shared)
+        let held = try TestFiles.holdShared(FolderSync.statePath(b.data))
+        let update = try b.run(shared)
+        held.close()
+        XCTAssertEqual(.failed, update.status)
+        // The sheet is already saved locally; the editor must hear about it, or its next save overwrites the synced text.
+        XCTAssertEqual("2 + 2", try b.source(id))
+        XCTAssertNotNil(update.workspace); XCTAssertTrue(update.changedSheets.contains(id))
+        try quiesce([a, b])
+        XCTAssertEqual("2 + 2", try b.source(id))
+    }
+
     func testSameLengthEditWithinOneFileTimeTickIsStillPublished() throws {
         let a = try machine("A")
         let id = try a.workspace.activeSheetId

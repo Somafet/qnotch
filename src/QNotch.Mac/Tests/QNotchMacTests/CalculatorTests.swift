@@ -275,6 +275,23 @@ final class CalculatorWorkspaceTests: XCTestCase {
         XCTAssertEqual((0..<4).map { CalculatorWorkspace.evaluatedLine(for: $0, old: old, current: edited) }, [0, nil, 2, 3])
     }
 
+    /// The Windows CarriedResultsTests cases: equal neighbours and Windows line breaks never carry a result onto the wrong line.
+    func testCarriedResultsNeverLandOnTheWrongLine() {
+        func map(_ old: String, _ current: String) -> [Int?] {
+            CalculatorWorkspace.evaluatedLines(old: CalculatorWorkspace.sourceLines(old), current: CalculatorWorkspace.sourceLines(current))
+        }
+        XCTAssertEqual(CalculatorWorkspace.sourceLines("a\r\nb\rc\nd").count, 4)
+        XCTAssertEqual(map("a\nb", "a\n\nb"), [0, nil, 1])                              // Return at the end of a line
+        XCTAssertEqual(map("a\nb\nc", "z\nb\ny"), [nil, nil, nil])                      // edits at both ends make one block
+        XCTAssertEqual(map("a\r\nb\r\nc", "a\r\nb2\r\nc"), [0, nil, 2])                 // Windows line breaks
+        XCTAssertEqual(map("a\na", "a\nx\na"), [0, nil, 1])
+        XCTAssertEqual(map("a\na", "a\na\na"), [nil, nil, nil])
+        XCTAssertEqual(map("uuid()\nb", "uuid()\nuuid()\nb"), [nil, nil, 1])           // a copy pasted above or below
+        XCTAssertEqual(map("a\na\nb", "a\nb"), [nil, 2])                               // one of two equal lines deleted
+        XCTAssertEqual(map("x\na\nb", "x\na\na\nb"), [0, nil, nil, 2])
+        XCTAssertEqual(map("uuid()\n2d6\nend", "uuid()\n2d6\nuuid()\n2d6\nend"), [nil, nil, nil, nil, 2]) // a block pasted above its copy
+    }
+
     func testCopyPutsTheCopyTextOnTheClipboard() {
         let workspace = workspace()
         XCTAssertTrue(workspace.copy(workspace.lines[1]))
@@ -581,6 +598,20 @@ final class CalculatorViewTests: XCTestCase {
         XCTAssertFalse(SheetTextView.isColourLiteral("#budget"))
         XCTAssertFalse(editor.isContinuousSpellCheckingEnabled)
         XCTAssertFalse(editor.isAutomaticQuoteSubstitutionEnabled)
+    }
+
+    /// Sheets written on Windows can hold CRLF; a sheet at the engine's 10,000 lines refuses another line break.
+    func testTheEditorTracksWindowsLineBreaksAndTheLineLimit() {
+        let editor = SheetTextView(sheetID: UUID(), text: "1\r\n22\r3\n", fontSize: 15)
+        XCTAssertEqual(editor.lineStarts, [0, 3, 6, 8])
+        XCTAssertEqual([0, 1, 2, 3].map { editor.contentEnd(ofLine: $0) }, [1, 5, 7, 8])
+        XCTAssertEqual(SheetTextView.lineBreaks("a\r\nb\rc\nd"), 3)
+        let full = SheetTextView(sheetID: UUID(), text: String(repeating: "1\n", count: CalculatorSheet.maxLines - 1) + "1", fontSize: 15)
+        XCTAssertEqual(full.lineStarts.count, CalculatorSheet.maxLines)
+        let end = NSRange(location: (full.string as NSString).length, length: 0)
+        XCTAssertFalse(full.textView(full, shouldChangeTextIn: end, replacementString: "\n"))
+        XCTAssertTrue(full.textView(full, shouldChangeTextIn: end, replacementString: "2"))
+        XCTAssertTrue(full.textView(full, shouldChangeTextIn: NSRange(location: 0, length: 2), replacementString: "\n"), "a break replacing a break")
     }
 
     func testTheStripShowsTheSheetsAndClosingUpdatesIt() {

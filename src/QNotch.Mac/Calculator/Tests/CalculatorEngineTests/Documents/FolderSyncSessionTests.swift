@@ -97,6 +97,35 @@ final class FolderSyncSessionTests: XCTestCase {
         XCTAssertEqual(1, report.published)
     }
 
+    func testAnIncompleteFileWaitsForItsRecheckInsteadOfRescanningEveryFewSeconds() throws {
+        let session = session(); defer { session.dispose() }
+        try session.setFolder(shared)
+        _ = try XCTUnwrap(nextReport())
+        try TestFiles.writeBytes(SyncFolderFiles.canonicalPath(shared, UUID()), [])
+        var report: SyncReport
+        repeat { report = try XCTUnwrap(nextReport()) } while report.recheckAfter == nil
+        XCTAssertEqual(FolderSync.incompleteGrace, report.recheckAfter)
+        let passes = session.passes
+        // The 5 s cap is for coalescing change requests; the 10 minute recheck must not be cut to it.
+        pause(FolderSyncSession.maxDelay + 2)
+        XCTAssertEqual(passes, session.passes)
+    }
+
+    func testAFolderThatWasUnavailableAtStartIsWatchedOnceAPassFindsIt() throws {
+        do { let first = session(); defer { first.dispose() }; try first.setFolder(shared); _ = try XCTUnwrap(nextReport()) }
+        TestFiles.delete(shared)
+        let session = session(); defer { session.dispose() }
+        try session.start()
+        XCTAssertFalse(session.watching)
+        XCTAssertEqual(.folderUnavailable, try XCTUnwrap(nextReport()).status)
+        try NetFile.createDirectory(shared)
+        session.request() // A save after the volume came back.
+        XCTAssertEqual(.synchronized, try XCTUnwrap(nextReport()).status)
+        XCTAssertTrue(session.watching)
+        // One more pass covers a file that arrived between that pass's scan and the watcher.
+        _ = try XCTUnwrap(nextReport())
+    }
+
     func testDisposeStopsWatcher() throws {
         let session = session()
         try session.setFolder(shared)

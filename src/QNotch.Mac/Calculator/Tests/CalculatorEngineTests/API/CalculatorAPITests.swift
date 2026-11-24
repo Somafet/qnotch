@@ -12,6 +12,11 @@ final class CalculatorAPITests: XCTestCase {
         XCTAssertTrue(result.lines[2].isBlank); XCTAssertNotNil(result.lines[3].error)
         XCTAssertFalse(result.lines[1].explanation.isEmpty)
     }
+    /// The host re-evaluates on a time zone change only when the evaluation says a line reads the local zone.
+    func testTheLocalTimeZoneDependencyReachesTheHost() throws {
+        XCTAssertTrue(try CalculatorSheet().evaluate("until 01:00\n2+2").usesLocalTimeZone)
+        XCTAssertFalse(try CalculatorSheet().evaluate("2+2").usesLocalTimeZone)
+    }
     func testAmortizationRowsReachTheStepDetails() throws {
         let line = try CalculatorSheet().evaluate("amortize 3000 at 0% for 30 months", format: CalculatorFormat(locale: Locale(identifier: "en_US"))).lines[0]
         XCTAssertEqual(line.explanation.first { !$0.details.isEmpty }?.details, [

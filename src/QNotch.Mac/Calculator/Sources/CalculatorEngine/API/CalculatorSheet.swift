@@ -97,6 +97,8 @@ public struct CalculatorEvaluation: Sendable {
     /// The line results depend on today's date / the current instant / currency rates: re-evaluate when those change.
     public let usesCurrentDate: Bool
     public let usesCurrentInstant: Bool
+    /// A line reads the system time zone (for example a fixed local timestamp): re-evaluate when the zone changes.
+    public let usesLocalTimeZone: Bool
     public let requiresSecondRefresh: Bool
     public let usesCurrencyRates: Bool
     public let hasMoney: Bool
@@ -140,6 +142,7 @@ public final class CalculatorSheet: @unchecked Sendable {
         let resultFormat = format.resultFormat
         return CalculatorEvaluation(lines: evaluation.results.map { CalculatorPresentation.line($0, resultFormat) },
                                     usesCurrentDate: evaluation.usesCurrentDate, usesCurrentInstant: evaluation.usesCurrentInstant,
+                                    usesLocalTimeZone: evaluation.usesLocalTimeZone,
                                     requiresSecondRefresh: evaluation.requiresSecondRefresh, usesCurrencyRates: evaluation.usesCurrencyRates,
                                     hasMoney: evaluation.hasMoney, totalMembers: evaluation.totalMembers,
                                     currencyRequests: evaluation.currencyRequests.map { $0.date.map(CalculatorDay.init) },

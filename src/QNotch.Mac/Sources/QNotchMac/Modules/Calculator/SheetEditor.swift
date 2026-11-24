@@ -13,11 +13,14 @@ protocol SheetEditorHost: AnyObject {
     func editorWillChange(_ editor: SheetTextView, range: NSRange) -> Bool
     /// A dice line was submitted: Return on it (`again` false) or ⌘Return (`again` true). Zero-based line.
     func editorRoll(_ editor: SheetTextView, line: Int, again: Bool)
+    /// Marked text was committed or dropped without changing the string, so no text change reports the end of composition.
+    func editorCompositionEnded(_ editor: SheetTextView)
 }
 
 extension SheetEditorHost {
     func editorWillChange(_ editor: SheetTextView, range: NSRange) -> Bool { false }
     func editorRoll(_ editor: SheetTextView, line: Int, again: Bool) {}
+    func editorCompositionEnded(_ editor: SheetTextView) {}
 }
 
 extension NSAttributedString.Key {
@@ -84,6 +87,12 @@ final class SheetTextView: NSTextView, NSTextViewDelegate, NSTextStorageDelegate
     private static var lastWholeLine: String?
 
     weak var host: SheetEditorHost?
+
+    override func unmarkText() {
+        let composing = hasMarkedText()
+        super.unmarkText()
+        if composing, !hasMarkedText() { host?.editorCompositionEnded(self) }
+    }
     let sheetID: UUID
     let ownUndo = UndoManager()
     /// Width kept free on the right for the results column.
@@ -184,12 +193,34 @@ final class SheetTextView: NSTextView, NSTextViewDelegate, NSTextStorageDelegate
         let text = string.utf16
         var starts = [0]
         starts.reserveCapacity(64)
-        var offset = 0
+        var offset = 0, previous: UInt16 = 0
+        // Line breaks as the engine's SourceLineMap counts them: CRLF, CR or LF (sheets written on Windows can hold CRLF).
         for unit in text {
             offset += 1
-            if unit == 0x0A { starts.append(offset) }
+            if unit == 0x0A && previous == 0x0D { starts[starts.count - 1] = offset }
+            else if unit == 0x0A || unit == 0x0D { starts.append(offset) }
+            previous = unit
         }
         lineStarts = starts
+    }
+
+    /// Line breaks in `text`, counted as the line index counts them (CRLF, CR or LF).
+    static func lineBreaks(_ text: String) -> Int {
+        var breaks = 0, previous: UInt16 = 0
+        for unit in text.utf16 {
+            if unit == 0x0D || (unit == 0x0A && previous != 0x0D) { breaks += 1 }
+            previous = unit
+        }
+        return breaks
+    }
+
+    /// The UTF-16 offset where the line's text ends, before its line break (one or two units).
+    func contentEnd(ofLine index: Int) -> Int {
+        let text = string as NSString
+        let start = lineStarts[index]
+        var end = index + 1 < lineStarts.count ? lineStarts[index + 1] : text.length
+        while end > start, text.character(at: end - 1) == 0x0A || text.character(at: end - 1) == 0x0D { end -= 1 }
+        return end
     }
 
     /// The zero-based line holding the UTF-16 offset.
@@ -367,9 +398,9 @@ final class SheetTextView: NSTextView, NSTextViewDelegate, NSTextStorageDelegate
         storage.beginEditing()
         for index in changed where lineStarts.indices.contains(index) {
             let start = lineStarts[index]
-            let end = index + 1 < lineStarts.count ? lineStarts[index + 1] - 1 : text.length
+            let end = contentEnd(ofLine: index)
             guard start <= end, end <= text.length else { continue }
-            let enclosing = NSRange(location: start, length: min(text.length, end + 1) - start)
+            let enclosing = NSRange(location: start, length: (index + 1 < lineStarts.count ? lineStarts[index + 1] : text.length) - start)
             style(storage, full: full, lineRange: NSRange(location: start, length: end - start), enclosing: enclosing, layout: layouts[index])
         }
         storage.endEditing()
@@ -388,7 +419,7 @@ final class SheetTextView: NSTextView, NSTextViewDelegate, NSTextStorageDelegate
     /// The room under a figure line (its whole spacing band), in this view's coordinates.
     func figureRoom(ofLine index: Int) -> NSRect? {
         guard layout(ofLine: index)?.figure == true, let layoutManager, let length = textStorage?.length, length > 0 else { return nil }
-        let end = index + 1 < lineStarts.count ? lineStarts[index + 1] - 1 : length
+        let end = contentEnd(ofLine: index)
         let character = min(max(lineStarts[index], end), length - 1)
         let fragment = layoutManager.lineFragmentRect(forGlyphAt: layoutManager.glyphIndexForCharacter(at: character), effectiveRange: nil)
         guard fragment.height > Self.figureSpace else { return nil }
@@ -417,7 +448,7 @@ final class SheetTextView: NSTextView, NSTextViewDelegate, NSTextStorageDelegate
         var widths = [CGFloat](repeating: 0, count: columns)
         for row in 0..<rows {
             let index = start + row
-            let end = index + 1 < lineStarts.count ? lineStarts[index + 1] - 1 : text.length
+            let end = contentEnd(ofLine: index)
             let cells = text.substring(with: NSRange(location: lineStarts[index], length: end - lineStarts[index])).components(separatedBy: "\t")
             guard cells.count == columns else { return nil }
             guard row < Self.measuredTableRows else { continue }
@@ -479,7 +510,7 @@ final class SheetTextView: NSTextView, NSTextViewDelegate, NSTextStorageDelegate
     func copyWholeLine() -> Bool {
         let text = string as NSString
         let index = line(at: selectedRange().location)
-        let end = index + 1 < lineStarts.count ? lineStarts[index + 1] - 1 : text.length
+        let end = contentEnd(ofLine: index)
         let copied = text.substring(with: NSRange(location: lineStarts[index], length: end - lineStarts[index])) + "\n"
         let board = CalculatorClipboard.board
         board.declareTypes([.string, Self.wholeLineType], owner: nil)
@@ -497,7 +528,7 @@ final class SheetTextView: NSTextView, NSTextViewDelegate, NSTextStorageDelegate
         let column = caret - lineStarts[index]
         var start = lineStarts[index]
         let end = index + 1 < lineStarts.count ? lineStarts[index + 1] : length
-        if index + 1 == lineStarts.count, index > 0 { start -= 1 }
+        if index + 1 == lineStarts.count, index > 0 { start = contentEnd(ofLine: index - 1) }
         let range = NSRange(location: start, length: end - start)
         guard range.length > 0 else { return }
         breakUndoCoalescing()
@@ -507,7 +538,7 @@ final class SheetTextView: NSTextView, NSTextViewDelegate, NSTextStorageDelegate
         breakUndoCoalescing()
         // The caret lands on the following line, or on the previous one when the last line went.
         let target = line(at: start)
-        let targetEnd = target + 1 < lineStarts.count ? lineStarts[target + 1] - 1 : (string as NSString).length
+        let targetEnd = contentEnd(ofLine: target)
         setSelectedRange(NSRange(location: lineStarts[target] + min(column, targetEnd - lineStarts[target]), length: 0))
     }
 
@@ -579,6 +610,11 @@ final class SheetTextView: NSTextView, NSTextViewDelegate, NSTextStorageDelegate
     func textView(_ textView: NSTextView, shouldChangeTextIn affectedCharRange: NSRange, replacementString: String?) -> Bool {
         let length = (textStorage?.length ?? 0) - affectedCharRange.length + (replacementString?.utf16.count ?? 0)
         if length > CalculatorSheet.maxCharacters { NSSound.beep(); return false }
+        // Past 10,000 lines the engine refuses to evaluate or save the sheet, so an edit that would get there is refused like one past the character limit.
+        if let replacementString, Self.lineBreaks(replacementString) > 0,
+           lineStarts.count - Self.lineBreaks((string as NSString).substring(with: affectedCharRange)) + Self.lineBreaks(replacementString) > CalculatorSheet.maxLines {
+            NSSound.beep(); return false
+        }
         if host?.editorWillChange(self, range: affectedCharRange) == true { breakUndoCoalescing() }
         pendingChange = (affectedCharRange, replacementString?.utf16.count ?? 0)
         return true

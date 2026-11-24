@@ -60,27 +60,34 @@ final class FolderSyncSession {
             stopLocked()
             configuredFolder = folder
             guard let folder else { return false }
-            // An unavailable folder gets no watcher: the pass reports it, and the next save or start retries.
-            watcher = FolderWatcher(folder) { [weak self] in self?.request() }
-            if watcher != nil { FolderSyncSession.countWatcher(1) }
+            watchLocked(folder)
             return true
         }
         if started { request() }
     }
 
-    /// Coalesces requests: waits for a quiet `debounce`, but never longer than `maxDelay` after the first.
-    func request() { schedule(FolderSyncSession.debounce, resetRetries: true) }
+    /// An unavailable folder gets no watcher: the pass reports it, and the next pass that finds it available installs one.
+    private func watchLocked(_ folder: String) {
+        watcher = FolderWatcher(folder) { [weak self] in self?.request() }
+        if watcher != nil { FolderSyncSession.countWatcher(1) }
+    }
 
-    private func schedule(_ delay: Double, resetRetries: Bool) {
+    /// Coalesces requests: waits for a quiet `debounce`, but never longer than `maxDelay` after the first.
+    func request() { schedule(FolderSyncSession.debounce, request: true) }
+
+    /// `request`: a change request, coalesced under `maxDelay`. A retry or recheck keeps its own delay.
+    private func schedule(_ delay: Double, request: Bool) {
         gate.lock(); defer { gate.unlock() }
         if disposed || configuredFolder == nil { return }
-        if resetRetries { retries = 0 }
+        if request { retries = 0 }
         if running { again = true; return }
-        let now = DispatchTime.now()
-        if firstRequest == nil { firstRequest = now }
         var wait = delay
-        let latest = FolderSyncSession.maxDelay - Double(now.uptimeNanoseconds - firstRequest!.uptimeNanoseconds) / 1e9
-        if latest < wait { wait = max(0, latest) }
+        if request {
+            let now = DispatchTime.now()
+            if firstRequest == nil { firstRequest = now }
+            let latest = FolderSyncSession.maxDelay - Double(now.uptimeNanoseconds - firstRequest!.uptimeNanoseconds) / 1e9
+            if latest < wait { wait = max(0, latest) }
+        }
         if timer == nil {
             let source = DispatchSource.makeTimerSource(queue: .global())
             source.setEventHandler { [weak self] in self?.fire() }
@@ -116,15 +123,18 @@ final class FolderSyncSession {
     }
 
     private func finish(_ report: SyncReport?) {
-        var rerun = false; var delay: Double?
-        locked {
-            running = false; rerun = again; again = false
-            if !rerun, let report {
-                if report.retrySoon && retries < FolderSyncSession.maxRetries { retries += 1; delay = FolderSyncSession.retryDelay }
-                else if let after = report.recheckAfter { delay = Double(after) / Double(Ticks.perSecond) + 1 }
-            } else if !rerun && report == nil && retries < FolderSyncSession.maxRetries { retries += 1; delay = FolderSyncSession.retryDelay }
+        gate.lock(); defer { gate.unlock() }
+        running = false; var rerun = again; again = false; var delay: Double?
+        if !disposed, watcher == nil, let folder = configuredFolder, let report, report.status != .folderUnavailable, report.status != .off {
+            watchLocked(folder)
+            if watcher != nil { rerun = true } // A file that arrived between this pass's scan and the watcher would go unseen.
         }
-        if rerun { request() } else if let delay { schedule(delay, resetRetries: false) }
+        if !rerun, let report {
+            if report.retrySoon && retries < FolderSyncSession.maxRetries { retries += 1; delay = FolderSyncSession.retryDelay }
+            else if let after = report.recheckAfter { delay = Double(after) / Double(Ticks.perSecond) + 1 }
+        } else if !rerun && report == nil && retries < FolderSyncSession.maxRetries { retries += 1; delay = FolderSyncSession.retryDelay }
+        // Armed under the lock (recursive): a change request arriving after this replaces a long recheck, never the other way round.
+        if rerun { request() } else if let delay { schedule(delay, request: false) }
     }
 
     private func stopLocked() {
