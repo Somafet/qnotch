@@ -2,24 +2,24 @@ import XCTest
 @testable import CalculatorEngine
 
 /// Runs one xUnit [Theory] row per element and counts the rows, so Swift and C# case counts can be compared.
-func theory<T>(_ rows: [T], file: StaticString = #filePath, line: UInt = #line, _ body: (T) throws -> Void) throws {
+func theory<T>(_ rows: [T], file: StaticString = #filePath, line: UInt = #line, function: String = #function, _ body: (T) throws -> Void) throws {
     for row in rows {
         do { try body(row) } catch { XCTFail("\(row): \(error)", file: file, line: line) }
-        CaseCounter.record(file: "\(file)")
+        CaseCounter.record(file: "\(file)", function: function)
     }
 }
-/// The number of theory rows and fixture cases each test file ran, written at exit to
-/// `.build/calculator-case-counts.json` for the C#/Swift comparison.
+/// Counts xUnit-equivalent cases: each theory row or fixture case counts one, each other test method one.
+/// `ZZCaseCountReport` (which runs last) writes the per-class totals to `<package>/.build/calculator-case-counts.json`.
 enum CaseCounter {
     private static let lock = NSLock()
-    private static var counts: [String: Int] = [:]
-    static func record(file: String, count: Int = 1) {
+    private static var rows: [String: [String: Int]] = [:]
+    /// Records `count` cases for the calling test method. The class is named after its file, by convention.
+    static func record(file: String, function: String = #function, count: Int = 1) {
         let name = URL(fileURLWithPath: file).deletingPathExtension().lastPathComponent
-        lock.lock(); counts[name, default: 0] += count; lock.unlock()
+        lock.lock(); rows[name, default: [:]][function, default: 0] += count; lock.unlock()
     }
-    static var snapshot: [String: Int] { lock.lock(); defer { lock.unlock() }; return counts }
+    static func rows(for testClass: String) -> [String: Int] { lock.lock(); defer { lock.unlock() }; return rows[testClass] ?? [:] }
 }
-
 /// System.Random(seed): .NET's seeded generator (Knuth's subtractive method), so fuzz tests see the same inputs as C#.
 struct NetRandom {
     private var seedArray = [Int32](repeating: 0, count: 56)
@@ -30,7 +30,7 @@ struct NetRandom {
         seedArray[55] = mj
         var mk: Int32 = 1
         var ii = 0
-        for i in 1..<55 {
+        for _ in 1..<55 {
             ii += 21; if ii >= 55 { ii -= 55 }
             seedArray[ii] = mk
             mk = mj &- mk
