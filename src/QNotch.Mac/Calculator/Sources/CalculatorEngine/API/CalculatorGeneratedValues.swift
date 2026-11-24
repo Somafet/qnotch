@@ -59,6 +59,15 @@ public final class CalculatorGeneratedValues {
         session.replaySource(source)
     }
 
+    /// The text and every identity, value and roll as they are now, to come back to on undo or redo.
+    public func checkpoint() -> CalculatorGeneratedCheckpoint { CalculatorGeneratedCheckpoint(source: session.source, state: session.snapshot) }
+
+    /// Puts a checkpoint's identities back, whatever edits came between (the editor's undo and redo).
+    public func restore(_ checkpoint: CalculatorGeneratedCheckpoint) {
+        stateLines = nil
+        if (try? session.restore(checkpoint.source, checkpoint.state)) == nil { _ = try? session.apply(checkpoint.source) }
+    }
+
     /// Adopts a restored version's exact identities; the edit joins the text replacement's undo step.
     public func restore(_ sheet: CalculatorSavedSheet) throws -> CalculatorGeneratedEdit {
         stateLines = nil
@@ -93,6 +102,12 @@ public final class CalculatorGeneratedValues {
 
     /// The roll a line holds.
     public func rolled(line: Int) -> CalculatorDiceRoll? { session.rolled(line).flatMap { CalculatorDiceRoll(line: line, $0) } }
+}
+
+/// Generated values at one moment (`CalculatorGeneratedValues.checkpoint`).
+public struct CalculatorGeneratedCheckpoint {
+    public let source: String
+    let state: GeneratedUuidState?
 }
 
 /// One identity change, undone and redone with the text edit it belongs to.

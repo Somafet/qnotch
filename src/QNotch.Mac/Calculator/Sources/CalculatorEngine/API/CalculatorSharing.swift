@@ -134,11 +134,14 @@ public final class CalculatorExport {
 
     /// Places the rows on pages (or one continuous page when `pageHeight` is infinite): source left, results right-aligned in one
     /// column, worksheet cells on column stops, figures under their line. `measure` gives a text's width in the renderer's font.
-    public func layout(width: Double, pageHeight: Double, margin: Double, lineHeight: Double, figureHeight: Double = 120, maxHeight: Double = 12_000,
+    public func layout(width: Double, pageHeight: Double, margin: Double, lineHeight: Double, figureHeight: Double = 120, figureGap: Double = 10,
+                       columnGap: Double = 24, maxHeight: Double = 12_000,
                        measure: @escaping (String, CalculatorExportLayout.Style) -> Double) throws -> CalculatorExportLayout {
         try CalculatorDocumentError.wrap {
             var options = LayoutOptions(width, pageHeight, margin, lineHeight)
             options.figureHeight = figureHeight
+            options.figureGap = figureGap
+            options.columnGap = columnGap
             options.maxHeight = maxHeight
             let layout = try SheetLayoutComposer.compose(export, options) { text, style in measure(text, CalculatorExportLayout.Style(style)) }
             return CalculatorExportLayout(layout)
