@@ -130,9 +130,9 @@ enum SheetValue: Hashable, CustomStringConvertible {
     var display: String {
         get throws {
             switch self {
-            case .plot(let v): return try v.display
-            case .chart(let v): return try v.display
-            case .table(let v): return try v.display
+            case .plot(let v): return v.display
+            case .chart(let v): return v.display
+            case .table(let v): return v.display
             case .practical(let v): return v.display
             case .complex(let v): return try v.display
             case .prime(let v): return try v.display
@@ -167,9 +167,9 @@ enum SheetValue: Hashable, CustomStringConvertible {
     var copyText: String {
         get throws {
             switch self {
-            case .plot(let v): return try v.copyText
-            case .chart(let v): return try v.copyText
-            case .table(let v): return try v.copyText
+            case .plot(let v): return v.copyText
+            case .chart(let v): return v.copyText
+            case .table(let v): return v.copyText
             case .practical(let v): return v.copyText
             case .complex(let v): return try v.copyText
             case .prime(let v): return try v.copyText
