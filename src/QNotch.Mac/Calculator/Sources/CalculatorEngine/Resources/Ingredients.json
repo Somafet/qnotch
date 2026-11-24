@@ -1,0 +1,346 @@
+{
+  "version": 1,
+  "basis": "Grams per US customary cup (236.5882365 mL) as measured; ingredient density varies with brand, moisture, sifting and packing. Estimates, not weights of a particular sample.",
+  "dataset": {
+    "name": "USDA FoodData Central, SR Legacy (April 2018)",
+    "url": "https://fdc.nal.usda.gov/download-datasets",
+    "file": "FoodData_Central_sr_legacy_food_csv_2018-04.zip",
+    "sha256": "B80817294B8850530AAEDF2E515C02593B1824F763A0FF356E5C2081643E6FD0"
+  },
+  "ingredients": [
+    {
+      "id": "flour",
+      "names": [
+        "flour",
+        "all purpose flour",
+        "plain flour",
+        "white flour"
+      ],
+      "gramsPerCup": "125",
+      "source": "USDA FoodData Central SR Legacy fdcId 168894: Wheat flour, white, all-purpose, enriched, bleached; portion 1 cup"
+    },
+    {
+      "id": "bread flour",
+      "names": [
+        "bread flour"
+      ],
+      "gramsPerCup": "137",
+      "source": "USDA FoodData Central SR Legacy fdcId 168896: Wheat flour, white, bread, enriched; portion 1 cup"
+    },
+    {
+      "id": "whole wheat flour",
+      "names": [
+        "whole wheat flour",
+        "wholemeal flour",
+        "whole grain flour"
+      ],
+      "gramsPerCup": "120",
+      "source": "USDA FoodData Central SR Legacy fdcId 168893: Wheat flour, whole-grain (Includes foods for USDA's Food Distribution Program); portion 1 cup"
+    },
+    {
+      "id": "cake flour",
+      "names": [
+        "cake flour"
+      ],
+      "gramsPerCup": "137",
+      "source": "USDA FoodData Central SR Legacy fdcId 169723: Wheat flour, white, cake, enriched; portion 1 cup unsifted, dipped"
+    },
+    {
+      "id": "cornmeal",
+      "names": [
+        "cornmeal",
+        "corn meal"
+      ],
+      "gramsPerCup": "157",
+      "source": "USDA FoodData Central SR Legacy fdcId 168867: Cornmeal, degermed, enriched, yellow; portion 1 cup"
+    },
+    {
+      "id": "cornstarch",
+      "names": [
+        "cornstarch",
+        "corn starch",
+        "cornflour"
+      ],
+      "gramsPerCup": "128",
+      "source": "USDA FoodData Central SR Legacy fdcId 169698: Cornstarch; portion 1 cup"
+    },
+    {
+      "id": "sugar",
+      "names": [
+        "sugar",
+        "granulated sugar",
+        "white sugar",
+        "caster sugar"
+      ],
+      "gramsPerCup": "200",
+      "source": "USDA FoodData Central SR Legacy fdcId 169655: Sugars, granulated; portion 1 cup"
+    },
+    {
+      "id": "brown sugar",
+      "names": [
+        "brown sugar"
+      ],
+      "gramsPerCup": "220",
+      "source": "USDA FoodData Central SR Legacy fdcId 168833: Sugars, brown; portion 1 cup packed"
+    },
+    {
+      "id": "powdered sugar",
+      "names": [
+        "powdered sugar",
+        "icing sugar",
+        "confectioners sugar"
+      ],
+      "gramsPerCup": "120",
+      "source": "USDA FoodData Central SR Legacy fdcId 169656: Sugars, powdered; portion 1 cup unsifted"
+    },
+    {
+      "id": "butter",
+      "names": [
+        "butter"
+      ],
+      "gramsPerCup": "227",
+      "source": "USDA FoodData Central SR Legacy fdcId 173410: Butter, salted; portion 1 cup"
+    },
+    {
+      "id": "milk",
+      "names": [
+        "milk",
+        "whole milk"
+      ],
+      "gramsPerCup": "244",
+      "source": "USDA FoodData Central SR Legacy fdcId 171265: Milk, whole, 3.25% milkfat, with added vitamin D; portion 1 cup"
+    },
+    {
+      "id": "water",
+      "names": [
+        "water"
+      ],
+      "gramsPerCup": "237",
+      "source": "USDA FoodData Central SR Legacy fdcId 174158: Water, bottled, generic; portion 1 cup"
+    },
+    {
+      "id": "honey",
+      "names": [
+        "honey"
+      ],
+      "gramsPerCup": "339",
+      "source": "USDA FoodData Central SR Legacy fdcId 169640: Honey; portion 1 cup"
+    },
+    {
+      "id": "maple syrup",
+      "names": [
+        "maple syrup"
+      ],
+      "gramsPerCup": "315",
+      "source": "USDA FoodData Central SR Legacy fdcId 169661: Syrups, maple; portion 1 cup"
+    },
+    {
+      "id": "molasses",
+      "names": [
+        "molasses"
+      ],
+      "gramsPerCup": "337",
+      "source": "USDA FoodData Central SR Legacy fdcId 168820: Molasses; portion 1 cup"
+    },
+    {
+      "id": "olive oil",
+      "names": [
+        "olive oil"
+      ],
+      "gramsPerCup": "216",
+      "source": "USDA FoodData Central SR Legacy fdcId 171413: Oil, olive, salad or cooking; portion 1 cup"
+    },
+    {
+      "id": "vegetable oil",
+      "names": [
+        "vegetable oil",
+        "cooking oil",
+        "canola oil",
+        "oil"
+      ],
+      "gramsPerCup": "218",
+      "source": "USDA FoodData Central SR Legacy fdcId 171411: Oil, soybean, salad or cooking; portion 1 cup"
+    },
+    {
+      "id": "rolled oats",
+      "names": [
+        "rolled oats",
+        "oats",
+        "oatmeal"
+      ],
+      "gramsPerCup": "81",
+      "source": "USDA FoodData Central SR Legacy fdcId 173904: Cereals, oats, regular and quick, not fortified, dry; portion 1 cup"
+    },
+    {
+      "id": "cocoa powder",
+      "names": [
+        "cocoa powder",
+        "cocoa"
+      ],
+      "gramsPerCup": "86",
+      "source": "USDA FoodData Central SR Legacy fdcId 169593: Cocoa, dry powder, unsweetened; portion 1 cup"
+    },
+    {
+      "id": "white rice",
+      "names": [
+        "white rice",
+        "rice"
+      ],
+      "gramsPerCup": "185",
+      "source": "USDA FoodData Central SR Legacy fdcId 168877: Rice, white, long-grain, regular, raw, enriched; portion 1 cup"
+    },
+    {
+      "id": "brown rice",
+      "names": [
+        "brown rice"
+      ],
+      "gramsPerCup": "185",
+      "source": "USDA FoodData Central SR Legacy fdcId 169703: Rice, brown, long-grain, raw (Includes foods for USDA's Food Distribution Program); portion 1 cup"
+    },
+    {
+      "id": "salt",
+      "names": [
+        "salt",
+        "table salt"
+      ],
+      "gramsPerCup": "292",
+      "source": "USDA FoodData Central SR Legacy fdcId 173468: Salt, table; portion 1 cup"
+    },
+    {
+      "id": "peanut butter",
+      "names": [
+        "peanut butter"
+      ],
+      "gramsPerCup": "258",
+      "source": "USDA FoodData Central SR Legacy fdcId 172470: Peanut butter, smooth style, without salt; portion 1 cup"
+    },
+    {
+      "id": "yogurt",
+      "names": [
+        "yogurt",
+        "yoghurt",
+        "plain yogurt"
+      ],
+      "gramsPerCup": "245",
+      "source": "USDA FoodData Central SR Legacy fdcId 171284: Yogurt, plain, whole milk; portion 1 cup (8 fl oz)"
+    },
+    {
+      "id": "sour cream",
+      "names": [
+        "sour cream"
+      ],
+      "gramsPerCup": "230",
+      "source": "USDA FoodData Central SR Legacy fdcId 171257: Cream, sour, cultured; portion 1 cup"
+    },
+    {
+      "id": "heavy cream",
+      "names": [
+        "heavy cream",
+        "double cream",
+        "whipping cream"
+      ],
+      "gramsPerCup": "238",
+      "source": "USDA FoodData Central SR Legacy fdcId 170859: Cream, fluid, heavy whipping; portion 1 cup, fluid (yields 2 cups whipped)"
+    },
+    {
+      "id": "cream cheese",
+      "names": [
+        "cream cheese"
+      ],
+      "gramsPerCup": "232",
+      "source": "USDA FoodData Central SR Legacy fdcId 173418: Cheese, cream; portion 1 cup"
+    },
+    {
+      "id": "shredded cheddar",
+      "names": [
+        "cheddar",
+        "shredded cheddar",
+        "grated cheddar",
+        "cheddar cheese"
+      ],
+      "gramsPerCup": "113",
+      "source": "USDA FoodData Central SR Legacy fdcId 173414: Cheese, cheddar (Includes foods for USDA's Food Distribution Program); portion 1 cup, shredded"
+    },
+    {
+      "id": "grated parmesan",
+      "names": [
+        "parmesan",
+        "grated parmesan",
+        "parmesan cheese"
+      ],
+      "gramsPerCup": "100",
+      "source": "USDA FoodData Central SR Legacy fdcId 171247: Cheese, parmesan, grated; portion 1 cup"
+    },
+    {
+      "id": "raisins",
+      "names": [
+        "raisins"
+      ],
+      "gramsPerCup": "145",
+      "source": "USDA FoodData Central SR Legacy fdcId 168165: Raisins, dark, seedless (Includes foods for USDA's Food Distribution Program); portion 1 cup (not packed)"
+    },
+    {
+      "id": "chocolate chips",
+      "names": [
+        "chocolate chips",
+        "choc chips"
+      ],
+      "gramsPerCup": "168",
+      "source": "USDA FoodData Central SR Legacy fdcId 167976: Candies, semisweet chocolate; portion 1 cup chips (6 oz package)"
+    },
+    {
+      "id": "chopped walnuts",
+      "names": [
+        "walnuts",
+        "chopped walnuts"
+      ],
+      "gramsPerCup": "117",
+      "source": "USDA FoodData Central SR Legacy fdcId 170187: Nuts, walnuts, english; portion 1 cup, chopped"
+    },
+    {
+      "id": "whole almonds",
+      "names": [
+        "almonds",
+        "whole almonds"
+      ],
+      "gramsPerCup": "143",
+      "source": "USDA FoodData Central SR Legacy fdcId 170567: Nuts, almonds; portion 1 cup, whole"
+    },
+    {
+      "id": "chopped pecans",
+      "names": [
+        "pecans",
+        "chopped pecans"
+      ],
+      "gramsPerCup": "109",
+      "source": "USDA FoodData Central SR Legacy fdcId 170182: Nuts, pecans; portion 1 cup, chopped"
+    },
+    {
+      "id": "lentils",
+      "names": [
+        "lentils",
+        "dry lentils"
+      ],
+      "gramsPerCup": "192",
+      "source": "USDA FoodData Central SR Legacy fdcId 172420: Lentils, raw; portion 1 cup"
+    },
+    {
+      "id": "chickpeas",
+      "names": [
+        "chickpeas",
+        "garbanzo beans",
+        "dry chickpeas"
+      ],
+      "gramsPerCup": "200",
+      "source": "USDA FoodData Central SR Legacy fdcId 173756: Chickpeas (garbanzo beans, bengal gram), mature seeds, raw; portion 1 cup"
+    },
+    {
+      "id": "quinoa",
+      "names": [
+        "quinoa"
+      ],
+      "gramsPerCup": "170",
+      "source": "USDA FoodData Central SR Legacy fdcId 168874: Quinoa, uncooked; portion 1 cup"
+    }
+  ]
+}

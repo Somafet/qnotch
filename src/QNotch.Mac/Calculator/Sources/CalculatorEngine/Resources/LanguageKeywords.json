@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "status": "Calculator aliases for current exact arithmetic; not a native-speaker-reviewed translation set.",
+  "languages": [
+    { "code": "en", "unspaced": false, "keywords": {
+      "Of": ["of"], "Sum": ["sum"], "Average": ["average"], "Double": ["double", "twice"], "Half": ["half"],
+      "To": ["to"], "Nearest": ["nearest"], "Decimals": ["decimal", "decimals", "decimal place", "decimal places"],
+      "Significant": ["sig fig", "sig figs", "significant figure", "significant figures"]
+    } },
+    { "code": "ro", "unspaced": false, "keywords": {
+      "Of": ["din"], "Sum": ["sumă", "suma"], "Average": ["medie", "media"], "Double": ["dublu", "dublul"], "Half": ["jumătate", "jumatate"],
+      "To": ["la"], "Nearest": ["cel mai apropiat multiplu de"], "Decimals": ["zecimală", "zecimala", "zecimale"],
+      "Significant": ["cifră semnificativă", "cifre semnificative"]
+    } },
+    { "code": "de", "unspaced": false, "keywords": {
+      "Of": ["von"], "Sum": ["summe"], "Average": ["durchschnitt", "mittelwert"], "Double": ["doppelt", "das doppelte", "zweimal"], "Half": ["hälfte", "die hälfte"],
+      "To": ["auf"], "Nearest": ["das nächste vielfache von"], "Decimals": ["dezimalstelle", "dezimalstellen", "nachkommastelle", "nachkommastellen"],
+      "Significant": ["signifikante stelle", "signifikante stellen", "signifikante ziffern"]
+    } },
+    { "code": "fr", "unspaced": false, "keywords": {
+      "Of": ["de"], "Sum": ["somme"], "Average": ["moyenne"], "Double": ["deux fois"], "Half": ["moitié", "la moitié"],
+      "To": ["à", "au"], "Nearest": ["multiple le plus proche de"], "Decimals": ["décimale", "décimales"],
+      "Significant": ["chiffre significatif", "chiffres significatifs"]
+    } },
+    { "code": "es", "unspaced": false, "keywords": {
+      "Of": ["de"], "Sum": ["suma"], "Average": ["promedio", "media"], "Double": ["doble", "el doble"], "Half": ["mitad", "la mitad"],
+      "To": ["a", "al"], "Nearest": ["múltiplo más cercano de"], "Decimals": ["decimal", "decimales"],
+      "Significant": ["cifra significativa", "cifras significativas"]
+    } },
+    { "code": "it", "unspaced": false, "keywords": {
+      "Of": ["di"], "Sum": ["somma"], "Average": ["media"], "Double": ["doppio", "il doppio"], "Half": ["metà", "la metà"],
+      "To": ["a", "al"], "Nearest": ["multiplo più vicino di"], "Decimals": ["decimale", "decimali"],
+      "Significant": ["cifra significativa", "cifre significative"]
+    } },
+    { "code": "ja", "unspaced": true, "keywords": {
+      "Of": ["の"], "Sum": ["合計", "総和"], "Average": ["平均"], "Double": ["二倍"], "Half": ["半分"],
+      "To": ["を"], "Nearest": ["最も近い倍数"], "LeadingDecimals": ["小数", "小数点以下"], "LeadingSignificant": ["有効数字"],
+      "Digits": ["桁"], "RoundEnd": ["に丸める"], "PostfixDouble": ["の 二倍", "の 2 倍"], "PostfixHalf": ["の 半分"]
+    } },
+    { "code": "zh-Hans", "unspaced": true, "keywords": {
+      "Of": ["的"], "Sum": ["总和", "合计"], "Average": ["平均", "平均值"], "Double": ["两倍", "二倍"], "Half": ["一半"],
+      "To": ["保留", "到"], "Nearest": ["最接近的倍数"], "Decimals": ["位小数"], "Significant": ["位有效数字"],
+      "PostfixDouble": ["的 两倍", "的 二倍", "的 2 倍"], "PostfixHalf": ["的 一半"]
+    } },
+    { "code": "ko", "unspaced": true, "keywords": {
+      "Of": ["의"], "Sum": ["합계", "총합"], "Average": ["평균"], "Double": ["두 배"], "Half": ["절반"],
+      "To": ["를", "을"], "Nearest": ["가장 가까운 배수"], "LeadingDecimals": ["소수점"], "LeadingSignificant": ["유효숫자"],
+      "Digits": ["자리"], "RoundEnd": ["로 반올림", "반올림"], "PostfixDouble": ["의 두 배", "의 2 배"], "PostfixHalf": ["의 절반"]
+    } }
+  ]
+}
