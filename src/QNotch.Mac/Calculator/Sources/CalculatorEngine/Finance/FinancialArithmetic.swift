@@ -139,20 +139,6 @@ final class FinancialArithmetic {
             (approximate ? "; ≈ bounded arithmetic rounded to 34 significant digits when exact components exceeded 4096 bits, or an input was already approximate; not a certified error interval" : "; exact rational computation") +
             (money.provenance.map { "; " + $0 } ?? "")
     }
-    /// C# StatisticsArithmetic.Flatten (math area): list arguments contribute their items; only numbers and money pass.
-    static func flatten(_ arguments: [SheetValue], _ budget: ExecutionBudget, _ token: CancellationToken) throws -> [SheetValue] {
-        var values: [SheetValue] = []
-        func add(_ value: SheetValue) throws {
-            try budget.step(token)
-            if values.count == SheetList.maxItems { throw CalcError.arithmetic("Combined list exceeds 1024 values") }
-            if value.kind != .number && value.kind != .money { throw CalcError.arithmetic("Statistics and cash flows require numeric or monetary values") }
-            values.append(value)
-        }
-        for argument in arguments {
-            if case .list(let list) = argument { for item in list.values { try add(item) } } else { try add(argument) }
-        }
-        return values
-    }
 
     // MARK: pmt, fv, pv, npv, irr
 
@@ -162,7 +148,7 @@ final class FinancialArithmetic {
         if name.equalsIgnoreCase("irr") { return try irr(args) }
         let key = name.netLower; let rate = try self.rate(args[0])
         if key == "npv" {
-            let flows = try FinancialArithmetic.flatten(Array(args.dropFirst()), budget, token)
+            let flows = try StatisticsArithmetic.flatten(Array(args.dropFirst()), budget, token)
             if flows.isEmpty { throw CalcError.arithmetic("NPV requires at least one cash flow") }
             try setTemplate(flows); let cash = try flows.map { try self.cash($0) }; var result = Rational.zero
             for i in stride(from: cash.count - 1, through: 0, by: -1) { result = try divide(try add(result, cash[i]), try add(.one, rate)) }
@@ -190,11 +176,11 @@ final class FinancialArithmetic {
         let flows: [SheetValue]; var guess = try Rational(1, 10)
         if args[0].kind == .list {
             if args.count > 2 { throw CalcError.format("IRR list form is irr(cashFlows[,guess])") }
-            flows = try FinancialArithmetic.flatten(Array(args.prefix(1)), budget, token)
+            flows = try StatisticsArithmetic.flatten(Array(args.prefix(1)), budget, token)
             if args.count == 2 { guess = try rate(args[1]) }
         } else {
             if args.contains(where: { $0.kind == .list }) { throw CalcError.format("Use irr(cashFlows[,guess]) for list inputs") }
-            flows = try FinancialArithmetic.flatten(args, budget, token)
+            flows = try StatisticsArithmetic.flatten(args, budget, token)
         }
         try setTemplate(flows); let cash = try flows.map { try self.cash($0) }
         let solution = try IrrSolver(budget, token).solve(cash, guess)

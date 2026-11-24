@@ -20,15 +20,9 @@ final class PrimeArithmetic {
     static func validateArity(_ name: String, _ count: Int) throws { if count != 1 { throw CalcError.format("\(name) expects 1 argument(s)") } }
     private func step() throws { try budget.step(token) }
     private func charge(_ steps: Int) throws { for _ in 0..<max(0, steps) { try step() } }
-    /// C# IntegerArithmetic.IsExactInteger and Require (developer area), restated here so this area does not depend on that port.
-    private static func exactInteger(_ value: SheetValue) throws -> BigInt? {
-        if case .integer(let integer) = value { return integer.value }
-        guard case .number(let number) = value, number.unit == nil, !number.isPercentage, !number.isApproximate, number.isRational else { return nil }
-        let scalar = try number.scalar
-        return scalar.denominator.isOne ? scalar.numerator : nil
-    }
     private static func input(_ name: String, _ value: SheetValue) throws -> BigInt {
-        guard let number = try exactInteger(value) else { throw CalcError.arithmetic(name + " expects an exact integer without units") }
+        if !IntegerArithmetic.isExactInteger(value) { throw CalcError.arithmetic(name + " expects an exact integer without units") }
+        let number = try IntegerArithmetic.require(value)
         if number.sign < 0 { throw CalcError.arithmetic(name + " expects a nonnegative integer") }
         if number.bitLength > maxBits { throw CalcError.arithmetic(name + " supports integers below 2^1024") }
         return number
