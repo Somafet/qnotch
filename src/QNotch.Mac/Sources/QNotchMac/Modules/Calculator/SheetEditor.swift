@@ -7,6 +7,7 @@ protocol SheetEditorHost: AnyObject {
     func editorEscape() -> Bool
     func editorCycleSheet(_ direction: Int)
     func editorRename()
+    func editorFocusResult()
     func editorTextChanged(_ editor: SheetTextView)
 }
 
@@ -278,6 +279,7 @@ final class SheetTextView: NSTextView, NSTextViewDelegate, NSTextStorageDelegate
         if event.keyCode == 48, modifiers == .control { host?.editorCycleSheet(1); return }
         if event.keyCode == 48, modifiers == [.control, .shift] { host?.editorCycleSheet(-1); return }
         if event.keyCode == 120, modifiers.isEmpty { host?.editorRename(); return } // F2
+        if event.keyCode == 48, modifiers == .option { host?.editorFocusResult(); return }
         super.keyDown(with: event)
     }
 

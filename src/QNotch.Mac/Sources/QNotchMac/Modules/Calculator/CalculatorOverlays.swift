@@ -4,12 +4,9 @@ import AppKit
 /// hairline and a soft shadow. Cards replace Windows' overlays, anchored to what opened them.
 class OverlayCard: FillView {
     init(id: String, label: String) {
-        super.init(fill: Palette.rgb(0x222228), stroke: Palette.strokeStrong, radius: 12)
+        super.init(fill: Palette.rgb(0x222228), stroke: CalculatorContrast.strongStroke, radius: 12)
         identifier = NSUserInterfaceItemIdentifier(id)
-        layer?.shadowColor = NSColor.black.cgColor
-        layer?.shadowOpacity = 0.5
-        layer?.shadowRadius = 14
-        layer?.shadowOffset = CGSize(width: 0, height: -6)
+        CalculatorContrast.shadow(layer, opacity: 0.5, radius: 14, y: -6)
         setAccessibilityElement(true)
         setAccessibilityRole(.group)
         setAccessibilityLabel(label)

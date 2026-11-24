@@ -8,6 +8,8 @@ protocol ResultPillHost: AnyObject {
     func pillHover(_ pill: ResultPill, inside: Bool)
     func pillFocus(_ pill: ResultPill, focused: Bool)
     func pillMenu(_ pill: ResultPill, event: NSEvent)
+    /// Escape on a focused result goes back to the sheet.
+    func pillEscape()
     /// Typing on a focused result goes back to the sheet.
     func pillTyped(_ event: NSEvent)
 }
@@ -56,6 +58,9 @@ final class ResultPill: NSView, OutlineRoleProviding {
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     var outlineRole: Outline.Role? { .button }
+
+    /// The line's source, read with the result by VoiceOver.
+    var expression = "" { didSet { if oldValue != expression { setAccessibilityValue(expression) } } }
 
     var copies: Bool { CalculatorResultText.copies(result) }
     private var muted: Bool { result.error != nil || result.pending != nil }
@@ -166,6 +171,7 @@ final class ResultPill: NSView, OutlineRoleProviding {
         let modifiers = event.modifierFlags.intersection([.command, .shift, .option, .control])
         if modifiers.isEmpty, [36, 76, 49].contains(event.keyCode) { host?.pillCopy(self); return }   // Return, Enter, Space
         if modifiers.isEmpty, event.keyCode == 122 { host?.pillExplain(self); return }                // F1
+        if modifiers.isEmpty, event.keyCode == 53 { host?.pillEscape(); return }                      // Escape
         if event.keyCode != 48, modifiers.isEmpty || modifiers == .shift, let characters = event.characters, !characters.isEmpty,
            characters.unicodeScalars.allSatisfy({ !CharacterSet.controlCharacters.contains($0) && !(0xF700...0xF8FF).contains($0.value) }) {
             host?.pillTyped(event)
@@ -243,7 +249,7 @@ final class ResultCardView: FillView {
             if !muted.isEmpty { views.append(Self.wrapping(muted, size: 12, weight: .regular, color: Palette.textSecondary)) }
         }
         stack = column(views, spacing: 4)
-        super.init(fill: Palette.rgb(0x222228), stroke: Palette.strokeStrong, radius: 9)
+        super.init(fill: Palette.rgb(0x222228), stroke: CalculatorContrast.strongStroke, radius: 9)
         stack.translatesAutoresizingMaskIntoConstraints = false
         addSubview(stack)
         NSLayoutConstraint.activate([
@@ -252,10 +258,7 @@ final class ResultCardView: FillView {
             stack.topAnchor.constraint(equalTo: topAnchor, constant: 9),
             stack.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -10)
         ])
-        layer?.shadowColor = NSColor.black.cgColor
-        layer?.shadowOpacity = 0.45
-        layer?.shadowRadius = 9
-        layer?.shadowOffset = CGSize(width: 0, height: -4)
+        CalculatorContrast.shadow(layer, opacity: 0.45, radius: 9, y: -4)
         identifier = NSUserInterfaceItemIdentifier("calculator-result-card")
         setAccessibilityElement(true)
         setAccessibilityRole(.staticText)

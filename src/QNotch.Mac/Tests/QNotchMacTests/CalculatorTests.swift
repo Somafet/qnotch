@@ -529,6 +529,8 @@ final class CalculatorViewTests: XCTestCase {
         XCTAssertEqual(pill.text, "42")
         XCTAssertEqual(pill.accessibilityLabel(), "Line 2: 42. Copy result")
         XCTAssertEqual(pill.identifier?.rawValue, "calculator-result-2")
+        XCTAssertEqual(pill.accessibilityValue() as? String, "a * 21", "VoiceOver reads the line's expression with its result")
+        XCTAssertEqual(pill.accessibilityCustomActions()?.map(\.name), [CalculatorText.explainMenu])
         let rows = [0, 1, 4].compactMap { page.pillsByLine[$0]?.frame.minY }
         XCTAssertEqual(rows, rows.sorted(), "results follow their lines down the column")
         XCTAssertGreaterThan(rows[2] - rows[1], rows[1] - rows[0], "the blank line and the heading push the last result down")
@@ -540,6 +542,15 @@ final class CalculatorViewTests: XCTestCase {
         XCTAssertTrue(pill.accessibilityPerformPress())
         XCTAssertEqual(CalculatorClipboard.board.string(forType: .string), "42")
         XCTAssertTrue(pill.showsCopied)
+    }
+
+    func testHidingThePageClosesItsCardAndReleasesThePanel() {
+        let page = page()
+        page.workspace.setVisible(true)
+        page.stripAll(page.more)
+        XCTAssertNotNil(page.overlayContent)
+        page.workspace.setVisible(false)
+        XCTAssertNil(page.overlayContent, "an open card would otherwise hold the panel open on other tabs")
     }
 
     func testTheEditorTracksLines() {

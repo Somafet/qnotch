@@ -94,6 +94,8 @@ final class CalculatorWorkspace {
         case notice
         case status
         case preferences
+        /// The sheet came on screen or left it.
+        case visibility
     }
     enum TabChange: Equatable { case refreshed, closed(UUID, keepingPlace: Bool), restored(UUID), created(UUID), renamed(UUID) }
     struct Notice: Equatable {
@@ -575,6 +577,7 @@ final class CalculatorWorkspace {
         guard visible != value, !closedDown else { return }
         visible = value
         if value { dateClockChanged() } else { stopDateSchedule() }
+        notify(.visibility)
     }
 
     /// Wake, clock and time zone changes.

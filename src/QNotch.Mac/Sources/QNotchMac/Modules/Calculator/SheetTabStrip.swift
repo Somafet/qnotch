@@ -69,6 +69,11 @@ final class SheetTabStrip: NSView {
 
     override var isFlipped: Bool { true }
 
+    func applyContrast() {
+        indicator.stroke = CalculatorContrast.strongStroke
+        track.stroke = CalculatorContrast.increased ? CalculatorContrast.stroke : nil
+    }
+
     // MARK: Content
 
     enum Change { case none, closed(UUID, keepingPlace: Bool), restored(UUID), created(UUID) }
@@ -370,10 +375,10 @@ final class SheetTabView: NSView, OutlineRoleProviding, MiddleClickTarget {
         super.layout()
         let closeSize: CGFloat = 18
         close.frame = NSRect(x: bounds.width - closeSize - 4, y: (bounds.height - closeSize) / 2, width: closeSize, height: closeSize)
-        // Centered, clear of the close mark on both sides, as Mac tab titles are.
+        // Centered in the room the close mark leaves, so names never shift when it appears.
         let height = label.intrinsicContentSize.height
         label.alignment = .center
-        label.frame = NSRect(x: 24, y: (bounds.height - height) / 2, width: max(0, bounds.width - 48), height: height)
+        label.frame = NSRect(x: 8, y: (bounds.height - height) / 2, width: max(0, bounds.width - 8 - 22), height: height)
     }
 
     override func updateTrackingAreas() {

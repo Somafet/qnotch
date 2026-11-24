@@ -1,7 +1,7 @@
 import AppKit
 
 /// The Calculator in diagnostic runs: extra snapshot states (`calculator-hover`, `calculator-explanation`,
-/// `calculator-closed`, `calculator-all-sheets`, `calculator-rename`) and the smoke checks
+/// `calculator-closed`, `calculator-all-sheets`, `calculator-rename`, `calculator-overflow`) and the smoke checks
 /// `calculator-typing`, `calculator-copy`, `calculator-sheets`, `calculator-last-sheet`, `calculator-search`
 /// and `calculator-hidden-idle`. Copies go to a private pasteboard; nothing is written to disk.
 enum CalculatorSmoke {
@@ -21,7 +21,7 @@ enum CalculatorSmoke {
     static func render(_ run: SnapshotRun) {
         let shell = run.shell
         guard shell.module(CalculatorModule.self) != nil,
-              run.wants(["calculator-hover", "calculator-explanation", "calculator-closed", "calculator-all-sheets", "calculator-rename"]) else { return }
+              run.wants(["calculator-hover", "calculator-explanation", "calculator-closed", "calculator-all-sheets", "calculator-rename", "calculator-overflow"]) else { return }
         shell.open(keyboard: false)
         shell.selectTab(CalculatorModule.id)
         guard let page = page(shell) else { return run.fail("calculator-hover", "the Calculator page did not load") }
@@ -47,6 +47,17 @@ enum CalculatorSmoke {
         page.renameSheet(workspace.activeID)
         run.notch("calculator-rename")
         page.closeOverlay(returnFocus: false)
+        // More sheets than fit: chevrons, the all-sheets button and the tab in front kept in view. A page of its
+        // own, so the demo sheets stay as they are.
+        if run.options.includes("calculator-overflow") {
+            let many = InMemoryCalculatorDocuments(sheets: (1...14).map { (name: "Sheet \($0)", source: $0 == 9 ? "9 * 9" : "") }, active: 8)
+            let overflow = CalculatorTabView(workspace: CalculatorWorkspace(documents: many, tabs: CalculatorStorage.makeTabState(), synchronous: true), shell: nil)
+            overflow.frame = page.bounds
+            overflow.appearance = Palette.dark
+            overflow.layoutSubtreeIfNeeded()
+            overflow.layoutResults()
+            run.write("calculator-overflow", overflow, background: Palette.surface)
+        }
         shell.selectTab("home")
         shell.close(restoreFocus: false)
     }

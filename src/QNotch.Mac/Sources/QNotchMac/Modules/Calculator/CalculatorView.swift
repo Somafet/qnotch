@@ -1,6 +1,20 @@
 import AppKit
 import CalculatorEngine
 
+/// Increase Contrast: stronger hairlines and no soft shadows. The Calculator's surfaces are already solid, so
+/// Reduce Transparency changes nothing here.
+enum CalculatorContrast {
+    static var increased: Bool { NSWorkspace.shared.accessibilityDisplayShouldIncreaseContrast }
+    static var stroke: NSColor { increased ? Palette.textTertiary : Palette.stroke }
+    static var strongStroke: NSColor { increased ? Palette.textSecondary : Palette.strokeStrong }
+    static func shadow(_ layer: CALayer?, opacity: Float, radius: CGFloat, y: CGFloat) {
+        layer?.shadowColor = NSColor.black.cgColor
+        layer?.shadowOpacity = increased ? 0 : opacity
+        layer?.shadowRadius = radius
+        layer?.shadowOffset = CGSize(width: 0, height: y)
+    }
+}
+
 /// The tab's cheap host. The editor, the engine and the sheets load the first time the tab shows.
 final class CalculatorHostView: NSView, PanelKeyboardContent {
     private weak var module: CalculatorModule?
@@ -72,6 +86,7 @@ final class CalculatorTabView: NSView, SheetEditorHost, ResultPillHost, SheetTab
     private var lastCardHidden = Date.distantPast
     private var gutter = baseGutter
     private var noticeShown: CalculatorWorkspace.Notice?
+    private var contrastObserver: NSObjectProtocol?
 
     init(workspace: CalculatorWorkspace, shell: ModuleShell?) {
         self.workspace = workspace
@@ -97,6 +112,9 @@ final class CalculatorTabView: NSView, SheetEditorHost, ResultPillHost, SheetTab
         overlay.dismiss = { [weak self] in self?.closeOverlay(returnFocus: true) }
         scroll.scrolled = { [weak self] in self?.scrolled() }
         observation = workspace.observe { [weak self] change in self?.apply(change) }
+        contrastObserver = NSWorkspace.shared.notificationCenter.addObserver(forName: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification,
+                                                                             object: nil, queue: .main) { [weak self] _ in self?.applyContrast() }
+        applyContrast()
         showEditor()
         strip.show(workspace.tabs.visible, active: workspace.activeID)
         refreshStatus()
@@ -106,6 +124,17 @@ final class CalculatorTabView: NSView, SheetEditorHost, ResultPillHost, SheetTab
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     override var isFlipped: Bool { true }
+
+    deinit {
+        if let contrastObserver { NSWorkspace.shared.notificationCenter.removeObserver(contrastObserver) }
+    }
+
+    private func applyContrast() {
+        card.stroke = CalculatorContrast.stroke
+        notice.stroke = CalculatorContrast.strongStroke
+        CalculatorContrast.shadow(notice.layer, opacity: 0.35, radius: 8, y: -3)
+        strip.applyContrast()
+    }
 
     // MARK: Layout
 
@@ -200,6 +229,9 @@ final class CalculatorTabView: NSView, SheetEditorHost, ResultPillHost, SheetTab
             refreshNotice(animated: true)
         case .status:
             refreshStatus()
+        case .visibility:
+            // An open card holds the panel open; it belongs to the page on screen.
+            if !workspace.visible { closeOverlay(returnFocus: false); hideCard(animated: false) }
         case .preferences:
             let size = CGFloat(workspace.preferences.resolvedFontSize)
             for editor in editors.values { editor.fontSize = size }
@@ -277,6 +309,8 @@ final class CalculatorTabView: NSView, SheetEditorHost, ResultPillHost, SheetTab
         let current: [Substring] = workspace.evaluatedSource == workspace.source ? [] : workspace.source.split(separator: "\n", omittingEmptySubsequences: false)
         var keep = Set<Int>()
         let fontSize = CGFloat(workspace.preferences.resolvedFontSize)
+        let text = editor.string as NSString
+        let starts = editor.lineStarts
         for index in range {
             guard let result = workspace.result(forLine: index, of: current), CalculatorResultText.isShown(result),
                   let row = editor.rowRect(ofLine: index) else { continue }
@@ -295,6 +329,10 @@ final class CalculatorTabView: NSView, SheetEditorHost, ResultPillHost, SheetTab
                 if focused { window?.makeFirstResponder(made) }
             }
             guard let pill else { continue }
+            let end = index + 1 < starts.count ? starts[index + 1] - 1 : text.length
+            if starts[index] <= end, end <= text.length {
+                pill.expression = text.substring(with: NSRange(location: starts[index], length: end - starts[index])).trimmingCharacters(in: .whitespaces)
+            }
             let width = min(results.bounds.width, pill.naturalWidth)
             pill.frame = NSRect(x: results.bounds.width - width, y: top, width: width, height: row.height)
             pill.needsDisplay = true
@@ -324,6 +362,12 @@ final class CalculatorTabView: NSView, SheetEditorHost, ResultPillHost, SheetTab
     }
     func editorCycleSheet(_ direction: Int) { workspace.cycle(direction) }
     func editorRename() { renameSheet(workspace.activeID) }
+    /// ⌥⇥: the result of the caret's line, or the next one below it.
+    func editorFocusResult() {
+        let line = editor.line(at: editor.selectedRange().location)
+        guard let target = pills.sorted(by: { $0.key < $1.key }).first(where: { $0.key >= line })?.value ?? pills.values.first else { NSSound.beep(); return }
+        window?.makeFirstResponder(target)
+    }
     func editorTextChanged(_ editor: SheetTextView) {
         guard editor === self.editor else { return }
         hideCard(animated: false)
@@ -380,6 +424,8 @@ final class CalculatorTabView: NSView, SheetEditorHost, ResultPillHost, SheetTab
         menu.addItem(explain)
         popUp(menu, at: convert(event.locationInWindow, from: nil))
     }
+
+    func pillEscape() { window?.makeFirstResponder(editor) }
 
     func pillTyped(_ event: NSEvent) {
         window?.makeFirstResponder(editor)
@@ -453,7 +499,9 @@ final class CalculatorTabView: NSView, SheetEditorHost, ResultPillHost, SheetTab
         guard let content = overlay.content else { return false }
         overlay.clear()
         overlayHold = nil
-        Motion.leave(content, duration: 0.12, up: 4) { content.removeFromSuperview() }
+        Motion.leave(content, duration: 0.12, up: 4) { [weak overlay] in
+            if let overlay { overlay.removed(content) } else { content.removeFromSuperview() }
+        }
         if returnFocus { window?.makeFirstResponder(editor) }
         return true
     }
@@ -659,10 +707,7 @@ final class NoticeBar: FillView {
         undo.refusesFirstResponder = true
         addSubview(text)
         addSubview(undo)
-        layer?.shadowColor = NSColor.black.cgColor
-        layer?.shadowOpacity = 0.35
-        layer?.shadowRadius = 8
-        layer?.shadowOffset = CGSize(width: 0, height: -3)
+        CalculatorContrast.shadow(layer, opacity: 0.35, radius: 8, y: -3)
         setAccessibilityElement(true)
         setAccessibilityRole(.group)
     }
@@ -713,10 +758,10 @@ private final class OverlayLayer: NSView {
         isHidden = subviews.isEmpty
     }
 
-    override func didAddSubview(_ subview: NSView) { super.didAddSubview(subview); isHidden = false }
-    override func willRemoveSubview(_ subview: NSView) {
-        super.willRemoveSubview(subview)
-        if content == nil, subviews.count <= 1 { DispatchQueue.main.async { [weak self] in if self?.content == nil { self?.isHidden = true } } }
+    /// A closed card finished fading out.
+    func removed(_ view: NSView) {
+        view.removeFromSuperview()
+        if content == nil, subviews.isEmpty { isHidden = true }
     }
 
     override func hitTest(_ point: NSPoint) -> NSView? {
