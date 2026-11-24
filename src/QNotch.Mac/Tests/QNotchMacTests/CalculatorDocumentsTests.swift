@@ -216,4 +216,48 @@ final class CalculatorDocumentsTests: XCTestCase {
         documents.close()
         XCTAssertFalse(FileManager.default.fileExists(atPath: demo.path))
     }
+
+    /// Writes a workspace and sync folder through the app's own paths for the C# check
+    /// (`dotnet run --project src/QNotch.Mac/Calculator/Tools/DocumentsOracle -- verify <dir>/data <dir>/sync`).
+    /// Runs only with CALC_WRITE_APP_DOCUMENTS=<dir>.
+    func testWritesASampleWorkspaceForTheWindowsCheck() throws {
+        guard let target = ProcessInfo.processInfo.environment["CALC_WRITE_APP_DOCUMENTS"] else { throw XCTSkip("CALC_WRITE_APP_DOCUMENTS not set") }
+        let out = URL(fileURLWithPath: target, isDirectory: true)
+        try? FileManager.default.removeItem(at: out)
+        let sync = out.appendingPathComponent("sync", isDirectory: true)
+        try FileManager.default.createDirectory(at: sync, withIntermediateDirectories: true)
+        let documents = try StoredCalculatorDocuments(directory: out.appendingPathComponent("data", isDirectory: true))
+        var clock = Date()
+        documents.now = { clock }
+        let workspace = CalculatorWorkspace(documents: documents, tabs: CalculatorTabList(), synchronous: true)
+        workspace.edit("# Trip 日本 😀\nnights = 3\nhotel = 129 * nights\nhotel + 40")
+        workspace.save()
+        clock += 600
+        workspace.edit("# Trip 日本 😀\nnights = 4\nhotel = 129 * nights\nhotel + 40")
+        workspace.save()
+        XCTAssertNil(workspace.rename(workspace.activeID, to: "Trip <&> \"quoted\""))
+        XCTAssertTrue(workspace.newSheet())
+        workspace.edit("area(w, h) = w * h\narea(3, 4)\nid = uuid\n2d6 + 1")
+        workspace.roll(line: 3, again: false)
+        workspace.save()
+        XCTAssertTrue(workspace.newSheet())
+        workspace.edit("gone")
+        let gone = workspace.activeID
+        XCTAssertTrue(workspace.close(gone))
+        workspace.commitClosedSheets(everything: true)
+        workspace.updatePreferences { $0.decimalPlaces = 2; $0.numberStyle = "comma"; $0.language = "de"; $0.defaultCurrency = "EUR" }
+        XCTAssertTrue(workspace.setSyncFolder(sync))
+        // Passes until one finds nothing left to publish.
+        let deadline = Date().addingTimeInterval(40)
+        var quiet = 0
+        var lastPasses = -1
+        while Date() < deadline, quiet < 2 {
+            workspace.requestSync()
+            RunLoop.main.run(until: Date().addingTimeInterval(1.2))
+            let passes = workspace.syncSession?.passes ?? 0
+            if passes != lastPasses { lastPasses = passes; quiet += 1 }
+        }
+        workspace.shutdown()
+        XCTAssertGreaterThan(lastPasses, 0)
+    }
 }
