@@ -237,7 +237,8 @@ extension CalculatorTabView {
                              userInfo: [.announcement: CalculatorText.rolled(workspace.lines.indices.contains(roll.line) ? workspace.lines[roll.line].answer : ""),
                                         .priority: NSAccessibilityPriorityLevel.high.rawValue])
         dismissDice()
-        guard Motion.fades, let editor, let row = editor.rowRect(ofLine: roll.line) else { return }
+        // Diagnostic runs show the dice at rest, so a snapshot has them.
+        guard let editor, let row = editor.rowRect(ofLine: roll.line) else { return }
         let visible = scroll.contentView.bounds
         guard row.maxY > visible.minY, row.minY < visible.maxY else { return }
         let size = (CGFloat(workspace.displayed.resolvedFontSize) * 1.9).rounded()
@@ -248,7 +249,7 @@ extension CalculatorTabView {
         card.addSubview(layer)
         diceLayer = layer
         let pill = pillsByLine[roll.line]
-        pill?.alphaValue = 0
+        if Motion.fades { pill?.alphaValue = 0 }
         layer.play(at: pointInCard) { [weak pill] in
             guard let pill else { return }
             NSAnimationContext.runAnimationGroup { context in
@@ -317,6 +318,7 @@ final class HistoryCard: OverlayCard, NSTableViewDataSource, NSTableViewDelegate
         table.rowHeight = 22
         table.intercellSpacing = NSSize(width: 0, height: 2)
         table.style = .plain
+        table.selectionHighlightStyle = .regular
         table.dataSource = self
         table.delegate = self
         table.identifier = NSUserInterfaceItemIdentifier("calculator-history-list")
@@ -371,6 +373,12 @@ final class HistoryCard: OverlayCard, NSTableViewDataSource, NSTableViewDelegate
         let text = label(CalculatorWorkspace.versionLabel(history.versions[row]), size: 12, color: Palette.textPrimary)
         text.lineBreakMode = .byTruncatingTail
         return text
+    }
+
+    func tableView(_ tableView: NSTableView, rowViewForRow row: Int) -> NSTableRowView? {
+        let view = NSTableRowView()
+        view.setAccessibilityLabel(CalculatorWorkspace.versionLabel(history.versions[row]))
+        return view
     }
 
     func tableViewSelectionDidChange(_ notification: Notification) {

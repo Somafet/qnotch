@@ -169,7 +169,7 @@ final class CalculatorTabView: NSView, SheetEditorHost, ResultPillHost, SheetTab
             ratesButton.frame = NSRect(x: right - 4 - ratesWidth, y: ((header - size.height) / 2).rounded(), width: ratesWidth, height: size.height)
             right = ratesButton.frame.minX
         }
-        let statusWidth = min(170, ceil(status.intrinsicContentSize.width))
+        let statusWidth = min(170, ceil((status.stringValue as NSString).size(withAttributes: [.font: status.font ?? NSFont.systemFont(ofSize: 11)]).width) + 6)
         status.isHidden = status.stringValue.isEmpty
         let statusX = right - 6 - (status.isHidden ? 0 : statusWidth)
         status.frame = NSRect(x: statusX, y: (header - 14) / 2, width: status.isHidden ? 0 : statusWidth, height: 14)
