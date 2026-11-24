@@ -42,6 +42,8 @@ enum ModuleList {
                    symbol: "speaker.wave.2.fill", tint: .systemPink) { VolumeModule() },
         ModuleInfo(id: "search", title: "Search", detail: "Search enabled features, tabs and settings, with a global shortcut and type-to-search.",
                    symbol: "magnifyingglass", tint: .systemBlue) { SearchModule() },
+        ModuleInfo(id: "calculator", title: "Calculator", detail: "A notepad calculator with live answers beside each line, in sheets you can switch between. Answers also appear in Search.",
+                   symbol: CalculatorModule.symbol, tint: .systemGray) { CalculatorModule() },
         ModuleInfo(id: "note", title: "Note", detail: "A quick note on a Home card, saved as you type.",
                    symbol: "note.text", tint: .systemYellow) { NoteModule() },
         ModuleInfo(id: "colorpicker", title: "Color picker", detail: "Pick a color anywhere on screen with the system loupe and copy its hex code.",
