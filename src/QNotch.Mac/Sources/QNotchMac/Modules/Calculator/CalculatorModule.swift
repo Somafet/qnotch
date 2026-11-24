@@ -34,6 +34,7 @@ final class CalculatorModule: NotchModule {
         })
         registries.searchSources.register(SearchSource(id: Self.id, order: 1) { [weak self] query in self?.search.find(query) ?? [] })
         search.functions = { [weak self] in self?.workspace?.documents.functions }
+        search.rates = { [weak self] in self?.workspace?.currencies.rates }
         search.answered = { [weak self] in self?.shell?.searchResultsChanged() }
         search.run = { [weak self] answer in
             CalculatorClipboard.copy(answer.copy)
@@ -55,8 +56,10 @@ final class CalculatorModule: NotchModule {
             self.opening = false
             var opened: CalculatorWorkspace?
             if !self.stopped, case .success(let documents) = result {
-                let workspace = CalculatorWorkspace(documents: documents, tabs: CalculatorStorage.makeTabState(), synchronous: demo)
+                let workspace = CalculatorWorkspace(documents: documents, tabs: CalculatorStorage.makeTabState(), synchronous: demo,
+                                                    ratesDirectory: directory, offlineRates: demo)
                 workspace.typingInBackground = true
+                workspace.rates = { [weak self] in self?.search.forget() }
                 workspace.setVisible(self.showing)
                 self.workspace = workspace
                 self.search.forget()

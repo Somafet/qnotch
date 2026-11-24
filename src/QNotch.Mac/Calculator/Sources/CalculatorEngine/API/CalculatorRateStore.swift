@@ -26,7 +26,9 @@ public struct CalculatorRateSnapshotInfo: Hashable, Sendable {
 
 /// The sheet's exchange-rate cache and downloads (Windows CalculatorSurface.Currencies with CurrencyRateCache and
 /// EcbRateConnection). The cache file is the same as Windows writes (`currency-rates.json` in the data folder).
-/// Not thread-safe: use it from one actor (the app's main thread); downloads run asynchronously.
+/// Main-actor isolated, so its state only changes between the app's own events; cache reads and writes and the
+/// downloads themselves run off the main thread.
+@MainActor
 public final class CalculatorRateStore {
     public static let ecbSource = EcbRateClient.source
     public static let inforEuroSource = InforEuroRateClient.source

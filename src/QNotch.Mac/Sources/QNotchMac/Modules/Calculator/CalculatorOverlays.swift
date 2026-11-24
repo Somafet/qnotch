@@ -242,3 +242,148 @@ final class AllSheetsCard: OverlayCard, NSTextFieldDelegate {
         return true
     }
 }
+
+/// The rates button's menu (Windows FillCurrencyMenu), anchored under the button: what the sheet converts with, the
+/// last problem, the downloads, the automatic download and the source. Rows behave like menu items: the pointer or the
+/// arrow keys choose, a click, Return or Space runs one and the menu closes. It follows a download while it is open.
+final class RatesMenuCard: OverlayCard {
+    struct Entry: Equatable {
+        enum Kind: Equatable { case note, warning, action, check(Bool), link }
+        let id: String
+        let title: String
+        var tip: String?
+        let kind: Kind
+        var enabled = true
+        static func == (a: Entry, b: Entry) -> Bool { a.id == b.id && a.title == b.title && a.tip == b.tip && a.kind == b.kind && a.enabled == b.enabled }
+    }
+
+    static let width: CGFloat = 300
+    private let stack = NSStackView()
+    private(set) var entries: [Entry] = []
+    private var rows: [(entry: Entry, background: FillView, button: HoverButton?)] = []
+    private(set) var selected: Int?
+    /// Runs the chosen entry (by id).
+    var run: ((String) -> Void)?
+    var escape: (() -> Void)?
+
+    init(entries: [Entry]) {
+        super.init(id: "calculator-rates-menu", label: CalculatorText.currencyRates)
+        stack.orientation = .vertical
+        stack.alignment = .leading
+        stack.spacing = 0
+        embed(stack, in: self, inset: NSEdgeInsets(top: 6, left: 6, bottom: 6, right: 6), fill: true)
+        show(entries)
+    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override var acceptsFirstResponder: Bool { true }
+
+    /// Rebuilds the rows when what they say changed, keeping the chosen one.
+    func show(_ next: [Entry]) {
+        guard next != entries else { return }
+        let chosen = selected.flatMap { rows.indices.contains($0) ? rows[$0].entry.id : nil }
+        entries = next
+        rows.forEach { $0.background.removeFromSuperview() }
+        rows.removeAll()
+        for (index, entry) in next.enumerated() {
+            let background = FillView(fill: nil, radius: 6)
+            background.translatesAutoresizingMaskIntoConstraints = false
+            var button: HoverButton?
+            switch entry.kind {
+            case .note, .warning:
+                let text = line(entry.title, size: 12, weight: entry.kind == .note ? .semibold : .regular,
+                                color: entry.kind == .note ? Palette.textSecondary : .systemOrange)
+                text.lineBreakMode = .byTruncatingTail
+                text.toolTip = entry.title
+                text.identifier = NSUserInterfaceItemIdentifier(entry.id)
+                text.translatesAutoresizingMaskIntoConstraints = false
+                background.addSubview(text)
+                NSLayoutConstraint.activate([
+                    text.leadingAnchor.constraint(equalTo: background.leadingAnchor, constant: 10),
+                    text.trailingAnchor.constraint(lessThanOrEqualTo: background.trailingAnchor, constant: -10),
+                    text.centerYAnchor.constraint(equalTo: background.centerYAnchor),
+                    background.heightAnchor.constraint(equalToConstant: 24)
+                ])
+            case .action, .check, .link:
+                let made = HoverButton("", style: .row, label: entry.title) { [weak self] in self?.choose(index) }
+                made.refusesFirstResponder = true
+                made.isEnabled = entry.enabled
+                made.toolTip = entry.tip
+                made.identifier = NSUserInterfaceItemIdentifier(entry.id)
+                made.translatesAutoresizingMaskIntoConstraints = false
+                if entry.tip != nil { made.setAccessibilityHelp(entry.tip) }
+                if case .check(let on) = entry.kind {
+                    made.setAccessibilityRole(.checkBox)
+                    made.setAccessibilityValue(NSNumber(value: on ? 1 : 0))
+                }
+                let mark: NSImageView
+                switch entry.kind {
+                case .check(let on):
+                    mark = symbol("checkmark", size: 10, weight: .semibold, color: Palette.accent)
+                    mark.isHidden = !on
+                case .link: mark = symbol("arrow.up.right", size: 9, weight: .semibold, color: Palette.textSecondary)
+                default: mark = symbol("checkmark", size: 10, weight: .semibold, color: .clear); mark.isHidden = true
+                }
+                let title = line(entry.title, size: 12, color: entry.enabled ? Palette.textPrimary : Palette.textTertiary)
+                title.lineBreakMode = .byTruncatingTail
+                title.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+                let content = row([mark, title], spacing: 8)
+                content.translatesAutoresizingMaskIntoConstraints = false
+                made.addSubview(content)
+                background.addSubview(made)
+                NSLayoutConstraint.activate([
+                    mark.widthAnchor.constraint(equalToConstant: 12),
+                    content.leadingAnchor.constraint(equalTo: made.leadingAnchor, constant: 8),
+                    content.trailingAnchor.constraint(lessThanOrEqualTo: made.trailingAnchor, constant: -8),
+                    content.centerYAnchor.constraint(equalTo: made.centerYAnchor),
+                    made.leadingAnchor.constraint(equalTo: background.leadingAnchor),
+                    made.trailingAnchor.constraint(equalTo: background.trailingAnchor),
+                    made.topAnchor.constraint(equalTo: background.topAnchor),
+                    made.bottomAnchor.constraint(equalTo: background.bottomAnchor),
+                    background.heightAnchor.constraint(equalToConstant: 26)
+                ])
+                button = made
+            }
+            stack.addArrangedSubview(background)
+            background.widthAnchor.constraint(equalToConstant: Self.width - 12).isActive = true
+            if index > 0, entry.kind != .warning, next[index - 1].kind == .note || next[index - 1].kind == .warning, entry.kind != .note {
+                stack.setCustomSpacing(4, after: rows[index - 1].background)
+            }
+            rows.append((entry, background, button))
+        }
+        select(chosen.flatMap { id in rows.firstIndex { $0.entry.id == id } })
+    }
+
+    private var choosable: [Int] { rows.indices.filter { rows[$0].button != nil && rows[$0].entry.enabled } }
+
+    private func select(_ index: Int?) {
+        selected = index
+        for (offset, row) in rows.enumerated() {
+            row.background.fill = offset == index ? Palette.accentSoft : nil
+            row.button?.isSelectedLook = offset == index
+        }
+    }
+
+    private func move(_ by: Int) {
+        let options = choosable
+        guard !options.isEmpty else { return }
+        guard let current = selected, let at = options.firstIndex(of: current) else { return select(by > 0 ? options.first : options.last) }
+        select(options[max(0, min(options.count - 1, at + by))])
+    }
+
+    private func choose(_ index: Int) {
+        guard rows.indices.contains(index), rows[index].entry.enabled, rows[index].button != nil else { return }
+        run?(rows[index].entry.id)
+    }
+
+    override func keyDown(with event: NSEvent) {
+        switch event.keyCode {
+        case 125: move(1)                                   // Down
+        case 126: move(-1)                                  // Up
+        case 36, 76, 49: if let selected { choose(selected) } // Return, Enter, Space
+        case 53: escape?()
+        default: super.keyDown(with: event)
+        }
+    }
+    override func cancelOperation(_ sender: Any?) { escape?() }
+}

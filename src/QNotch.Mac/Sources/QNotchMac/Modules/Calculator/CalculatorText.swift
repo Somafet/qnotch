@@ -46,6 +46,13 @@ enum CalculatorText {
     static func uses(_ lines: [Int]) -> String { "Uses " + lines.prefix(16).map { "L\($0 + 1)" }.joined(separator: ", ") }
     static let settings = "Settings…"
 
+    // Variables and figures
+    static let renameVariable = "Rename variable"
+    static let variableNameTaken = "Another variable already has this name"
+    static let invalidVariableName = "Not a valid variable name"
+    static let other = "Other"
+    static func moreSlices(_ count: Int) -> String { "+ \(count) more" }
+
     // Settings
     static let calculatorSettingsIntro = "For now, sheets last until QNotch quits. Calculations never leave this Mac."
     static let general = "General"
@@ -65,15 +72,47 @@ enum CalculatorText {
     static let defaultCurrency = "Default currency"
     static let defaultCurrencyTip = "Plain amounts of money are shown in this currency."
     static let none = "None"
+    static let download = "Download"
+    static let openLink = "Open"
+
+    // Currency rates
+    static let downloadingRates = "Downloading rates…"
+    static let euNotSaved = "EU monthly · not saved"
+    static let ecbNotSaved = "ECB · not saved"
+    static let historyUnavailable = "History unavailable"
+    static let ratesUnavailable = "Rates unavailable"
+    static let euMultiple = "EU monthly · multiple dates"
+    static let ecbMultiple = "ECB · multiple dates"
+    static func euDate(_ date: String) -> String { "EU monthly · \(date)" }
+    static func ecbDate(_ date: String) -> String { "ECB · \(date)" }
+    static let euMixed = "EU monthly · mixed dates"
+    static let ecbMixed = "ECB · mixed dates"
+    static let ecbHistoryCached = "ECB · history cached"
+    static func euStale(_ date: String) -> String { "EU monthly · stale \(date)" }
+    static func ecbStale(_ date: String) -> String { "ECB · stale \(date)" }
+    static let ratesTipMonthly = "EU monthly accounting rates (European Commission InforEuro, CC BY 4.0) via api.frankfurter.dev. Cached data; not live prices. Downloads send only the provider, base EUR and selected dates, never sheet text or amounts."
+    static let ratesTip = "ECB daily reference rates via api.frankfurter.dev. Cached data; not live prices. Downloads send only base EUR and selected dates, never sheet text or amounts."
+    static func currencyRatesName(_ status: String) -> String { "Currency reference rates: \(status)" }
+    static let downloadLatest = "Download latest ECB rates"
+    static let downloadLatestTip = "Network: api.frankfurter.dev; fixed base EUR only. No sheet text or amounts are sent."
+    static let downloadMonthly = "Download monthly EU rates"
+    static let downloadMonthlyTip = "Network: api.frankfurter.dev; European Commission InforEuro accounting rates for about 150 currencies, updated monthly; fixed provider and base EUR only. No sheet text or amounts are sent."
+    static func downloadHistory(_ count: Int) -> String { "Download historical dates (\(count))" }
+    static func downloadHistoryTip(_ dates: String) -> String { "Network: api.frankfurter.dev receives these dates and base EUR only: \(dates)" }
+    static let cancelDownload = "Cancel download"
+    static let autoRates = "Allow daily downloads while visible"
+    static let autoRatesTipMonthly = "Optional network access to api.frankfurter.dev for the current rate source, only when a visible sheet needs latest rates. No sheet text or amounts are sent."
+    static let autoRatesTip = "Optional network access to api.frankfurter.dev for ECB reference rates, only when a visible sheet needs latest rates. No sheet text or amounts are sent."
+    static let rateSourceMonthly = "Source: European Commission (CC BY 4.0) via Frankfurter"
+    static let rateSource = "Source: ECB via Frankfurter"
+
     static let comingTitle = "Coming to the Mac"
-    static let comingSaved = "Saved sheets and version history"
-    static let comingSavedTip = "Sheets saved on this Mac, restored after a restart, with earlier versions."
-    static let comingRates = "Currency rate downloads"
-    static let comingRatesTip = "ECB and EU monthly reference rates, downloaded only when you ask or allow it."
+    static let comingSaved = "Saved sheets, settings and version history"
+    static let comingSavedTip = "Sheets and these settings saved on this Mac and restored after a restart, with earlier versions and saved functions."
     static let comingSync = "Sync folder"
     static let comingSyncTip = "Keep sheets in a folder you choose, such as an iCloud Drive or Dropbox folder."
     static let comingShare = "Import, export and share"
-    static let comingShareTip = "Numi, Soulver and text imports, exports, images, links and printing."
+    static let comingShareTip = "Copying results, the total, a table or an image; exports, share links and printing; Numi, Soulver and text imports."
     static let comingLanguage = "Interface language and help"
     static let comingLanguageTip = "The calculator's own language choice, help and third-party notices."
 }

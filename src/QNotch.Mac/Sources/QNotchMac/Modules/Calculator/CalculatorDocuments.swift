@@ -19,6 +19,8 @@ struct CalculatorPreferences: Equatable {
     var defaultCurrency: String?
     /// "DE", "US" or "WEEKDAYS"; nil follows the system region.
     var workdayRegion: String?
+    /// Daily rate downloads while a visible sheet needs the latest rates (C# AutoCurrencyRates; off unless allowed).
+    var autoCurrencyRates = false
 
     static let defaultFontSize = 15
     static let fontSizes = [12, 13, 14, 15, 16, 18, 20, 22, 24, 28]
