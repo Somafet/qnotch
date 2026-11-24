@@ -29,8 +29,10 @@ final class TextValue: Hashable {
         }
         display = value.isEmpty ? "\"\"" : shown
     }
-    static func validate(_ text: String) throws {
-        let u = text.units
+    static func validate(_ text: String) throws { try validate(units: text.units) }
+    /// Swift strings cannot hold an unpaired surrogate (decoding repairs it to U+FFFD), so code that builds text
+    /// from UTF-16 units, such as \u escapes, validates the units before they become a String.
+    static func validate(units u: [UInt16]) throws {
         if u.count > maximumLength { throw CalcError.arithmetic("Text exceeds 32768 UTF-16 code units") }
         var i = 0
         while i < u.count {
@@ -64,7 +66,7 @@ enum TextSyntax {
             if index & 255 == 0 { try token.throwIfCancellationRequested() }
             if index - start > TextValue.maximumLength * 6 { throw CalcError.arithmetic("Text literal length limit exceeded") }
             let c = source[index]; index += 1
-            if c == 0x22 { let value = String(units: result); try TextValue.validate(value); return value }
+            if c == 0x22 { try TextValue.validate(units: result); return String(units: result) }
             if c < 32 { throw CalcError.format("Escape control characters inside a text literal") }
             if c != 0x5C { result.append(c) }
             else {

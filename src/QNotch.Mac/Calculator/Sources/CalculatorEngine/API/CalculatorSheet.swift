@@ -188,7 +188,15 @@ enum StepDetails {
 
 /// The host's local zone as engine rules.
 enum CalculatorZones {
-    /// The embedded TZDB rules for the host zone's IANA id (C# LocalZoneSnapshot.FromTimeZoneInfo). Nil until the
-    /// time-zone rules are available; "local" then reports that the local zone is unavailable.
-    static func local(_ zone: TimeZone) -> LocalZoneSnapshot? { nil }
+    private static let lock = NSLock()
+    private static var cached: (key: String, snapshot: LocalZoneSnapshot)?
+    /// The embedded TZDB rules for the host zone's IANA id (C# LocalZoneSnapshot.FromTimeZoneInfo), built once per zone.
+    static func local(_ zone: TimeZone) -> LocalZoneSnapshot? {
+        let key = zone.identifier + "|" + String(zone.secondsFromGMT())
+        lock.lock(); defer { lock.unlock() }
+        if let cached, cached.key == key { return cached.snapshot }
+        let snapshot = LocalZoneSnapshot.host(zone)
+        cached = (key, snapshot)
+        return snapshot
+    }
 }

@@ -62,7 +62,7 @@ struct ZonedMoment: Hashable, CustomStringConvertible {
     /// The local date and time in the zone.
     var local: NetDateTime { NetDateTime(ticks: zone.localTicks(instant)) }
     var offsetSeconds: Int { zone.offsetSeconds(at: instant) }
-    static func == (a: ZonedMoment, b: ZonedMoment) -> Bool { a.instant == b.instant && a.zone === b.zone && a.ruleVersion == b.ruleVersion }
+    static func == (a: ZonedMoment, b: ZonedMoment) -> Bool { a.instant == b.instant && sameZone(a.zone, b.zone) && a.ruleVersion == b.ruleVersion }
     func hash(into hasher: inout Hasher) { hasher.combine(instant); hasher.combine(ruleVersion) }
     var description: String {
         let offset = offsetSeconds, magnitude = abs(offset)
