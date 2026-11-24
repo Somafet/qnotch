@@ -30,7 +30,7 @@ struct NetRandom {
         seedArray[55] = mj
         var mk: Int32 = 1
         var ii = 0
-        for i in 1..<55 {
+        for _ in 1..<55 {
             ii += 21; if ii >= 55 { ii -= 55 }
             seedArray[ii] = mk
             mk = mj &- mk
