@@ -62,11 +62,16 @@ final class IntegerArithmetic {
     }
     /// The word profile two operands share: matching widths/signs are required; a bare integer adopts the other's.
     private static func profile(_ left: SheetValue, _ right: SheetValue) throws -> IntegerValue? {
-        var a: IntegerValue?, b: IntegerValue?
+        // Plain early returns: Swift 6.1's optimizer (Xcode 16.4, CI) crashes verifying the nested optional ternary this replaced.
+        var a: IntegerValue? = nil, b: IntegerValue? = nil
         if case .integer(let x) = left { a = x }
         if case .integer(let y) = right { b = y }
-        if let a, let b, a.width != nil, b.width != nil, a.width != b.width || a.signed != b.signed { throw CalcError.arithmetic("Cast mixed integer widths/signs explicitly") }
-        return a?.width != nil ? a : b?.width != nil ? b : a ?? b
+        if let first = a, let second = b, let leftWidth = first.width, let rightWidth = second.width, leftWidth != rightWidth || first.signed != second.signed {
+            throw CalcError.arithmetic("Cast mixed integer widths/signs explicitly")
+        }
+        if let first = a, first.width != nil { return first }
+        if let second = b, second.width != nil { return second }
+        return a ?? b
     }
     /// Integer handling of a unary operator, or nil when it does not apply.
     func tryUnary(_ operation: String, _ value: SheetValue) throws -> SheetValue? {
