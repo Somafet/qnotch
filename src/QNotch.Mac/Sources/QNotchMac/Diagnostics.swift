@@ -691,13 +691,15 @@ enum NativeSmokeTest {
             if let layout = shell.layout { try checkPlacement(shell: shell, layout: layout) }
             run.notch(prefix + (direction < 0 ? "-left-open" : "-right-open"))
             // Dragging the header folds the panel into the carried notch; without Keep panel open it stays closed.
+            // It is carried halfway back, clear of the center and edge snaps on any display width.
+            let carry = limit / 2
             shell.panel.nudgeBegan?()
             guard !shell.state.expanded else { throw Failure(name, "Dragging the header did not fold the panel") }
-            shell.panel.nudged?(-direction * 300)
-            guard let carried = shell.layout, abs(carried.offset - direction * (limit - 300)) < 0.5 else { throw Failure(name, "The folded notch did not follow the pointer") }
+            shell.panel.nudged?(-direction * carry)
+            guard let carried = shell.layout, abs(carried.offset - direction * (limit - carry)) < 0.5 else { throw Failure(name, "The folded notch did not follow the pointer") }
             shell.panel.nudgeEnded?(false, 0)
-            guard !shell.state.expanded, !shell.reopensAfterNudge, let dropped = shell.layout, abs(dropped.offset - direction * (limit - 300)) < 0.5 else {
-                throw Failure(name, "A header drop without Keep panel open reopened the panel or did not land")
+            guard !shell.state.expanded, !shell.reopensAfterNudge, let dropped = shell.layout, abs(dropped.offset - direction * (limit - carry)) < 0.5 else {
+                throw Failure(name, "A header drop without Keep panel open reopened the panel or did not land: expanded=\(shell.state.expanded) reopens=\(shell.reopensAfterNudge) offset=\(shell.layout?.offset ?? .nan) expected=\(direction * (limit - carry))")
             }
             shell.panel.nudgeEnded?(true, 0)
             guard shell.layout?.offset == 0, shell.general.pillOffsets.isEmpty else { throw Failure(name, "Double click did not recenter") }
