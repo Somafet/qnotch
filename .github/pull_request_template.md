@@ -14,3 +14,4 @@ Affected areas: Windows / macOS development / website / repository / shared
 - [ ] Repository/release changes: ran root `npm test` and preserved the required `build` gate and Windows release compatibility
 - [ ] Packaging changes: verified both Windows publish variants and the single-exe ZIP with `--verify-publish`, where affected
 - [ ] Mac UI/providers: described real validation and known platform limitations; no feature-parity claims without evidence
+- [ ] Feature on both platforms: follows the contract in `spec/` (updated in this PR if the wording or behaviour changed), and links the counterpart PR or says why it is platform-only
