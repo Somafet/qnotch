@@ -226,9 +226,14 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
         let leave = SettingsSlider("Close delay", value: shell.general.closeDelayMs, range: GeneralSettings.closeRange, step: 50) { [weak self] value in
             Analytics.setting("close_delay"); self?.shell.updateGeneral { $0.closeDelayMs = value }
         }
+        // Rows that only matter for hover opening; hidden (not disabled) while Open on is Click.
+        var hoverOnly: [NSView] = []
+        var hoverDetail: NSTextField?
         let openOn = ActionPopUp("Open on", items: ["Hover", "Click"], selected: shell.general.openOnClick ? 1 : 0) { [weak self] index in
             guard let self, self.shell.general.openOnClick != (index == 1) else { return }
             Analytics.setting("open_on"); self.shell.updateGeneral { $0.openOnClick = index == 1 }
+            hoverOnly.forEach { $0.isHidden = index == 1 }
+            hoverDetail?.stringValue = Self.hoverDelayDetail(click: index == 1)
         }
         openOn.identifier = NSUserInterfaceItemIdentifier("open-on")
         let segmentHover = ActionSwitch("Open hovered feature", value: shell.general.hoverOpensSegment) { [weak self] value in
@@ -245,6 +250,10 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
         }
         usage.isEnabled = !Analytics.forcedOff
         usage.identifier = NSUserInterfaceItemIdentifier("share-usage-data")
+        let segmentRow = settingsRow("Open hovered feature", detail: "After the hover delay, open details for the status under the pointer. Moving across statuses while open does not change the view.", control: segmentHover, width: width)
+        let leaveRow = settingsRow("Close delay", detail: "How long after the pointer leaves before the panel closes.", control: leave, width: width)
+        hoverOnly = [segmentRow, leaveRow]
+        hoverOnly.forEach { $0.isHidden = shell.general.openOnClick }
         return page("General", [
             banner(),
             settingsGroup([
@@ -253,15 +262,21 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
             ], width: width),
             settingsGroup([
                 settingsRow("Open on", detail: "Hover opens the panel when the pointer rests on the notch. Click opens it only when you click the notch, so heading for tabs or the menu bar never pops it open; a click outside, Escape or the toggle hotkey closes it.", control: openOn, width: width),
-                settingsRow("Hover delay", detail: "How long the pointer rests on the notch before the panel opens. With Open on Click it still applies to files dragged onto the notch.", control: hover, width: width),
-                settingsRow("Open hovered feature", detail: "After the hover delay, open details for the status under the pointer. Moving across statuses while open does not change the view. Not used with Open on Click; clicking a status always opens its details.", control: segmentHover, width: width),
-                settingsRow("Close delay", detail: "How long after the pointer leaves before the panel closes. Not used for a panel opened by a click.", control: leave, width: width),
+                settingsRow("Hover delay", detail: Self.hoverDelayDetail(click: shell.general.openOnClick), control: hover, width: width) { hoverDetail = $0 },
+                segmentRow,
+                leaveRow,
                 settingsRow("Keep panel open", detail: "The panel stays open until you close it with Escape, the pin, or the toggle hotkey. Also the pin in the panel header.", control: pin, width: width)
             ], header: "Panel", width: width),
             settingsGroup([loginRow(width: width)], width: width),
             setupGroup(width: width),
             settingsGroup([settingsRow("Share usage data", control: usage, width: width)], width: width)
         ])
+    }
+
+    /// With Open on Click the hover delay only applies to files dragged onto the notch.
+    private static func hoverDelayDetail(click: Bool) -> String {
+        click ? "How long files dragged onto the notch rest there before the panel opens."
+              : "How long the pointer must rest on the notch before the panel opens."
     }
 
     // MARK: Setup codes
@@ -276,14 +291,17 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
     private var setupPlan: SetupCode.Plan?
 
     private func setupGroup(width: CGFloat) -> NSView {
-        let note = label("", size: 11, color: .secondaryLabelColor)
-        note.preferredMaxLayoutWidth = width - 30
-        let copy = actionButton("Copy Code") { [weak self, weak note] in
+        // Results replace their row's own detail, so there is no separate (often empty) note row.
+        let shareDetail = "A code with your layout, features and preferences (no accounts, tokens, history, display or hotkeys). It also works with QNotch for Windows."
+        var shared: NSTextField?
+        var note: NSTextField?
+        let copy = actionButton("Copy Code") { [weak self] in
             Analytics.record("settings", "setup_export")
             guard let self else { return }
             NSPasteboard.general.clearContents()
             NSPasteboard.general.setString(SetupCode.export(self.setupSnapshot), forType: .string)
-            note?.stringValue = "Copied. Paste it into QNotch on another Mac or PC."
+            shared?.stringValue = "Copied. Paste it into QNotch on another Mac or PC."
+            DispatchQueue.main.asyncAfter(deadline: .now() + 4) { [weak shared] in shared?.stringValue = shareDetail }
         }
         let field = NSTextField()
         field.placeholderString = "qnotch-setup-1:…"
@@ -291,7 +309,7 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
         field.setAccessibilityLabel("Setup code")
         let apply = actionButton("Apply and Restart") { [weak self] in self?.applySetup() }
         apply.isEnabled = false
-        let check = actionButton("Check") { [weak self, weak field, weak note, weak apply] in
+        let check = actionButton("Check") { [weak self, weak field, weak apply] in
             Analytics.record("settings", "setup_check")
             guard let self, let field else { return }
             do {
@@ -308,13 +326,11 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
                 apply?.isEnabled = false
             }
         }
-        let box = NSView()
-        embed(note, in: box, inset: NSEdgeInsets(top: 0, left: 14, bottom: 8, right: 14), fill: true)
+        let applyRow = settingsRow("", detail: "Check a code to see what it changes.", control: apply, width: width) { note = $0 }
         return settingsGroup([
-            settingsRow("Share your setup", detail: "A code with your layout, features and preferences (no accounts, tokens, history, display or hotkeys). It also works with QNotch for Windows.", control: copy, width: width),
+            settingsRow("Share your setup", detail: shareDetail, control: copy, width: width) { shared = $0 },
             settingsRow("Apply a setup code", control: row([field, check], spacing: 6), width: width),
-            box,
-            settingsRow("", control: apply, width: width)
+            applyRow
         ], width: width)
     }
 
