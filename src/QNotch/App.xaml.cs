@@ -323,6 +323,14 @@ public partial class App : Application
         Dispatcher.BeginInvoke(() => Keyboard.Focus((IInputElement)sender));
     }
 
+    /// <summary>Sign-out, restart and shutdown: WPF only queues Shutdown here, and Windows may end the process before OnExit runs.
+    /// Mark the clean exit now (one small local file write) so the next launch does not report previous_exit=unclean.</summary>
+    protected override void OnSessionEnding(SessionEndingCancelEventArgs e)
+    {
+        base.OnSessionEnding(e);
+        if (!e.Cancel) Analytics.Current?.Exited();
+    }
+
     protected override void OnExit(ExitEventArgs e)
     {
         try
