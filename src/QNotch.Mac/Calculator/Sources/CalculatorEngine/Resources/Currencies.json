@@ -1,0 +1,1802 @@
+{
+  "version": "2026-10-31",
+  "sources": [
+    {
+      "url": "https://www.six-group.com/dam/download/financial-information/data-center/iso-currrency/lists/list-one.xml",
+      "published": "2026-09-17",
+      "sha256": "33139B438657D1CEE116BA737807EA71D19D6DE4B90F799A09C56F0CC6A1B0FF"
+    },
+    {
+      "url": "https://api.frankfurter.dev/v2/currencies?scope=all",
+      "sha256": "FBDE6DA7657A6EF752936EFDC3BC384D2A688E39A8666A6D29F6A6F07D59C29E"
+    }
+  ],
+  "policy": "Code/name/minor-unit facts, plus explicitly curated aliases. Historical/non-ISO entries default to two display decimals unless crypto (8) or metal (6). Code recognition is separate from licensed live-rate coverage. No rate data is embedded.",
+  "currencies": [
+    {
+      "code": "ADP",
+      "name": "Andorran Peseta",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "AED",
+      "name": "United Arab Emirates Dirham",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "AFA",
+      "name": "Afghan Afghani (1927–2002)",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "AFN",
+      "name": "Afghan Afghani",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "ALL",
+      "name": "Albanian Lek",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "AMD",
+      "name": "Armenian Dram",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "ANG",
+      "name": "Netherlands Antillean Guilder",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "AOA",
+      "name": "Angolan Kwanza",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "ARS",
+      "name": "Argentine Peso",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "ATS",
+      "name": "Austrian Schilling",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "AUD",
+      "name": "Australian Dollar",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": [
+        "AU$",
+        "Australian dollar",
+        "Australian dollars"
+      ]
+    },
+    {
+      "code": "AWG",
+      "name": "Aruban Florin",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "AZM",
+      "name": "Azerbaijani Manat (1993–2006)",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "AZN",
+      "name": "Azerbaijani Manat",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "BAM",
+      "name": "Bosnia and Herzegovina Convertible Mark",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "BBD",
+      "name": "Barbadian Dollar",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "BCH",
+      "name": "Bitcoin Cash",
+      "digits": 8,
+      "kind": "Crypto",
+      "aliases": []
+    },
+    {
+      "code": "BDT",
+      "name": "Bangladeshi Taka",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "BEF",
+      "name": "Belgian Franc",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "BGL",
+      "name": "Bulgarian Hard Lev",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "BGN",
+      "name": "Bulgarian Lev",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "BHD",
+      "name": "Bahraini Dinar",
+      "digits": 3,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "BIF",
+      "name": "Burundian Franc",
+      "digits": 0,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "BMD",
+      "name": "Bermudian Dollar",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "BND",
+      "name": "Brunei Dollar",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "BOB",
+      "name": "Bolivian Boliviano",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "BOV",
+      "name": "Mvdol",
+      "digits": 2,
+      "kind": "Fund",
+      "aliases": []
+    },
+    {
+      "code": "BRL",
+      "name": "Brazilian Real",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": [
+        "R$"
+      ]
+    },
+    {
+      "code": "BRR",
+      "name": "Brazilian Cruzeiro (1993–1994)",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "BSD",
+      "name": "Bahamian Dollar",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "BTC",
+      "name": "Bitcoin",
+      "digits": 8,
+      "kind": "Crypto",
+      "aliases": [
+        "₿",
+        "bitcoin"
+      ]
+    },
+    {
+      "code": "BTN",
+      "name": "Bhutanese Ngultrum",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "BWP",
+      "name": "Botswana Pula",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "BYB",
+      "name": "Belarusian Ruble (1994–1999)",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "BYN",
+      "name": "Belarusian Ruble",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "BYR",
+      "name": "Belarusian Ruble (2000–2016)",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "BZD",
+      "name": "Belize Dollar",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "CAD",
+      "name": "Canadian Dollar",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": [
+        "CA$",
+        "Canadian dollar",
+        "Canadian dollars"
+      ]
+    },
+    {
+      "code": "CDF",
+      "name": "Congolese Franc",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "CHE",
+      "name": "WIR Euro",
+      "digits": 2,
+      "kind": "Fund",
+      "aliases": []
+    },
+    {
+      "code": "CHF",
+      "name": "Swiss Franc",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": [
+        "Swiss franc",
+        "Swiss francs"
+      ]
+    },
+    {
+      "code": "CHW",
+      "name": "WIR Franc",
+      "digits": 2,
+      "kind": "Fund",
+      "aliases": []
+    },
+    {
+      "code": "CLF",
+      "name": "Unidad de Fomento",
+      "digits": 4,
+      "kind": "Fund",
+      "aliases": []
+    },
+    {
+      "code": "CLP",
+      "name": "Chilean Peso",
+      "digits": 0,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "CMD",
+      "name": "COMESA Dollar",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "CNH",
+      "name": "Chinese Renminbi Yuan Offshore",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "CNY",
+      "name": "Chinese Renminbi Yuan",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "COP",
+      "name": "Colombian Peso",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "COU",
+      "name": "Unidad de Valor Real",
+      "digits": 2,
+      "kind": "Fund",
+      "aliases": []
+    },
+    {
+      "code": "CRC",
+      "name": "Costa Rican Colón",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "CSD",
+      "name": "Serbian Dinar (2002–2006)",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "CUC",
+      "name": "Cuban Convertible Peso",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "CUP",
+      "name": "Cuban Peso",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "CVE",
+      "name": "Cape Verdean Escudo",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "CYP",
+      "name": "Cypriot Pound",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "CZK",
+      "name": "Czech Koruna",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "DEM",
+      "name": "German Mark",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "DJF",
+      "name": "Djiboutian Franc",
+      "digits": 0,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "DKK",
+      "name": "Danish Krone",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "DOP",
+      "name": "Dominican Peso",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "DZD",
+      "name": "Algerian Dinar",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "ECS",
+      "name": "Ecuadorian Sucre",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "EEK",
+      "name": "Estonian Kroon",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "EGP",
+      "name": "Egyptian Pound",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "ERN",
+      "name": "Eritrean Nakfa",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "ESP",
+      "name": "Spanish Peseta",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "ETB",
+      "name": "Ethiopian Birr",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "ETH",
+      "name": "Ethereum",
+      "digits": 8,
+      "kind": "Crypto",
+      "aliases": [
+        "ether"
+      ]
+    },
+    {
+      "code": "EUR",
+      "name": "Euro",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": [
+        "€",
+        "euro",
+        "euros"
+      ]
+    },
+    {
+      "code": "FIM",
+      "name": "Finnish Markka",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "FJD",
+      "name": "Fijian Dollar",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "FKP",
+      "name": "Falkland Pound",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "FRF",
+      "name": "French Franc",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "GBP",
+      "name": "British Pound",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": [
+        "£",
+        "sterling",
+        "pound sterling",
+        "pounds sterling"
+      ]
+    },
+    {
+      "code": "GEL",
+      "name": "Georgian Lari",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "GGP",
+      "name": "Guernsey Pound",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "GHC",
+      "name": "Ghanaian Cedi",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "GHS",
+      "name": "Ghanaian Cedi",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "GIP",
+      "name": "Gibraltar Pound",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "GMD",
+      "name": "Gambian Dalasi",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "GNF",
+      "name": "Guinean Franc",
+      "digits": 0,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "GRD",
+      "name": "Greek Drachma",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "GTQ",
+      "name": "Guatemalan Quetzal",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "GYD",
+      "name": "Guyanese Dollar",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "HKD",
+      "name": "Hong Kong Dollar",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": [
+        "HK$"
+      ]
+    },
+    {
+      "code": "HNL",
+      "name": "Honduran Lempira",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "HRK",
+      "name": "Croatian Kuna",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "HTG",
+      "name": "Haitian Gourde",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "HUF",
+      "name": "Hungarian Forint",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "IDR",
+      "name": "Indonesian Rupiah",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "IEP",
+      "name": "Irish Pound",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "ILS",
+      "name": "Israeli New Shekel",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": [
+        "₪"
+      ]
+    },
+    {
+      "code": "IMP",
+      "name": "Isle of Man Pound",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "INR",
+      "name": "Indian Rupee",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": [
+        "₹",
+        "rupee",
+        "rupees"
+      ]
+    },
+    {
+      "code": "IQD",
+      "name": "Iraqi Dinar",
+      "digits": 3,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "IRR",
+      "name": "Iranian Rial",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "ISK",
+      "name": "Icelandic Króna",
+      "digits": 0,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "ITL",
+      "name": "Italian Lira",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "JEP",
+      "name": "Jersey Pound",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "JMD",
+      "name": "Jamaican Dollar",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "JOD",
+      "name": "Jordanian Dinar",
+      "digits": 3,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "JPY",
+      "name": "Japanese Yen",
+      "digits": 0,
+      "kind": "Currency",
+      "aliases": [
+        "yen"
+      ]
+    },
+    {
+      "code": "KES",
+      "name": "Kenyan Shilling",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "KGS",
+      "name": "Kyrgyzstani Som",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "KHR",
+      "name": "Cambodian Riel",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "KMF",
+      "name": "Comorian Franc",
+      "digits": 0,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "KPW",
+      "name": "North Korean Won",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "KRW",
+      "name": "South Korean Won",
+      "digits": 0,
+      "kind": "Currency",
+      "aliases": [
+        "₩"
+      ]
+    },
+    {
+      "code": "KWD",
+      "name": "Kuwaiti Dinar",
+      "digits": 3,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "KYD",
+      "name": "Cayman Islands Dollar",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "KZT",
+      "name": "Kazakhstani Tenge",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "LAK",
+      "name": "Lao Kip",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "LBP",
+      "name": "Lebanese Pound",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "LKR",
+      "name": "Sri Lankan Rupee",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "LRD",
+      "name": "Liberian Dollar",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "LSL",
+      "name": "Lesotho Loti",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "LTC",
+      "name": "Litecoin",
+      "digits": 8,
+      "kind": "Crypto",
+      "aliases": []
+    },
+    {
+      "code": "LTL",
+      "name": "Lithuanian Litas",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "LUF",
+      "name": "Luxembourgian Franc",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "LVL",
+      "name": "Latvian Lats",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "LYD",
+      "name": "Libyan Dinar",
+      "digits": 3,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "MAD",
+      "name": "Moroccan Dirham",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "MDL",
+      "name": "Moldovan Leu",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "MGA",
+      "name": "Malagasy Ariary",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "MGF",
+      "name": "Malagasy Franc",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "MKD",
+      "name": "Macedonian Denar",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "MMK",
+      "name": "Myanmar Kyat",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "MNT",
+      "name": "Mongolian Tögrög",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "MOP",
+      "name": "Macanese Pataca",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "MRO",
+      "name": "Mauritanian Ouguiya (1973–2017)",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "MRU",
+      "name": "Mauritanian Ouguiya",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "MTL",
+      "name": "Maltese Lira",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "MUR",
+      "name": "Mauritian Rupee",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "MVR",
+      "name": "Maldivian Rufiyaa",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "MWK",
+      "name": "Malawian Kwacha",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "MXN",
+      "name": "Mexican Peso",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "MXV",
+      "name": "Mexican Unidad de Inversion (UDI)",
+      "digits": 2,
+      "kind": "Fund",
+      "aliases": []
+    },
+    {
+      "code": "MYR",
+      "name": "Malaysian Ringgit",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "MZM",
+      "name": "Mozambican Metical (1980–2006)",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "MZN",
+      "name": "Mozambican Metical",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "NAD",
+      "name": "Namibian Dollar",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "NGN",
+      "name": "Nigerian Naira",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "NIO",
+      "name": "Nicaraguan Córdoba",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "NLG",
+      "name": "Dutch Guilder",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "NOK",
+      "name": "Norwegian Krone",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "NPR",
+      "name": "Nepalese Rupee",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "NZD",
+      "name": "New Zealand Dollar",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": [
+        "NZ$"
+      ]
+    },
+    {
+      "code": "OMR",
+      "name": "Omani Rial",
+      "digits": 3,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "PAB",
+      "name": "Panamanian Balboa",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "PEN",
+      "name": "Peruvian Sol",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "PGK",
+      "name": "Papua New Guinean Kina",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "PHP",
+      "name": "Philippine Peso",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": [
+        "₱"
+      ]
+    },
+    {
+      "code": "PKR",
+      "name": "Pakistani Rupee",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "PLN",
+      "name": "Polish Złoty",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": [
+        "zloty",
+        "zlotys"
+      ]
+    },
+    {
+      "code": "PLZ",
+      "name": "Polish Zloty (1950–1995)",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "PTE",
+      "name": "Portuguese Escudo",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "PYG",
+      "name": "Paraguayan Guaraní",
+      "digits": 0,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "QAR",
+      "name": "Qatari Riyal",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "ROL",
+      "name": "Romanian Leu (1952–2006)",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "RON",
+      "name": "Romanian Leu",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": [
+        "lei",
+        "leu"
+      ]
+    },
+    {
+      "code": "RSD",
+      "name": "Serbian Dinar",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "RUB",
+      "name": "Russian Ruble",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": [
+        "₽"
+      ]
+    },
+    {
+      "code": "RUR",
+      "name": "Russian Ruble (1991–1998)",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "RWF",
+      "name": "Rwandan Franc",
+      "digits": 0,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "SAR",
+      "name": "Saudi Riyal",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "SBD",
+      "name": "Solomon Islands Dollar",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "SCR",
+      "name": "Seychellois Rupee",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "SDD",
+      "name": "Sudanese Dinar (1992–2007)",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "SDG",
+      "name": "Sudanese Pound",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "SEK",
+      "name": "Swedish Krona",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "SGD",
+      "name": "Singapore Dollar",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": [
+        "SG$"
+      ]
+    },
+    {
+      "code": "SHP",
+      "name": "Saint Helenian Pound",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "SIT",
+      "name": "Slovenian Tolar",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "SKK",
+      "name": "Slovak Koruna",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "SLE",
+      "name": "New Leone",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "SLL",
+      "name": "Sierra Leonean Leone (1964–2022)",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "SOS",
+      "name": "Somali Shilling",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "SRD",
+      "name": "Surinamese Dollar",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "SRG",
+      "name": "Surinamese Guilder",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "SSP",
+      "name": "South Sudanese Pound",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "STD",
+      "name": "São Tomé & Príncipe Dobra (1977–2017)",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "STN",
+      "name": "São Tomé and Príncipe Second Dobra",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "SVC",
+      "name": "Salvadoran Colón",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "SYP",
+      "name": "Syrian Pound",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "SZL",
+      "name": "Swazi Lilangeni",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "THB",
+      "name": "Thai Baht",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": [
+        "฿"
+      ]
+    },
+    {
+      "code": "TJR",
+      "name": "Tajikistani Ruble",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "TJS",
+      "name": "Tajikistani Somoni",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "TMM",
+      "name": "Turkmenistani Manat (1993–2009)",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "TMT",
+      "name": "Turkmenistani Manat",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "TND",
+      "name": "Tunisian Dinar",
+      "digits": 3,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "TOP",
+      "name": "Tongan Paʻanga",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "TRL",
+      "name": "Turkish Lira (1922–2005)",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "TRY",
+      "name": "Turkish Lira",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": [
+        "₺"
+      ]
+    },
+    {
+      "code": "TTD",
+      "name": "Trinidad and Tobago Dollar",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "TWD",
+      "name": "New Taiwan Dollar",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": [
+        "NT$"
+      ]
+    },
+    {
+      "code": "TZS",
+      "name": "Tanzanian Shilling",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "UAH",
+      "name": "Ukrainian Hryvnia",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": [
+        "₴"
+      ]
+    },
+    {
+      "code": "UAK",
+      "name": "Ukrainian Karbovanets",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "UGX",
+      "name": "Ugandan Shilling",
+      "digits": 0,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "USD",
+      "name": "United States Dollar",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": [
+        "$",
+        "US$",
+        "dollar",
+        "dollars",
+        "US dollar",
+        "US dollars"
+      ]
+    },
+    {
+      "code": "USN",
+      "name": "US Dollar (Next day)",
+      "digits": 2,
+      "kind": "Fund",
+      "aliases": []
+    },
+    {
+      "code": "UYI",
+      "name": "Uruguay Peso en Unidades Indexadas (UI)",
+      "digits": 0,
+      "kind": "Fund",
+      "aliases": []
+    },
+    {
+      "code": "UYU",
+      "name": "Uruguayan Peso",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "UYW",
+      "name": "Unidad Previsional",
+      "digits": 4,
+      "kind": "Fund",
+      "aliases": []
+    },
+    {
+      "code": "UZS",
+      "name": "Uzbekistan Som",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "VEB",
+      "name": "Venezuelan Bolívar (1871–2008)",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "VED",
+      "name": "Bolívar Soberano",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "VEF",
+      "name": "Venezuelan Bolívar (2008–2018)",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "VES",
+      "name": "Venezuelan Bolívar Soberano",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "VND",
+      "name": "Vietnamese Đồng",
+      "digits": 0,
+      "kind": "Currency",
+      "aliases": [
+        "₫"
+      ]
+    },
+    {
+      "code": "VUV",
+      "name": "Vanuatu Vatu",
+      "digits": 0,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "WST",
+      "name": "Samoan Tala",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "XAD",
+      "name": "Arab Accounting Dinar",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "XAF",
+      "name": "Central African CFA Franc",
+      "digits": 0,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "XAG",
+      "name": "Silver (Troy Ounce)",
+      "digits": 6,
+      "kind": "Metal",
+      "aliases": []
+    },
+    {
+      "code": "XAU",
+      "name": "Gold (Troy Ounce)",
+      "digits": 6,
+      "kind": "Metal",
+      "aliases": []
+    },
+    {
+      "code": "XBA",
+      "name": "Bond Markets Unit European Composite Unit (EURCO)",
+      "digits": 2,
+      "kind": "Fund",
+      "aliases": []
+    },
+    {
+      "code": "XBB",
+      "name": "Bond Markets Unit European Monetary Unit (E.M.U.-6)",
+      "digits": 2,
+      "kind": "Fund",
+      "aliases": []
+    },
+    {
+      "code": "XBC",
+      "name": "Bond Markets Unit European Unit of Account 9 (E.U.A.-9)",
+      "digits": 2,
+      "kind": "Fund",
+      "aliases": []
+    },
+    {
+      "code": "XBD",
+      "name": "Bond Markets Unit European Unit of Account 17 (E.U.A.-17)",
+      "digits": 2,
+      "kind": "Fund",
+      "aliases": []
+    },
+    {
+      "code": "XCD",
+      "name": "East Caribbean Dollar",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "XCG",
+      "name": "Caribbean Guilder",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "XCU",
+      "name": "Czech-Slovak Clearing ECU",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "XDR",
+      "name": "Special Drawing Rights",
+      "digits": 2,
+      "kind": "Fund",
+      "aliases": []
+    },
+    {
+      "code": "XEU",
+      "name": "European Currency Unit",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "XOF",
+      "name": "West African CFA Franc",
+      "digits": 0,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "XPD",
+      "name": "Palladium",
+      "digits": 6,
+      "kind": "Metal",
+      "aliases": []
+    },
+    {
+      "code": "XPF",
+      "name": "CFP Franc",
+      "digits": 0,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "XPT",
+      "name": "Platinum",
+      "digits": 6,
+      "kind": "Metal",
+      "aliases": []
+    },
+    {
+      "code": "XRP",
+      "name": "XRP",
+      "digits": 8,
+      "kind": "Crypto",
+      "aliases": []
+    },
+    {
+      "code": "XSU",
+      "name": "Sucre",
+      "digits": 2,
+      "kind": "Fund",
+      "aliases": []
+    },
+    {
+      "code": "XUA",
+      "name": "ADB Unit of Account",
+      "digits": 2,
+      "kind": "Fund",
+      "aliases": []
+    },
+    {
+      "code": "YER",
+      "name": "Yemeni Rial",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "YUM",
+      "name": "Yugoslavian New Dinar (1994–2002)",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "YUN",
+      "name": "Yugoslavian Convertible Dinar (1990–1992)",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "ZAR",
+      "name": "South African Rand",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "ZMK",
+      "name": "Zambian Kwacha (1968–2012)",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "ZMW",
+      "name": "Zambian Kwacha",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "ZRN",
+      "name": "Zairean New Zaire (1993–1998)",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "ZWD",
+      "name": "Zimbabwean Dollar (1980–2008)",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "ZWG",
+      "name": "Zimbabwe Gold",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "ZWL",
+      "name": "Zimbabwean Dollar (2009–2024)",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "ZWN",
+      "name": "Zimbabwean Dollar",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    },
+    {
+      "code": "ZWR",
+      "name": "Zimbabwean Dollar (2008)",
+      "digits": 2,
+      "kind": "Currency",
+      "aliases": []
+    }
+  ]
+}

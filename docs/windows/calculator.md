@@ -36,6 +36,6 @@ The strip creates only the tabs in view. Tabs share the width between 92 and 150
 
 ## Testing
 
-`tests/QNotch.CalculatorTests` holds every calculator check, run with `dotnet test`: the tab list, and the engine's arithmetic, units, dates, finance, payroll, documents and rate providers against the fixtures in its `fixtures/` folder. Cooking densities come from USDA FoodData Central; its `ingredient-usda-sr-legacy-2018.csv` extract pins every catalog value.
+`tests/QNotch.CalculatorTests` holds every calculator check, run with `dotnet test`: the tab list, and the engine's arithmetic, units, dates, finance, payroll, documents and rate providers against the oracle fixtures in `tests/fixtures/calculator/`, which the Mac engine tests read too. Cooking densities come from USDA FoodData Central; its `ingredient-usda-sr-legacy-2018.csv` extract pins every catalog value.
 
 A `--debug-control` run can send the sheet's clipboard writes to a file by setting `QNOTCH_CALCULATOR_CLIPBOARD`, so a test leaves the real clipboard alone. `debug press --id calculator-tab-1 --button middle` runs a tab's middle-click.

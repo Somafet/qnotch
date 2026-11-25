@@ -68,7 +68,7 @@ enum NativeSmokeTest {
                 do { try checkPinAndCards(run) } catch { return finish(error) }
                 exerciseNotifications(run) { error in
                     if let error { return finish(error) }
-                    exerciseAgents(run) { error in
+                    exerciseCalculatorThenAgents(run) { error in
                         if let error { return finish(error) }
                         exerciseOnboarding(run) { error in
                             if let error { return finish(error) }
@@ -419,6 +419,15 @@ enum NativeSmokeTest {
     }
 
     /// Hook events through the real `QNotch agent` binary, a tracked agent process and transcript usage.
+    /// The Calculator's checks (calculator-typing, -copy, -sheets, -last-sheet, -search, -hidden-idle), then Agents'.
+    private static func exerciseCalculatorThenAgents(_ run: SnapshotRun, done: @escaping (Error?) -> Void) {
+        guard run.shell.module(CalculatorModule.self) != nil else { return exerciseAgents(run, done: done) }
+        CalculatorSmoke.exercise(run) { error in
+            if let error { return done(error) }
+            exerciseAgents(run, done: done)
+        }
+    }
+
     private static func exerciseAgents(_ run: SnapshotRun, done: @escaping (Error?) -> Void) {
         let shell = run.shell
         guard let module = shell.module(AgentsModule.self) else { run.skip("agents-hook", "Agents is off"); return done(nil) }

@@ -243,6 +243,17 @@ final class SearchView: NSView, NSTextFieldDelegate {
         return true
     }
 
+    /// The same query again, for an answer that arrived after the keystroke. The selected result stays
+    /// selected when it is still listed.
+    func refreshResults() {
+        let previous = selectedIndex.flatMap { hits.indices.contains($0) ? hits[$0] : nil }
+        let moved = (selectedIndex ?? 0) > 0
+        reload()
+        guard moved, let previous, let index = hits.firstIndex(where: { $0.title == previous.title && $0.detail == previous.detail }) else { return }
+        selectedIndex = index
+        revealSelection()
+    }
+
     private func reload() {
         let query = field.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
         hits = query.isEmpty ? [] : Array(find(query).prefix(6))
