@@ -7,7 +7,8 @@ enum RenderDiagnostics {
 
 final class NotchPanel: NSPanel {
     var keyboardAllowed = false
-    var clicked: (() -> Bool)?
+    /// A press at a window point that did not start a drag; true consumes it.
+    var clicked: ((NSPoint) -> Bool)?
     /// Sideways drags of a floating notch: whether a press at a window point may start one (the
     /// collapsed notch, or the open panel's empty header), the drag starting, each move and the release.
     var canNudge: ((NSPoint) -> Bool)?
@@ -25,14 +26,15 @@ final class NotchPanel: NSPanel {
     override func sendEvent(_ event: NSEvent) {
         // Consume the opening click so it cannot also hit a newly revealed control.
         if event.type == .leftMouseDown, canNudge?(event.locationInWindow) == true, trackNudge(event) { return }
-        if event.type == .leftMouseDown, clicked?() == true { return }
+        if event.type == .leftMouseDown, clicked?(event.locationInWindow) == true { return }
         super.sendEvent(event)
     }
     override func cancelOperation(_ sender: Any?) { escaped?() }
 
     /// A press that moves 5 points sideways drags the notch; a double-click re-centers it. The
     /// release reports the pointer's sideways speed, so a flick can throw it.
-    /// Returns false for a plain click, which then goes on as usual (on the collapsed notch, it opens the panel).
+    /// Returns false for a plain click, which then goes on to `clicked` (on the collapsed notch it opens
+    /// the panel; on the open panel's header it does nothing).
     private func trackNudge(_ down: NSEvent) -> Bool {
         if down.clickCount == 2 { nudgeEnded?(true, 0); return true }
         let start = NSEvent.mouseLocation

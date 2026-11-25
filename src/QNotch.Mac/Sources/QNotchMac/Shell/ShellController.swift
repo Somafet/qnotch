@@ -107,8 +107,10 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         surface.setAccessibilityRole(.group)
         updateSurfaceLabel()
         surface.identifier = NSUserInterfaceItemIdentifier("pill")
-        panel.clicked = { [weak self] in
+        panel.clicked = { [weak self] point in
             guard let self else { return false }
+            // A plain press on the open panel's empty header is only a drag handle: it does nothing.
+            if self.state.expanded, self.panel.canNudge?(point) == true { return true }
             let opening = !self.state.expanded
             let target = opening ? self.segmentID(at: NSEvent.mouseLocation) : nil
             if !self.state.acceptsKeyboard { self.open(keyboard: true) }
@@ -665,10 +667,6 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         }
         if screen == nil { clearSegmentDetail(); state.close(); panel.orderOut(nil); updateVisibility() }
         statusChanged?()
-        if reopensAfterNudge, nudgeOffset == nil {
-            reopensAfterNudge = false
-            if general.pinned { open(keyboard: false, recordAction: false) }
-        }
     }
 
     var layout: DisplayLayout? {
@@ -1388,7 +1386,10 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         nudgeStart = nil
         nudgeOffset = nil
         nudgeFolding = false
-        updateGeneral { $0.pillOffsets[String(Self.displayID(screen))] = target == 0 ? nil : Double(target) }
+        // Saved without `updateGeneral`: its surface rebuild would jump the notch to its spot
+        // before the release spring starts from where it shows.
+        general.pillOffsets[String(Self.displayID(screen))] = target == 0 ? nil : Double(target)
+        store.save("general", general)
         // A double-click on the open panel's header: the panel glides along with its notch.
         if let panelView, let panelFrame, let moved = self.layout {
             surface.place(panelView, at: moved.panelBody)
@@ -1562,6 +1563,11 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
             closingPanel.removeFromSuperview()
             closingPanel.layer?.removeAllAnimations()
             self.closingPanel = nil
+        }
+        // A drag folded a pinned panel: it opens again once the dropped notch has landed.
+        if reopensAfterNudge, nudgeOffset == nil {
+            reopensAfterNudge = false
+            if general.pinned, !state.expanded { open(keyboard: false, recordAction: false) }
         }
     }
 

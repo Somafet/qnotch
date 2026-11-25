@@ -639,6 +639,16 @@ enum NativeSmokeTest {
             }
             guard shell.panel.canNudge?(try panelPoints().body) == false else { throw Failure(name, "Tab content became a drag handle") }
         }
+        /// A press and release in place at a window point, through NotchPanel.sendEvent as a real
+        /// click arrives. The nudge tracker reads the release from the queue.
+        func press(at point: NSPoint) {
+            func event(_ type: NSEvent.EventType) -> NSEvent {
+                NSEvent.mouseEvent(with: type, location: point, modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime,
+                                   windowNumber: shell.panel.windowNumber, context: nil, eventNumber: 0, clickCount: 1, pressure: type == .leftMouseDown ? 1 : 0)!
+            }
+            NSApp.postEvent(event(.leftMouseUp), atStart: false)
+            shell.panel.sendEvent(event(.leftMouseDown))
+        }
         if original.integratesCameraHousing {
             guard let surface = shell.expectedFrame, shell.panel.canNudge?(shell.panel.convertPoint(fromScreen: CGPoint(x: surface.midX, y: surface.midY))) == false else {
                 throw Failure(name, "Physical housing is movable")
@@ -672,6 +682,12 @@ enum NativeSmokeTest {
             shell.open(keyboard: false)
             guard shell.panel.canNudge?(try panelPoints().header) == true else { throw Failure(name, "The open panel's header cannot be dragged") }
             try checkHeaderControls()
+            // A plain press on the empty header does nothing: no drag, no keyboard, no reopening click.
+            let before = shell.layout?.offset
+            press(at: try panelPoints().header)
+            guard shell.state.expanded, !shell.state.acceptsKeyboard, !shell.panel.isKeyWindow, shell.layout?.offset == before else {
+                throw Failure(name, "A plain press on the open panel's header did something")
+            }
             if let layout = shell.layout { try checkPlacement(shell: shell, layout: layout) }
             run.notch(prefix + (direction < 0 ? "-left-open" : "-right-open"))
             // Dragging the header folds the panel into the carried notch; without Keep panel open it stays closed.
