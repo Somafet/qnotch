@@ -1,7 +1,8 @@
 <UserControl x:Class="QNotch.Modules.FileTray.PhoneShareView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <!-- DataContext: PhoneShareState. Fills row 1 of the Files tab (674 x 262). Left: the files; right: start, or the code and transfers. -->
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:theme="clr-namespace:QNotch.Theme">
+    <!-- DataContext: PhoneShareState. Fills row 1 of the Files tab (696 x 264), so the file list sits in the panel's bottom-left corner. Left: the files; right: start, or the code and transfers. -->
     <UserControl.Resources>
         <Style x:Key="Link" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
             <Setter Property="Padding" Value="6,2"/>
@@ -36,7 +37,7 @@
                 </StackPanel>
                 <TextBlock Text="{Binding SelectionText}" Style="{StaticResource Caption}" FontSize="12" VerticalAlignment="Center"/>
             </DockPanel>
-            <Border CornerRadius="10" BorderThickness="1" Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource StrokeBrush}">
+            <Border CornerRadius="{x:Static theme:PanelMetrics.Card}" BorderThickness="1" Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource StrokeBrush}">
                 <Grid>
                     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,4">
                         <ItemsControl x:Name="ChoiceList" ItemsSource="{Binding Choices}">

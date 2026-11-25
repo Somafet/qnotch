@@ -3,6 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Threading;
 using Calc.Windows;
 using QNotch.Core;
+using QNotch.Theme;
 
 namespace QNotch.Modules.Calculator;
 
@@ -18,7 +19,7 @@ internal sealed class CalculatorTab : Grid, IPanelKeyboardInput
     public CalculatorTab(CalculatorModule module)
     {
         _module = module;
-        Margin = new Thickness(19, 2, 19, 10);
+        Margin = PanelMetrics.Page with { Top = 2 };
         IsVisibleChanged += (_, _) => ShowIfOpen();
         module.PanelOpened += ShowIfOpen;
     }

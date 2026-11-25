@@ -6,13 +6,14 @@ using System.Windows.Automation.Provider;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
+using QNotch.Theme;
 
 namespace QNotch.Modules.Terminal;
 
 /// <summary>One event-driven drawing surface. No cursor blink, cell controls, render loop or hidden rendering.</summary>
 internal sealed class TerminalSurface : FrameworkElement, IExclusiveKeyboardInput
 {
-    const double FontSize = 12, CellWidth = 7.2, CellHeight = 17, PadX = 12, PadY = 8, CornerRadius = 9;
+    const double FontSize = 12, CellWidth = 7.2, CellHeight = 17, PadX = PanelMetrics.TextInset - PanelMetrics.Gap - 1, PadY = 8, CornerRadius = PanelMetrics.CardRadius - 1; // text lines up with the caption; clip inside the card's 1px border
     readonly TerminalBuffer _buffer;
     readonly Action<string> _send, _status;
     readonly Action<int, int> _resize;

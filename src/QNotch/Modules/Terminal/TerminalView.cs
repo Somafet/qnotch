@@ -10,7 +10,7 @@ internal sealed class TerminalView : Grid, IPanelKeyboardInput
     internal TerminalSurface Input { get; }
     internal TerminalView(TerminalModule module, TerminalBuffer buffer)
     {
-        Margin = new Thickness(19, 2, 19, 10);
+        Margin = PanelMetrics.Page with { Top = 2 };
         RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         RowDefinitions.Add(new RowDefinition());
         _status = UiKit.Text(module.Demo ? "Demo session · no commands run" : "Session stays open when the panel closes", "Muted");
@@ -18,11 +18,11 @@ internal sealed class TerminalView : Grid, IPanelKeyboardInput
         _status.VerticalAlignment = VerticalAlignment.Center;
         var restart = new Button { Content = "New session", Padding = new Thickness(8, 3, 8, 3), ToolTip = "End this session and start a new shell in your home folder" };
         restart.Click += async (_, _) => await module.Restart();
-        var top = new DockPanel { Margin = new Thickness(0, 0, 0, 6) };
+        var top = new DockPanel { Margin = PanelMetrics.Caption with { Bottom = 6 } };
         DockPanel.SetDock(restart, Dock.Right);
         top.Children.Add(restart); top.Children.Add(_status); Children.Add(top);
         Input = new TerminalSurface(buffer, module.Send, module.Resize, module.TakeKeyboard, SetStatus);
-        var card = new Border { CornerRadius = new CornerRadius(10), BorderThickness = new Thickness(1), Child = Input };
+        var card = new Border { CornerRadius = PanelMetrics.Card, BorderThickness = new Thickness(1), Child = Input };
         card.SetResourceReference(Border.BackgroundProperty, "CardBrush");
         card.SetResourceReference(Border.BorderBrushProperty, "StrokeBrush");
         Grid.SetRow(card, 1); Children.Add(card);
