@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The calculator's UI-free engine. A separate assembly so it loads only when the Calculator module first calculates. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Calc.Core</RootNamespace>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <!-- No symbols file beside the published QNotch.exe. -->
+    <DebugType Condition="'$(Configuration)' == 'Release'">none</DebugType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="LanguageKeywords.json" LogicalName="Calc.LanguageKeywords" />
+    <EmbeddedResource Include="Units.json" LogicalName="Calc.Units" />
+    <EmbeddedResource Include="TimeZones.json" LogicalName="Calc.TimeZones" />
+    <EmbeddedResource Include="Currencies.json" LogicalName="Calc.Currencies" />
+    <EmbeddedResource Include="ResistorColors.json" LogicalName="Calc.ResistorColors" />
+    <EmbeddedResource Include="AtomicWeights.json" LogicalName="Calc.AtomicWeights" />
+    <EmbeddedResource Include="Ingredients.json" LogicalName="Calc.Ingredients" />
+    <!-- What Calc shipped beside its exe. QNotch stays one file: these are written under the calculator data folder when first needed. -->
+    <EmbeddedResource Include="Assets/UiStrings.json" LogicalName="Calc.UiStrings" />
+    <EmbeddedResource Include="Assets/Help.html" LogicalName="Calc.Help" />
+    <EmbeddedResource Include="THIRD-PARTY-NOTICES.txt" LogicalName="Calc.Notices" />
+    <EmbeddedResource Include="Assets/ShareViewer/index.html" LogicalName="Calc.ShareViewer.index.html" />
+    <EmbeddedResource Include="Assets/ShareViewer/viewer.css" LogicalName="Calc.ShareViewer.viewer.css" />
+    <EmbeddedResource Include="Assets/ShareViewer/viewer.js" LogicalName="Calc.ShareViewer.viewer.js" />
+    <EmbeddedResource Include="Assets/ShareViewer/codec.js" LogicalName="Calc.ShareViewer.codec.js" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NodaTime" Version="3.3.7" />
+  </ItemGroup>
+
+</Project>

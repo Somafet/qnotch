@@ -11,7 +11,7 @@ const RULES = [
   // The Mac build bundles these Windows weather icons.
   [/^src\/QNotch\/Modules\/Weather\/Icons\//, PLATFORMS],
   [/^(src\/QNotch\.Mac|scripts\/macos|docs\/macos)\//, ['macos']],
-  [/^(src\/QNotch|tests\/QNotch\.[^/]+|docs\/windows)\/|^QNotch\.sln$/, ['windows']],
+  [/^(src\/QNotch(\.Calculator\.Engine)?|tests\/QNotch\.[^/]+|docs\/windows)\/|^QNotch\.sln$/, ['windows']],
   // Read by neither app: the website, other guides and top-level Markdown.
   [/^(website|docs)\/|^[^/]+\.md$/, []],
 ];

@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "ruleId": "Vishay-commercial-color-code-v1",
+  "source": "https://www.vishay.com/docs/49411/resistor_color_code_calculator.pdf",
+  "scope": "Commercial axial three/four/five band markings, two/three significant digits; no band means 20 percent. Excludes military, six-band temperature coefficients and zero-ohm jumpers.",
+  "colors": [
+    {"name":"black", "digit":0, "multiplierExponent":0, "tolerancePercent":null},
+    {"name":"brown", "digit":1, "multiplierExponent":1, "tolerancePercent":"1"},
+    {"name":"red", "digit":2, "multiplierExponent":2, "tolerancePercent":"2"},
+    {"name":"orange", "digit":3, "multiplierExponent":3, "tolerancePercent":null},
+    {"name":"yellow", "digit":4, "multiplierExponent":4, "tolerancePercent":null},
+    {"name":"green", "digit":5, "multiplierExponent":5, "tolerancePercent":"0.5"},
+    {"name":"blue", "digit":6, "multiplierExponent":6, "tolerancePercent":"0.25"},
+    {"name":"violet", "digit":7, "multiplierExponent":7, "tolerancePercent":"0.1"},
+    {"name":"gray", "digit":8, "multiplierExponent":8, "tolerancePercent":"0.05"},
+    {"name":"white", "digit":9, "multiplierExponent":9, "tolerancePercent":null},
+    {"name":"gold", "digit":null, "multiplierExponent":-1, "tolerancePercent":"5"},
+    {"name":"silver", "digit":null, "multiplierExponent":-2, "tolerancePercent":"10"}
+  ]
+}

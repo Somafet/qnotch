@@ -45,6 +45,14 @@ public sealed class SearchModule : INotchModule, ICadenceAware
         presentation.Changed += SyncPresentation;
         SyncPresentation();
         ctx.Shortcuts.Changed += About;
+        ctx.Search.Changed += Refresh;
+    }
+
+    /// <summary>A source finished work it started off the UI thread. Once the user has moved to a row the list stays as it is, so Enter runs
+    /// what they chose. The new answer shows with the next keystroke.</summary>
+    void Refresh()
+    {
+        if (_box is not null && _list.SelectedIndex <= 0) Find(_box.Text.Trim());
     }
 
     /// <summary>The empty state names where search looks and the current shortcut.</summary>

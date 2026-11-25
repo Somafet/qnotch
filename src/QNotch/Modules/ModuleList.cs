@@ -1,5 +1,6 @@
 using QNotch.Modules.Agents;
 using QNotch.Modules.Ai;
+using QNotch.Modules.Calculator;
 using QNotch.Modules.Capture;
 using QNotch.Modules.Clipboard;
 using QNotch.Modules.ColorPicker;
@@ -33,6 +34,8 @@ public static class ModuleList
             Glyph: Glyphs.Robot),
         new("agents", "Agents", "Live Claude Code sessions: working, needs you or done, in the pill and the Agents tab.", () => new AgentsModule(), Early: true,
             Shared: new(typeof(AgentsConfig), "SoundNeedsYou", "SoundDone"), Glyph: AgentsModule.Icon, Setup: c => AgentsSetup.Create(c)),
+        new("calculator", "Calculator", "A notepad calculator with live answers, units, dates and currencies. Answers also appear in Search.", () => new CalculatorModule(),
+            Glyph: CalculatorModule.Icon, Tip: _ => "Type a calculation like 250 km in miles in Search, or open the Calculator tab."),
         new("note", "Note", "A quick note on a Home card, saved as you type.", () => new NoteModule(), Glyph: Glyphs.Note),
         new("github", "GitHub", "Your GitHub contribution graph, with a token you add in Settings.", () => new GithubModule(), Glyph: Glyphs.Github, Setup: c => GithubSetup.Create(c)),
         new("filetray", "File tray", "Drop files on the notch to keep them within reach.", () => new FileTrayModule(), Glyph: Glyphs.Folder,
@@ -59,7 +62,7 @@ public static class ModuleList
     public static readonly IReadOnlyList<(string Title, string[] Ids)> TourGroups =
     [
         ("At a glance", ["stats", "media", "weather", "capture", "timer", "volume"]),
-        ("Get things done", ["clipboard", "search", "note", "filetray", "colorpicker", "scheduled"]),
+        ("Get things done", ["clipboard", "search", "calculator", "note", "filetray", "colorpicker", "scheduled"]),
         ("For developers", ["agents", "ai", "github", "notifications", "taildrop", "terminal"]),
     ];
 

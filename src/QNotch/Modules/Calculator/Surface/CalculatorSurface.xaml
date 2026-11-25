@@ -1,0 +1,72 @@
+<UserControl x:Class="Calc.Windows.CalculatorSurface"
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ xmlns:local="clr-namespace:Calc.Windows"
+ FontFamily="{DynamicResource UiFont}" FontSize="13" Foreground="{DynamicResource TextPrimaryBrush}">
+ <UserControl.Resources>
+  <Style x:Key="SheetResult" TargetType="Button">
+   <Setter Property="Background" Value="Transparent"/><Setter Property="Cursor" Value="Hand"/>
+   <!-- A mouse copy returns focus to the editor, so keyboard focus here always means a keyboard user. -->
+   <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+   <Setter Property="ToolTipService.InitialShowDelay" Value="400"/><Setter Property="ToolTipService.BetweenShowDelay" Value="300"/><Setter Property="ToolTipService.ShowDuration" Value="2147483647"/>
+   <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Button">
+    <Grid Background="Transparent">
+     <!-- The pill marks the value, not the gutter. It reaches a little past the source line so the text sits inside it with room on
+          every side, the same on every row. -->
+     <Border x:Name="Surface" HorizontalAlignment="Right" Margin="0,-2" Padding="7,0" BorderThickness="1.5" BorderBrush="Transparent" CornerRadius="6">
+     <DockPanel LastChildFill="False" VerticalAlignment="Center">
+      <TextBlock x:Name="CopiedMark" DockPanel.Dock="Left" Text="&#xE73E;" FontFamily="{DynamicResource IconFont}" FontSize="13" FontWeight="Normal" Foreground="{TemplateBinding Foreground}" Margin="0,0,8,0" VerticalAlignment="Center" Visibility="Collapsed"/>
+      <Grid DockPanel.Dock="Right" VerticalAlignment="Center">
+       <ContentPresenter x:Name="Value" RenderTransformOrigin="1,0.5"><ContentPresenter.RenderTransform><ScaleTransform/></ContentPresenter.RenderTransform></ContentPresenter>
+       <Line x:Name="Explained" Visibility="Collapsed" Stretch="Fill" X2="1" Width="{Binding ActualWidth, ElementName=Value}" Height="1" VerticalAlignment="Bottom" Margin="0,0,0,5" Stroke="{TemplateBinding Foreground}" StrokeThickness="1" StrokeDashArray="1 2.5" Opacity="0.7" SnapsToDevicePixels="True"/>
+      </Grid>
+     </DockPanel>
+     </Border>
+    </Grid>
+    <ControlTemplate.Triggers>
+     <Trigger Property="Tag" Value="Explained"><Setter TargetName="Explained" Property="Visibility" Value="Visible"/></Trigger>
+     <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Surface" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/></Trigger>
+     <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Surface" Property="Background" Value="{DynamicResource ControlHoverBrush}"/></Trigger>
+     <Trigger Property="IsPressed" Value="True"><Setter TargetName="Surface" Property="Background" Value="{DynamicResource ControlPressedBrush}"/><Setter TargetName="Value" Property="RenderTransform"><Setter.Value><ScaleTransform ScaleX="0.97" ScaleY="0.97"/></Setter.Value></Setter></Trigger>
+    </ControlTemplate.Triggers>
+   </ControlTemplate></Setter.Value></Setter>
+  </Style>
+  <!-- Result hover cards draw their own surface and shadow (ResultCard); the ToolTip contributes only timing and dismissal. -->
+  <Style x:Key="ResultCardTip" TargetType="ToolTip">
+   <Setter Property="OverridesDefaultStyle" Value="True"/><Setter Property="HasDropShadow" Value="False"/>
+   <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ToolTip"><ContentPresenter/></ControlTemplate></Setter.Value></Setter>
+  </Style>
+  <DataTemplate x:Key="ResultTemplate"><TextBlock Text="{Binding}" TextTrimming="CharacterEllipsis" Typography.NumeralAlignment="Tabular"/></DataTemplate>
+ </UserControl.Resources>
+ <Grid x:Name="Root">
+  <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition/></Grid.RowDefinitions>
+  <DockPanel x:Name="Header" Height="32" Margin="0,0,0,6">
+   <Button x:Name="MoreButton" DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE712;" Margin="2,0,0,0" VerticalAlignment="Center" Click="ShowSheetMenu" AutomationProperties.AutomationId="calculator-more"/>
+   <Button x:Name="Share" DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE72D;" Margin="2,0,0,0" VerticalAlignment="Center" Click="ShowShare" AutomationProperties.AutomationId="calculator-share"/>
+   <Button x:Name="CurrencyRatesAction" DockPanel.Dock="Right" FontSize="11" Padding="8,3" Margin="4,0,0,0" VerticalAlignment="Center" Click="ShowCurrencyRates" Visibility="Collapsed" AutomationProperties.AutomationId="calculator-rates"/>
+   <TextBlock x:Name="SaveState" DockPanel.Dock="Right" MaxWidth="170" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="11" Margin="6,0,2,0" TextTrimming="CharacterEllipsis" AutomationProperties.LiveSetting="Polite" AutomationProperties.AutomationId="calculator-status"/>
+   <local:SheetTabStrip x:Name="Tabs"/>
+  </DockPanel>
+  <Border x:Name="Card" Grid.Row="1" CornerRadius="10" BorderThickness="1" Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource StrokeBrush}">
+   <Grid x:Name="ResultGrid" Margin="14,0,4,0" ClipToBounds="True">
+    <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition x:Name="ResultColumn" Width="220"/></Grid.ColumnDefinitions>
+    <!-- The editor spans the gutter so its scrollbar lands on the card edge, not between source and results. -->
+    <ContentControl x:Name="EditorHost" Grid.ColumnSpan="2" Focusable="False" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
+     <local:SheetEditor x:Name="Editor" Foreground="{DynamicResource TextPrimaryBrush}" CaretBrush="{DynamicResource TextPrimaryBrush}" TextChanged="EditorChanged"/>
+    </ContentControl>
+    <TextBlock x:Name="Placeholder" Grid.ColumnSpan="2" Foreground="{DynamicResource TextTertiaryBrush}" Margin="0,8,0,0" IsHitTestVisible="False" Visibility="Collapsed"/>
+    <Canvas x:Name="Results" Grid.Column="1" Margin="0,0,10,0" ClipToBounds="True"/>
+    <local:DiceToss x:Name="DiceLayer" Grid.ColumnSpan="2"/>
+    <Canvas x:Name="RenameLayer" Grid.ColumnSpan="2"/>
+   </Grid>
+  </Border>
+  <!-- A closed tab's way back, and short notes such as the sheet limit. In the card, above the last lines; never over the tabs. -->
+  <Border x:Name="NoticeBar" Grid.Row="1" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,10" Padding="12,5,6,5" MaxWidth="460" CornerRadius="8" BorderThickness="1" Background="{DynamicResource SurfaceRaisedBrush}" BorderBrush="{DynamicResource StrokeStrongBrush}" AutomationProperties.AutomationId="calculator-notice">
+   <StackPanel Orientation="Horizontal">
+    <TextBlock x:Name="NoticeText" FontSize="12" MaxWidth="340" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" AutomationProperties.LiveSetting="Polite" AutomationProperties.AutomationId="calculator-notice-text"/>
+    <Button x:Name="NoticeUndo" Style="{StaticResource LinkButton}" FontSize="12" Margin="10,0,6,0" VerticalAlignment="Center" Click="UndoClose" AutomationProperties.AutomationId="calculator-undo-close"/>
+   </StackPanel>
+  </Border>
+  <Grid x:Name="OverlayHost" Grid.RowSpan="2" Visibility="Collapsed"/>
+ </Grid>
+</UserControl>

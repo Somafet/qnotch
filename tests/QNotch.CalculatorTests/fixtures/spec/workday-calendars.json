@@ -1,0 +1,35 @@
+{
+  "version": "2026-10-31",
+  "policy": "Offline projections of the listed rules. These are not future-law guarantees, private-employer schedules or complete regional coverage.",
+  "weekend": ["Saturday", "Sunday"],
+  "calendars": [
+    {
+      "id": "DE",
+      "scope": "Nationwide German public holidays only; additional state/local holidays excluded; no weekend substitute days",
+      "firstYear": 2022,
+      "lastYear": 2099,
+      "rules": ["January 1", "Good Friday", "Easter Monday", "May 1", "Ascension (Easter +39)", "Whit Monday (Easter +50)", "October 3", "December 25", "December 26"],
+      "reviewedTables": [2026, 2027],
+      "sources": ["https://www.trade.gov/german-holidays", "https://www.bundesbank.de/en/tasks/payment-systems/target/public-holidays-in-germany-2027-764518", "https://aa.usno.navy.mil/faq/easter"]
+    },
+    {
+      "id": "US",
+      "scope": "Federal Monday-Friday employee observance; Saturday holidays observed Friday, Sunday holidays Monday; no DC-only Inauguration Day, state/local or one-off executive closures",
+      "firstYear": 2022,
+      "lastYear": 2099,
+      "rules": ["January 1", "January third Monday", "February third Monday", "May last Monday", "June 19", "July 4", "September first Monday", "October second Monday", "November 11", "November fourth Thursday", "December 25"],
+      "reviewedTables": [2026, 2027, 2028],
+      "sources": ["https://www.opm.gov/policy-data-oversight/pay-leave/federal-holidays/"]
+    },
+    {
+      "id": "WEEKDAYS",
+      "scope": "Explicit weekdays-only choice; no regional holidays",
+      "firstYear": 1,
+      "lastYear": 9999,
+      "rules": [],
+      "sources": []
+    }
+  ],
+  "customHolidays": "At most 256 exact or annual dates. Annual February 29 is absent in non-leap years. They add closures without weekend substitution. A new preceding holidays assignment replaces the previous custom list; it does not remove regional holidays.",
+  "unresolved": ["Complete region/subdivision inventory", "Other national calendars", "Alternative weekends and scheduled working weekends", "One-off closures and future legislative updates", "Historical rules before 2022", "Boundary and offset-capture behavior"]
+}

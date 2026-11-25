@@ -79,7 +79,7 @@ test('pull requests run the platforms their changes affect, and both for shared 
   const both = { windows: true, macos: true };
   assert.deepEqual(run('src/QNotch.Mac/Sources/QNotchMac/Application.swift'), { windows: false, macos: true });
   assert.deepEqual(run('scripts/macos/build.sh', 'docs/macos/README.md'), { windows: false, macos: true });
-  assert.deepEqual(run('src/QNotch/App.xaml.cs', 'tests/QNotch.WindowsTests/Program.cs', 'docs/windows/development.md', 'QNotch.sln'),
+  assert.deepEqual(run('src/QNotch/App.xaml.cs', 'src/QNotch.Calculator.Engine/Rational.cs', 'tests/QNotch.WindowsTests/Program.cs', 'docs/windows/development.md', 'QNotch.sln'),
     { windows: true, macos: false });
   assert.deepEqual(run('website/src/pages/index.astro', 'README.md', 'ARCHITECTURE.md', 'docs/releases.md'), { windows: false, macos: false });
   assert.deepEqual(run(), { windows: false, macos: false });

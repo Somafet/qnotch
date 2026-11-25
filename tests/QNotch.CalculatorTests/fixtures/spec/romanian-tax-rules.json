@@ -1,0 +1,84 @@
+{
+  "version": "2026-10-31-v1",
+  "country": "RO",
+  "taxYear": 2026,
+  "validFrom": "2026-01-01",
+  "validThrough": "2026-12-31",
+  "currency": "RON",
+  "status": "Implemented pre-filing rate-model subset; no eligibility or tax-return certification",
+  "januaryMinimum": 4050,
+  "maximumAmount": 100000000,
+  "maximumListItems": 1024,
+  "arithmetic": "Exact represented rational inputs and liabilities BEFORE statutory whole-leu, per-payment, withholding and return rounding; display rounding is separate",
+  "models": [
+    {
+      "id": "RO-PFA-real-2026-v1",
+      "functions": ["pfaNetRO", "pfaTaxRO"],
+      "arguments": "Annual single-source real-system receipts, eligible expenses excluding social contributions, year, optional CAS exemption flag, optional CASS floor-exception flag",
+      "incomeTaxRate": "0.10",
+      "pensionRate": "0.25",
+      "pensionMinimumBases": [48600, 97200],
+      "healthRate": "0.10",
+      "healthFloorBase": 24300,
+      "healthCapBase": 291600,
+      "scope": "Minimum mandatory CAS; no other independent/IP/sports income, norm regime, losses carried forward, foreign credits or voluntary contributions. Floor exception removes only top-up. The floor top-up is not income-tax deductible. Negative/zero profit has no mandatory contributions in this profile.",
+      "sources": ["https://static.anaf.ro/static/10/Anaf/legislatie/Cod_fiscal_norme_2023.htm", "https://static.anaf.ro/static/10/Anaf/legislatie/L_239_2025.pdf", "https://static.anaf.ro/static/10/Anaf/legislatie/HG_1506_2024.pdf"]
+    },
+    {
+      "id": "RO-micro-2026-v1",
+      "functions": ["microTaxRO"],
+      "arguments": "One eligible Article 53 quarter base or list of up to four quarter bases in RON, declared annual linked-group turnover in statutory EUR equivalent, year",
+      "incomeTaxRate": "0.01",
+      "annualGroupTurnoverCeilingEUR": 100000,
+      "scope": "Eligibility including employment, ownership, filings and exclusions is asserted. Caller prepares statutory prior-year-end EUR valuation. Computes company tax only; no inferred distributable profit, dividends, payroll, credits or threshold-exit/profit-tax switch.",
+      "sources": ["https://static.anaf.ro/static/10/Anaf/legislatie/Cod_fiscal_norme_2023.htm", "https://static.anaf.ro/static/10/Anaf/legislatie/OUG_89_2025.pdf", "https://static.anaf.ro/static/3/Cluj/20260402144800_cj_micro_02apr2026.pdf"]
+    },
+    {
+      "id": "RO-dividend-2026-v1",
+      "functions": ["dividendTaxRO", "dividendCashRO"],
+      "arguments": "Gross dividend or complete list of gross distributions, year",
+      "incomeTaxRate": "0.16",
+      "scope": "Romanian resident individual; distributed and paid in 2026, excluding interim 2025 distributions, foreign credits and exempt corporate recipients. Cash output is after income tax BEFORE aggregated CASS. Dividend CASS basis ordinarily uses paid dividends less withholding.",
+      "sources": ["https://static.anaf.ro/static/10/Anaf/legislatie/Cod_fiscal_norme_2023.htm", "https://static.anaf.ro/static/10/Anaf/legislatie/L_141_2025.pdf"]
+    },
+    {
+      "id": "RO-securities-annual-2026-v1",
+      "functions": ["stockTaxRO"],
+      "arguments": "Annual net gain or signed current-year gain/loss list in one homogeneous eligible source/country pool, year, optional declared valid carryforward loss",
+      "incomeTaxRate": "0.16",
+      "carryforwardOffsetCap": "0.70",
+      "scope": "Annual non-withholding regime, including investment gold; no cross-country pooling, lot matching, legacy-loss expiry/order, foreign credits or qualifying-intermediary treatment. CASS is separate and uses the applicable gain basis before prior-loss carryforward.",
+      "sources": ["https://static.anaf.ro/static/10/Anaf/legislatie/Cod_fiscal_norme_2023.htm", "https://static.anaf.ro/static/10/Anaf/legislatie/L_239_2025.pdf"]
+    },
+    {
+      "id": "RO-securities-broker-2026-v1",
+      "functions": ["brokerTaxRO", "brokerGainsRO"],
+      "arguments": "Cost-adjusted realized gain/loss list, holding-day scalar/list for tax, explicit year",
+      "shortRate": "0.06",
+      "longRate": "0.03",
+      "longHoldingDaysInclusive": 365,
+      "scope": "Qualifying Article 96.1 intermediary; positive gains only, no tax loss netting. Caller supplies correct lot/FIFO gains and holding-day classification. Gains helper is not a tax. No automatic CASS or lot/valuation inference.",
+      "sources": ["https://static.anaf.ro/static/10/Anaf/legislatie/Cod_fiscal_norme_2023.htm", "https://static.anaf.ro/static/10/Anaf/legislatie/L_239_2025.pdf"]
+    },
+    {
+      "id": "RO-crypto-2026-v1",
+      "functions": ["cryptoTaxRO"],
+      "arguments": "Complete annual signed cost-adjusted realized transaction gains, year",
+      "incomeTaxRate": "0.16",
+      "exemptGainStrictlyBelow": 200,
+      "annualPositiveGainCeilingInclusive": 600,
+      "scope": "Positive gains without loss netting; small-gain relief applies only when complete annual positive gains total at most 600. No cost basis, lot matching, currency valuation or automatic investment CASS assessment.",
+      "sources": ["https://static.anaf.ro/static/10/Anaf/legislatie/Cod_fiscal_norme_2023.htm", "https://static.anaf.ro/static/10/Anaf/legislatie/L_239_2025.pdf"]
+    },
+    {
+      "id": "RO-investment-CASS-2026-v1",
+      "functions": ["investmentCassRO"],
+      "arguments": "One annual aggregate or list of prepared nonnegative Article 155(c–h)/170 assessment amounts, year",
+      "thresholds": [24300, 48600, 97200],
+      "liabilities": [2430, 4860, 9720],
+      "scope": "Apply once to the complete eligible annual assessment, not once per category. PFA CASS is separate. Caller prepares each category's statutory basis and exemptions; no prior payments, foreign credits, dividend timing or eligibility inference.",
+      "sources": ["https://static.anaf.ro/static/10/Anaf/legislatie/Cod_fiscal_norme_2023.htm", "https://static.anaf.ro/static/10/Anaf/legislatie/HG_1506_2024.pdf"]
+    }
+  ],
+  "openGates": ["Localized grammar", "Statutory filing/per-payment/whole-leu rounding", "Full eligibility, multiple independent sources, carryforward expiry/order and foreign credits", "Tax-basis/lot and BNR currency valuation preparation", "Micro threshold-exit/quarterly profit-tax settlement", "Other years and profiles"]
+}

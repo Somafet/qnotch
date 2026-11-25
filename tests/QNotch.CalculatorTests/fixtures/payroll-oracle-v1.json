@@ -1,0 +1,1746 @@
+{
+  "version": 1,
+  "rules": "US calendar 2026 single employee under 65; UK tax year 2026/27 England/Wales/NI category A annual thresholds; no settlement rounding/credits/pension/state taxes",
+  "oracle": "Python Fraction; US published base-tax intercepts, UK expanded continuous net slopes; exact rational outputs",
+  "seed": 6142026,
+  "sources": [
+    "https://www.irs.gov/irb/2025-45_IRB",
+    "https://www.irs.gov/taxtopics/tc751",
+    "https://www.gov.uk/guidance/rates-and-thresholds-for-employers-2026-to-2027",
+    "https://www.gov.uk/income-tax-rates"
+  ],
+  "cases": [
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "0",
+      "netAnnual": "0",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "0",
+      "deductionsAnnual": {
+        "Federal income tax": "0",
+        "Social Security": "0",
+        "Medicare": "0",
+        "Additional Medicare": "0"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "1000",
+      "netAnnual": "1847/2",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "0",
+      "deductionsAnnual": {
+        "Federal income tax": "0",
+        "Social Security": "62",
+        "Medicare": "29/2",
+        "Additional Medicare": "0"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "10000",
+      "netAnnual": "9235",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "0",
+      "deductionsAnnual": {
+        "Federal income tax": "0",
+        "Social Security": "620",
+        "Medicare": "145",
+        "Additional Medicare": "0"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "1609999/100",
+      "netAnnual": "2973668153/200000",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "0",
+      "deductionsAnnual": {
+        "Federal income tax": "0",
+        "Social Security": "49909969/50000",
+        "Medicare": "46689971/200000",
+        "Additional Medicare": "0"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "16100",
+      "netAnnual": "297367/20",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "0",
+      "deductionsAnnual": {
+        "Federal income tax": "0",
+        "Social Security": "4991/5",
+        "Medicare": "4669/20",
+        "Additional Medicare": "0"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "1610001/100",
+      "netAnnual": "2973671647/200000",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "1/100",
+      "deductionsAnnual": {
+        "Federal income tax": "1/1000",
+        "Social Security": "49910031/50000",
+        "Medicare": "46690029/200000",
+        "Additional Medicare": "0"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "2038737/100",
+      "netAnnual": "3679799839/200000",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "428737/100",
+      "deductionsAnnual": {
+        "Federal income tax": "428737/1000",
+        "Social Security": "63200847/50000",
+        "Medicare": "59123373/200000",
+        "Additional Medicare": "0"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "2849999/100",
+      "netAnnual": "5015948353/200000",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "1239999/100",
+      "deductionsAnnual": {
+        "Federal income tax": "1239999/1000",
+        "Social Security": "88349969/50000",
+        "Medicare": "82649971/200000",
+        "Additional Medicare": "0"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "28500",
+      "netAnnual": "100319/4",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "12400",
+      "deductionsAnnual": {
+        "Federal income tax": "1240",
+        "Social Security": "1767",
+        "Medicare": "1653/4",
+        "Additional Medicare": "0"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "2850001/100",
+      "netAnnual": "5015951607/200000",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "1240001/100",
+      "deductionsAnnual": {
+        "Federal income tax": "3100003/2500",
+        "Social Security": "88350031/50000",
+        "Medicare": "82650029/200000",
+        "Additional Medicare": "0"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "50000",
+      "netAnnual": "42355",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "33900",
+      "deductionsAnnual": {
+        "Federal income tax": "3820",
+        "Social Security": "3100",
+        "Medicare": "725",
+        "Additional Medicare": "0"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "6649999/100",
+      "netAnnual": "11122548393/200000",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "5039999/100",
+      "deductionsAnnual": {
+        "Federal income tax": "14499997/2500",
+        "Social Security": "206149969/50000",
+        "Medicare": "192849971/200000",
+        "Additional Medicare": "0"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "66500",
+      "netAnnual": "222451/4",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "50400",
+      "deductionsAnnual": {
+        "Federal income tax": "5800",
+        "Social Security": "4123",
+        "Medicare": "3857/4",
+        "Additional Medicare": "0"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "6650001/100",
+      "netAnnual": "11122551407/200000",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "5040001/100",
+      "deductionsAnnual": {
+        "Federal income tax": "29000011/5000",
+        "Social Security": "206150031/50000",
+        "Medicare": "192850029/200000",
+        "Additional Medicare": "0"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "1999793/25",
+      "netAnnual": "3255208751/50000",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "1597293/25",
+      "deductionsAnnual": {
+        "Federal income tax": "10960223/1250",
+        "Social Security": "61993583/12500",
+        "Medicare": "57993997/50000",
+        "Additional Medicare": "0"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "100000",
+      "netAnnual": "79180",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "83900",
+      "deductionsAnnual": {
+        "Federal income tax": "13170",
+        "Social Security": "6200",
+        "Medicare": "1450",
+        "Additional Medicare": "0"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "5675397/50",
+      "netAnnual": "8868283579/100000",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "4870397/50",
+      "deductionsAnnual": {
+        "Federal income tax": "40354367/2500",
+        "Social Security": "175937307/25000",
+        "Medicare": "164586513/100000",
+        "Additional Medicare": "0"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "11984639/100",
+      "netAnnual": "18628387073/200000",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "10374639/100",
+      "deductionsAnnual": {
+        "Federal income tax": "87681029/5000",
+        "Social Security": "371523809/50000",
+        "Medicare": "347554531/200000",
+        "Additional Medicare": "0"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "12179999/100",
+      "netAnnual": "18903258593/200000",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "10569999/100",
+      "deductionsAnnual": {
+        "Federal income tax": "89829989/5000",
+        "Social Security": "377579969/50000",
+        "Medicare": "353219971/200000",
+        "Additional Medicare": "0"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "121800",
+      "netAnnual": "945163/10",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "105700",
+      "deductionsAnnual": {
+        "Federal income tax": "17966",
+        "Social Security": "37758/5",
+        "Medicare": "17661/10",
+        "Additional Medicare": "0"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "12180001/100",
+      "netAnnual": "18903261367/200000",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "10570001/100",
+      "deductionsAnnual": {
+        "Federal income tax": "22457503/1250",
+        "Social Security": "377580031/50000",
+        "Medicare": "353220029/200000",
+        "Additional Medicare": "0"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "2688793/20",
+      "netAnnual": "4126220031/40000",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "2366793/20",
+      "deductionsAnnual": {
+        "Federal income tax": "5249879/250",
+        "Social Security": "83352583/10000",
+        "Medicare": "77974997/40000",
+        "Additional Medicare": "0"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "8659531/50",
+      "netAnnual": "12964178877/100000",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "7854531/50",
+      "deductionsAnnual": {
+        "Federal income tax": "18937343/625",
+        "Social Security": "268445461/25000",
+        "Medicare": "251126399/100000",
+        "Additional Medicare": "0"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "18449999/100",
+      "netAnnual": "27474348633/200000",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "16839999/100",
+      "deductionsAnnual": {
+        "Federal income tax": "41267497/1250",
+        "Social Security": "571949969/50000",
+        "Medicare": "535049971/200000",
+        "Additional Medicare": "0"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "184500",
+      "netAnnual": "549487/4",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "168400",
+      "deductionsAnnual": {
+        "Federal income tax": "33014",
+        "Social Security": "11439",
+        "Medicare": "10701/4",
+        "Additional Medicare": "0"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "18450001/100",
+      "netAnnual": "27474351491/200000",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "16840001/100",
+      "deductionsAnnual": {
+        "Federal income tax": "41267503/1250",
+        "Social Security": "11439",
+        "Medicare": "535050029/200000",
+        "Additional Medicare": "0"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "19999999/100",
+      "netAnnual": "29785398509/200000",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "18389999/100",
+      "deductionsAnnual": {
+        "Federal income tax": "45917497/1250",
+        "Social Security": "11439",
+        "Medicare": "579999971/200000",
+        "Additional Medicare": "0"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "200000",
+      "netAnnual": "148927",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "183900",
+      "deductionsAnnual": {
+        "Federal income tax": "36734",
+        "Social Security": "11439",
+        "Medicare": "2900",
+        "Additional Medicare": "0"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "20000001/100",
+      "netAnnual": "29785401473/200000",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "18390001/100",
+      "deductionsAnnual": {
+        "Federal income tax": "45917503/1250",
+        "Social Security": "11439",
+        "Medicare": "580000029/200000",
+        "Additional Medicare": "9/100000"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "21787499/100",
+      "netAnnual": "32418386027/200000",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "20177499/100",
+      "deductionsAnnual": {
+        "Federal income tax": "51279997/1250",
+        "Social Security": "11439",
+        "Medicare": "631837471/200000",
+        "Additional Medicare": "16087491/100000"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "217875",
+      "netAnnual": "2593471/16",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "201775",
+      "deductionsAnnual": {
+        "Federal income tax": "41024",
+        "Social Security": "11439",
+        "Medicare": "50547/16",
+        "Additional Medicare": "1287/8"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "21787501/100",
+      "netAnnual": "32418388813/200000",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "20177501/100",
+      "deductionsAnnual": {
+        "Federal income tax": "25640002/625",
+        "Social Security": "11439",
+        "Medicare": "631837529/200000",
+        "Additional Medicare": "16087509/100000"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "22752667/100",
+      "netAnnual": "33685651771/200000",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "21142667/100",
+      "deductionsAnnual": {
+        "Federal income tax": "27570334/625",
+        "Social Security": "11439",
+        "Medicare": "659827343/200000",
+        "Additional Medicare": "24774003/100000"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "1218507/5",
+      "netAnnual": "1790469691/10000",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "1138007/5",
+      "deductionsAnnual": {
+        "Federal income tax": "6161056/125",
+        "Social Security": "11439",
+        "Medicare": "35336703/10000",
+        "Additional Medicare": "1966563/5000"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "6557393/25",
+      "netAnnual": "9562707009/50000",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "6154893/25",
+      "deductionsAnnual": {
+        "Federal income tax": "34524144/625",
+        "Social Security": "11439",
+        "Medicare": "190164397/50000",
+        "Additional Medicare": "14016537/25000"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "27232499/100",
+      "netAnnual": "39567671187/200000",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "25622499/100",
+      "deductionsAnnual": {
+        "Federal income tax": "36529998/625",
+        "Social Security": "11439",
+        "Medicare": "789742471/200000",
+        "Additional Medicare": "65092491/100000"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "272325",
+      "netAnnual": "15827069/80",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "256225",
+      "deductionsAnnual": {
+        "Federal income tax": "58448",
+        "Social Security": "11439",
+        "Medicare": "315897/80",
+        "Additional Medicare": "26037/40"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "27232501/100",
+      "netAnnual": "39567673753/200000",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "25622501/100",
+      "deductionsAnnual": {
+        "Federal income tax": "116896007/2000",
+        "Social Security": "11439",
+        "Medicare": "789742529/200000",
+        "Additional Medicare": "65092509/100000"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "6885586/25",
+      "netAnnual": "4994488379/25000",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "6483086/25",
+      "deductionsAnnual": {
+        "Federal income tax": "29766227/500",
+        "Social Security": "11439",
+        "Medicare": "99840997/25000",
+        "Additional Medicare": "8485137/12500"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "31065117/100",
+      "netAnnual": "44369941601/200000",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "29455117/100",
+      "deductionsAnnual": {
+        "Federal income tax": "143724319/2000",
+        "Social Security": "11439",
+        "Medicare": "900888393/200000",
+        "Additional Medicare": "99586053/100000"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "7883369/25",
+      "netAnnual": "11239198857/50000",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "7480869/25",
+      "deductionsAnnual": {
+        "Federal income tax": "9187677/125",
+        "Social Security": "11439",
+        "Medicare": "228617701/50000",
+        "Additional Medicare": "25950321/25000"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "346361",
+      "netAnnual": "488443833/2000",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "330261",
+      "deductionsAnnual": {
+        "Federal income tax": "421803/5",
+        "Social Security": "11439",
+        "Medicare": "10044469/2000",
+        "Additional Medicare": "1317249/1000"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "35889383/100",
+      "netAnnual": "50414746899/200000",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "34279383/100",
+      "deductionsAnnual": {
+        "Federal income tax": "177494181/2000",
+        "Social Security": "11439",
+        "Medicare": "1040792107/200000",
+        "Additional Medicare": "143004447/100000"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "38334267/100",
+      "netAnnual": "53478186551/200000",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "36724267/100",
+      "deductionsAnnual": {
+        "Federal income tax": "194608369/2000",
+        "Social Security": "11439",
+        "Medicare": "1111693743/200000",
+        "Additional Medicare": "165008403/100000"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "40729687/100",
+      "netAnnual": "56479647811/200000",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "39119687/100",
+      "deductionsAnnual": {
+        "Federal income tax": "211376309/2000",
+        "Social Security": "11439",
+        "Medicare": "1181160923/200000",
+        "Additional Medicare": "186567183/100000"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "10583677/25",
+      "netAnnual": "14622684781/50000",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "10181177/25",
+      "deductionsAnnual": {
+        "Federal income tax": "13913216/125",
+        "Social Security": "11439",
+        "Medicare": "306926633/50000",
+        "Additional Medicare": "50253093/25000"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "1758235/4",
+      "netAnnual": "484176491/1600",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "1693835/4",
+      "deductionsAnnual": {
+        "Federal income tax": "1871677/16",
+        "Social Security": "11439",
+        "Medicare": "10197763/1600",
+        "Additional Medicare": "1724823/800"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "11205544/25",
+      "netAnnual": "3850471033/12500",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "10803044/25",
+      "deductionsAnnual": {
+        "Federal income tax": "60005933/500",
+        "Social Security": "11439",
+        "Medicare": "40620097/6250",
+        "Additional Medicare": "6981237/3125"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "11606606/25",
+      "netAnnual": "7952207409/25000",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "11204106/25",
+      "deductionsAnnual": {
+        "Federal income tax": "62813367/500",
+        "Social Security": "11439",
+        "Medicare": "168295787/25000",
+        "Additional Medicare": "29729727/12500"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "52220409/100",
+      "netAnnual": "70877522477/200000",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "50610409/100",
+      "deductionsAnnual": {
+        "Federal income tax": "291811363/2000",
+        "Social Security": "11439",
+        "Medicare": "1514391861/200000",
+        "Additional Medicare": "289983681/100000"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "13406334/25",
+      "netAnnual": "9079737001/25000",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "13003834/25",
+      "deductionsAnnual": {
+        "Federal income tax": "75411463/500",
+        "Social Security": "11439",
+        "Medicare": "194391843/25000",
+        "Additional Medicare": "37828503/12500"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "11496083/20",
+      "netAnnual": "15493661999/40000",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "11174083/20",
+      "deductionsAnnual": {
+        "Federal income tax": "65726281/400",
+        "Social Security": "11439",
+        "Medicare": "333386407/40000",
+        "Additional Medicare": "67464747/20000"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "29066657/50",
+      "netAnnual": "39143196221/100000",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "28261657/50",
+      "deductionsAnnual": {
+        "Federal income tax": "166600849/1000",
+        "Social Security": "11439",
+        "Medicare": "842933053/100000",
+        "Additional Medicare": "171599913/50000"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "63065473/100",
+      "netAnnual": "84466387669/200000",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "61455473/100",
+      "deductionsAnnual": {
+        "Federal income tax": "367726811/2000",
+        "Social Security": "11439",
+        "Medicare": "1828898717/200000",
+        "Additional Medicare": "387589257/100000"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "64346693/100",
+      "netAnnual": "86071756329/200000",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "62736693/100",
+      "deductionsAnnual": {
+        "Federal income tax": "376695351/2000",
+        "Social Security": "11439",
+        "Medicare": "1866054097/200000",
+        "Additional Medicare": "399120237/100000"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "16307956/25",
+      "netAnnual": "1362200398/3125",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "15905456/25",
+      "deductionsAnnual": {
+        "Federal income tax": "95722817/500",
+        "Social Security": "11439",
+        "Medicare": "118232681/12500",
+        "Additional Medicare": "25442901/6250"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "65669999/100",
+      "netAnnual": "87729858747/200000",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "64059999/100",
+      "deductionsAnnual": {
+        "Federal income tax": "385958493/2000",
+        "Social Security": "11439",
+        "Medicare": "1904429971/200000",
+        "Additional Medicare": "411029991/100000"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "656700",
+      "netAnnual": "4386493/10",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "640600",
+      "deductionsAnnual": {
+        "Federal income tax": "771917/4",
+        "Social Security": "11439",
+        "Medicare": "190443/20",
+        "Additional Medicare": "41103/10"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "65670001/100",
+      "netAnnual": "87729861213/200000",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "64060001/100",
+      "deductionsAnnual": {
+        "Federal income tax": "1929792537/10000",
+        "Social Security": "11439",
+        "Medicare": "1904430029/200000",
+        "Additional Medicare": "411030009/100000"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "67129989/100",
+      "netAnnual": "89500826657/200000",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "65519989/100",
+      "deductionsAnnual": {
+        "Federal income tax": "1983812093/10000",
+        "Social Security": "11439",
+        "Medicare": "1946769681/200000",
+        "Additional Medicare": "424169901/100000"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "17687357/25",
+      "netAnnual": "23472801541/50000",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "17284857/25",
+      "deductionsAnnual": {
+        "Federal income tax": "264716417/1250",
+        "Social Security": "11439",
+        "Medicare": "512933353/50000",
+        "Additional Medicare": "114186213/25000"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "71158037/100",
+      "netAnnual": "94386848881/200000",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "69548037/100",
+      "deductionsAnnual": {
+        "Federal income tax": "2132849869/10000",
+        "Social Security": "11439",
+        "Medicare": "2063583073/200000",
+        "Additional Medicare": "460422333/100000"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "72997393/100",
+      "netAnnual": "96617987709/200000",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "71387393/100",
+      "deductionsAnnual": {
+        "Federal income tax": "2200906041/10000",
+        "Social Security": "11439",
+        "Medicare": "2116924397/200000",
+        "Additional Medicare": "476976537/100000"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "75401723/100",
+      "netAnnual": "99534439999/200000",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "73791723/100",
+      "deductionsAnnual": {
+        "Federal income tax": "2289866251/10000",
+        "Social Security": "11439",
+        "Medicare": "2186649967/200000",
+        "Additional Medicare": "498615507/100000"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "84337653/100",
+      "netAnnual": "110373723089/200000",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "82727653/100",
+      "deductionsAnnual": {
+        "Federal income tax": "2620495661/10000",
+        "Social Security": "11439",
+        "Medicare": "2445791937/200000",
+        "Additional Medicare": "579038877/100000"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "85976391/100",
+      "netAnnual": "112361512283/200000",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "84366391/100",
+      "deductionsAnnual": {
+        "Federal income tax": "2681128967/10000",
+        "Social Security": "11439",
+        "Medicare": "2493315339/200000",
+        "Additional Medicare": "593787519/100000"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "43482459/50",
+      "netAnnual": "56780297767/100000",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "42677459/50",
+      "deductionsAnnual": {
+        "Federal income tax": "1358852233/5000",
+        "Social Security": "11439",
+        "Medicare": "1260991311/100000",
+        "Additional Medicare": "301342131/50000"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "22938108/25",
+      "netAnnual": "3730245313/6250",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "22535608/25",
+      "deductionsAnnual": {
+        "Federal income tax": "723710621/2500",
+        "Social Security": "11439",
+        "Medicare": "166301283/12500",
+        "Additional Medicare": "40360743/6250"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "93996067/100",
+      "netAnnual": "122089379271/200000",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "92386067/100",
+      "deductionsAnnual": {
+        "Federal income tax": "2977856979/10000",
+        "Social Security": "11439",
+        "Medicare": "2725885943/200000",
+        "Additional Medicare": "665964603/100000"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "48822783/50",
+      "netAnnual": "63258110779/100000",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "48017783/50",
+      "deductionsAnnual": {
+        "Federal income tax": "1556444221/5000",
+        "Social Security": "11439",
+        "Medicare": "1415860707/100000",
+        "Additional Medicare": "349405047/50000"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "24951839/25",
+      "netAnnual": "32284618207/50000",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "24549339/25",
+      "deductionsAnnual": {
+        "Federal income tax": "199554667/625",
+        "Social Security": "11439",
+        "Medicare": "723603331/50000",
+        "Additional Medicare": "179566551/25000"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "99955161/100",
+      "netAnnual": "129317760293/200000",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "98345161/100",
+      "deductionsAnnual": {
+        "Federal income tax": "3198343457/10000",
+        "Social Security": "11439",
+        "Medicare": "2898699669/200000",
+        "Additional Medicare": "719596449/100000"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "1000000",
+      "netAnnual": "2587443/4",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "983900",
+      "deductionsAnnual": {
+        "Federal income tax": "1280001/4",
+        "Social Security": "11439",
+        "Medicare": "14500",
+        "Additional Medicare": "7200"
+      }
+    },
+    {
+      "country": "US",
+      "year": 2026,
+      "grossAnnual": "100000000",
+      "netAnnual": "242761443/4",
+      "allowanceAnnual": "16100",
+      "taxableAnnual": "99983900",
+      "deductionsAnnual": {
+        "Federal income tax": "147800001/4",
+        "Social Security": "11439",
+        "Medicare": "1450000",
+        "Additional Medicare": "898200"
+      }
+    },
+    {
+      "country": "UK",
+      "year": 2026,
+      "grossAnnual": "0",
+      "netAnnual": "0",
+      "allowanceAnnual": "12570",
+      "taxableAnnual": "0",
+      "deductionsAnnual": {
+        "Income tax": "0",
+        "Employee National Insurance": "0"
+      }
+    },
+    {
+      "country": "UK",
+      "year": 2026,
+      "grossAnnual": "1000",
+      "netAnnual": "1000",
+      "allowanceAnnual": "12570",
+      "taxableAnnual": "0",
+      "deductionsAnnual": {
+        "Income tax": "0",
+        "Employee National Insurance": "0"
+      }
+    },
+    {
+      "country": "UK",
+      "year": 2026,
+      "grossAnnual": "10000",
+      "netAnnual": "10000",
+      "allowanceAnnual": "12570",
+      "taxableAnnual": "0",
+      "deductionsAnnual": {
+        "Income tax": "0",
+        "Employee National Insurance": "0"
+      }
+    },
+    {
+      "country": "UK",
+      "year": 2026,
+      "grossAnnual": "1256999/100",
+      "netAnnual": "1256999/100",
+      "allowanceAnnual": "12570",
+      "taxableAnnual": "0",
+      "deductionsAnnual": {
+        "Income tax": "0",
+        "Employee National Insurance": "0"
+      }
+    },
+    {
+      "country": "UK",
+      "year": 2026,
+      "grossAnnual": "12570",
+      "netAnnual": "12570",
+      "allowanceAnnual": "12570",
+      "taxableAnnual": "0",
+      "deductionsAnnual": {
+        "Income tax": "0",
+        "Employee National Insurance": "0"
+      }
+    },
+    {
+      "country": "UK",
+      "year": 2026,
+      "grossAnnual": "1257001/100",
+      "netAnnual": "15712509/1250",
+      "allowanceAnnual": "12570",
+      "taxableAnnual": "1/100",
+      "deductionsAnnual": {
+        "Income tax": "1/500",
+        "Employee National Insurance": "1/1250"
+      }
+    },
+    {
+      "country": "UK",
+      "year": 2026,
+      "grossAnnual": "288663/20",
+      "netAnnual": "3477867/250",
+      "allowanceAnnual": "12570",
+      "taxableAnnual": "37263/20",
+      "deductionsAnnual": {
+        "Income tax": "37263/100",
+        "Employee National Insurance": "37263/250"
+      }
+    },
+    {
+      "country": "UK",
+      "year": 2026,
+      "grossAnnual": "3898523/100",
+      "netAnnual": "39486207/1250",
+      "allowanceAnnual": "12570",
+      "taxableAnnual": "2641523/100",
+      "deductionsAnnual": {
+        "Income tax": "2641523/500",
+        "Employee National Insurance": "2641523/1250"
+      }
+    },
+    {
+      "country": "UK",
+      "year": 2026,
+      "grossAnnual": "198107/4",
+      "netAnnual": "1958943/50",
+      "allowanceAnnual": "12570",
+      "taxableAnnual": "147827/4",
+      "deductionsAnnual": {
+        "Income tax": "147827/20",
+        "Employee National Insurance": "147827/50"
+      }
+    },
+    {
+      "country": "UK",
+      "year": 2026,
+      "grossAnnual": "50000",
+      "netAnnual": "197598/5",
+      "allowanceAnnual": "12570",
+      "taxableAnnual": "37430",
+      "deductionsAnnual": {
+        "Income tax": "7486",
+        "Employee National Insurance": "14972/5"
+      }
+    },
+    {
+      "country": "UK",
+      "year": 2026,
+      "grossAnnual": "5026999/100",
+      "netAnnual": "49642491/1250",
+      "allowanceAnnual": "12570",
+      "taxableAnnual": "3769999/100",
+      "deductionsAnnual": {
+        "Income tax": "3769999/500",
+        "Employee National Insurance": "3769999/1250"
+      }
+    },
+    {
+      "country": "UK",
+      "year": 2026,
+      "grossAnnual": "50270",
+      "netAnnual": "39714",
+      "allowanceAnnual": "12570",
+      "taxableAnnual": "37700",
+      "deductionsAnnual": {
+        "Income tax": "7540",
+        "Employee National Insurance": "3016"
+      }
+    },
+    {
+      "country": "UK",
+      "year": 2026,
+      "grossAnnual": "5027001/100",
+      "netAnnual": "198570029/5000",
+      "allowanceAnnual": "12570",
+      "taxableAnnual": "3770001/100",
+      "deductionsAnnual": {
+        "Income tax": "1885001/250",
+        "Employee National Insurance": "15080001/5000"
+      }
+    },
+    {
+      "country": "UK",
+      "year": 2026,
+      "grossAnnual": "9397273/100",
+      "netAnnual": "325307917/5000",
+      "allowanceAnnual": "12570",
+      "taxableAnnual": "8140273/100",
+      "deductionsAnnual": {
+        "Income tax": "6255273/250",
+        "Employee National Insurance": "19450273/5000"
+      }
+    },
+    {
+      "country": "UK",
+      "year": 2026,
+      "grossAnnual": "9999999/100",
+      "netAnnual": "342786971/5000",
+      "allowanceAnnual": "12570",
+      "taxableAnnual": "8742999/100",
+      "deductionsAnnual": {
+        "Income tax": "6857999/250",
+        "Employee National Insurance": "20052999/5000"
+      }
+    },
+    {
+      "country": "UK",
+      "year": 2026,
+      "grossAnnual": "100000",
+      "netAnnual": "342787/5",
+      "allowanceAnnual": "12570",
+      "taxableAnnual": "87430",
+      "deductionsAnnual": {
+        "Income tax": "27432",
+        "Employee National Insurance": "20053/5"
+      }
+    },
+    {
+      "country": "UK",
+      "year": 2026,
+      "grossAnnual": "10000001/100",
+      "netAnnual": "342787019/5000",
+      "allowanceAnnual": "2513999/200",
+      "taxableAnnual": "17486003/200",
+      "deductionsAnnual": {
+        "Income tax": "13716003/500",
+        "Employee National Insurance": "20053001/5000"
+      }
+    },
+    {
+      "country": "UK",
+      "year": 2026,
+      "grossAnnual": "12513999/100",
+      "netAnnual": "390552981/5000",
+      "allowanceAnnual": "1/200",
+      "taxableAnnual": "25027997/200",
+      "deductionsAnnual": {
+        "Income tax": "21257997/500",
+        "Employee National Insurance": "22566999/5000"
+      }
+    },
+    {
+      "country": "UK",
+      "year": 2026,
+      "grossAnnual": "125140",
+      "netAnnual": "390553/5",
+      "allowanceAnnual": "0",
+      "taxableAnnual": "125140",
+      "deductionsAnnual": {
+        "Income tax": "42516",
+        "Employee National Insurance": "22567/5"
+      }
+    },
+    {
+      "country": "UK",
+      "year": 2026,
+      "grossAnnual": "12514001/100",
+      "netAnnual": "781106053/10000",
+      "allowanceAnnual": "0",
+      "taxableAnnual": "12514001/100",
+      "deductionsAnnual": {
+        "Income tax": "85032009/2000",
+        "Employee National Insurance": "22567001/5000"
+      }
+    },
+    {
+      "country": "UK",
+      "year": 2026,
+      "grossAnnual": "2860931/20",
+      "netAnnual": "175202143/2000",
+      "allowanceAnnual": "0",
+      "taxableAnnual": "2860931/20",
+      "deductionsAnnual": {
+        "Income tax": "20229579/400",
+        "Employee National Insurance": "4871531/1000"
+      }
+    },
+    {
+      "country": "UK",
+      "year": 2026,
+      "grossAnnual": "4665961/25",
+      "netAnnual": "276761933/2500",
+      "allowanceAnnual": "0",
+      "taxableAnnual": "4665961/25",
+      "deductionsAnnual": {
+        "Income tax": "35095149/500",
+        "Employee National Insurance": "7179211/1250"
+      }
+    },
+    {
+      "country": "UK",
+      "year": 2026,
+      "grossAnnual": "2152773/10",
+      "netAnnual": "125883369/1000",
+      "allowanceAnnual": "0",
+      "taxableAnnual": "2152773/10",
+      "deductionsAnnual": {
+        "Income tax": "16615557/200",
+        "Employee National Insurance": "3158073/500"
+      }
+    },
+    {
+      "country": "UK",
+      "year": 2026,
+      "grossAnnual": "5730018/25",
+      "netAnnual": "166578477/1250",
+      "allowanceAnnual": "0",
+      "taxableAnnual": "5730018/25",
+      "deductionsAnnual": {
+        "Income tax": "22335831/250",
+        "Employee National Insurance": "4121634/625"
+      }
+    },
+    {
+      "country": "UK",
+      "year": 2026,
+      "grossAnnual": "12573191/50",
+      "netAnnual": "725311123/5000",
+      "allowanceAnnual": "0",
+      "taxableAnnual": "12573191/50",
+      "deductionsAnnual": {
+        "Income tax": "99361719/1000",
+        "Employee National Insurance": "17599691/2500"
+      }
+    },
+    {
+      "country": "UK",
+      "year": 2026,
+      "grossAnnual": "6591483/25",
+      "netAnnual": "378814599/2500",
+      "allowanceAnnual": "0",
+      "taxableAnnual": "6591483/25",
+      "deductionsAnnual": {
+        "Income tax": "52424847/500",
+        "Employee National Insurance": "9104733/1250"
+      }
+    },
+    {
+      "country": "UK",
+      "year": 2026,
+      "grossAnnual": "7157268/25",
+      "netAnnual": "102200301/625",
+      "allowanceAnnual": "0",
+      "taxableAnnual": "7157268/25",
+      "deductionsAnnual": {
+        "Income tax": "14379228/125",
+        "Employee National Insurance": "4835259/625"
+      }
+    },
+    {
+      "country": "UK",
+      "year": 2026,
+      "grossAnnual": "37089347/100",
+      "netAnnual": "2083599391/10000",
+      "allowanceAnnual": "0",
+      "taxableAnnual": "37089347/100",
+      "deductionsAnnual": {
+        "Income tax": "306210123/2000",
+        "Employee National Insurance": "47142347/5000"
+      }
+    },
+    {
+      "country": "UK",
+      "year": 2026,
+      "grossAnnual": "38191129/100",
+      "netAnnual": "2141993837/10000",
+      "allowanceAnnual": "0",
+      "taxableAnnual": "38191129/100",
+      "deductionsAnnual": {
+        "Income tax": "316126161/2000",
+        "Employee National Insurance": "48244129/5000"
+      }
+    },
+    {
+      "country": "UK",
+      "year": 2026,
+      "grossAnnual": "39688379/100",
+      "netAnnual": "2221348087/10000",
+      "allowanceAnnual": "0",
+      "taxableAnnual": "39688379/100",
+      "deductionsAnnual": {
+        "Income tax": "329601411/2000",
+        "Employee National Insurance": "49741379/5000"
+      }
+    },
+    {
+      "country": "UK",
+      "year": 2026,
+      "grossAnnual": "41401599/100",
+      "netAnnual": "2312148747/10000",
+      "allowanceAnnual": "0",
+      "taxableAnnual": "41401599/100",
+      "deductionsAnnual": {
+        "Income tax": "345020391/2000",
+        "Employee National Insurance": "51454599/5000"
+      }
+    },
+    {
+      "country": "UK",
+      "year": 2026,
+      "grossAnnual": "10577601/25",
+      "netAnnual": "590078853/2500",
+      "allowanceAnnual": "0",
+      "taxableAnnual": "10577601/25",
+      "deductionsAnnual": {
+        "Income tax": "88299909/500",
+        "Employee National Insurance": "13090851/1250"
+      }
+    },
+    {
+      "country": "UK",
+      "year": 2026,
+      "grossAnnual": "45144111/100",
+      "netAnnual": "2510501883/10000",
+      "allowanceAnnual": "0",
+      "taxableAnnual": "45144111/100",
+      "deductionsAnnual": {
+        "Income tax": "378702999/2000",
+        "Employee National Insurance": "55197111/5000"
+      }
+    },
+    {
+      "country": "UK",
+      "year": 2026,
+      "grossAnnual": "49931887/100",
+      "netAnnual": "2764254011/10000",
+      "allowanceAnnual": "0",
+      "taxableAnnual": "49931887/100",
+      "deductionsAnnual": {
+        "Income tax": "421792983/2000",
+        "Employee National Insurance": "59984887/5000"
+      }
+    },
+    {
+      "country": "UK",
+      "year": 2026,
+      "grossAnnual": "25442357/50",
+      "netAnnual": "1407376921/5000",
+      "allowanceAnnual": "0",
+      "taxableAnnual": "25442357/50",
+      "deductionsAnnual": {
+        "Income tax": "215184213/1000",
+        "Employee National Insurance": "30468857/2500"
+      }
+    },
+    {
+      "country": "UK",
+      "year": 2026,
+      "grossAnnual": "26567949/50",
+      "netAnnual": "1467033297/5000",
+      "allowanceAnnual": "0",
+      "taxableAnnual": "26567949/50",
+      "deductionsAnnual": {
+        "Income tax": "225314541/1000",
+        "Employee National Insurance": "31594449/2500"
+      }
+    },
+    {
+      "country": "UK",
+      "year": 2026,
+      "grossAnnual": "26585337/50",
+      "netAnnual": "1467954861/5000",
+      "allowanceAnnual": "0",
+      "taxableAnnual": "26585337/50",
+      "deductionsAnnual": {
+        "Income tax": "225471033/1000",
+        "Employee National Insurance": "31611837/2500"
+      }
+    },
+    {
+      "country": "UK",
+      "year": 2026,
+      "grossAnnual": "53949979/100",
+      "netAnnual": "2977212887/10000",
+      "allowanceAnnual": "0",
+      "taxableAnnual": "53949979/100",
+      "deductionsAnnual": {
+        "Income tax": "457955811/2000",
+        "Employee National Insurance": "64002979/5000"
+      }
+    },
+    {
+      "country": "UK",
+      "year": 2026,
+      "grossAnnual": "2717892/5",
+      "netAnnual": "37485369/125",
+      "allowanceAnnual": "0",
+      "taxableAnnual": "2717892/5",
+      "deductionsAnnual": {
+        "Income tax": "5770332/25",
+        "Employee National Insurance": "1610271/125"
+      }
+    },
+    {
+      "country": "UK",
+      "year": 2026,
+      "grossAnnual": "14505541/25",
+      "netAnnual": "798259673/2500",
+      "allowanceAnnual": "0",
+      "taxableAnnual": "14505541/25",
+      "deductionsAnnual": {
+        "Income tax": "123651369/500",
+        "Employee National Insurance": "17018791/1250"
+      }
+    },
+    {
+      "country": "UK",
+      "year": 2026,
+      "grossAnnual": "2330781/4",
+      "netAnnual": "128245953/400",
+      "allowanceAnnual": "0",
+      "taxableAnnual": "2330781/4",
+      "deductionsAnnual": {
+        "Income tax": "19873269/80",
+        "Employee National Insurance": "2732901/200"
+      }
+    },
+    {
+      "country": "UK",
+      "year": 2026,
+      "grossAnnual": "15412069/25",
+      "netAnnual": "846305657/2500",
+      "allowanceAnnual": "0",
+      "taxableAnnual": "15412069/25",
+      "deductionsAnnual": {
+        "Income tax": "131810121/500",
+        "Employee National Insurance": "17925319/1250"
+      }
+    },
+    {
+      "country": "UK",
+      "year": 2026,
+      "grossAnnual": "62916357/100",
+      "netAnnual": "3452430921/10000",
+      "allowanceAnnual": "0",
+      "taxableAnnual": "62916357/100",
+      "deductionsAnnual": {
+        "Income tax": "538653213/2000",
+        "Employee National Insurance": "72969357/5000"
+      }
+    },
+    {
+      "country": "UK",
+      "year": 2026,
+      "grossAnnual": "644901",
+      "netAnnual": "35358393/100",
+      "allowanceAnnual": "0",
+      "taxableAnnual": "644901",
+      "deductionsAnnual": {
+        "Income tax": "5528169/20",
+        "Employee National Insurance": "745431/50"
+      }
+    },
+    {
+      "country": "UK",
+      "year": 2026,
+      "grossAnnual": "16935937/25",
+      "netAnnual": "927070661/2500",
+      "allowanceAnnual": "0",
+      "taxableAnnual": "16935937/25",
+      "deductionsAnnual": {
+        "Income tax": "145524933/500",
+        "Employee National Insurance": "19449187/1250"
+      }
+    },
+    {
+      "country": "UK",
+      "year": 2026,
+      "grossAnnual": "68079131/100",
+      "netAnnual": "3726057943/10000",
+      "allowanceAnnual": "0",
+      "taxableAnnual": "68079131/100",
+      "deductionsAnnual": {
+        "Income tax": "585118179/2000",
+        "Employee National Insurance": "78132131/5000"
+      }
+    },
+    {
+      "country": "UK",
+      "year": 2026,
+      "grossAnnual": "68628381/100",
+      "netAnnual": "3755168193/10000",
+      "allowanceAnnual": "0",
+      "taxableAnnual": "68628381/100",
+      "deductionsAnnual": {
+        "Income tax": "590061429/2000",
+        "Employee National Insurance": "78681381/5000"
+      }
+    },
+    {
+      "country": "UK",
+      "year": 2026,
+      "grossAnnual": "70006751/100",
+      "netAnnual": "3828221803/10000",
+      "allowanceAnnual": "0",
+      "taxableAnnual": "70006751/100",
+      "deductionsAnnual": {
+        "Income tax": "602466759/2000",
+        "Employee National Insurance": "80059751/5000"
+      }
+    },
+    {
+      "country": "UK",
+      "year": 2026,
+      "grossAnnual": "18034472/25",
+      "netAnnual": "246323254/625",
+      "allowanceAnnual": "0",
+      "taxableAnnual": "18034472/25",
+      "deductionsAnnual": {
+        "Income tax": "38852937/125",
+        "Employee National Insurance": "10273861/625"
+      }
+    },
+    {
+      "country": "UK",
+      "year": 2026,
+      "grossAnnual": "74180413/100",
+      "netAnnual": "4049425889/10000",
+      "allowanceAnnual": "0",
+      "taxableAnnual": "74180413/100",
+      "deductionsAnnual": {
+        "Income tax": "640029717/2000",
+        "Employee National Insurance": "84233413/5000"
+      }
+    },
+    {
+      "country": "UK",
+      "year": 2026,
+      "grossAnnual": "79951131/100",
+      "netAnnual": "4355273943/10000",
+      "allowanceAnnual": "0",
+      "taxableAnnual": "79951131/100",
+      "deductionsAnnual": {
+        "Income tax": "691966179/2000",
+        "Employee National Insurance": "90004131/5000"
+      }
+    },
+    {
+      "country": "UK",
+      "year": 2026,
+      "grossAnnual": "40695491/50",
+      "netAnnual": "2215793023/5000",
+      "allowanceAnnual": "0",
+      "taxableAnnual": "40695491/50",
+      "deductionsAnnual": {
+        "Income tax": "352462419/1000",
+        "Employee National Insurance": "45721991/2500"
+      }
+    },
+    {
+      "country": "UK",
+      "year": 2026,
+      "grossAnnual": "41728313/50",
+      "netAnnual": "2270532589/5000",
+      "allowanceAnnual": "0",
+      "taxableAnnual": "41728313/50",
+      "deductionsAnnual": {
+        "Income tax": "361757817/1000",
+        "Employee National Insurance": "46754813/2500"
+      }
+    },
+    {
+      "country": "UK",
+      "year": 2026,
+      "grossAnnual": "83914603/100",
+      "netAnnual": "4565337959/10000",
+      "allowanceAnnual": "0",
+      "taxableAnnual": "83914603/100",
+      "deductionsAnnual": {
+        "Income tax": "727637427/2000",
+        "Employee National Insurance": "93967603/5000"
+      }
+    },
+    {
+      "country": "UK",
+      "year": 2026,
+      "grossAnnual": "84267937/100",
+      "netAnnual": "4584064661/10000",
+      "allowanceAnnual": "0",
+      "taxableAnnual": "84267937/100",
+      "deductionsAnnual": {
+        "Income tax": "730817433/2000",
+        "Employee National Insurance": "94320937/5000"
+      }
+    },
+    {
+      "country": "UK",
+      "year": 2026,
+      "grossAnnual": "96623489/100",
+      "netAnnual": "5238908917/10000",
+      "allowanceAnnual": "0",
+      "taxableAnnual": "96623489/100",
+      "deductionsAnnual": {
+        "Income tax": "842017401/2000",
+        "Employee National Insurance": "106676489/5000"
+      }
+    },
+    {
+      "country": "UK",
+      "year": 2026,
+      "grossAnnual": "1000000",
+      "netAnnual": "2708932/5",
+      "allowanceAnnual": "0",
+      "taxableAnnual": "1000000",
+      "deductionsAnnual": {
+        "Income tax": "436203",
+        "Employee National Insurance": "110053/5"
+      }
+    },
+    {
+      "country": "UK",
+      "year": 2026,
+      "grossAnnual": "100000000",
+      "netAnnual": "265058932/5",
+      "allowanceAnnual": "0",
+      "taxableAnnual": "100000000",
+      "deductionsAnnual": {
+        "Income tax": "44986203",
+        "Employee National Insurance": "10010053/5"
+      }
+    }
+  ]
+}

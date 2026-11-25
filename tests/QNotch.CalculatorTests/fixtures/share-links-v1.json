@@ -1,0 +1,166 @@
+{
+ "format": "Calc share link v1: \"c1.\" + base64url(raw DEFLATE(UTF-8 canonical JSON)); see src/Calc.Documents/ShareLink.cs",
+ "cases": [
+  {
+   "name": "starter",
+   "payload": "{\"v\":1,\"title\":\"Budget\",\"theme\":\"light\",\"date\":\"2026-11-01\",\"lines\":[{\"s\":\"price = 120\",\"r\":\"120\"},{\"s\":\"discount = 15%\",\"r\":\"15%\"},{\"s\":\"price * discount\",\"r\":\"18\",\"x\":\"multiply(120, 15%) = 18\\nUses L1, L2\"},{\"s\":\"\"},{\"s\":\"# total\"},{\"s\":\"1/0\",\"r\":\"Division by zero\",\"err\":true}]}",
+   "node": "c1.PY7LCgIxDEV_pVwRVCJOC4oU3IhLt67UhTpBA3VG2oz4YP5diszs7k1ODvniCW8JKhoYHuumvLKCoDe-50GQ6y338qS5usItptZOCwtCkIoT_P6LBI9HlAublbGuACHCI6eW_ttS0qVuKs3AfNgB82EP_M8npgM7ZAnCCx73Jqg8wntkXUHZMc6q5aHaJU5ma8lsXS_rw8BorafQdzvrntvIU5LUlTm_zYdjDQLHCK-x4fbY_gA",
+   "dotnet": "c1.PY7BCsIwEER_JawIKi02BUUKXsRjr57Ug9pFF2IjyaZYpf_uBkkvYebNZNgvdFDpDJjYIFSwC80dGQQ88BmBofsj-ubC0ZZFuc61zgstzFCLHqrjF-SFl6Mbqq3SZSGZExLVkP3ThvzNhpZjYTVNBVGp8P--UKmYKhsRbxHPYJhepp_JahY35nFqc2oPHr2qdabqchwbxUSx5YsZvV6m4_bUkSfbqmuvPuisYHQSsAs4nIcf"
+  },
+  {
+   "name": "unicode",
+   "payload": "{\"v\":1,\"title\":\"Ünïcode ✓ 😀\",\"theme\":\"dark\",\"lines\":[{\"s\":\"café = 3 € 😀 中文\",\"r\":\"3\"},{\"s\":\"\\t indented  \"},{\"s\":\"quote \\\" backslash \\\\ end\",\"r\":\"\\\"q\\\"\"}]}",
+   "node": "c1.PYs9CsIwGIav8vHOWaRbwJMYh5h80tCa0ia6lIC4eABBHArOguLq3psUcfYI4g-uz0-LFeRIILpYMiT6zvdXU1mmodvR83hYQyDmvHhLq5sCAqXzHCAnLQIkjJ73JxpTRsPm_Dnofrs89lsINJDIkMS3VJGct-wjW6I_rZdVZFKgmTZFKHXISSlib3-_Qq2ANE0v",
+   "dotnet": "c1.q1YqU7Iy1FEqySzJSVWyUjo8J-_w-uT8lFSFR3MmK3yYP6NBCSiZkZoLkkxJLMoGcnMy81KLlayiq5WApFJyYtrhlQq2CsYKj5rWgHUoPNmx9tm0dqDKIqC8sVKtDkRlTIlCZl5Kal5JaoqCAly0sDS_JFUhRkkhKTE5uzgnsThDISZGITUvBao_RqkwRkmpNrYWAA"
+  },
+  {
+   "name": "figures",
+   "payload": "{\"v\":1,\"title\":\"Figures\",\"theme\":\"light\",\"lines\":[{\"s\":\"Rent 1200 EUR\",\"r\":\"1200 EUR\"},{\"s\":\"Food 300 EUR\",\"r\":\"300 EUR\"},{\"s\":\"bar chart\",\"r\":\"1500 EUR\",\"x\":\"Bar chart of 2 values, total 1500 EUR\",\"fig\":{\"kind\":\"bar\",\"desc\":\"Bar chart of 2 values, from Food 300 EUR to Rent 1200 EUR\",\"total\":\"1500 EUR\",\"items\":[[\"Rent\",1200,\"1200 EUR\"],[\"Food\",300,\"300 EUR\"]]}},{\"s\":\"pie chart of [1, 3]\",\"r\":\"4\",\"fig\":{\"kind\":\"pie\",\"desc\":\"Pie chart of 2 values, from 1 1 to 2 3\",\"total\":\"4\",\"items\":[[\"1\",1,\"1\"],[\"2\",3,\"3\"]]}},{\"s\":\"trend chart of [1.5, -2, 0.25]\",\"r\":\"3 points\",\"fig\":{\"kind\":\"trend\",\"desc\":\"Trend chart of 3 values, from 2 -2 to 1 1.5\",\"items\":[[\"1\",1.5,\"1.5\"],[\"2\",-2,\"-2\"],[\"3\",0.25,\"0.25\"]]}},{\"s\":\"plot 1/x from -2 to 2\",\"r\":\"plot\",\"x\":\"Formula: 1/x\",\"fig\":{\"kind\":\"plot\",\"desc\":\"Plot of 1/x for x from -2 to 2, y shown from [-10, 10]\",\"frame\":[\"-2\",\"2\",\"-10\",\"10\"],\"pts\":[[0,1843],[2047,-4096],[2049,8192],[4096,2253]],\"seg\":[0,2]}}]}",
+   "node": "c1.dZNPb6MwFMS_ytOcH6n_QNtwXGlzrqrdE_KBNiaxluAInLariO--MoQGEu0F6T2Ph9-M4IwP5JIRXKgtcmzc7tTaDoywt4e4qd1uH8CoXWM75MUZHXK82iaQVELQz9-vYLTI8T32PIo23m9JLzT6RvJWtvS-L9sweWTf8i_k-DEdk69I0UdZn2zHFHwoa5ppK7dDfsYf12xHUzC2tnv_v0XV-gPNASl4uk01vGdJ5YI9xBqKoQJwVPM1uuFiiA3WcT_FNaafEh-dvfIUkkmbS_b0LsjR2WuQl_nFmyCSZORXpGfU6QJXgiVDDoQKrBl6jhVa22znYKuMKVFMYqWyiVDT0bsmdHegw-0r6q-lmV7CKkpUpJUkV9kd4ypjxP2FM1GMRA2TBkcYRnwuKq19IPnwNdqP5uqCHM8uH9PGt4dTXeZRel_1qJu6jo6-Gk19S0trpr_U7f1nM26LRAomKWJLVVvGv6aIzBz5kUgBhhQwjGMYcgqWz6k2XCiRPnGSivXjOKz5Wa6V4SKuWKlMG8Po7A55IViZvjf9Pw",
+   "dotnet": "c1.dZPRb4IwEMb_lcs9n462sCmPS-bzYrYnwgPTqs2QmlKdi_F_3xVEQbOQNNz168fvO-CEB0wFoTe-1JjizKz3TtfInY3ehk5p1hvPdWkq7qfZCXnFua48CBlF8PY5513HvWt5plY0s3YJaqBRd5KvwsFiUzjfeSRX-ZHL124b7AokHIpyr2sCb31RQk-7MmtMT_htqmVryr2lrhf_W6yc3UIfkE3hPlXznCGV8XobxpA1I0AKarpFzylrYiOp0O_i5vm5S7wz-saTCQKVX7LHD0FYewvy3j94F0TwxfwSVI86HuAKZmXQhlAyHsP1sbzT1bIPNk4IRpIgGsukI1Sws6by9QNoc_qG-jE0U0NYyb6BlqHHyQMjPxdD_8LJCDiSTcXZAgxhWAcjLS2_tqdja9-aywty2Lt8TDPrtvuySIP0cdStrpt1cGTyxtQ6GFoT_EK9sT9V281GIiIQUZjSyhXhr8kCMwV-5E1eeckJd77JGZGYxIojySh-oVEcTZ_bYkoTMZV8H1okZaJyPlVrBuVDkhPn5z8"
+  },
+  {
+   "name": "hostile",
+   "payload": "{\"v\":1,\"title\":\"<b>x</b>\",\"theme\":\"light\",\"lines\":[{\"s\":\"<script>alert(1)</script>\"},{\"s\":\"<img src=x onerror=alert(1)> = 2\",\"r\":\"<i>2</i>\",\"x\":\"</div><script>alert(2)</script>\"},{\"s\":\"# javascript:alert(1) and https://example.test/a?b=1&c=<2>. done\"},{\"s\":\"# data:text/html,<script>x</script> https://user:pw@example.test/\"}]}",
+   "node": "c1.bY1bCsIwFAW3Eq4gCsHQfoYkug_xI20vNpI-SK41IN27VNui4OcZhjlPGEBmHMiRR5CgCpOUKAxwoBqbCXl3rQk4eNdiBHl-QpzEWAbXk7EeA-2yvRIzgJHPhmuuLIZSJ9a1GEIX9CIbplkOHMJbM7kSbnpM0xSVG8xvPf9T37CbHeyHyqXLbFuxmqiPUghMtuk9HggjCXssdLYttcrNgVVdi1-hypKVhIlETY3ny3daT9fkPWKQ_eP0k4bxMr4A",
+   "dotnet": "c1.bY5dCsIwEAavElYQhWJoH0MSvYf4kLaLjaQ_JGsNSO9uq21R8HGHYb59Qg8iTYAsOQQBMtdR8lzDiCqsJ-TstaLxdrbBAOL8hDCJofC2I20cetqle8lnAEMyG7a-suALFVnboPetV4usmWLZmPRvTWeS22kxTicvba9_69mf-obdTG8-VCxdZpqSVURdEJxjNHXn8EAYiJtjrtJtoWSmD6wc__kKlYaMIIzEK6pdsmzHdXRN3gN60T1OP2kYLsML"
+  }
+ ],
+ "invalid": [
+  {
+   "name": "unsupported-prefix",
+   "fragment": "c2.PY7LCgIxDEV_pVwRVCJOC4oU3IhLt67UhTpBA3VG2oz4YP5diszs7k1ODvniCW8JKhoYHuumvLKCoDe-50GQ6y338qS5usItptZOCwtCkIoT_P6LBI9HlAublbGuACHCI6eW_ttS0qVuKs3AfNgB82EP_M8npgM7ZAnCCx73Jqg8wntkXUHZMc6q5aHaJU5ma8lsXS_rw8BorafQdzvrntvIU5LUlTm_zYdjDQLHCK-x4fbY_gA",
+   "error": "Unsupported link version"
+  },
+  {
+   "name": "bad-alphabet",
+   "fragment": "c1.ab$d",
+   "error": "Damaged link"
+  },
+  {
+   "name": "empty-data",
+   "fragment": "c1.",
+   "error": "Damaged link"
+  },
+  {
+   "name": "reserved-deflate-block",
+   "fragment": "c1.____",
+   "error": "Damaged link"
+  },
+  {
+   "name": "truncated",
+   "fragment": "c1.PY7LCgIxDEV_pVwRVCJOC4oU3IhLt67UhTpBA3VG2oz4YP5diszs7k1ODvniCW8JKhoYHuumvLKCoDe-50GQ6y338qS5usItptZOCwtCkIoT_P6LBI9HlAublQ",
+   "error": "Damaged link"
+  },
+  {
+   "name": "expansion-bomb",
+   "fragment": "c1.7cExAQAAAMKgKuuf0hC-QAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAnAY",
+   "error": "Link expands beyond the size limit"
+  },
+  {
+   "name": "invalid-utf8",
+   "fragment": "c1.qz6sUQsA",
+   "error": "Damaged link"
+  },
+  {
+   "name": "not-json",
+   "fragment": "c1.q1YqU7Iy1AEA",
+   "error": "Damaged link"
+  },
+  {
+   "name": "unknown-key",
+   "fragment": "c1.FcYxCoBADADBv2ydxjbvsBMrCV4gipggwnF_F6eazoNOQnmFocwI1ez4H763Qgg_LdGlkyiMVcjt9qtQXsYH",
+   "error": "Damaged link"
+  },
+  {
+   "name": "future-version",
+   "fragment": "c1.q1YqU7Iy0lEqySzJSVWyUgpR0lEqyUjNBbFzMtMzSpR0lHIy81KLlayiq5WKlayUlGpjawE",
+   "error": "Unsupported link version"
+  },
+  {
+   "name": "bad-theme",
+   "fragment": "c1.q1YqU7Iy1FEqySzJSVWyUgpR0lEqyUjNBbHzUvPzlHSUcjLzUouVrKKrlYqVrJSUamNrAQ",
+   "error": "Damaged link"
+  },
+  {
+   "name": "impossible-date",
+   "fragment": "c1.FcexCoAgFEDRf7nzE8yg4X1HWzQEiQrW4qNF_PdwO6fzoYtgxWpE2REsx2e6lpQN4b5sNviwOR_c6hFqeWNDj05DYZzjBw",
+   "error": "Damaged link"
+  },
+  {
+   "name": "empty-title",
+   "fragment": "c1.q1YqU7Iy1FEqySzJSVWyUlLSUSrJSM0FMXMy0zNKlHSUcjLzUouVrKKrlYpBCmpjawE",
+   "error": "Damaged link"
+  },
+  {
+   "name": "long-title",
+   "fragment": "c1.q1YqU7Iy1FEqySzJSVWyUqqgNlDSUSrJSM0FmZ2TmZ5RoqSjlJOZl1qsZBVdrVSsZKWkVBtbCwA",
+   "error": "Damaged link"
+  },
+  {
+   "name": "no-lines",
+   "fragment": "c1.q1YqU7Iy1FEqySzJSVWyUgpR0lEqyUjNBbFzMtMzSpR0lHIy81KLlayiY2sB",
+   "error": "Damaged link"
+  },
+  {
+   "name": "too-many-lines",
+   "fragment": "c1.7cYxCoMwAAXQu_w5i2vO0a04Bg2kXQwu4t2lxyi8N70rZ-pSMvscLTWvlMy9fX4ffdtnSkb_tiP1feVITe4iIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIif5X1fgA",
+   "error": "Damaged link"
+  },
+  {
+   "name": "newline-in-source",
+   "fragment": "c1.q1YqU7Iy1FEqySzJSVWyUgpR0lEqyUjNBbFzMtMzSpR0lHIy81KLlayiq5WKlayUEmPykpRqY2sB",
+   "error": "Damaged link"
+  },
+  {
+   "name": "number-source",
+   "fragment": "c1.q1YqU7Iy1FEqySzJSVWyUgpR0lEqyUjNBbFzMtMzSpR0lHIy81KLlayiq5WKlawMa2NrAQ",
+   "error": "Damaged link"
+  },
+  {
+   "name": "error-without-result",
+   "fragment": "c1.FcYhDoAwDEDRu3xdg-05cASBaFiTgugKZtndCU-9wYsuQnmFoawI1ez6H362Qgi_raPboKMcCJaJVj429_kB",
+   "error": "Damaged link"
+  },
+  {
+   "name": "false-error-flag",
+   "fragment": "c1.FcYhDoAwDEDRu3xdM9tz4AhiorAlBdE1mGV3Jzz1Ji9ahOzphrIhZLP7v_erJYL3xwa6TwZKRQiUgmAR6Fl92DrWBw",
+   "error": "Damaged link"
+  },
+  {
+   "name": "explanation-without-result",
+   "fragment": "c1.FcY7CoBADEDBu7w6jW3OYScWFsEEos0GPyx7d3Gq6VzoJFRUGsqMUG7H_4zdCyHjtIYunYayITwot7-MdXw",
+   "error": "Damaged link"
+  },
+  {
+   "name": "long-result",
+   "fragment": "c1.7cahDYAwFEDBXZ6uQfLnwBEEooEmBQENhrA7YQySd-puLqJLtNJqJhhItDVv32tZ1kailj2fxHhzEswkDoJekiRJkiRJkiRJkiT9H8_0vA",
+   "error": "Damaged link"
+  },
+  {
+   "name": "unknown-figure",
+   "fragment": "c1.FcsxDoMwDEDRu_zZS1afoxvKgMCARYKqxuoS5e4o21te548mITyKoXwQ4rI6Xfy8AqH4Yw1dOg1lRfihJITDT7Rz-7Oj1PWLsFvbUBA8rM63zJOERM5j5PEC",
+   "error": "Damaged link"
+  },
+  {
+   "name": "string-magnitude",
+   "fragment": "c1.HcsxDoQwDADBv2ztJq3fcR1KkTsMWAQKYl0T5e8IipW2mc4fTUJ4VEP5IMRmx_PV1y0Qqp_W0KnTUArChZIQFl_Rzu7njPItF8Js7YeC4GHH46bXpLecx8jjBg",
+   "error": "Damaged link"
+  },
+  {
+   "name": "plot-point-out-of-range",
+   "fragment": "c1.RYxBCsMgFAXvMuu_ULpp_zm6ExehMUZq0hClG_HuQSh09YY3MI0vaoWaag4oT4S6hm1wTnGtCDntoaCuUVAmhBPlyJ8hlxTRxjvt8_-cQ3mhDH1Oo-UwCBb5rReOOprOyN0-bt4LJUTUGd-77xc",
+   "error": "Damaged link"
+  },
+  {
+   "name": "plot-segment-order",
+   "fragment": "c1.RYwxCgMhFAXvMvUrtP3nSCcWS9bsSsxmWSWNePcgBFK94Q1M54N50XIrCeOGaHt6TS552xui5CNVLHQqxoK4MM7ynvKRN6zzzMf6P9dU7xhTX8tsBRzCo99GcbbZDE4uKnj5GEVNGxa8XBwjji8",
+   "error": "Damaged link"
+  },
+  {
+   "name": "too-much-source",
+   "fragment": "c1.7dAxCgIxAEXBu_w6jW3OYSeWwV1YbRIWIeTu4h22nKle_WbO1FvJ2MfRUnNPydja-9_H_tpGSo7903rqY6an5gsAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAXC6rzPTUWAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA18sqMz01VgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADA9bKe6wc",
+   "error": "Damaged link"
+  }
+ ]
+}

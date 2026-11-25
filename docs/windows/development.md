@@ -129,7 +129,7 @@ Then drive it with the `debug` verb from a shell with the same `QNOTCH_INSTANCE`
 & $exe debug quit | Out-String
 ```
 
-Every command of the contract table is there: `ping`, `state`, `open [--tab]`, `close`, `select-tab --id`, `settings [--section] [--close]`, `onboarding [--close]`, `outline [--window panel|pill|settings|onboarding]`, `snapshot --path <absolute .png> [--window]`, `press --id`, `type --text [--id]`, `key --name Escape|Return|Tab|Space|Up|Down|Left|Right|Backspace|Delete|<char> [--modifiers ctrl,alt,shift,cmd]` (`Backspace` erases backwards, `Delete` forwards), `hotkey --action toggle|search|game-mode` and `game-mode --mode auto|on|off`. Windows has no `timer` tab (the timer is a Home card); `select-tab` lists the valid ids when it gets an unknown one.
+Every command of the contract table is there: `ping`, `state`, `open [--tab]`, `close`, `select-tab --id`, `settings [--section] [--close]`, `onboarding [--close]`, `outline [--window panel|pill|settings|onboarding]`, `snapshot --path <absolute .png> [--window]`, `press --id [--button middle [--off]]`, `type --text [--id]`, `key --name Escape|Return|Tab|F1|F2|Space|Up|Down|Left|Right|Backspace|Delete|<char> [--modifiers ctrl,alt,shift,cmd]` (`Backspace` erases backwards, `Delete` forwards), `hotkey --action toggle|search|game-mode` and `game-mode --mode auto|on|off`. Windows has no `timer` tab (the timer is a Home card); `select-tab` lists the valid ids when it gets an unknown one.
 
 - Arguments are `--name value`; the verb sends every value as a JSON string and the channel reads `true`, `false` and numbers from strings, so `--close true` and a bare `--close` both work.
 - Exit codes: 0 ok, 1 the command failed (the error is printed), 3 no instance has the channel open, 4 bad usage.

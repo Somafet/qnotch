@@ -88,7 +88,7 @@ internal sealed class DebugCommands : IDisposable
             "select-tab" => () => SelectTab(a.Need("id")),
             "settings" => () => Settings(a.Str("section"), a.Flag("close")),
             "onboarding" => () => { if (a.Flag("close")) Tour()?.Close(); else _h.ShowTour(); },
-            "press" => () => Press(a.Need("id")),
+            "press" => () => { if (a.Str("button") == "middle") MiddleClick(a.Need("id"), !a.Flag("off")); else Press(a.Need("id")); },
             "type" => () => Type(a.Str("text") ?? throw new DebugException("missing arg text"), a.Str("id")),
             "key" => () => SendKey(a.Need("name"), a.Str("modifiers")),
             "hotkey" => () => Hotkey(a.Need("action")),
@@ -318,6 +318,13 @@ internal sealed class DebugCommands : IDisposable
         }
     }
 
+    /// <summary>A middle-button click on a control that has an action for it.</summary>
+    void MiddleClick(string id, bool releasedInside)
+    {
+        if (Find(id) is not IMiddleClickTarget target) throw new DebugException($"control {id} has no middle-click action");
+        target.MiddleClick(releasedInside);
+    }
+
     void Type(string text, string? id)
     {
         UIElement field;
@@ -377,10 +384,11 @@ internal sealed class DebugCommands : IDisposable
         var key = name switch
         {
             "Escape" => System.Windows.Input.Key.Escape, "Return" or "Enter" => System.Windows.Input.Key.Return, "Tab" => System.Windows.Input.Key.Tab,
+            "F1" => System.Windows.Input.Key.F1, "F2" => System.Windows.Input.Key.F2,
             "Space" => System.Windows.Input.Key.Space, "Up" => System.Windows.Input.Key.Up, "Down" => System.Windows.Input.Key.Down,
             "Left" => System.Windows.Input.Key.Left, "Right" => System.Windows.Input.Key.Right, "Backspace" => System.Windows.Input.Key.Back, "Delete" => System.Windows.Input.Key.Delete,
             _ when ch is { } c => VkKeyScanW(c) is var vk && vk != -1 ? KeyInterop.KeyFromVirtualKey(vk & 0xFF) : System.Windows.Input.Key.None,
-            _ => throw new DebugException($"unknown key {name}: use Escape, Return, Tab, Space, Up, Down, Left, Right, Backspace, Delete or one character"),
+            _ => throw new DebugException($"unknown key {name}: use Escape, Return, Tab, F1, F2, Space, Up, Down, Left, Right, Backspace, Delete or one character"),
         };
         if (ch is { } upper && char.IsUpper(upper)) mods |= ModifierKeys.Shift;
         var (w, target) = KeyTarget();

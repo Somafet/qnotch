@@ -1,0 +1,9301 @@
+{
+ "version": 1,
+ "rules": "Germany 2026 current wage (laufender Arbeitslohn), statutory health/care/pension/unemployment insurance, no Versorgungsbezuege/sonstige Bezuege/Freibetraege/factor; employee contributions half-up to cents; church tax truncated to cents from BK",
+ "oracle": "Python executes the official BMF Lohnsteuer2026.xml pseudo-code; Pruftabelle self-check (516 values); Decimal social insurance; exhaustive-window lowest inverse",
+ "papSha256": "63d8981646d139eba2f4dd990c13b43c4fb3883b402a5a40cddf253aa7aa96b4",
+ "seed": 20260101,
+ "maxObservedDipCents": {
+  "month": 27,
+  "year": 108
+ },
+ "sources": [
+  "https://www.bmf-steuerrechner.de/javax.faces.resource/daten/xmls/Lohnsteuer2026.xml.xhtml",
+  "https://www.ihk-muenchen.de/ihk/documents/Recht-Steuern/Steuerrecht/Einkommensteuer/2025-11-12-PAP-2026-anlage-1.pdf"
+ ],
+ "groups": [
+  {
+   "profile": {},
+   "period": "month",
+   "cases": [
+    {
+     "gross": 200001,
+     "net": 147685,
+     "wageTax": 8816,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 18600,
+     "unemployment": 2600,
+     "health": 17500,
+     "care": 4800
+    },
+    {
+     "gross": 213593,
+     "net": 155687,
+     "wageTax": 11450,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 19864,
+     "unemployment": 2777,
+     "health": 18689,
+     "care": 5126
+    },
+    {
+     "gross": 223461,
+     "net": 161475,
+     "wageTax": 13383,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 20782,
+     "unemployment": 2905,
+     "health": 19553,
+     "care": 5363
+    },
+    {
+     "gross": 245186,
+     "net": 174109,
+     "wageTax": 17750,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 22802,
+     "unemployment": 3187,
+     "health": 21454,
+     "care": 5884
+    },
+    {
+     "gross": 250000,
+     "net": 176892,
+     "wageTax": 18733,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 23250,
+     "unemployment": 3250,
+     "health": 21875,
+     "care": 6000
+    },
+    {
+     "gross": 275945,
+     "net": 191794,
+     "wageTax": 24133,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 25663,
+     "unemployment": 3587,
+     "health": 24145,
+     "care": 6623
+    },
+    {
+     "gross": 293779,
+     "net": 201924,
+     "wageTax": 27958,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 27321,
+     "unemployment": 3819,
+     "health": 25706,
+     "care": 7051
+    },
+    {
+     "gross": 300000,
+     "net": 205442,
+     "wageTax": 29308,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 27900,
+     "unemployment": 3900,
+     "health": 26250,
+     "care": 7200
+    },
+    {
+     "gross": 305138,
+     "net": 208337,
+     "wageTax": 30433,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 28378,
+     "unemployment": 3967,
+     "health": 26700,
+     "care": 7323
+    },
+    {
+     "gross": 418275,
+     "net": 270333,
+     "wageTax": 56966,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 38900,
+     "unemployment": 5438,
+     "health": 36599,
+     "care": 10039
+    },
+    {
+     "gross": 450000,
+     "net": 287109,
+     "wageTax": 65016,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 41850,
+     "unemployment": 5850,
+     "health": 39375,
+     "care": 10800
+    },
+    {
+     "gross": 457741,
+     "net": 291166,
+     "wageTax": 67016,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 42570,
+     "unemployment": 5951,
+     "health": 40052,
+     "care": 10986
+    },
+    {
+     "gross": 489769,
+     "net": 307769,
+     "wageTax": 75475,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 45549,
+     "unemployment": 6367,
+     "health": 42855,
+     "care": 11754
+    },
+    {
+     "gross": 572390,
+     "net": 349338,
+     "wageTax": 98558,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 53232,
+     "unemployment": 7441,
+     "health": 50084,
+     "care": 13737
+    },
+    {
+     "gross": 581249,
+     "net": 353687,
+     "wageTax": 101141,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 54056,
+     "unemployment": 7556,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 581250,
+     "net": 353688,
+     "wageTax": 101141,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 54056,
+     "unemployment": 7556,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 581251,
+     "net": 353689,
+     "wageTax": 101141,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 54056,
+     "unemployment": 7556,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 600000,
+     "net": 364158,
+     "wageTax": 107433,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 55800,
+     "unemployment": 7800,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 664962,
+     "net": 399501,
+     "wageTax": 130166,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 61841,
+     "unemployment": 8645,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 755081,
+     "net": 446317,
+     "wageTax": 163916,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 70223,
+     "unemployment": 9816,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 755297,
+     "net": 446426,
+     "wageTax": 164000,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 70243,
+     "unemployment": 9819,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 763732,
+     "net": 450759,
+     "wageTax": 167208,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 71027,
+     "unemployment": 9929,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 783839,
+     "net": 460439,
+     "wageTax": 174875,
+     "solidarity": 629,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 72897,
+     "unemployment": 10190,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 824607,
+     "net": 479513,
+     "wageTax": 190400,
+     "solidarity": 2477,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 76688,
+     "unemployment": 10720,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 844999,
+     "net": 489053,
+     "wageTax": 198166,
+     "solidarity": 3401,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 845000,
+     "net": 489044,
+     "wageTax": 198175,
+     "solidarity": 3402,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 845001,
+     "net": 489045,
+     "wageTax": 198175,
+     "solidarity": 3402,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 895183,
+     "net": 515654,
+     "wageTax": 219241,
+     "solidarity": 5909,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 902296,
+     "net": 519419,
+     "wageTax": 222233,
+     "solidarity": 6265,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 941344,
+     "net": 540116,
+     "wageTax": 238633,
+     "solidarity": 8216,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 974911,
+     "net": 557905,
+     "wageTax": 252733,
+     "solidarity": 9894,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 1000000,
+     "net": 571197,
+     "wageTax": 263275,
+     "solidarity": 11149,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 1004796,
+     "net": 573746,
+     "wageTax": 265283,
+     "solidarity": 11388,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 1274716,
+     "net": 720862,
+     "wageTax": 378650,
+     "solidarity": 20825,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 1277832,
+     "net": 722598,
+     "wageTax": 379958,
+     "solidarity": 20897,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 1330271,
+     "net": 751800,
+     "wageTax": 401983,
+     "solidarity": 22109,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 1507237,
+     "net": 850354,
+     "wageTax": 476308,
+     "solidarity": 26196,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 1704896,
+     "net": 960430,
+     "wageTax": 559325,
+     "solidarity": 30762,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 1904899,
+     "net": 1071813,
+     "wageTax": 643325,
+     "solidarity": 35382,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 1920683,
+     "net": 1080599,
+     "wageTax": 649958,
+     "solidarity": 35747,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 1926169,
+     "net": 1083658,
+     "wageTax": 652258,
+     "solidarity": 35874,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 1974933,
+     "net": 1110813,
+     "wageTax": 672741,
+     "solidarity": 37000,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 2500000,
+     "net": 1402188,
+     "wageTax": 894250,
+     "solidarity": 49183,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 833333333,
+     "net": 437797405,
+     "wageTax": 374769241,
+     "solidarity": 20612308,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    }
+   ]
+  },
+  {
+   "profile": {},
+   "period": "year",
+   "cases": [
+    {
+     "gross": 2400001,
+     "net": 1772201,
+     "wageTax": 105800,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 223200,
+     "unemployment": 31200,
+     "health": 210000,
+     "care": 57600
+    },
+    {
+     "gross": 2597036,
+     "net": 1888181,
+     "wageTax": 144000,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 241524,
+     "unemployment": 33761,
+     "health": 227241,
+     "care": 62329
+    },
+    {
+     "gross": 2895731,
+     "net": 2062409,
+     "wageTax": 203500,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 269303,
+     "unemployment": 37645,
+     "health": 253376,
+     "care": 69498
+    },
+    {
+     "gross": 2988867,
+     "net": 2116288,
+     "wageTax": 222500,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 277965,
+     "unemployment": 38855,
+     "health": 261526,
+     "care": 71733
+    },
+    {
+     "gross": 3000000,
+     "net": 2122700,
+     "wageTax": 224800,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 279000,
+     "unemployment": 39000,
+     "health": 262500,
+     "care": 72000
+    },
+    {
+     "gross": 3892320,
+     "net": 2629340,
+     "wageTax": 416400,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 361986,
+     "unemployment": 50600,
+     "health": 340578,
+     "care": 93416
+    },
+    {
+     "gross": 4248127,
+     "net": 2826459,
+     "wageTax": 497700,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 395076,
+     "unemployment": 55226,
+     "health": 371711,
+     "care": 101955
+    },
+    {
+     "gross": 4256433,
+     "net": 2830959,
+     "wageTax": 499700,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 395848,
+     "unemployment": 55334,
+     "health": 372438,
+     "care": 102154
+    },
+    {
+     "gross": 4447322,
+     "net": 2935529,
+     "wageTax": 544500,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 413601,
+     "unemployment": 57815,
+     "health": 389141,
+     "care": 106736
+    },
+    {
+     "gross": 4500000,
+     "net": 2964250,
+     "wageTax": 557000,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 418500,
+     "unemployment": 58500,
+     "health": 393750,
+     "care": 108000
+    },
+    {
+     "gross": 6000000,
+     "net": 3756100,
+     "wageTax": 938900,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 558000,
+     "unemployment": 78000,
+     "health": 525000,
+     "care": 144000
+    },
+    {
+     "gross": 6975000,
+     "net": 4244237,
+     "wageTax": 1213700,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 648675,
+     "unemployment": 90675,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 6975001,
+     "net": 4244238,
+     "wageTax": 1213700,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 648675,
+     "unemployment": 90675,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 7599306,
+     "net": 4589267,
+     "wageTax": 1426800,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 706735,
+     "unemployment": 98791,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 7978730,
+     "net": 4793572,
+     "wageTax": 1561700,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 742022,
+     "unemployment": 103723,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 8000000,
+     "net": 4804887,
+     "wageTax": 1569400,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 744000,
+     "unemployment": 104000,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 8615910,
+     "net": 5127410,
+     "wageTax": 1797500,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 801280,
+     "unemployment": 112007,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 8832973,
+     "net": 5238865,
+     "wageTax": 1880100,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 821466,
+     "unemployment": 114829,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 10140000,
+     "net": 5868519,
+     "wageTax": 2378100,
+     "solidarity": 40828,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 10140001,
+     "net": 5868520,
+     "wageTax": 2378100,
+     "solidarity": 40828,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 13337835,
+     "net": 7563537,
+     "wageTax": 3721100,
+     "solidarity": 200645,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 13484809,
+     "net": 7641356,
+     "wageTax": 3782900,
+     "solidarity": 208000,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 13545665,
+     "net": 7675250,
+     "wageTax": 3808400,
+     "solidarity": 209462,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 13828964,
+     "net": 7833004,
+     "wageTax": 3927400,
+     "solidarity": 216007,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 14939932,
+     "net": 8451709,
+     "wageTax": 4394000,
+     "solidarity": 241670,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 15000000,
+     "net": 8485086,
+     "wageTax": 4419300,
+     "solidarity": 243061,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 15701745,
+     "net": 8875922,
+     "wageTax": 4714000,
+     "solidarity": 259270,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 16137326,
+     "net": 9118544,
+     "wageTax": 4896900,
+     "solidarity": 269329,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 16859196,
+     "net": 9520538,
+     "wageTax": 5200100,
+     "solidarity": 286005,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 16950058,
+     "net": 9571099,
+     "wageTax": 5238300,
+     "solidarity": 288106,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 17686162,
+     "net": 9981102,
+     "wageTax": 5547400,
+     "solidarity": 305107,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 18977025,
+     "net": 10699944,
+     "wageTax": 6089600,
+     "solidarity": 334928,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 20750180,
+     "net": 11687441,
+     "wageTax": 6834300,
+     "solidarity": 375886,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 21776778,
+     "net": 12259123,
+     "wageTax": 7265500,
+     "solidarity": 399602,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 21846049,
+     "net": 12297693,
+     "wageTax": 7294600,
+     "solidarity": 401203,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 22597428,
+     "net": 12716114,
+     "wageTax": 7610200,
+     "solidarity": 418561,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 22637710,
+     "net": 12738567,
+     "wageTax": 7627100,
+     "solidarity": 419490,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 23998725,
+     "net": 13496544,
+     "wageTax": 8198700,
+     "solidarity": 450928,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 24071837,
+     "net": 13537267,
+     "wageTax": 8229400,
+     "solidarity": 452617,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 24925126,
+     "net": 14012444,
+     "wageTax": 8587800,
+     "solidarity": 472329,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 30000000,
+     "net": 16826242,
+     "wageTax": 10731000,
+     "solidarity": 590205,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 10000000000,
+     "net": 5253568742,
+     "wageTax": 4497231000,
+     "solidarity": 247347705,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    }
+   ]
+  },
+  {
+   "profile": {
+    "taxClass": 3,
+    "children": 2,
+    "childAllowance": "2",
+    "churchTax": 9
+   },
+   "period": "month",
+   "cases": [
+    {
+     "gross": 200001,
+     "net": 158201,
+     "wageTax": 0,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 18600,
+     "unemployment": 2600,
+     "health": 17500,
+     "care": 3100
+    },
+    {
+     "gross": 250000,
+     "net": 197750,
+     "wageTax": 0,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 23250,
+     "unemployment": 3250,
+     "health": 21875,
+     "care": 3875
+    },
+    {
+     "gross": 268586,
+     "net": 212402,
+     "wageTax": 50,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 24978,
+     "unemployment": 3492,
+     "health": 23501,
+     "care": 4163
+    },
+    {
+     "gross": 300000,
+     "net": 233334,
+     "wageTax": 3966,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 27900,
+     "unemployment": 3900,
+     "health": 26250,
+     "care": 4650
+    },
+    {
+     "gross": 353537,
+     "net": 267398,
+     "wageTax": 12250,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 32879,
+     "unemployment": 4596,
+     "health": 30934,
+     "care": 5480
+    },
+    {
+     "gross": 372964,
+     "net": 279248,
+     "wageTax": 15766,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 34686,
+     "unemployment": 4849,
+     "health": 32634,
+     "care": 5781
+    },
+    {
+     "gross": 381727,
+     "net": 284496,
+     "wageTax": 17450,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 35501,
+     "unemployment": 4962,
+     "health": 33401,
+     "care": 5917
+    },
+    {
+     "gross": 404666,
+     "net": 298175,
+     "wageTax": 21916,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 37634,
+     "unemployment": 5261,
+     "health": 35408,
+     "care": 6272
+    },
+    {
+     "gross": 427700,
+     "net": 311828,
+     "wageTax": 26483,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 39776,
+     "unemployment": 5560,
+     "health": 37424,
+     "care": 6629
+    },
+    {
+     "gross": 450000,
+     "net": 324967,
+     "wageTax": 30983,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 41850,
+     "unemployment": 5850,
+     "health": 39375,
+     "care": 6975
+    },
+    {
+     "gross": 471944,
+     "net": 337835,
+     "wageTax": 35450,
+     "solidarity": 0,
+     "churchBase": 266,
+     "churchTax": 23,
+     "pension": 43891,
+     "unemployment": 6135,
+     "health": 41295,
+     "care": 7315
+    },
+    {
+     "gross": 479636,
+     "net": 342239,
+     "wageTax": 37050,
+     "solidarity": 0,
+     "churchBase": 1166,
+     "churchTax": 104,
+     "pension": 44606,
+     "unemployment": 6235,
+     "health": 41968,
+     "care": 7434
+    },
+    {
+     "gross": 566934,
+     "net": 391537,
+     "wageTax": 55616,
+     "solidarity": 0,
+     "churchBase": 14366,
+     "churchTax": 1292,
+     "pension": 52725,
+     "unemployment": 7370,
+     "health": 49607,
+     "care": 8787
+    },
+    {
+     "gross": 581249,
+     "net": 399484,
+     "wageTax": 58750,
+     "solidarity": 0,
+     "churchBase": 17066,
+     "churchTax": 1535,
+     "pension": 54056,
+     "unemployment": 7556,
+     "health": 50859,
+     "care": 9009
+    },
+    {
+     "gross": 581250,
+     "net": 399469,
+     "wageTax": 58766,
+     "solidarity": 0,
+     "churchBase": 17066,
+     "churchTax": 1535,
+     "pension": 54056,
+     "unemployment": 7556,
+     "health": 50859,
+     "care": 9009
+    },
+    {
+     "gross": 581251,
+     "net": 399470,
+     "wageTax": 58766,
+     "solidarity": 0,
+     "churchBase": 17066,
+     "churchTax": 1535,
+     "pension": 54056,
+     "unemployment": 7556,
+     "health": 50859,
+     "care": 9009
+    },
+    {
+     "gross": 600000,
+     "net": 411195,
+     "wageTax": 63433,
+     "solidarity": 0,
+     "churchBase": 21166,
+     "churchTax": 1904,
+     "pension": 55800,
+     "unemployment": 7800,
+     "health": 50859,
+     "care": 9009
+    },
+    {
+     "gross": 622509,
+     "net": 425168,
+     "wageTax": 69133,
+     "solidarity": 0,
+     "churchBase": 26166,
+     "churchTax": 2354,
+     "pension": 57893,
+     "unemployment": 8093,
+     "health": 50859,
+     "care": 9009
+    },
+    {
+     "gross": 643521,
+     "net": 438142,
+     "wageTax": 74516,
+     "solidarity": 0,
+     "churchBase": 30916,
+     "churchTax": 2782,
+     "pension": 59847,
+     "unemployment": 8366,
+     "health": 50859,
+     "care": 9009
+    },
+    {
+     "gross": 728176,
+     "net": 489532,
+     "wageTax": 97016,
+     "solidarity": 0,
+     "churchBase": 50833,
+     "churchTax": 4574,
+     "pension": 67720,
+     "unemployment": 9466,
+     "health": 50859,
+     "care": 9009
+    },
+    {
+     "gross": 791681,
+     "net": 527205,
+     "wageTax": 114700,
+     "solidarity": 0,
+     "churchBase": 66566,
+     "churchTax": 5990,
+     "pension": 73626,
+     "unemployment": 10292,
+     "health": 50859,
+     "care": 9009
+    },
+    {
+     "gross": 844999,
+     "net": 558251,
+     "wageTax": 130083,
+     "solidarity": 0,
+     "churchBase": 80300,
+     "churchTax": 7227,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 9009
+    },
+    {
+     "gross": 845000,
+     "net": 558251,
+     "wageTax": 130083,
+     "solidarity": 0,
+     "churchBase": 80316,
+     "churchTax": 7228,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 9009
+    },
+    {
+     "gross": 845001,
+     "net": 558252,
+     "wageTax": 130083,
+     "solidarity": 0,
+     "churchBase": 80316,
+     "churchTax": 7228,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 9009
+    },
+    {
+     "gross": 895790,
+     "net": 591013,
+     "wageTax": 146766,
+     "solidarity": 0,
+     "churchBase": 95266,
+     "churchTax": 8573,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 9009
+    },
+    {
+     "gross": 909613,
+     "net": 599844,
+     "wageTax": 151383,
+     "solidarity": 0,
+     "churchBase": 99433,
+     "churchTax": 8948,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 9009
+    },
+    {
+     "gross": 915003,
+     "net": 603270,
+     "wageTax": 153200,
+     "solidarity": 0,
+     "churchBase": 101066,
+     "churchTax": 9095,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 9009
+    },
+    {
+     "gross": 1000000,
+     "net": 656426,
+     "wageTax": 182650,
+     "solidarity": 0,
+     "churchBase": 127633,
+     "churchTax": 11486,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 9009
+    },
+    {
+     "gross": 1012745,
+     "net": 664267,
+     "wageTax": 187183,
+     "solidarity": 0,
+     "churchBase": 131750,
+     "churchTax": 11857,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 9009
+    },
+    {
+     "gross": 1018990,
+     "net": 668079,
+     "wageTax": 189433,
+     "solidarity": 0,
+     "churchBase": 133783,
+     "churchTax": 12040,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 9009
+    },
+    {
+     "gross": 1046587,
+     "net": 684879,
+     "wageTax": 199416,
+     "solidarity": 0,
+     "churchBase": 142833,
+     "churchTax": 12854,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 9009
+    },
+    {
+     "gross": 1191618,
+     "net": 770273,
+     "wageTax": 254533,
+     "solidarity": 0,
+     "churchBase": 193050,
+     "churchTax": 17374,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 9009
+    },
+    {
+     "gross": 1264993,
+     "net": 811680,
+     "wageTax": 284066,
+     "solidarity": 0,
+     "churchBase": 220100,
+     "churchTax": 19809,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 9009
+    },
+    {
+     "gross": 1279667,
+     "net": 819805,
+     "wageTax": 290116,
+     "solidarity": 0,
+     "churchBase": 225650,
+     "churchTax": 20308,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 9009
+    },
+    {
+     "gross": 1334792,
+     "net": 849985,
+     "wageTax": 313150,
+     "solidarity": 0,
+     "churchBase": 246883,
+     "churchTax": 22219,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 9009
+    },
+    {
+     "gross": 1443770,
+     "net": 909234,
+     "wageTax": 358933,
+     "solidarity": 0,
+     "churchBase": 290733,
+     "churchTax": 26165,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 9009
+    },
+    {
+     "gross": 1513126,
+     "net": 946860,
+     "wageTax": 388050,
+     "solidarity": 0,
+     "churchBase": 319766,
+     "churchTax": 28778,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 9009
+    },
+    {
+     "gross": 1604258,
+     "net": 994020,
+     "wageTax": 426333,
+     "solidarity": 2245,
+     "churchBase": 358033,
+     "churchTax": 32222,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 9009
+    },
+    {
+     "gross": 1641221,
+     "net": 1012220,
+     "wageTax": 441850,
+     "solidarity": 4093,
+     "churchBase": 373566,
+     "churchTax": 33620,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 9009
+    },
+    {
+     "gross": 1671331,
+     "net": 1027039,
+     "wageTax": 454500,
+     "solidarity": 5596,
+     "churchBase": 386200,
+     "churchTax": 34758,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 9009
+    },
+    {
+     "gross": 1761738,
+     "net": 1071542,
+     "wageTax": 492466,
+     "solidarity": 10116,
+     "churchBase": 424183,
+     "churchTax": 38176,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 9009
+    },
+    {
+     "gross": 1931631,
+     "net": 1155173,
+     "wageTax": 563816,
+     "solidarity": 18607,
+     "churchBase": 495533,
+     "churchTax": 44597,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 9009
+    },
+    {
+     "gross": 2500000,
+     "net": 1441547,
+     "wageTax": 802550,
+     "solidarity": 40383,
+     "churchBase": 734250,
+     "churchTax": 66082,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 9009
+    },
+    {
+     "gross": 833333333,
+     "net": 404266972,
+     "wageTax": 374609200,
+     "solidarity": 20599481,
+     "churchBase": 374536033,
+     "churchTax": 33708242,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 9009
+    }
+   ]
+  },
+  {
+   "profile": {
+    "taxClass": 3,
+    "children": 2,
+    "childAllowance": "2",
+    "churchTax": 9
+   },
+   "period": "year",
+   "cases": [
+    {
+     "gross": 2400001,
+     "net": 1898401,
+     "wageTax": 0,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 223200,
+     "unemployment": 31200,
+     "health": 210000,
+     "care": 37200
+    },
+    {
+     "gross": 3000000,
+     "net": 2373000,
+     "wageTax": 0,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 279000,
+     "unemployment": 39000,
+     "health": 262500,
+     "care": 46500
+    },
+    {
+     "gross": 3554977,
+     "net": 2770587,
+     "wageTax": 41400,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 330613,
+     "unemployment": 46215,
+     "health": 311060,
+     "care": 55102
+    },
+    {
+     "gross": 4224119,
+     "net": 3197478,
+     "wageTax": 143800,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 392843,
+     "unemployment": 54914,
+     "health": 369610,
+     "care": 65474
+    },
+    {
+     "gross": 4500000,
+     "net": 3365700,
+     "wageTax": 193800,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 418500,
+     "unemployment": 58500,
+     "health": 393750,
+     "care": 69750
+    },
+    {
+     "gross": 5857592,
+     "net": 4165379,
+     "wageTax": 465600,
+     "solidarity": 0,
+     "churchBase": 26400,
+     "churchTax": 2376,
+     "pension": 544756,
+     "unemployment": 76149,
+     "health": 512539,
+     "care": 90793
+    },
+    {
+     "gross": 6000000,
+     "net": 4246532,
+     "wageTax": 495400,
+     "solidarity": 0,
+     "churchBase": 45200,
+     "churchTax": 4068,
+     "pension": 558000,
+     "unemployment": 78000,
+     "health": 525000,
+     "care": 93000
+    },
+    {
+     "gross": 6008602,
+     "net": 4251446,
+     "wageTax": 497200,
+     "solidarity": 0,
+     "churchBase": 46200,
+     "churchTax": 4158,
+     "pension": 558800,
+     "unemployment": 78112,
+     "health": 525753,
+     "care": 93133
+    },
+    {
+     "gross": 6975000,
+     "net": 4793592,
+     "wageTax": 705200,
+     "solidarity": 0,
+     "churchBase": 204800,
+     "churchTax": 18432,
+     "pension": 648675,
+     "unemployment": 90675,
+     "health": 610313,
+     "care": 108113
+    },
+    {
+     "gross": 6975001,
+     "net": 4793593,
+     "wageTax": 705200,
+     "solidarity": 0,
+     "churchBase": 204800,
+     "churchTax": 18432,
+     "pension": 648675,
+     "unemployment": 90675,
+     "health": 610313,
+     "care": 108113
+    },
+    {
+     "gross": 7410229,
+     "net": 5064865,
+     "wageTax": 814400,
+     "solidarity": 0,
+     "churchBase": 300600,
+     "churchTax": 27054,
+     "pension": 689151,
+     "unemployment": 96333,
+     "health": 610313,
+     "care": 108113
+    },
+    {
+     "gross": 7669385,
+     "net": 5225094,
+     "wageTax": 880600,
+     "solidarity": 0,
+     "churchBase": 359000,
+     "churchTax": 32310,
+     "pension": 713253,
+     "unemployment": 99702,
+     "health": 610313,
+     "care": 108113
+    },
+    {
+     "gross": 8000000,
+     "net": 5427824,
+     "wageTax": 966600,
+     "solidarity": 0,
+     "churchBase": 435000,
+     "churchTax": 39150,
+     "pension": 744000,
+     "unemployment": 104000,
+     "health": 610313,
+     "care": 108113
+    },
+    {
+     "gross": 9002154,
+     "net": 6031804,
+     "wageTax": 1237000,
+     "solidarity": 0,
+     "churchBase": 674400,
+     "churchTax": 60696,
+     "pension": 837200,
+     "unemployment": 117028,
+     "health": 610313,
+     "care": 108113
+    },
+    {
+     "gross": 9033802,
+     "net": 6050795,
+     "wageTax": 1245600,
+     "solidarity": 0,
+     "churchBase": 682200,
+     "churchTax": 61398,
+     "pension": 840144,
+     "unemployment": 117439,
+     "health": 610313,
+     "care": 108113
+    },
+    {
+     "gross": 9111301,
+     "net": 6096751,
+     "wageTax": 1267200,
+     "solidarity": 0,
+     "churchBase": 701400,
+     "churchTax": 63126,
+     "pension": 847351,
+     "unemployment": 118447,
+     "health": 610313,
+     "care": 108113
+    },
+    {
+     "gross": 9645226,
+     "net": 6411402,
+     "wageTax": 1417800,
+     "solidarity": 0,
+     "churchBase": 835600,
+     "churchTax": 75204,
+     "pension": 897006,
+     "unemployment": 125388,
+     "health": 610313,
+     "care": 108113
+    },
+    {
+     "gross": 10140000,
+     "net": 6698992,
+     "wageTax": 1561000,
+     "solidarity": 0,
+     "churchBase": 963800,
+     "churchTax": 86742,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 108113
+    },
+    {
+     "gross": 10140001,
+     "net": 6698993,
+     "wageTax": 1561000,
+     "solidarity": 0,
+     "churchBase": 963800,
+     "churchTax": 86742,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 108113
+    },
+    {
+     "gross": 12648565,
+     "net": 8272557,
+     "wageTax": 2425800,
+     "solidarity": 0,
+     "churchBase": 1743800,
+     "churchTax": 156942,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 108113
+    },
+    {
+     "gross": 12752660,
+     "net": 8335338,
+     "wageTax": 2464000,
+     "solidarity": 0,
+     "churchBase": 1778400,
+     "churchTax": 160056,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 108113
+    },
+    {
+     "gross": 13545253,
+     "net": 8806177,
+     "wageTax": 2761400,
+     "solidarity": 0,
+     "churchBase": 2049000,
+     "churchTax": 184410,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 108113
+    },
+    {
+     "gross": 13768059,
+     "net": 8936563,
+     "wageTax": 2846800,
+     "solidarity": 0,
+     "churchBase": 2127000,
+     "churchTax": 191430,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 108113
+    },
+    {
+     "gross": 13935923,
+     "net": 9034081,
+     "wageTax": 2911800,
+     "solidarity": 0,
+     "churchBase": 2186400,
+     "churchTax": 196776,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 108113
+    },
+    {
+     "gross": 15000000,
+     "net": 9639692,
+     "wageTax": 3335400,
+     "solidarity": 0,
+     "churchBase": 2573800,
+     "churchTax": 231642,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 108113
+    },
+    {
+     "gross": 15081314,
+     "net": 9685270,
+     "wageTax": 3368400,
+     "solidarity": 0,
+     "churchBase": 2604200,
+     "churchTax": 234378,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 108113
+    },
+    {
+     "gross": 16594767,
+     "net": 10514093,
+     "wageTax": 4000200,
+     "solidarity": 0,
+     "churchBase": 3191200,
+     "churchTax": 287208,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 108113
+    },
+    {
+     "gross": 16739428,
+     "net": 10592716,
+     "wageTax": 4061000,
+     "solidarity": 0,
+     "churchBase": 3249400,
+     "churchTax": 292446,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 108113
+    },
+    {
+     "gross": 17053575,
+     "net": 10763379,
+     "wageTax": 4193000,
+     "solidarity": 0,
+     "churchBase": 3377000,
+     "churchTax": 303930,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 108113
+    },
+    {
+     "gross": 18082668,
+     "net": 11321680,
+     "wageTax": 4625200,
+     "solidarity": 0,
+     "churchBase": 3805800,
+     "churchTax": 342522,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 108113
+    },
+    {
+     "gross": 18217483,
+     "net": 11394801,
+     "wageTax": 4681800,
+     "solidarity": 0,
+     "churchBase": 3862400,
+     "churchTax": 347616,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 108113
+    },
+    {
+     "gross": 18641963,
+     "net": 11624843,
+     "wageTax": 4860200,
+     "solidarity": 0,
+     "churchBase": 4040600,
+     "churchTax": 363654,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 108113
+    },
+    {
+     "gross": 18770038,
+     "net": 11691373,
+     "wageTax": 4914000,
+     "solidarity": 2903,
+     "churchBase": 4094400,
+     "churchTax": 368496,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 108113
+    },
+    {
+     "gross": 19249820,
+     "net": 11927620,
+     "wageTax": 5115400,
+     "solidarity": 26894,
+     "churchBase": 4296000,
+     "churchTax": 386640,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 108113
+    },
+    {
+     "gross": 19421594,
+     "net": 12012146,
+     "wageTax": 5187600,
+     "solidarity": 35462,
+     "churchBase": 4368000,
+     "churchTax": 393120,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 108113
+    },
+    {
+     "gross": 19640472,
+     "net": 12119796,
+     "wageTax": 5279600,
+     "solidarity": 46410,
+     "churchBase": 4460000,
+     "churchTax": 401400,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 108113
+    },
+    {
+     "gross": 21452392,
+     "net": 13011867,
+     "wageTax": 6040400,
+     "solidarity": 136969,
+     "churchBase": 5221000,
+     "churchTax": 469890,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 108113
+    },
+    {
+     "gross": 21594234,
+     "net": 13081453,
+     "wageTax": 6100200,
+     "solidarity": 144061,
+     "churchBase": 5280600,
+     "churchTax": 475254,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 108113
+    },
+    {
+     "gross": 22329782,
+     "net": 13443662,
+     "wageTax": 6409000,
+     "solidarity": 180808,
+     "churchBase": 5589400,
+     "churchTax": 503046,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 108113
+    },
+    {
+     "gross": 24210787,
+     "net": 14369557,
+     "wageTax": 7199000,
+     "solidarity": 274818,
+     "churchBase": 6379400,
+     "churchTax": 574146,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 108113
+    },
+    {
+     "gross": 30000000,
+     "net": 17298539,
+     "wageTax": 9630600,
+     "solidarity": 484605,
+     "churchBase": 8811000,
+     "churchTax": 792990,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 108113
+    },
+    {
+     "gross": 10000000000,
+     "net": 4851203407,
+     "wageTax": 4495310600,
+     "solidarity": 247193793,
+     "churchBase": 4494432600,
+     "churchTax": 404498934,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 108113
+    }
+   ]
+  },
+  {
+   "profile": {
+    "taxClass": 2,
+    "children": 1,
+    "childAllowance": "0.5",
+    "churchTax": 8
+   },
+   "period": "month",
+   "cases": [
+    {
+     "gross": 200001,
+     "net": 155876,
+     "wageTax": 1825,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 18600,
+     "unemployment": 2600,
+     "health": 17500,
+     "care": 3600
+    },
+    {
+     "gross": 247437,
+     "net": 185240,
+     "wageTax": 9750,
+     "solidarity": 0,
+     "churchBase": 1416,
+     "churchTax": 113,
+     "pension": 23012,
+     "unemployment": 3217,
+     "health": 21651,
+     "care": 4454
+    },
+    {
+     "gross": 250000,
+     "net": 186735,
+     "wageTax": 10250,
+     "solidarity": 0,
+     "churchBase": 1758,
+     "churchTax": 140,
+     "pension": 23250,
+     "unemployment": 3250,
+     "health": 21875,
+     "care": 4500
+    },
+    {
+     "gross": 300000,
+     "net": 215398,
+     "wageTax": 20341,
+     "solidarity": 0,
+     "churchBase": 10141,
+     "churchTax": 811,
+     "pension": 27900,
+     "unemployment": 3900,
+     "health": 26250,
+     "care": 5400
+    },
+    {
+     "gross": 355757,
+     "net": 246417,
+     "wageTax": 32383,
+     "solidarity": 0,
+     "churchBase": 21425,
+     "churchTax": 1714,
+     "pension": 33085,
+     "unemployment": 4625,
+     "health": 31129,
+     "care": 6404
+    },
+    {
+     "gross": 374796,
+     "net": 256806,
+     "wageTax": 36683,
+     "solidarity": 0,
+     "churchBase": 25475,
+     "churchTax": 2038,
+     "pension": 34856,
+     "unemployment": 4872,
+     "health": 32795,
+     "care": 6746
+    },
+    {
+     "gross": 450000,
+     "net": 296792,
+     "wageTax": 54641,
+     "solidarity": 0,
+     "churchBase": 42408,
+     "churchTax": 3392,
+     "pension": 41850,
+     "unemployment": 5850,
+     "health": 39375,
+     "care": 8100
+    },
+    {
+     "gross": 581249,
+     "net": 362652,
+     "wageTax": 89616,
+     "solidarity": 0,
+     "churchBase": 75600,
+     "churchTax": 6048,
+     "pension": 54056,
+     "unemployment": 7556,
+     "health": 50859,
+     "care": 10462
+    },
+    {
+     "gross": 581250,
+     "net": 362643,
+     "wageTax": 89625,
+     "solidarity": 0,
+     "churchBase": 75608,
+     "churchTax": 6048,
+     "pension": 54056,
+     "unemployment": 7556,
+     "health": 50859,
+     "care": 10463
+    },
+    {
+     "gross": 581251,
+     "net": 362644,
+     "wageTax": 89625,
+     "solidarity": 0,
+     "churchBase": 75608,
+     "churchTax": 6048,
+     "pension": 54056,
+     "unemployment": 7556,
+     "health": 50859,
+     "care": 10463
+    },
+    {
+     "gross": 600000,
+     "net": 372877,
+     "wageTax": 95691,
+     "solidarity": 0,
+     "churchBase": 81383,
+     "churchTax": 6510,
+     "pension": 55800,
+     "unemployment": 7800,
+     "health": 50859,
+     "care": 10463
+    },
+    {
+     "gross": 656210,
+     "net": 402775,
+     "wageTax": 114600,
+     "solidarity": 0,
+     "churchBase": 99433,
+     "churchTax": 7954,
+     "pension": 61028,
+     "unemployment": 8531,
+     "health": 50859,
+     "care": 10463
+    },
+    {
+     "gross": 663958,
+     "net": 406814,
+     "wageTax": 117283,
+     "solidarity": 0,
+     "churchBase": 102000,
+     "churchTax": 8160,
+     "pension": 61748,
+     "unemployment": 8631,
+     "health": 50859,
+     "care": 10463
+    },
+    {
+     "gross": 681684,
+     "net": 415941,
+     "wageTax": 123525,
+     "solidarity": 0,
+     "churchBase": 107966,
+     "churchTax": 8637,
+     "pension": 63397,
+     "unemployment": 8862,
+     "health": 50859,
+     "care": 10463
+    },
+    {
+     "gross": 748857,
+     "net": 449518,
+     "wageTax": 148116,
+     "solidarity": 0,
+     "churchBase": 131533,
+     "churchTax": 10522,
+     "pension": 69644,
+     "unemployment": 9735,
+     "health": 50859,
+     "care": 10463
+    },
+    {
+     "gross": 804584,
+     "net": 476463,
+     "wageTax": 169333,
+     "solidarity": 0,
+     "churchBase": 152258,
+     "churchTax": 12180,
+     "pension": 74826,
+     "unemployment": 10460,
+     "health": 50859,
+     "care": 10463
+    },
+    {
+     "gross": 829991,
+     "net": 488728,
+     "wageTax": 179008,
+     "solidarity": 0,
+     "churchBase": 161933,
+     "churchTax": 12954,
+     "pension": 77189,
+     "unemployment": 10790,
+     "health": 50859,
+     "care": 10463
+    },
+    {
+     "gross": 844999,
+     "net": 495970,
+     "wageTax": 184725,
+     "solidarity": 0,
+     "churchBase": 167650,
+     "churchTax": 13412,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 10463
+    },
+    {
+     "gross": 845000,
+     "net": 495971,
+     "wageTax": 184725,
+     "solidarity": 0,
+     "churchBase": 167658,
+     "churchTax": 13412,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 10463
+    },
+    {
+     "gross": 845001,
+     "net": 495972,
+     "wageTax": 184725,
+     "solidarity": 0,
+     "churchBase": 167658,
+     "churchTax": 13412,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 10463
+    },
+    {
+     "gross": 856153,
+     "net": 501738,
+     "wageTax": 189408,
+     "solidarity": 328,
+     "churchBase": 172341,
+     "churchTax": 13787,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 10463
+    },
+    {
+     "gross": 908930,
+     "net": 527938,
+     "wageTax": 211575,
+     "solidarity": 2965,
+     "churchBase": 194500,
+     "churchTax": 15560,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 10463
+    },
+    {
+     "gross": 1000000,
+     "net": 573146,
+     "wageTax": 249825,
+     "solidarity": 7517,
+     "churchBase": 232758,
+     "churchTax": 18620,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 10463
+    },
+    {
+     "gross": 1026059,
+     "net": 586077,
+     "wageTax": 260775,
+     "solidarity": 8819,
+     "churchBase": 243700,
+     "churchTax": 19496,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 10463
+    },
+    {
+     "gross": 1053644,
+     "net": 599774,
+     "wageTax": 272358,
+     "solidarity": 10198,
+     "churchBase": 255283,
+     "churchTax": 20422,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 10463
+    },
+    {
+     "gross": 1083050,
+     "net": 614373,
+     "wageTax": 284708,
+     "solidarity": 11667,
+     "churchBase": 267633,
+     "churchTax": 21410,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 10463
+    },
+    {
+     "gross": 1092881,
+     "net": 619258,
+     "wageTax": 288833,
+     "solidarity": 12158,
+     "churchBase": 271758,
+     "churchTax": 21740,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 10463
+    },
+    {
+     "gross": 1188652,
+     "net": 666797,
+     "wageTax": 329058,
+     "solidarity": 16946,
+     "churchBase": 311991,
+     "churchTax": 24959,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 10463
+    },
+    {
+     "gross": 1201425,
+     "net": 673266,
+     "wageTax": 334425,
+     "solidarity": 17454,
+     "churchBase": 317350,
+     "churchTax": 25388,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 10463
+    },
+    {
+     "gross": 1278844,
+     "net": 713780,
+     "wageTax": 366941,
+     "solidarity": 19242,
+     "churchBase": 349866,
+     "churchTax": 27989,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 10463
+    },
+    {
+     "gross": 1395647,
+     "net": 774901,
+     "wageTax": 416000,
+     "solidarity": 21940,
+     "churchBase": 398925,
+     "churchTax": 31914,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 10463
+    },
+    {
+     "gross": 1701049,
+     "net": 934721,
+     "wageTax": 544266,
+     "solidarity": 28995,
+     "churchBase": 527191,
+     "churchTax": 42175,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 10463
+    },
+    {
+     "gross": 1751264,
+     "net": 960997,
+     "wageTax": 565358,
+     "solidarity": 30155,
+     "churchBase": 548283,
+     "churchTax": 43862,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 10463
+    },
+    {
+     "gross": 1795557,
+     "net": 984179,
+     "wageTax": 583958,
+     "solidarity": 31178,
+     "churchBase": 566883,
+     "churchTax": 45350,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 10463
+    },
+    {
+     "gross": 1796229,
+     "net": 984529,
+     "wageTax": 584241,
+     "solidarity": 31194,
+     "churchBase": 567166,
+     "churchTax": 45373,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 10463
+    },
+    {
+     "gross": 1801962,
+     "net": 987528,
+     "wageTax": 586650,
+     "solidarity": 31326,
+     "churchBase": 569575,
+     "churchTax": 45566,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 10463
+    },
+    {
+     "gross": 1823108,
+     "net": 998592,
+     "wageTax": 595533,
+     "solidarity": 31815,
+     "churchBase": 578458,
+     "churchTax": 46276,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 10463
+    },
+    {
+     "gross": 1877185,
+     "net": 1026894,
+     "wageTax": 618241,
+     "solidarity": 33064,
+     "churchBase": 601175,
+     "churchTax": 48094,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 10463
+    },
+    {
+     "gross": 1885853,
+     "net": 1031430,
+     "wageTax": 621883,
+     "solidarity": 33264,
+     "churchBase": 604808,
+     "churchTax": 48384,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 10463
+    },
+    {
+     "gross": 1903232,
+     "net": 1040524,
+     "wageTax": 629183,
+     "solidarity": 33665,
+     "churchBase": 612108,
+     "churchTax": 48968,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 10463
+    },
+    {
+     "gross": 1920199,
+     "net": 1049404,
+     "wageTax": 636308,
+     "solidarity": 34057,
+     "churchBase": 619233,
+     "churchTax": 49538,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 10463
+    },
+    {
+     "gross": 1944870,
+     "net": 1062307,
+     "wageTax": 646675,
+     "solidarity": 34628,
+     "churchBase": 629600,
+     "churchTax": 50368,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 10463
+    },
+    {
+     "gross": 2500000,
+     "net": 1352796,
+     "wageTax": 879841,
+     "solidarity": 47451,
+     "churchBase": 862758,
+     "churchTax": 69020,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 10463
+    },
+    {
+     "gross": 833333333,
+     "net": 407838166,
+     "wageTax": 374754841,
+     "solidarity": 20610510,
+     "churchBase": 374736550,
+     "churchTax": 29978924,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 10463
+    }
+   ]
+  },
+  {
+   "profile": {
+    "taxClass": 2,
+    "children": 1,
+    "childAllowance": "0.5",
+    "churchTax": 8
+   },
+   "period": "year",
+   "cases": [
+    {
+     "gross": 2400001,
+     "net": 1870501,
+     "wageTax": 21900,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 223200,
+     "unemployment": 31200,
+     "health": 210000,
+     "care": 43200
+    },
+    {
+     "gross": 2859932,
+     "net": 2158868,
+     "wageTax": 95900,
+     "solidarity": 0,
+     "churchBase": 3600,
+     "churchTax": 288,
+     "pension": 265974,
+     "unemployment": 37179,
+     "health": 250244,
+     "care": 51479
+    },
+    {
+     "gross": 3000000,
+     "net": 2240812,
+     "wageTax": 123000,
+     "solidarity": 0,
+     "churchBase": 21100,
+     "churchTax": 1688,
+     "pension": 279000,
+     "unemployment": 39000,
+     "health": 262500,
+     "care": 54000
+    },
+    {
+     "gross": 3197298,
+     "net": 2355201,
+     "wageTax": 161900,
+     "solidarity": 0,
+     "churchBase": 49600,
+     "churchTax": 3968,
+     "pension": 297349,
+     "unemployment": 41565,
+     "health": 279764,
+     "care": 57551
+    },
+    {
+     "gross": 3262342,
+     "net": 2392657,
+     "wageTax": 174900,
+     "solidarity": 0,
+     "churchBase": 60000,
+     "churchTax": 4800,
+     "pension": 303398,
+     "unemployment": 42410,
+     "health": 285455,
+     "care": 58722
+    },
+    {
+     "gross": 3521740,
+     "net": 2540572,
+     "wageTax": 227800,
+     "solidarity": 0,
+     "churchBase": 106500,
+     "churchTax": 8520,
+     "pension": 327522,
+     "unemployment": 45783,
+     "health": 308152,
+     "care": 63391
+    },
+    {
+     "gross": 3838066,
+     "net": 2718519,
+     "wageTax": 294300,
+     "solidarity": 0,
+     "churchBase": 168700,
+     "churchTax": 13496,
+     "pension": 356940,
+     "unemployment": 49895,
+     "health": 335831,
+     "care": 69085
+    },
+    {
+     "gross": 4211788,
+     "net": 2925588,
+     "wageTax": 375800,
+     "solidarity": 0,
+     "churchBase": 245100,
+     "churchTax": 19608,
+     "pension": 391696,
+     "unemployment": 54753,
+     "health": 368531,
+     "care": 75812
+    },
+    {
+     "gross": 4500000,
+     "net": 3082954,
+     "wageTax": 440800,
+     "solidarity": 0,
+     "churchBase": 306200,
+     "churchTax": 24496,
+     "pension": 418500,
+     "unemployment": 58500,
+     "health": 393750,
+     "care": 81000
+    },
+    {
+     "gross": 4647239,
+     "net": 3162593,
+     "wageTax": 474700,
+     "solidarity": 0,
+     "churchBase": 338200,
+     "churchTax": 27056,
+     "pension": 432193,
+     "unemployment": 60414,
+     "health": 406633,
+     "care": 83650
+    },
+    {
+     "gross": 6000000,
+     "net": 3869572,
+     "wageTax": 809100,
+     "solidarity": 0,
+     "churchBase": 654100,
+     "churchTax": 52328,
+     "pension": 558000,
+     "unemployment": 78000,
+     "health": 525000,
+     "care": 108000
+    },
+    {
+     "gross": 6754435,
+     "net": 4244716,
+     "wageTax": 1013300,
+     "solidarity": 0,
+     "churchBase": 848200,
+     "churchTax": 67856,
+     "pension": 628162,
+     "unemployment": 87808,
+     "health": 591013,
+     "care": 121580
+    },
+    {
+     "gross": 6975000,
+     "net": 4351703,
+     "wageTax": 1075500,
+     "solidarity": 0,
+     "churchBase": 907300,
+     "churchTax": 72584,
+     "pension": 648675,
+     "unemployment": 90675,
+     "health": 610313,
+     "care": 125550
+    },
+    {
+     "gross": 6975001,
+     "net": 4351704,
+     "wageTax": 1075500,
+     "solidarity": 0,
+     "churchBase": 907300,
+     "churchTax": 72584,
+     "pension": 648675,
+     "unemployment": 90675,
+     "health": 610313,
+     "care": 125550
+    },
+    {
+     "gross": 7946192,
+     "net": 4870681,
+     "wageTax": 1400000,
+     "solidarity": 0,
+     "churchBase": 1216900,
+     "churchTax": 97352,
+     "pension": 738996,
+     "unemployment": 103300,
+     "health": 610313,
+     "care": 125550
+    },
+    {
+     "gross": 8000000,
+     "net": 4898545,
+     "wageTax": 1418800,
+     "solidarity": 0,
+     "churchBase": 1234900,
+     "churchTax": 98792,
+     "pension": 744000,
+     "unemployment": 104000,
+     "health": 610313,
+     "care": 125550
+    },
+    {
+     "gross": 9812406,
+     "net": 5793460,
+     "wageTax": 2092000,
+     "solidarity": 0,
+     "churchBase": 1887100,
+     "churchTax": 150968,
+     "pension": 912554,
+     "unemployment": 127561,
+     "health": 610313,
+     "care": 125550
+    },
+    {
+     "gross": 10140000,
+     "net": 5951645,
+     "wageTax": 2216700,
+     "solidarity": 0,
+     "churchBase": 2011900,
+     "churchTax": 160952,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 125550
+    },
+    {
+     "gross": 10140001,
+     "net": 5951646,
+     "wageTax": 2216700,
+     "solidarity": 0,
+     "churchBase": 2011900,
+     "churchTax": 160952,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 125550
+    },
+    {
+     "gross": 10589791,
+     "net": 6177714,
+     "wageTax": 2405600,
+     "solidarity": 19718,
+     "churchBase": 2200700,
+     "churchTax": 176056,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 125550
+    },
+    {
+     "gross": 11209673,
+     "net": 6485377,
+     "wageTax": 2666000,
+     "solidarity": 50705,
+     "churchBase": 2461100,
+     "churchTax": 196888,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 125550
+    },
+    {
+     "gross": 11379576,
+     "net": 6569791,
+     "wageTax": 2737300,
+     "solidarity": 59190,
+     "churchBase": 2532400,
+     "churchTax": 202592,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 125550
+    },
+    {
+     "gross": 11461659,
+     "net": 6610508,
+     "wageTax": 2771800,
+     "solidarity": 63296,
+     "churchBase": 2566900,
+     "churchTax": 205352,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 125550
+    },
+    {
+     "gross": 12102108,
+     "net": 6928426,
+     "wageTax": 3040800,
+     "solidarity": 95307,
+     "churchBase": 2835900,
+     "churchTax": 226872,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 125550
+    },
+    {
+     "gross": 12772545,
+     "net": 7261225,
+     "wageTax": 3322400,
+     "solidarity": 128817,
+     "churchBase": 3117500,
+     "churchTax": 249400,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 125550
+    },
+    {
+     "gross": 12826039,
+     "net": 7287741,
+     "wageTax": 3344900,
+     "solidarity": 131495,
+     "churchBase": 3140000,
+     "churchTax": 251200,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 125550
+    },
+    {
+     "gross": 14243277,
+     "net": 7991335,
+     "wageTax": 3940100,
+     "solidarity": 202323,
+     "churchBase": 3735200,
+     "churchTax": 298816,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 125550
+    },
+    {
+     "gross": 14381567,
+     "net": 8060569,
+     "wageTax": 3998200,
+     "solidarity": 208631,
+     "churchBase": 3793300,
+     "churchTax": 303464,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 125550
+    },
+    {
+     "gross": 15000000,
+     "net": 8384229,
+     "wageTax": 4257900,
+     "solidarity": 222920,
+     "churchBase": 4053100,
+     "churchTax": 324248,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 125550
+    },
+    {
+     "gross": 15133402,
+     "net": 8453971,
+     "wageTax": 4314000,
+     "solidarity": 226000,
+     "churchBase": 4109100,
+     "churchTax": 328728,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 125550
+    },
+    {
+     "gross": 15167078,
+     "net": 8471643,
+     "wageTax": 4328100,
+     "solidarity": 226776,
+     "churchBase": 4123200,
+     "churchTax": 329856,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 125550
+    },
+    {
+     "gross": 16068751,
+     "net": 8943492,
+     "wageTax": 4706800,
+     "solidarity": 247604,
+     "churchBase": 4501900,
+     "churchTax": 360152,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 125550
+    },
+    {
+     "gross": 16819603,
+     "net": 9336365,
+     "wageTax": 5022200,
+     "solidarity": 264951,
+     "churchBase": 4817300,
+     "churchTax": 385384,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 125550
+    },
+    {
+     "gross": 18120303,
+     "net": 10017014,
+     "wageTax": 5568500,
+     "solidarity": 294998,
+     "churchBase": 5363600,
+     "churchTax": 429088,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 125550
+    },
+    {
+     "gross": 20248127,
+     "net": 11130589,
+     "wageTax": 6462100,
+     "solidarity": 344151,
+     "churchBase": 6257300,
+     "churchTax": 500584,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 125550
+    },
+    {
+     "gross": 21619319,
+     "net": 11848134,
+     "wageTax": 7038000,
+     "solidarity": 375826,
+     "churchBase": 6833200,
+     "churchTax": 546656,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 125550
+    },
+    {
+     "gross": 21619433,
+     "net": 11848148,
+     "wageTax": 7038100,
+     "solidarity": 375826,
+     "churchBase": 6833200,
+     "churchTax": 546656,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 125550
+    },
+    {
+     "gross": 21722276,
+     "net": 11901959,
+     "wageTax": 7081300,
+     "solidarity": 378202,
+     "churchBase": 6876400,
+     "churchTax": 550112,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 125550
+    },
+    {
+     "gross": 22503107,
+     "net": 12310610,
+     "wageTax": 7409200,
+     "solidarity": 396242,
+     "churchBase": 7204400,
+     "churchTax": 576352,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 125550
+    },
+    {
+     "gross": 23265288,
+     "net": 12709491,
+     "wageTax": 7729300,
+     "solidarity": 413842,
+     "churchBase": 7524400,
+     "churchTax": 601952,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 125550
+    },
+    {
+     "gross": 30000000,
+     "net": 16233529,
+     "wageTax": 10558100,
+     "solidarity": 569420,
+     "churchBase": 10353100,
+     "churchTax": 828248,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 125550
+    },
+    {
+     "gross": 10000000000,
+     "net": 4894057986,
+     "wageTax": 4497058100,
+     "solidarity": 247326123,
+     "churchBase": 4496838600,
+     "churchTax": 359747088,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 125550
+    }
+   ]
+  },
+  {
+   "profile": {
+    "taxClass": 4,
+    "children": 3,
+    "childAllowance": "1.5"
+   },
+   "period": "month",
+   "cases": [
+    {
+     "gross": 200001,
+     "net": 149360,
+     "wageTax": 9341,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 18600,
+     "unemployment": 2600,
+     "health": 17500,
+     "care": 2600
+    },
+    {
+     "gross": 212197,
+     "net": 156637,
+     "wageTax": 11741,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 19734,
+     "unemployment": 2759,
+     "health": 18567,
+     "care": 2759
+    },
+    {
+     "gross": 250000,
+     "net": 178934,
+     "wageTax": 19441,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 23250,
+     "unemployment": 3250,
+     "health": 21875,
+     "care": 3250
+    },
+    {
+     "gross": 274997,
+     "net": 193469,
+     "wageTax": 24741,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 25575,
+     "unemployment": 3575,
+     "health": 24062,
+     "care": 3575
+    },
+    {
+     "gross": 283686,
+     "net": 198488,
+     "wageTax": 26616,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 26383,
+     "unemployment": 3688,
+     "health": 24823,
+     "care": 3688
+    },
+    {
+     "gross": 288361,
+     "net": 201172,
+     "wageTax": 27641,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 26818,
+     "unemployment": 3749,
+     "health": 25232,
+     "care": 3749
+    },
+    {
+     "gross": 300000,
+     "net": 207834,
+     "wageTax": 30216,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 27900,
+     "unemployment": 3900,
+     "health": 26250,
+     "care": 3900
+    },
+    {
+     "gross": 347385,
+     "net": 234600,
+     "wageTax": 41050,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 32307,
+     "unemployment": 4516,
+     "health": 30396,
+     "care": 4516
+    },
+    {
+     "gross": 382286,
+     "net": 253918,
+     "wageTax": 49425,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 35553,
+     "unemployment": 4970,
+     "health": 33450,
+     "care": 4970
+    },
+    {
+     "gross": 387822,
+     "net": 256954,
+     "wageTax": 50783,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 36067,
+     "unemployment": 5042,
+     "health": 33934,
+     "care": 5042
+    },
+    {
+     "gross": 394419,
+     "net": 260564,
+     "wageTax": 52408,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 36681,
+     "unemployment": 5127,
+     "health": 34512,
+     "care": 5127
+    },
+    {
+     "gross": 406838,
+     "net": 267318,
+     "wageTax": 55508,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 37836,
+     "unemployment": 5289,
+     "health": 35598,
+     "care": 5289
+    },
+    {
+     "gross": 450000,
+     "net": 290459,
+     "wageTax": 66616,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 41850,
+     "unemployment": 5850,
+     "health": 39375,
+     "care": 5850
+    },
+    {
+     "gross": 564502,
+     "net": 349406,
+     "wageTax": 98525,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 52499,
+     "unemployment": 7339,
+     "health": 49394,
+     "care": 7339
+    },
+    {
+     "gross": 581249,
+     "net": 357731,
+     "wageTax": 103491,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 54056,
+     "unemployment": 7556,
+     "health": 50859,
+     "care": 7556
+    },
+    {
+     "gross": 581250,
+     "net": 357732,
+     "wageTax": 103491,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 54056,
+     "unemployment": 7556,
+     "health": 50859,
+     "care": 7556
+    },
+    {
+     "gross": 581251,
+     "net": 357733,
+     "wageTax": 103491,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 54056,
+     "unemployment": 7556,
+     "health": 50859,
+     "care": 7556
+    },
+    {
+     "gross": 600000,
+     "net": 368152,
+     "wageTax": 109833,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 55800,
+     "unemployment": 7800,
+     "health": 50859,
+     "care": 7556
+    },
+    {
+     "gross": 601824,
+     "net": 369157,
+     "wageTax": 110458,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 55970,
+     "unemployment": 7824,
+     "health": 50859,
+     "care": 7556
+    },
+    {
+     "gross": 606528,
+     "net": 371755,
+     "wageTax": 112066,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 56407,
+     "unemployment": 7885,
+     "health": 50859,
+     "care": 7556
+    },
+    {
+     "gross": 617218,
+     "net": 377620,
+     "wageTax": 115758,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 57401,
+     "unemployment": 8024,
+     "health": 50859,
+     "care": 7556
+    },
+    {
+     "gross": 694152,
+     "net": 418682,
+     "wageTax": 143475,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 64556,
+     "unemployment": 9024,
+     "health": 50859,
+     "care": 7556
+    },
+    {
+     "gross": 793517,
+     "net": 469748,
+     "wageTax": 181241,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 73797,
+     "unemployment": 10316,
+     "health": 50859,
+     "care": 7556
+    },
+    {
+     "gross": 844999,
+     "net": 495482,
+     "wageTax": 200858,
+     "solidarity": 674,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 7556
+    },
+    {
+     "gross": 845000,
+     "net": 495483,
+     "wageTax": 200858,
+     "solidarity": 674,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 7556
+    },
+    {
+     "gross": 845001,
+     "net": 495484,
+     "wageTax": 200858,
+     "solidarity": 674,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 7556
+    },
+    {
+     "gross": 908738,
+     "net": 529269,
+     "wageTax": 227625,
+     "solidarity": 3859,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 7556
+    },
+    {
+     "gross": 914909,
+     "net": 532532,
+     "wageTax": 230225,
+     "solidarity": 4167,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 7556
+    },
+    {
+     "gross": 1000000,
+     "net": 577636,
+     "wageTax": 265958,
+     "solidarity": 8421,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 7556
+    },
+    {
+     "gross": 1005580,
+     "net": 580596,
+     "wageTax": 268300,
+     "solidarity": 8699,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 7556
+    },
+    {
+     "gross": 1300935,
+     "net": 740430,
+     "wageTax": 392350,
+     "solidarity": 20170,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 7556
+    },
+    {
+     "gross": 1315161,
+     "net": 748352,
+     "wageTax": 398325,
+     "solidarity": 20499,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 7556
+    },
+    {
+     "gross": 1408695,
+     "net": 800442,
+     "wageTax": 437608,
+     "solidarity": 22660,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 7556
+    },
+    {
+     "gross": 1424114,
+     "net": 809030,
+     "wageTax": 444083,
+     "solidarity": 23016,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 7556
+    },
+    {
+     "gross": 1559555,
+     "net": 884460,
+     "wageTax": 500966,
+     "solidarity": 26144,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 7556
+    },
+    {
+     "gross": 1608127,
+     "net": 911501,
+     "wageTax": 521375,
+     "solidarity": 27266,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 7556
+    },
+    {
+     "gross": 1729883,
+     "net": 979311,
+     "wageTax": 572508,
+     "solidarity": 30079,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 7556
+    },
+    {
+     "gross": 1863044,
+     "net": 1053471,
+     "wageTax": 628433,
+     "solidarity": 33155,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 7556
+    },
+    {
+     "gross": 1888853,
+     "net": 1067842,
+     "wageTax": 639275,
+     "solidarity": 33751,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 7556
+    },
+    {
+     "gross": 1912760,
+     "net": 1081156,
+     "wageTax": 649316,
+     "solidarity": 34303,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 7556
+    },
+    {
+     "gross": 1943079,
+     "net": 1098040,
+     "wageTax": 662050,
+     "solidarity": 35004,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 7556
+    },
+    {
+     "gross": 1988761,
+     "net": 1123476,
+     "wageTax": 681241,
+     "solidarity": 36059,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 7556
+    },
+    {
+     "gross": 2500000,
+     "net": 1407021,
+     "wageTax": 897125,
+     "solidarity": 47869,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 7556
+    },
+    {
+     "gross": 833333333,
+     "net": 437802266,
+     "wageTax": 374772125,
+     "solidarity": 20610957,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 7556
+    }
+   ]
+  },
+  {
+   "profile": {
+    "taxClass": 4,
+    "children": 3,
+    "childAllowance": "1.5"
+   },
+   "period": "year",
+   "cases": [
+    {
+     "gross": 2400001,
+     "net": 1792201,
+     "wageTax": 112200,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 223200,
+     "unemployment": 31200,
+     "health": 210000,
+     "care": 31200
+    },
+    {
+     "gross": 2580916,
+     "net": 1900157,
+     "wageTax": 147800,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 240025,
+     "unemployment": 33552,
+     "health": 225830,
+     "care": 33552
+    },
+    {
+     "gross": 2829488,
+     "net": 2047200,
+     "wageTax": 198000,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 263142,
+     "unemployment": 36783,
+     "health": 247580,
+     "care": 36783
+    },
+    {
+     "gross": 3000000,
+     "net": 2147200,
+     "wageTax": 233300,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 279000,
+     "unemployment": 39000,
+     "health": 262500,
+     "care": 39000
+    },
+    {
+     "gross": 4500000,
+     "net": 2998950,
+     "wageTax": 571800,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 418500,
+     "unemployment": 58500,
+     "health": 393750,
+     "care": 58500
+    },
+    {
+     "gross": 4968522,
+     "net": 3254521,
+     "wageTax": 688000,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 462073,
+     "unemployment": 64591,
+     "health": 434746,
+     "care": 64591
+    },
+    {
+     "gross": 5399938,
+     "net": 3485451,
+     "wageTax": 799400,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 502194,
+     "unemployment": 70199,
+     "health": 472495,
+     "care": 70199
+    },
+    {
+     "gross": 5969703,
+     "net": 3783960,
+     "wageTax": 953000,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 555182,
+     "unemployment": 77606,
+     "health": 522349,
+     "care": 77606
+    },
+    {
+     "gross": 6000000,
+     "net": 3799600,
+     "wageTax": 961400,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 558000,
+     "unemployment": 78000,
+     "health": 525000,
+     "care": 78000
+    },
+    {
+     "gross": 6029364,
+     "net": 3814800,
+     "wageTax": 969500,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 560731,
+     "unemployment": 78382,
+     "health": 527569,
+     "care": 78382
+    },
+    {
+     "gross": 6453713,
+     "net": 4031822,
+     "wageTax": 1089200,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 600195,
+     "unemployment": 83898,
+     "health": 564700,
+     "care": 83898
+    },
+    {
+     "gross": 6975000,
+     "net": 4292762,
+     "wageTax": 1241900,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 648675,
+     "unemployment": 90675,
+     "health": 610313,
+     "care": 90675
+    },
+    {
+     "gross": 6975001,
+     "net": 4292763,
+     "wageTax": 1241900,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 648675,
+     "unemployment": 90675,
+     "health": 610313,
+     "care": 90675
+    },
+    {
+     "gross": 8000000,
+     "net": 4850912,
+     "wageTax": 1600100,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 744000,
+     "unemployment": 104000,
+     "health": 610313,
+     "care": 90675
+    },
+    {
+     "gross": 9189330,
+     "net": 5466173,
+     "wageTax": 2048100,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 854608,
+     "unemployment": 119461,
+     "health": 610313,
+     "care": 90675
+    },
+    {
+     "gross": 9193842,
+     "net": 5468407,
+     "wageTax": 2049900,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 855027,
+     "unemployment": 119520,
+     "health": 610313,
+     "care": 90675
+    },
+    {
+     "gross": 9250552,
+     "net": 5497506,
+     "wageTax": 2071500,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 860301,
+     "unemployment": 120257,
+     "health": 610313,
+     "care": 90675
+    },
+    {
+     "gross": 10140000,
+     "net": 5945780,
+     "wageTax": 2410300,
+     "solidarity": 8092,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 90675
+    },
+    {
+     "gross": 10140001,
+     "net": 5945781,
+     "wageTax": 2410300,
+     "solidarity": 8092,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 90675
+    },
+    {
+     "gross": 10215363,
+     "net": 5985783,
+     "wageTax": 2441900,
+     "solidarity": 11852,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 90675
+    },
+    {
+     "gross": 11189584,
+     "net": 6502109,
+     "wageTax": 2851100,
+     "solidarity": 60547,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 90675
+    },
+    {
+     "gross": 12505666,
+     "net": 7199608,
+     "wageTax": 3403900,
+     "solidarity": 126330,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 90675
+    },
+    {
+     "gross": 13499992,
+     "net": 7726640,
+     "wageTax": 3821500,
+     "solidarity": 176024,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 90675
+    },
+    {
+     "gross": 13770512,
+     "net": 7870041,
+     "wageTax": 3935100,
+     "solidarity": 189543,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 90675
+    },
+    {
+     "gross": 13962753,
+     "net": 7971979,
+     "wageTax": 4015800,
+     "solidarity": 199146,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 90675
+    },
+    {
+     "gross": 15000000,
+     "net": 8544741,
+     "wageTax": 4451500,
+     "solidarity": 227931,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 90675
+    },
+    {
+     "gross": 15058638,
+     "net": 8577426,
+     "wageTax": 4476100,
+     "solidarity": 229284,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 90675
+    },
+    {
+     "gross": 16388263,
+     "net": 9317839,
+     "wageTax": 5034600,
+     "solidarity": 259996,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 90675
+    },
+    {
+     "gross": 16640672,
+     "net": 9458413,
+     "wageTax": 5140600,
+     "solidarity": 265831,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 90675
+    },
+    {
+     "gross": 17383185,
+     "net": 9871977,
+     "wageTax": 5452400,
+     "solidarity": 282980,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 90675
+    },
+    {
+     "gross": 18381876,
+     "net": 10428095,
+     "wageTax": 5871900,
+     "solidarity": 306053,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 90675
+    },
+    {
+     "gross": 18739752,
+     "net": 10627405,
+     "wageTax": 6022200,
+     "solidarity": 314319,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 90675
+    },
+    {
+     "gross": 18774794,
+     "net": 10646938,
+     "wageTax": 6036900,
+     "solidarity": 315128,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 90675
+    },
+    {
+     "gross": 18812032,
+     "net": 10667618,
+     "wageTax": 6052600,
+     "solidarity": 315986,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 90675
+    },
+    {
+     "gross": 19266860,
+     "net": 10920936,
+     "wageTax": 6243600,
+     "solidarity": 326496,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 90675
+    },
+    {
+     "gross": 20617249,
+     "net": 11673034,
+     "wageTax": 6810700,
+     "solidarity": 357687,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 90675
+    },
+    {
+     "gross": 21067187,
+     "net": 11923577,
+     "wageTax": 6999700,
+     "solidarity": 368082,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 90675
+    },
+    {
+     "gross": 22129951,
+     "net": 12515389,
+     "wageTax": 7446100,
+     "solidarity": 392634,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 90675
+    },
+    {
+     "gross": 22370604,
+     "net": 12649382,
+     "wageTax": 7547200,
+     "solidarity": 398194,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 90675
+    },
+    {
+     "gross": 23736741,
+     "net": 13410265,
+     "wageTax": 8120900,
+     "solidarity": 429748,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 90675
+    },
+    {
+     "gross": 30000000,
+     "net": 16884241,
+     "wageTax": 10765500,
+     "solidarity": 574431,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 90675
+    },
+    {
+     "gross": 10000000000,
+     "net": 5253627176,
+     "wageTax": 4497265500,
+     "solidarity": 247331496,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 90675
+    }
+   ]
+  },
+  {
+   "profile": {
+    "taxClass": 5
+   },
+   "period": "month",
+   "cases": [
+    {
+     "gross": 200001,
+     "net": 126710,
+     "wageTax": 29791,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 18600,
+     "unemployment": 2600,
+     "health": 17500,
+     "care": 4800
+    },
+    {
+     "gross": 246567,
+     "net": 147522,
+     "wageTax": 45416,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 22931,
+     "unemployment": 3205,
+     "health": 21575,
+     "care": 5918
+    },
+    {
+     "gross": 250000,
+     "net": 149059,
+     "wageTax": 46566,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 23250,
+     "unemployment": 3250,
+     "health": 21875,
+     "care": 6000
+    },
+    {
+     "gross": 253667,
+     "net": 150703,
+     "wageTax": 47791,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 23591,
+     "unemployment": 3298,
+     "health": 22196,
+     "care": 6088
+    },
+    {
+     "gross": 300000,
+     "net": 172184,
+     "wageTax": 62566,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 27900,
+     "unemployment": 3900,
+     "health": 26250,
+     "care": 7200
+    },
+    {
+     "gross": 378274,
+     "net": 208799,
+     "wageTax": 87200,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 35179,
+     "unemployment": 4918,
+     "health": 33099,
+     "care": 9079
+    },
+    {
+     "gross": 405352,
+     "net": 220905,
+     "wageTax": 96283,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 37698,
+     "unemployment": 5270,
+     "health": 35468,
+     "care": 9728
+    },
+    {
+     "gross": 448970,
+     "net": 240411,
+     "wageTax": 110908,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 41754,
+     "unemployment": 5837,
+     "health": 39285,
+     "care": 10775
+    },
+    {
+     "gross": 450000,
+     "net": 240867,
+     "wageTax": 111258,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 41850,
+     "unemployment": 5850,
+     "health": 39375,
+     "care": 10800
+    },
+    {
+     "gross": 490144,
+     "net": 258813,
+     "wageTax": 124725,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 45583,
+     "unemployment": 6372,
+     "health": 42888,
+     "care": 11763
+    },
+    {
+     "gross": 503939,
+     "net": 264982,
+     "wageTax": 129350,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 46866,
+     "unemployment": 6551,
+     "health": 44095,
+     "care": 12095
+    },
+    {
+     "gross": 581249,
+     "net": 299553,
+     "wageTax": 155275,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 54056,
+     "unemployment": 7556,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 581250,
+     "net": 299554,
+     "wageTax": 155275,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 54056,
+     "unemployment": 7556,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 581251,
+     "net": 299555,
+     "wageTax": 155275,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 54056,
+     "unemployment": 7556,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 600000,
+     "net": 309166,
+     "wageTax": 162425,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 55800,
+     "unemployment": 7800,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 644693,
+     "net": 330933,
+     "wageTax": 179441,
+     "solidarity": 1173,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 59956,
+     "unemployment": 8381,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 811980,
+     "net": 409179,
+     "wageTax": 243166,
+     "solidarity": 8756,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 75514,
+     "unemployment": 10556,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 844999,
+     "net": 424627,
+     "wageTax": 255741,
+     "solidarity": 10252,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 845000,
+     "net": 424618,
+     "wageTax": 255750,
+     "solidarity": 10253,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 845001,
+     "net": 424619,
+     "wageTax": 255750,
+     "solidarity": 10253,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 899273,
+     "net": 453387,
+     "wageTax": 278541,
+     "solidarity": 12966,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 933222,
+     "net": 471381,
+     "wageTax": 292800,
+     "solidarity": 14662,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 948914,
+     "net": 479697,
+     "wageTax": 299391,
+     "solidarity": 15447,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 960597,
+     "net": 485887,
+     "wageTax": 304300,
+     "solidarity": 16031,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 967040,
+     "net": 489309,
+     "wageTax": 307000,
+     "solidarity": 16352,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 1000000,
+     "net": 507125,
+     "wageTax": 320850,
+     "solidarity": 17646,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 1123626,
+     "net": 575970,
+     "wageTax": 372775,
+     "solidarity": 20502,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 1143502,
+     "net": 587046,
+     "wageTax": 381116,
+     "solidarity": 20961,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 1172371,
+     "net": 603123,
+     "wageTax": 393241,
+     "solidarity": 21628,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 1187888,
+     "net": 611765,
+     "wageTax": 399758,
+     "solidarity": 21986,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 1232007,
+     "net": 636331,
+     "wageTax": 418291,
+     "solidarity": 23006,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 1326247,
+     "net": 688820,
+     "wageTax": 457866,
+     "solidarity": 25182,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 1457045,
+     "net": 761654,
+     "wageTax": 512808,
+     "solidarity": 28204,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 1474993,
+     "net": 771655,
+     "wageTax": 520341,
+     "solidarity": 28618,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 1496447,
+     "net": 783604,
+     "wageTax": 529350,
+     "solidarity": 29114,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 1498455,
+     "net": 784715,
+     "wageTax": 530200,
+     "solidarity": 29161,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 1532614,
+     "net": 803745,
+     "wageTax": 544541,
+     "solidarity": 29949,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 1546499,
+     "net": 811475,
+     "wageTax": 550375,
+     "solidarity": 30270,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 1683806,
+     "net": 887944,
+     "wageTax": 608041,
+     "solidarity": 33442,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 1730553,
+     "net": 913969,
+     "wageTax": 627683,
+     "solidarity": 34522,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 1901114,
+     "net": 1008957,
+     "wageTax": 699316,
+     "solidarity": 38462,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 1947029,
+     "net": 1034527,
+     "wageTax": 718600,
+     "solidarity": 39523,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 2500000,
+     "net": 1326800,
+     "wageTax": 965708,
+     "solidarity": 53113,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 833333333,
+     "net": 437722008,
+     "wageTax": 374840708,
+     "solidarity": 20616238,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    }
+   ]
+  },
+  {
+   "profile": {
+    "taxClass": 5
+   },
+   "period": "year",
+   "cases": [
+    {
+     "gross": 2400001,
+     "net": 1520401,
+     "wageTax": 357600,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 223200,
+     "unemployment": 31200,
+     "health": 210000,
+     "care": 57600
+    },
+    {
+     "gross": 2417802,
+     "net": 1528430,
+     "wageTax": 363500,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 224856,
+     "unemployment": 31431,
+     "health": 211558,
+     "care": 58027
+    },
+    {
+     "gross": 3000000,
+     "net": 1788700,
+     "wageTax": 558800,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 279000,
+     "unemployment": 39000,
+     "health": 262500,
+     "care": 72000
+    },
+    {
+     "gross": 3214067,
+     "net": 1884507,
+     "wageTax": 630500,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 298908,
+     "unemployment": 41783,
+     "health": 281231,
+     "care": 77138
+    },
+    {
+     "gross": 3225038,
+     "net": 1889392,
+     "wageTax": 634200,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 299929,
+     "unemployment": 41925,
+     "health": 282191,
+     "care": 77401
+    },
+    {
+     "gross": 3515476,
+     "net": 2024861,
+     "wageTax": 726000,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 326939,
+     "unemployment": 45701,
+     "health": 307604,
+     "care": 84371
+    },
+    {
+     "gross": 3808126,
+     "net": 2166858,
+     "wageTax": 813000,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 354156,
+     "unemployment": 49506,
+     "health": 333211,
+     "care": 91395
+    },
+    {
+     "gross": 4227445,
+     "net": 2363976,
+     "wageTax": 944000,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 393152,
+     "unemployment": 54957,
+     "health": 369901,
+     "care": 101459
+    },
+    {
+     "gross": 4500000,
+     "net": 2487850,
+     "wageTax": 1033400,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 418500,
+     "unemployment": 58500,
+     "health": 393750,
+     "care": 108000
+    },
+    {
+     "gross": 6000000,
+     "net": 3158600,
+     "wageTax": 1536400,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 558000,
+     "unemployment": 78000,
+     "health": 525000,
+     "care": 144000
+    },
+    {
+     "gross": 6058334,
+     "net": 3184747,
+     "wageTax": 1555900,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 563425,
+     "unemployment": 78758,
+     "health": 530104,
+     "care": 145400
+    },
+    {
+     "gross": 6975000,
+     "net": 3594637,
+     "wageTax": 1863300,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 648675,
+     "unemployment": 90675,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 6975001,
+     "net": 3594638,
+     "wageTax": 1863300,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 648675,
+     "unemployment": 90675,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 8000000,
+     "net": 4094450,
+     "wageTax": 2253800,
+     "solidarity": 26037,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 744000,
+     "unemployment": 104000,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 8878943,
+     "net": 4505584,
+     "wageTax": 2588600,
+     "solidarity": 65878,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 825742,
+     "unemployment": 115426,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 9276332,
+     "net": 4691433,
+     "wageTax": 2740000,
+     "solidarity": 83895,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 862699,
+     "unemployment": 120592,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 10140000,
+     "net": 5095401,
+     "wageTax": 3069000,
+     "solidarity": 123046,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 10140001,
+     "net": 5095402,
+     "wageTax": 3069000,
+     "solidarity": 123046,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 10665186,
+     "net": 5373848,
+     "wageTax": 3289500,
+     "solidarity": 149285,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 10892229,
+     "net": 5494138,
+     "wageTax": 3384900,
+     "solidarity": 160638,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 11245497,
+     "net": 5681347,
+     "wageTax": 3533300,
+     "solidarity": 178297,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 14271235,
+     "net": 7350357,
+     "wageTax": 4804100,
+     "solidarity": 264225,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 14771241,
+     "net": 7628813,
+     "wageTax": 5014100,
+     "solidarity": 275775,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 14892037,
+     "net": 7696120,
+     "wageTax": 5064800,
+     "solidarity": 278564,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 15000000,
+     "net": 7756186,
+     "wageTax": 5110200,
+     "solidarity": 281061,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 15460422,
+     "net": 8012571,
+     "wageTax": 5303600,
+     "solidarity": 291698,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 15501200,
+     "net": 8035309,
+     "wageTax": 5320700,
+     "solidarity": 292638,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 16761045,
+     "net": 8736953,
+     "wageTax": 5849800,
+     "solidarity": 321739,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 17276692,
+     "net": 9024087,
+     "wageTax": 6066400,
+     "solidarity": 333652,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 18565750,
+     "net": 9741968,
+     "wageTax": 6607800,
+     "solidarity": 363429,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 18702981,
+     "net": 9818431,
+     "wageTax": 6665400,
+     "solidarity": 366597,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 19007801,
+     "net": 9988106,
+     "wageTax": 6793500,
+     "solidarity": 373642,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 19781416,
+     "net": 10418951,
+     "wageTax": 7118400,
+     "solidarity": 391512,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 21573066,
+     "net": 11416819,
+     "wageTax": 7870800,
+     "solidarity": 432894,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 21839528,
+     "net": 11565121,
+     "wageTax": 7982800,
+     "solidarity": 439054,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 21918589,
+     "net": 11609156,
+     "wageTax": 8016000,
+     "solidarity": 440880,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 22285898,
+     "net": 11813784,
+     "wageTax": 8170200,
+     "solidarity": 449361,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 22619360,
+     "net": 11999441,
+     "wageTax": 8310300,
+     "solidarity": 457066,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 23044873,
+     "net": 12236425,
+     "wageTax": 8489000,
+     "solidarity": 466895,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 23533963,
+     "net": 12508818,
+     "wageTax": 8694400,
+     "solidarity": 478192,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 30000000,
+     "net": 15921580,
+     "wageTax": 11588500,
+     "solidarity": 637367,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 10000000000,
+     "net": 5252664080,
+     "wageTax": 4498088500,
+     "solidarity": 247394867,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    }
+   ]
+  },
+  {
+   "profile": {
+    "taxClass": 6,
+    "churchTax": 9
+   },
+   "period": "month",
+   "cases": [
+    {
+     "gross": 200001,
+     "net": 119196,
+     "wageTax": 34225,
+     "solidarity": 0,
+     "churchBase": 34225,
+     "churchTax": 3080,
+     "pension": 18600,
+     "unemployment": 2600,
+     "health": 17500,
+     "care": 4800
+    },
+    {
+     "gross": 250000,
+     "net": 140035,
+     "wageTax": 51000,
+     "solidarity": 0,
+     "churchBase": 51000,
+     "churchTax": 4590,
+     "pension": 23250,
+     "unemployment": 3250,
+     "health": 21875,
+     "care": 6000
+    },
+    {
+     "gross": 294076,
+     "net": 159574,
+     "wageTax": 64716,
+     "solidarity": 0,
+     "churchBase": 64716,
+     "churchTax": 5824,
+     "pension": 27349,
+     "unemployment": 3823,
+     "health": 25732,
+     "care": 7058
+    },
+    {
+     "gross": 300000,
+     "net": 162265,
+     "wageTax": 66500,
+     "solidarity": 0,
+     "churchBase": 66500,
+     "churchTax": 5985,
+     "pension": 27900,
+     "unemployment": 3900,
+     "health": 26250,
+     "care": 7200
+    },
+    {
+     "gross": 324115,
+     "net": 173069,
+     "wageTax": 73900,
+     "solidarity": 0,
+     "churchBase": 73900,
+     "churchTax": 6651,
+     "pension": 30143,
+     "unemployment": 4213,
+     "health": 28360,
+     "care": 7779
+    },
+    {
+     "gross": 348920,
+     "net": 183796,
+     "wageTax": 81866,
+     "solidarity": 0,
+     "churchBase": 81866,
+     "churchTax": 7367,
+     "pension": 32450,
+     "unemployment": 4536,
+     "health": 30531,
+     "care": 8374
+    },
+    {
+     "gross": 393103,
+     "net": 202301,
+     "wageTax": 96608,
+     "solidarity": 0,
+     "churchBase": 96608,
+     "churchTax": 8694,
+     "pension": 36559,
+     "unemployment": 5110,
+     "health": 34397,
+     "care": 9434
+    },
+    {
+     "gross": 410377,
+     "net": 209504,
+     "wageTax": 102400,
+     "solidarity": 0,
+     "churchBase": 102400,
+     "churchTax": 9216,
+     "pension": 38165,
+     "unemployment": 5335,
+     "health": 35908,
+     "care": 9849
+    },
+    {
+     "gross": 439514,
+     "net": 221650,
+     "wageTax": 112175,
+     "solidarity": 0,
+     "churchBase": 112175,
+     "churchTax": 10095,
+     "pension": 40875,
+     "unemployment": 5714,
+     "health": 38457,
+     "care": 10548
+    },
+    {
+     "gross": 450000,
+     "net": 226022,
+     "wageTax": 115691,
+     "solidarity": 0,
+     "churchBase": 115691,
+     "churchTax": 10412,
+     "pension": 41850,
+     "unemployment": 5850,
+     "health": 39375,
+     "care": 10800
+    },
+    {
+     "gross": 495516,
+     "net": 245006,
+     "wageTax": 130950,
+     "solidarity": 0,
+     "churchBase": 130950,
+     "churchTax": 11785,
+     "pension": 46083,
+     "unemployment": 6442,
+     "health": 43358,
+     "care": 11892
+    },
+    {
+     "gross": 532037,
+     "net": 260232,
+     "wageTax": 143200,
+     "solidarity": 0,
+     "churchBase": 143200,
+     "churchTax": 12888,
+     "pension": 49479,
+     "unemployment": 6916,
+     "health": 46553,
+     "care": 12769
+    },
+    {
+     "gross": 567265,
+     "net": 274918,
+     "wageTax": 155016,
+     "solidarity": 0,
+     "churchBase": 155016,
+     "churchTax": 13951,
+     "pension": 52756,
+     "unemployment": 7374,
+     "health": 49636,
+     "care": 13614
+    },
+    {
+     "gross": 567738,
+     "net": 275114,
+     "wageTax": 155175,
+     "solidarity": 0,
+     "churchBase": 155175,
+     "churchTax": 13965,
+     "pension": 52800,
+     "unemployment": 7381,
+     "health": 49677,
+     "care": 13626
+    },
+    {
+     "gross": 581249,
+     "net": 280747,
+     "wageTax": 159708,
+     "solidarity": 0,
+     "churchBase": 159708,
+     "churchTax": 14373,
+     "pension": 54056,
+     "unemployment": 7556,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 581250,
+     "net": 280748,
+     "wageTax": 159708,
+     "solidarity": 0,
+     "churchBase": 159708,
+     "churchTax": 14373,
+     "pension": 54056,
+     "unemployment": 7556,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 581251,
+     "net": 280749,
+     "wageTax": 159708,
+     "solidarity": 0,
+     "churchBase": 159708,
+     "churchTax": 14373,
+     "pension": 54056,
+     "unemployment": 7556,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 593157,
+     "net": 286451,
+     "wageTax": 164241,
+     "solidarity": 0,
+     "churchBase": 164241,
+     "churchTax": 14781,
+     "pension": 55164,
+     "unemployment": 7711,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 600000,
+     "net": 289725,
+     "wageTax": 166850,
+     "solidarity": 0,
+     "churchBase": 166850,
+     "churchTax": 15016,
+     "pension": 55800,
+     "unemployment": 7800,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 606374,
+     "net": 292780,
+     "wageTax": 169275,
+     "solidarity": 0,
+     "churchBase": 169275,
+     "churchTax": 15234,
+     "pension": 56393,
+     "unemployment": 7883,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 641354,
+     "net": 307979,
+     "wageTax": 182600,
+     "solidarity": 1548,
+     "churchBase": 182600,
+     "churchTax": 16434,
+     "pension": 59646,
+     "unemployment": 8338,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 755684,
+     "net": 357528,
+     "wageTax": 226158,
+     "solidarity": 6732,
+     "churchBase": 226158,
+     "churchTax": 20354,
+     "pension": 70279,
+     "unemployment": 9824,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 802132,
+     "net": 377664,
+     "wageTax": 243850,
+     "solidarity": 8837,
+     "churchBase": 243850,
+     "churchTax": 21946,
+     "pension": 74598,
+     "unemployment": 10428,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 835776,
+     "net": 392248,
+     "wageTax": 256666,
+     "solidarity": 10362,
+     "churchBase": 256666,
+     "churchTax": 23099,
+     "pension": 77727,
+     "unemployment": 10865,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 844999,
+     "net": 396250,
+     "wageTax": 260175,
+     "solidarity": 10780,
+     "churchBase": 260175,
+     "churchTax": 23415,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 845000,
+     "net": 396241,
+     "wageTax": 260183,
+     "solidarity": 10781,
+     "churchBase": 260183,
+     "churchTax": 23416,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 845001,
+     "net": 396242,
+     "wageTax": 260183,
+     "solidarity": 10781,
+     "churchBase": 260183,
+     "churchTax": 23416,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 857399,
+     "net": 402353,
+     "wageTax": 265383,
+     "solidarity": 11400,
+     "churchBase": 265383,
+     "churchTax": 23884,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 988358,
+     "net": 467141,
+     "wageTax": 320383,
+     "solidarity": 17621,
+     "churchBase": 320383,
+     "churchTax": 28834,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 1000000,
+     "net": 473173,
+     "wageTax": 325283,
+     "solidarity": 17890,
+     "churchBase": 325283,
+     "churchTax": 29275,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 1045480,
+     "net": 496793,
+     "wageTax": 344375,
+     "solidarity": 18940,
+     "churchBase": 344375,
+     "churchTax": 30993,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 1046385,
+     "net": 497259,
+     "wageTax": 344758,
+     "solidarity": 18961,
+     "churchBase": 344758,
+     "churchTax": 31028,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 1200094,
+     "net": 577049,
+     "wageTax": 409316,
+     "solidarity": 22512,
+     "churchBase": 409316,
+     "churchTax": 36838,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 1235348,
+     "net": 595347,
+     "wageTax": 424125,
+     "solidarity": 23326,
+     "churchBase": 424125,
+     "churchTax": 38171,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 1362838,
+     "net": 661533,
+     "wageTax": 477666,
+     "solidarity": 26271,
+     "churchBase": 477666,
+     "churchTax": 42989,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 1576615,
+     "net": 772497,
+     "wageTax": 567458,
+     "solidarity": 31210,
+     "churchBase": 567458,
+     "churchTax": 51071,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 1612753,
+     "net": 791261,
+     "wageTax": 582633,
+     "solidarity": 32044,
+     "churchBase": 582633,
+     "churchTax": 52436,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 1624704,
+     "net": 797467,
+     "wageTax": 587650,
+     "solidarity": 32320,
+     "churchBase": 587650,
+     "churchTax": 52888,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 1684511,
+     "net": 828506,
+     "wageTax": 612775,
+     "solidarity": 33702,
+     "churchBase": 612775,
+     "churchTax": 55149,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 1828194,
+     "net": 903098,
+     "wageTax": 673116,
+     "solidarity": 37021,
+     "churchBase": 673116,
+     "churchTax": 60580,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 1910765,
+     "net": 945955,
+     "wageTax": 707800,
+     "solidarity": 38929,
+     "churchBase": 707800,
+     "churchTax": 63702,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 1935981,
+     "net": 959045,
+     "wageTax": 718391,
+     "solidarity": 39511,
+     "churchBase": 718391,
+     "churchTax": 64655,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 2500000,
+     "net": 1234447,
+     "wageTax": 970458,
+     "solidarity": 53375,
+     "churchBase": 970458,
+     "churchTax": 87341,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    },
+    {
+     "gross": 833333333,
+     "net": 403980905,
+     "wageTax": 374845458,
+     "solidarity": 20616500,
+     "churchBase": 374845458,
+     "churchTax": 33736091,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 50859,
+     "care": 13950
+    }
+   ]
+  },
+  {
+   "profile": {
+    "taxClass": 6,
+    "churchTax": 9
+   },
+   "period": "year",
+   "cases": [
+    {
+     "gross": 2400001,
+     "net": 1430229,
+     "wageTax": 410800,
+     "solidarity": 0,
+     "churchBase": 410800,
+     "churchTax": 36972,
+     "pension": 223200,
+     "unemployment": 31200,
+     "health": 210000,
+     "care": 57600
+    },
+    {
+     "gross": 3000000,
+     "net": 1680420,
+     "wageTax": 612000,
+     "solidarity": 0,
+     "churchBase": 612000,
+     "churchTax": 55080,
+     "pension": 279000,
+     "unemployment": 39000,
+     "health": 262500,
+     "care": 72000
+    },
+    {
+     "gross": 3549441,
+     "net": 1924185,
+     "wageTax": 782800,
+     "solidarity": 0,
+     "churchBase": 782800,
+     "churchTax": 70452,
+     "pension": 330098,
+     "unemployment": 46143,
+     "health": 310576,
+     "care": 85187
+    },
+    {
+     "gross": 3894358,
+     "net": 2078979,
+     "wageTax": 888400,
+     "solidarity": 0,
+     "churchBase": 888400,
+     "churchTax": 79956,
+     "pension": 362175,
+     "unemployment": 50627,
+     "health": 340756,
+     "care": 93465
+    },
+    {
+     "gross": 4500000,
+     "net": 2336965,
+     "wageTax": 1086500,
+     "solidarity": 0,
+     "churchBase": 1086500,
+     "churchTax": 97785,
+     "pension": 418500,
+     "unemployment": 58500,
+     "health": 393750,
+     "care": 108000
+    },
+    {
+     "gross": 6000000,
+     "net": 2962445,
+     "wageTax": 1589500,
+     "solidarity": 0,
+     "churchBase": 1589500,
+     "churchTax": 143055,
+     "pension": 558000,
+     "unemployment": 78000,
+     "health": 525000,
+     "care": 144000
+    },
+    {
+     "gross": 6451810,
+     "net": 3150852,
+     "wageTax": 1741000,
+     "solidarity": 0,
+     "churchBase": 1741000,
+     "churchTax": 156690,
+     "pension": 600018,
+     "unemployment": 83874,
+     "health": 564533,
+     "care": 154843
+    },
+    {
+     "gross": 6975000,
+     "net": 3368952,
+     "wageTax": 1916500,
+     "solidarity": 0,
+     "churchBase": 1916500,
+     "churchTax": 172485,
+     "pension": 648675,
+     "unemployment": 90675,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 6975001,
+     "net": 3368953,
+     "wageTax": 1916500,
+     "solidarity": 0,
+     "churchBase": 1916500,
+     "churchTax": 172485,
+     "pension": 648675,
+     "unemployment": 90675,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 7831896,
+     "net": 3754501,
+     "wageTax": 2242900,
+     "solidarity": 24740,
+     "churchBase": 2242900,
+     "churchTax": 201861,
+     "pension": 728366,
+     "unemployment": 101815,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 8000000,
+     "net": 3827289,
+     "wageTax": 2307000,
+     "solidarity": 32368,
+     "churchBase": 2307000,
+     "churchTax": 207630,
+     "pension": 744000,
+     "unemployment": 104000,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 8590430,
+     "net": 4083229,
+     "wageTax": 2531900,
+     "solidarity": 59131,
+     "churchBase": 2531900,
+     "churchTax": 227871,
+     "pension": 798910,
+     "unemployment": 111676,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 10140000,
+     "net": 4754873,
+     "wageTax": 3122200,
+     "solidarity": 129376,
+     "churchBase": 3122200,
+     "churchTax": 280998,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 10140001,
+     "net": 4754874,
+     "wageTax": 3122200,
+     "solidarity": 129376,
+     "churchBase": 3122200,
+     "churchTax": 280998,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 11987489,
+     "net": 5671612,
+     "wageTax": 3898100,
+     "solidarity": 214395,
+     "churchBase": 3898100,
+     "churchTax": 350829,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 12043673,
+     "net": 5700774,
+     "wageTax": 3921700,
+     "solidarity": 215693,
+     "churchBase": 3921700,
+     "churchTax": 352953,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 13121038,
+     "net": 6260026,
+     "wageTax": 4374200,
+     "solidarity": 240581,
+     "churchBase": 4374200,
+     "churchTax": 393678,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 13228893,
+     "net": 6316013,
+     "wageTax": 4419500,
+     "solidarity": 243072,
+     "churchBase": 4419500,
+     "churchTax": 397755,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 13307507,
+     "net": 6356842,
+     "wageTax": 4452500,
+     "solidarity": 244887,
+     "churchBase": 4452500,
+     "churchTax": 400725,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 13579348,
+     "net": 6497924,
+     "wageTax": 4566700,
+     "solidarity": 251168,
+     "churchBase": 4566700,
+     "churchTax": 411003,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 14621590,
+     "net": 7038999,
+     "wageTax": 5004400,
+     "solidarity": 275242,
+     "churchBase": 5004400,
+     "churchTax": 450396,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 15000000,
+     "net": 7235354,
+     "wageTax": 5163400,
+     "solidarity": 283987,
+     "churchBase": 5163400,
+     "churchTax": 464706,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 15135461,
+     "net": 7305779,
+     "wageTax": 5220200,
+     "solidarity": 287111,
+     "churchBase": 5220200,
+     "churchTax": 469818,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 16171014,
+     "net": 7843257,
+     "wageTax": 5655200,
+     "solidarity": 311036,
+     "churchBase": 5655200,
+     "churchTax": 508968,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 16196265,
+     "net": 7856371,
+     "wageTax": 5665800,
+     "solidarity": 311619,
+     "churchBase": 5665800,
+     "churchTax": 509922,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 17259387,
+     "net": 8408251,
+     "wageTax": 6112300,
+     "solidarity": 336176,
+     "churchBase": 6112300,
+     "churchTax": 550107,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 17357267,
+     "net": 8459071,
+     "wageTax": 6153400,
+     "solidarity": 338437,
+     "churchBase": 6153400,
+     "churchTax": 553806,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 18961881,
+     "net": 9292070,
+     "wageTax": 6827300,
+     "solidarity": 375501,
+     "churchBase": 6827300,
+     "churchTax": 614457,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 19145307,
+     "net": 9387216,
+     "wageTax": 6904400,
+     "solidarity": 379742,
+     "churchBase": 6904400,
+     "churchTax": 621396,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 19879551,
+     "net": 9768457,
+     "wageTax": 7212700,
+     "solidarity": 396698,
+     "churchBase": 7212700,
+     "churchTax": 649143,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 20470913,
+     "net": 10075401,
+     "wageTax": 7461100,
+     "solidarity": 410360,
+     "churchBase": 7461100,
+     "churchTax": 671499,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 20723436,
+     "net": 10206439,
+     "wageTax": 7567200,
+     "solidarity": 416196,
+     "churchBase": 7567200,
+     "churchTax": 681048,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 21302802,
+     "net": 10507227,
+     "wageTax": 7810500,
+     "solidarity": 429577,
+     "churchBase": 7810500,
+     "churchTax": 702945,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 22587813,
+     "net": 11174281,
+     "wageTax": 8350200,
+     "solidarity": 459261,
+     "churchBase": 8350200,
+     "churchTax": 751518,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 23206424,
+     "net": 11495421,
+     "wageTax": 8610000,
+     "solidarity": 473550,
+     "churchBase": 8610000,
+     "churchTax": 774900,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 23257559,
+     "net": 11521939,
+     "wageTax": 8631500,
+     "solidarity": 474732,
+     "churchBase": 8631500,
+     "churchTax": 776835,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 23371861,
+     "net": 11581281,
+     "wageTax": 8679500,
+     "solidarity": 477372,
+     "churchBase": 8679500,
+     "churchTax": 781155,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 23527350,
+     "net": 11662001,
+     "wageTax": 8744800,
+     "solidarity": 480964,
+     "churchBase": 8744800,
+     "churchTax": 787032,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 24383897,
+     "net": 12091005,
+     "wageTax": 9118200,
+     "solidarity": 501501,
+     "churchBase": 9118200,
+     "churchTax": 820638,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 24762501,
+     "net": 12274501,
+     "wageTax": 9288600,
+     "solidarity": 510873,
+     "churchBase": 9288600,
+     "churchTax": 835974,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 30000000,
+     "net": 14813350,
+     "wageTax": 11645500,
+     "solidarity": 640502,
+     "churchBase": 11645500,
+     "churchTax": 1048095,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    },
+    {
+     "gross": 10000000000,
+     "net": 4847770850,
+     "wageTax": 4498145500,
+     "solidarity": 247398002,
+     "churchBase": 4498145500,
+     "churchTax": 404833095,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 610313,
+     "care": 167400
+    }
+   ]
+  },
+  {
+   "profile": {
+    "saxony": true,
+    "healthSurcharge": "2.5",
+    "childlessSurcharge": false
+   },
+   "period": "month",
+   "cases": [
+    {
+     "gross": 200001,
+     "net": 148143,
+     "wageTax": 8958,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 18600,
+     "unemployment": 2600,
+     "health": 17100,
+     "care": 4600
+    },
+    {
+     "gross": 200053,
+     "net": 148175,
+     "wageTax": 8966,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 18605,
+     "unemployment": 2601,
+     "health": 17105,
+     "care": 4601
+    },
+    {
+     "gross": 250000,
+     "net": 177450,
+     "wageTax": 18925,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 23250,
+     "unemployment": 3250,
+     "health": 21375,
+     "care": 5750
+    },
+    {
+     "gross": 300000,
+     "net": 206092,
+     "wageTax": 29558,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 27900,
+     "unemployment": 3900,
+     "health": 25650,
+     "care": 6900
+    },
+    {
+     "gross": 352996,
+     "net": 235728,
+     "wageTax": 41550,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 32829,
+     "unemployment": 4589,
+     "health": 30181,
+     "care": 8119
+    },
+    {
+     "gross": 353098,
+     "net": 235784,
+     "wageTax": 41575,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 32838,
+     "unemployment": 4590,
+     "health": 30190,
+     "care": 8121
+    },
+    {
+     "gross": 406515,
+     "net": 264892,
+     "wageTax": 54425,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 37806,
+     "unemployment": 5285,
+     "health": 34757,
+     "care": 9350
+    },
+    {
+     "gross": 432146,
+     "net": 278593,
+     "wageTax": 60858,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 40190,
+     "unemployment": 5618,
+     "health": 36948,
+     "care": 9939
+    },
+    {
+     "gross": 433903,
+     "net": 279522,
+     "wageTax": 61308,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 40353,
+     "unemployment": 5641,
+     "health": 37099,
+     "care": 9980
+    },
+    {
+     "gross": 437823,
+     "net": 281601,
+     "wageTax": 62308,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 40718,
+     "unemployment": 5692,
+     "health": 37434,
+     "care": 10070
+    },
+    {
+     "gross": 441858,
+     "net": 283738,
+     "wageTax": 63341,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 41093,
+     "unemployment": 5744,
+     "health": 37779,
+     "care": 10163
+    },
+    {
+     "gross": 446057,
+     "net": 285953,
+     "wageTax": 64425,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 41483,
+     "unemployment": 5799,
+     "health": 38138,
+     "care": 10259
+    },
+    {
+     "gross": 450000,
+     "net": 288025,
+     "wageTax": 65450,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 41850,
+     "unemployment": 5850,
+     "health": 38475,
+     "care": 10350
+    },
+    {
+     "gross": 465569,
+     "net": 296189,
+     "wageTax": 69516,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 43298,
+     "unemployment": 6052,
+     "health": 39806,
+     "care": 10708
+    },
+    {
+     "gross": 466201,
+     "net": 296517,
+     "wageTax": 69683,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 43357,
+     "unemployment": 6061,
+     "health": 39860,
+     "care": 10723
+    },
+    {
+     "gross": 569381,
+     "net": 348941,
+     "wageTax": 98308,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 52952,
+     "unemployment": 7402,
+     "health": 48682,
+     "care": 13096
+    },
+    {
+     "gross": 573406,
+     "net": 350928,
+     "wageTax": 99483,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 53327,
+     "unemployment": 7454,
+     "health": 49026,
+     "care": 13188
+    },
+    {
+     "gross": 581249,
+     "net": 354796,
+     "wageTax": 101775,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 54056,
+     "unemployment": 7556,
+     "health": 49697,
+     "care": 13369
+    },
+    {
+     "gross": 581250,
+     "net": 354789,
+     "wageTax": 101783,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 54056,
+     "unemployment": 7556,
+     "health": 49697,
+     "care": 13369
+    },
+    {
+     "gross": 581251,
+     "net": 354790,
+     "wageTax": 101783,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 54056,
+     "unemployment": 7556,
+     "health": 49697,
+     "care": 13369
+    },
+    {
+     "gross": 600000,
+     "net": 365243,
+     "wageTax": 108091,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 55800,
+     "unemployment": 7800,
+     "health": 49697,
+     "care": 13369
+    },
+    {
+     "gross": 712641,
+     "net": 425544,
+     "wageTax": 148491,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 66276,
+     "unemployment": 9264,
+     "health": 49697,
+     "care": 13369
+    },
+    {
+     "gross": 780864,
+     "net": 459980,
+     "wageTax": 174466,
+     "solidarity": 581,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 72620,
+     "unemployment": 10151,
+     "health": 49697,
+     "care": 13369
+    },
+    {
+     "gross": 843496,
+     "net": 489275,
+     "wageTax": 198325,
+     "solidarity": 3420,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78445,
+     "unemployment": 10965,
+     "health": 49697,
+     "care": 13369
+    },
+    {
+     "gross": 844999,
+     "net": 489975,
+     "wageTax": 198900,
+     "solidarity": 3488,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 49697,
+     "care": 13369
+    },
+    {
+     "gross": 845000,
+     "net": 489967,
+     "wageTax": 198908,
+     "solidarity": 3489,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 49697,
+     "care": 13369
+    },
+    {
+     "gross": 845001,
+     "net": 489968,
+     "wageTax": 198908,
+     "solidarity": 3489,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 49697,
+     "care": 13369
+    },
+    {
+     "gross": 871263,
+     "net": 503893,
+     "wageTax": 209933,
+     "solidarity": 4801,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 49697,
+     "care": 13369
+    },
+    {
+     "gross": 940871,
+     "net": 540789,
+     "wageTax": 239166,
+     "solidarity": 8280,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 49697,
+     "care": 13369
+    },
+    {
+     "gross": 1000000,
+     "net": 572120,
+     "wageTax": 264008,
+     "solidarity": 11236,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 49697,
+     "care": 13369
+    },
+    {
+     "gross": 1079615,
+     "net": 614323,
+     "wageTax": 297441,
+     "solidarity": 15215,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 49697,
+     "care": 13369
+    },
+    {
+     "gross": 1149320,
+     "net": 651999,
+     "wageTax": 326716,
+     "solidarity": 17969,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 49697,
+     "care": 13369
+    },
+    {
+     "gross": 1181545,
+     "net": 669946,
+     "wageTax": 340250,
+     "solidarity": 18713,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 49697,
+     "care": 13369
+    },
+    {
+     "gross": 1196850,
+     "net": 678464,
+     "wageTax": 346683,
+     "solidarity": 19067,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 49697,
+     "care": 13369
+    },
+    {
+     "gross": 1340648,
+     "net": 758548,
+     "wageTax": 407075,
+     "solidarity": 22389,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 49697,
+     "care": 13369
+    },
+    {
+     "gross": 1350615,
+     "net": 764102,
+     "wageTax": 411258,
+     "solidarity": 22619,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 49697,
+     "care": 13369
+    },
+    {
+     "gross": 1363301,
+     "net": 771162,
+     "wageTax": 416591,
+     "solidarity": 22912,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 49697,
+     "care": 13369
+    },
+    {
+     "gross": 1653251,
+     "net": 932630,
+     "wageTax": 538375,
+     "solidarity": 29610,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 49697,
+     "care": 13369
+    },
+    {
+     "gross": 1679182,
+     "net": 947079,
+     "wageTax": 549258,
+     "solidarity": 30209,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 49697,
+     "care": 13369
+    },
+    {
+     "gross": 1688750,
+     "net": 952401,
+     "wageTax": 553283,
+     "solidarity": 30430,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 49697,
+     "care": 13369
+    },
+    {
+     "gross": 1944002,
+     "net": 1094557,
+     "wageTax": 660483,
+     "solidarity": 36326,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 49697,
+     "care": 13369
+    },
+    {
+     "gross": 1950821,
+     "net": 1098351,
+     "wageTax": 663350,
+     "solidarity": 36484,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 49697,
+     "care": 13369
+    },
+    {
+     "gross": 2500000,
+     "net": 1403105,
+     "wageTax": 895033,
+     "solidarity": 49226,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 49697,
+     "care": 13369
+    },
+    {
+     "gross": 833333333,
+     "net": 437798313,
+     "wageTax": 374770033,
+     "solidarity": 20612351,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 49697,
+     "care": 13369
+    }
+   ]
+  },
+  {
+   "profile": {
+    "saxony": true,
+    "healthSurcharge": "2.5",
+    "childlessSurcharge": false
+   },
+   "period": "year",
+   "cases": [
+    {
+     "gross": 2400001,
+     "net": 1777701,
+     "wageTax": 107500,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 223200,
+     "unemployment": 31200,
+     "health": 205200,
+     "care": 55200
+    },
+    {
+     "gross": 2446984,
+     "net": 1805505,
+     "wageTax": 116600,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 227570,
+     "unemployment": 31811,
+     "health": 209217,
+     "care": 56281
+    },
+    {
+     "gross": 2808025,
+     "net": 2017704,
+     "wageTax": 188000,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 261146,
+     "unemployment": 36504,
+     "health": 240086,
+     "care": 64585
+    },
+    {
+     "gross": 3000000,
+     "net": 2129400,
+     "wageTax": 227100,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 279000,
+     "unemployment": 39000,
+     "health": 256500,
+     "care": 69000
+    },
+    {
+     "gross": 4500000,
+     "net": 2973750,
+     "wageTax": 561000,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 418500,
+     "unemployment": 58500,
+     "health": 384750,
+     "care": 103500
+    },
+    {
+     "gross": 4644338,
+     "net": 3052328,
+     "wageTax": 595800,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 431923,
+     "unemployment": 60376,
+     "health": 397091,
+     "care": 106820
+    },
+    {
+     "gross": 5698549,
+     "net": 3612410,
+     "wageTax": 863800,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 529965,
+     "unemployment": 74081,
+     "health": 487226,
+     "care": 131067
+    },
+    {
+     "gross": 6000000,
+     "net": 3768000,
+     "wageTax": 945000,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 558000,
+     "unemployment": 78000,
+     "health": 513000,
+     "care": 138000
+    },
+    {
+     "gross": 6156624,
+     "net": 3848029,
+     "wageTax": 988000,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 572566,
+     "unemployment": 80036,
+     "health": 526391,
+     "care": 141602
+    },
+    {
+     "gross": 6723963,
+     "net": 4133472,
+     "wageTax": 1148200,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 625329,
+     "unemployment": 87412,
+     "health": 574899,
+     "care": 154651
+    },
+    {
+     "gross": 6919594,
+     "net": 4230241,
+     "wageTax": 1205100,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 643522,
+     "unemployment": 89955,
+     "health": 591625,
+     "care": 159151
+    },
+    {
+     "gross": 6975000,
+     "net": 4257462,
+     "wageTax": 1221400,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 648675,
+     "unemployment": 90675,
+     "health": 596363,
+     "care": 160425
+    },
+    {
+     "gross": 6975001,
+     "net": 4257463,
+     "wageTax": 1221400,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 648675,
+     "unemployment": 90675,
+     "health": 596363,
+     "care": 160425
+    },
+    {
+     "gross": 7159687,
+     "net": 4360672,
+     "wageTax": 1283300,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 665851,
+     "unemployment": 93076,
+     "health": 596363,
+     "care": 160425
+    },
+    {
+     "gross": 7195647,
+     "net": 4380521,
+     "wageTax": 1295600,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 669195,
+     "unemployment": 93543,
+     "health": 596363,
+     "care": 160425
+    },
+    {
+     "gross": 7322552,
+     "net": 4450674,
+     "wageTax": 1338900,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 680997,
+     "unemployment": 95193,
+     "health": 596363,
+     "care": 160425
+    },
+    {
+     "gross": 8000000,
+     "net": 4817412,
+     "wageTax": 1577800,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 744000,
+     "unemployment": 104000,
+     "health": 596363,
+     "care": 160425
+    },
+    {
+     "gross": 8554355,
+     "net": 5107905,
+     "wageTax": 1782900,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 795555,
+     "unemployment": 111207,
+     "health": 596363,
+     "care": 160425
+    },
+    {
+     "gross": 9354778,
+     "net": 5512413,
+     "wageTax": 2087700,
+     "solidarity": 6271,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 869994,
+     "unemployment": 121612,
+     "health": 596363,
+     "care": 160425
+    },
+    {
+     "gross": 10140000,
+     "net": 5879596,
+     "wageTax": 2386900,
+     "solidarity": 41876,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 596363,
+     "care": 160425
+    },
+    {
+     "gross": 10140001,
+     "net": 5879597,
+     "wageTax": 2386900,
+     "solidarity": 41876,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 596363,
+     "care": 160425
+    },
+    {
+     "gross": 10408700,
+     "net": 6022073,
+     "wageTax": 2499700,
+     "solidarity": 55299,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 596363,
+     "care": 160425
+    },
+    {
+     "gross": 13116181,
+     "net": 7457139,
+     "wageTax": 3636800,
+     "solidarity": 190614,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 596363,
+     "care": 160425
+    },
+    {
+     "gross": 13337376,
+     "net": 7574379,
+     "wageTax": 3729700,
+     "solidarity": 201669,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 596363,
+     "care": 160425
+    },
+    {
+     "gross": 13374811,
+     "net": 7594134,
+     "wageTax": 3745500,
+     "solidarity": 203549,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 596363,
+     "care": 160425
+    },
+    {
+     "gross": 15000000,
+     "net": 8496727,
+     "wageTax": 4428100,
+     "solidarity": 243545,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 596363,
+     "care": 160425
+    },
+    {
+     "gross": 15363207,
+     "net": 8699046,
+     "wageTax": 4580600,
+     "solidarity": 251933,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 596363,
+     "care": 160425
+    },
+    {
+     "gross": 15786511,
+     "net": 8934771,
+     "wageTax": 4758400,
+     "solidarity": 261712,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 596363,
+     "care": 160425
+    },
+    {
+     "gross": 16137511,
+     "net": 9130264,
+     "wageTax": 4905800,
+     "solidarity": 269819,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 596363,
+     "care": 160425
+    },
+    {
+     "gross": 16437664,
+     "net": 9297382,
+     "wageTax": 5031900,
+     "solidarity": 276754,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 596363,
+     "care": 160425
+    },
+    {
+     "gross": 17227690,
+     "net": 9737359,
+     "wageTax": 5363700,
+     "solidarity": 295003,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 596363,
+     "care": 160425
+    },
+    {
+     "gross": 17447036,
+     "net": 9859539,
+     "wageTax": 5455800,
+     "solidarity": 300069,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 596363,
+     "care": 160425
+    },
+    {
+     "gross": 18772856,
+     "net": 10597830,
+     "wageTax": 6012700,
+     "solidarity": 330698,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 596363,
+     "care": 160425
+    },
+    {
+     "gross": 19262663,
+     "net": 10870623,
+     "wageTax": 6218400,
+     "solidarity": 342012,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 596363,
+     "care": 160425
+    },
+    {
+     "gross": 20531163,
+     "net": 11577125,
+     "wageTax": 6751100,
+     "solidarity": 371310,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 596363,
+     "care": 160425
+    },
+    {
+     "gross": 22104124,
+     "net": 12453047,
+     "wageTax": 7411800,
+     "solidarity": 407649,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 596363,
+     "care": 160425
+    },
+    {
+     "gross": 22920512,
+     "net": 12907676,
+     "wageTax": 7754700,
+     "solidarity": 426508,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 596363,
+     "care": 160425
+    },
+    {
+     "gross": 23292049,
+     "net": 13114633,
+     "wageTax": 7910700,
+     "solidarity": 435088,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 596363,
+     "care": 160425
+    },
+    {
+     "gross": 24277890,
+     "net": 13663598,
+     "wageTax": 8324800,
+     "solidarity": 457864,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 596363,
+     "care": 160425
+    },
+    {
+     "gross": 24743899,
+     "net": 13923144,
+     "wageTax": 8520500,
+     "solidarity": 468627,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 596363,
+     "care": 160425
+    },
+    {
+     "gross": 30000000,
+     "net": 16837250,
+     "wageTax": 10740400,
+     "solidarity": 590722,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 596363,
+     "care": 160425
+    },
+    {
+     "gross": 10000000000,
+     "net": 5253579750,
+     "wageTax": 4497240400,
+     "solidarity": 247348222,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 596363,
+     "care": 160425
+    }
+   ]
+  },
+  {
+   "profile": {
+    "children": 6,
+    "childAllowance": "3",
+    "saxony": true,
+    "healthSurcharge": "3.45"
+   },
+   "period": "month",
+   "cases": [
+    {
+     "gross": 200001,
+     "net": 148943,
+     "wageTax": 9208,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 18600,
+     "unemployment": 2600,
+     "health": 18050,
+     "care": 2600
+    },
+    {
+     "gross": 221696,
+     "net": 161815,
+     "wageTax": 13491,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 20618,
+     "unemployment": 2882,
+     "health": 20008,
+     "care": 2882
+    },
+    {
+     "gross": 250000,
+     "net": 178429,
+     "wageTax": 19258,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 23250,
+     "unemployment": 3250,
+     "health": 22563,
+     "care": 3250
+    },
+    {
+     "gross": 250846,
+     "net": 178923,
+     "wageTax": 19433,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 23329,
+     "unemployment": 3261,
+     "health": 22639,
+     "care": 3261
+    },
+    {
+     "gross": 263284,
+     "net": 186151,
+     "wageTax": 22041,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 24485,
+     "unemployment": 3423,
+     "health": 23761,
+     "care": 3423
+    },
+    {
+     "gross": 280072,
+     "net": 195834,
+     "wageTax": 25633,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 26047,
+     "unemployment": 3641,
+     "health": 25276,
+     "care": 3641
+    },
+    {
+     "gross": 300000,
+     "net": 207242,
+     "wageTax": 29983,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 27900,
+     "unemployment": 3900,
+     "health": 27075,
+     "care": 3900
+    },
+    {
+     "gross": 313429,
+     "net": 214860,
+     "wageTax": 32983,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 29149,
+     "unemployment": 4075,
+     "health": 28287,
+     "care": 4075
+    },
+    {
+     "gross": 431996,
+     "net": 280059,
+     "wageTax": 61541,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 40176,
+     "unemployment": 5616,
+     "health": 38988,
+     "care": 5616
+    },
+    {
+     "gross": 450000,
+     "net": 289621,
+     "wageTax": 66216,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 41850,
+     "unemployment": 5850,
+     "health": 40613,
+     "care": 5850
+    },
+    {
+     "gross": 567382,
+     "net": 349849,
+     "wageTax": 98808,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 52767,
+     "unemployment": 7376,
+     "health": 51206,
+     "care": 7376
+    },
+    {
+     "gross": 581249,
+     "net": 356723,
+     "wageTax": 102900,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 54056,
+     "unemployment": 7556,
+     "health": 52458,
+     "care": 7556
+    },
+    {
+     "gross": 581250,
+     "net": 356724,
+     "wageTax": 102900,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 54056,
+     "unemployment": 7556,
+     "health": 52458,
+     "care": 7556
+    },
+    {
+     "gross": 581251,
+     "net": 356725,
+     "wageTax": 102900,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 54056,
+     "unemployment": 7556,
+     "health": 52458,
+     "care": 7556
+    },
+    {
+     "gross": 600000,
+     "net": 367153,
+     "wageTax": 109233,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 55800,
+     "unemployment": 7800,
+     "health": 52458,
+     "care": 7556
+    },
+    {
+     "gross": 625962,
+     "net": 381405,
+     "wageTax": 118191,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 58214,
+     "unemployment": 8138,
+     "health": 52458,
+     "care": 7556
+    },
+    {
+     "gross": 844999,
+     "net": 495232,
+     "wageTax": 200183,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 52458,
+     "care": 7556
+    },
+    {
+     "gross": 845000,
+     "net": 495233,
+     "wageTax": 200183,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 52458,
+     "care": 7556
+    },
+    {
+     "gross": 845001,
+     "net": 495234,
+     "wageTax": 200183,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 52458,
+     "care": 7556
+    },
+    {
+     "gross": 1000000,
+     "net": 585133,
+     "wageTax": 265283,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 52458,
+     "care": 7556
+    },
+    {
+     "gross": 1073419,
+     "net": 624843,
+     "wageTax": 296125,
+     "solidarity": 2867,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 52458,
+     "care": 7556
+    },
+    {
+     "gross": 1074933,
+     "net": 625648,
+     "wageTax": 296758,
+     "solidarity": 2943,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 52458,
+     "care": 7556
+    },
+    {
+     "gross": 1097343,
+     "net": 637521,
+     "wageTax": 306175,
+     "solidarity": 4063,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 52458,
+     "care": 7556
+    },
+    {
+     "gross": 1166201,
+     "net": 674022,
+     "wageTax": 335091,
+     "solidarity": 7504,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 52458,
+     "care": 7556
+    },
+    {
+     "gross": 1187463,
+     "net": 685295,
+     "wageTax": 344016,
+     "solidarity": 8568,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 52458,
+     "care": 7556
+    },
+    {
+     "gross": 1245597,
+     "net": 716107,
+     "wageTax": 368433,
+     "solidarity": 11473,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 52458,
+     "care": 7556
+    },
+    {
+     "gross": 1399895,
+     "net": 798876,
+     "wageTax": 433241,
+     "solidarity": 18194,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 52458,
+     "care": 7556
+    },
+    {
+     "gross": 1410652,
+     "net": 804868,
+     "wageTax": 437758,
+     "solidarity": 18442,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 52458,
+     "care": 7556
+    },
+    {
+     "gross": 1453073,
+     "net": 828492,
+     "wageTax": 455575,
+     "solidarity": 19422,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 52458,
+     "care": 7556
+    },
+    {
+     "gross": 1461645,
+     "net": 833266,
+     "wageTax": 459175,
+     "solidarity": 19620,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 52458,
+     "care": 7556
+    },
+    {
+     "gross": 1471366,
+     "net": 838680,
+     "wageTax": 463258,
+     "solidarity": 19844,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 52458,
+     "care": 7556
+    },
+    {
+     "gross": 1556072,
+     "net": 885853,
+     "wageTax": 498833,
+     "solidarity": 21802,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 52458,
+     "care": 7556
+    },
+    {
+     "gross": 1567413,
+     "net": 892166,
+     "wageTax": 503600,
+     "solidarity": 22063,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 52458,
+     "care": 7556
+    },
+    {
+     "gross": 1585836,
+     "net": 902430,
+     "wageTax": 511333,
+     "solidarity": 22489,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 52458,
+     "care": 7556
+    },
+    {
+     "gross": 1599287,
+     "net": 909920,
+     "wageTax": 516983,
+     "solidarity": 22800,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 52458,
+     "care": 7556
+    },
+    {
+     "gross": 1614455,
+     "net": 918363,
+     "wageTax": 523358,
+     "solidarity": 23150,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 52458,
+     "care": 7556
+    },
+    {
+     "gross": 1622152,
+     "net": 922649,
+     "wageTax": 526591,
+     "solidarity": 23328,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 52458,
+     "care": 7556
+    },
+    {
+     "gross": 1706302,
+     "net": 969513,
+     "wageTax": 561933,
+     "solidarity": 25272,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 52458,
+     "care": 7556
+    },
+    {
+     "gross": 1710429,
+     "net": 971812,
+     "wageTax": 563666,
+     "solidarity": 25367,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 52458,
+     "care": 7556
+    },
+    {
+     "gross": 1813167,
+     "net": 1029026,
+     "wageTax": 606816,
+     "solidarity": 27741,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 52458,
+     "care": 7556
+    },
+    {
+     "gross": 1867902,
+     "net": 1059505,
+     "wageTax": 629808,
+     "solidarity": 29005,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 52458,
+     "care": 7556
+    },
+    {
+     "gross": 1917499,
+     "net": 1087131,
+     "wageTax": 650633,
+     "solidarity": 30151,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 52458,
+     "care": 7556
+    },
+    {
+     "gross": 2500000,
+     "net": 1410402,
+     "wageTax": 896408,
+     "solidarity": 43606,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 52458,
+     "care": 7556
+    },
+    {
+     "gross": 833333333,
+     "net": 437805951,
+     "wageTax": 374771408,
+     "solidarity": 20606390,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 78585,
+     "unemployment": 10985,
+     "health": 52458,
+     "care": 7556
+    }
+   ]
+  },
+  {
+   "profile": {
+    "children": 6,
+    "childAllowance": "3",
+    "saxony": true,
+    "healthSurcharge": "3.45"
+   },
+   "period": "year",
+   "cases": [
+    {
+     "gross": 2400001,
+     "net": 1787201,
+     "wageTax": 110600,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 223200,
+     "unemployment": 31200,
+     "health": 216600,
+     "care": 31200
+    },
+    {
+     "gross": 3000000,
+     "net": 2141150,
+     "wageTax": 231100,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 279000,
+     "unemployment": 39000,
+     "health": 270750,
+     "care": 39000
+    },
+    {
+     "gross": 3091274,
+     "net": 2194225,
+     "wageTax": 250200,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 287488,
+     "unemployment": 40187,
+     "health": 278987,
+     "care": 40187
+    },
+    {
+     "gross": 4500000,
+     "net": 2990275,
+     "wageTax": 568100,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 418500,
+     "unemployment": 58500,
+     "health": 406125,
+     "care": 58500
+    },
+    {
+     "gross": 4528050,
+     "net": 3005754,
+     "wageTax": 574800,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 421109,
+     "unemployment": 58865,
+     "health": 408657,
+     "care": 58865
+    },
+    {
+     "gross": 4653208,
+     "net": 3074224,
+     "wageTax": 605300,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 432748,
+     "unemployment": 60492,
+     "health": 419952,
+     "care": 60492
+    },
+    {
+     "gross": 4906565,
+     "net": 3211767,
+     "wageTax": 668100,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 456311,
+     "unemployment": 63785,
+     "health": 442817,
+     "care": 63785
+    },
+    {
+     "gross": 6000000,
+     "net": 3788800,
+     "wageTax": 955700,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 558000,
+     "unemployment": 78000,
+     "health": 541500,
+     "care": 78000
+    },
+    {
+     "gross": 6503579,
+     "net": 4045504,
+     "wageTax": 1097200,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 604833,
+     "unemployment": 84547,
+     "health": 586948,
+     "care": 84547
+    },
+    {
+     "gross": 6975000,
+     "net": 4280681,
+     "wageTax": 1234800,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 648675,
+     "unemployment": 90675,
+     "health": 629494,
+     "care": 90675
+    },
+    {
+     "gross": 6975001,
+     "net": 4280682,
+     "wageTax": 1234800,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 648675,
+     "unemployment": 90675,
+     "health": 629494,
+     "care": 90675
+    },
+    {
+     "gross": 8000000,
+     "net": 4839431,
+     "wageTax": 1592400,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 744000,
+     "unemployment": 104000,
+     "health": 629494,
+     "care": 90675
+    },
+    {
+     "gross": 8100617,
+     "net": 4892683,
+     "wageTax": 1629100,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 753357,
+     "unemployment": 105308,
+     "health": 629494,
+     "care": 90675
+    },
+    {
+     "gross": 9106193,
+     "net": 5412367,
+     "wageTax": 2008400,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 846876,
+     "unemployment": 118381,
+     "health": 629494,
+     "care": 90675
+    },
+    {
+     "gross": 9572869,
+     "net": 5651776,
+     "wageTax": 2186200,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 890277,
+     "unemployment": 124447,
+     "health": 629494,
+     "care": 90675
+    },
+    {
+     "gross": 10072551,
+     "net": 5908192,
+     "wageTax": 2376500,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 936747,
+     "unemployment": 130943,
+     "health": 629494,
+     "care": 90675
+    },
+    {
+     "gross": 10140000,
+     "net": 5942791,
+     "wageTax": 2402200,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 629494,
+     "care": 90675
+    },
+    {
+     "gross": 10140001,
+     "net": 5942792,
+     "wageTax": 2402200,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 629494,
+     "care": 90675
+    },
+    {
+     "gross": 10489226,
+     "net": 6145317,
+     "wageTax": 2548900,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 629494,
+     "care": 90675
+    },
+    {
+     "gross": 11427449,
+     "net": 6689440,
+     "wageTax": 2943000,
+     "solidarity": 0,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 629494,
+     "care": 90675
+    },
+    {
+     "gross": 12559261,
+     "net": 7327615,
+     "wageTax": 3418300,
+     "solidarity": 18337,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 629494,
+     "care": 90675
+    },
+    {
+     "gross": 13709458,
+     "net": 7937235,
+     "wageTax": 3901400,
+     "solidarity": 75814,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 629494,
+     "care": 90675
+    },
+    {
+     "gross": 13848926,
+     "net": 8011129,
+     "wageTax": 3960000,
+     "solidarity": 82788,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 629494,
+     "care": 90675
+    },
+    {
+     "gross": 14245108,
+     "net": 8221110,
+     "wageTax": 4126400,
+     "solidarity": 102589,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 629494,
+     "care": 90675
+    },
+    {
+     "gross": 14649926,
+     "net": 8435686,
+     "wageTax": 4296400,
+     "solidarity": 122831,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 629494,
+     "care": 90675
+    },
+    {
+     "gross": 15000000,
+     "net": 8621267,
+     "wageTax": 4443400,
+     "solidarity": 140324,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 629494,
+     "care": 90675
+    },
+    {
+     "gross": 16421047,
+     "net": 9376133,
+     "wageTax": 5040300,
+     "solidarity": 209605,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 629494,
+     "care": 90675
+    },
+    {
+     "gross": 16440701,
+     "net": 9387131,
+     "wageTax": 5048500,
+     "solidarity": 210061,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 629494,
+     "care": 90675
+    },
+    {
+     "gross": 16468890,
+     "net": 9402871,
+     "wageTax": 5060300,
+     "solidarity": 210710,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 629494,
+     "care": 90675
+    },
+    {
+     "gross": 17056582,
+     "net": 9730089,
+     "wageTax": 5307200,
+     "solidarity": 224284,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 629494,
+     "care": 90675
+    },
+    {
+     "gross": 17982303,
+     "net": 10245620,
+     "wageTax": 5696000,
+     "solidarity": 245674,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 629494,
+     "care": 90675
+    },
+    {
+     "gross": 18184506,
+     "net": 10358254,
+     "wageTax": 5780900,
+     "solidarity": 250343,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 629494,
+     "care": 90675
+    },
+    {
+     "gross": 18627149,
+     "net": 10604772,
+     "wageTax": 5966800,
+     "solidarity": 260568,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 629494,
+     "care": 90675
+    },
+    {
+     "gross": 20005772,
+     "net": 11372550,
+     "wageTax": 6545800,
+     "solidarity": 292413,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 629494,
+     "care": 90675
+    },
+    {
+     "gross": 20938534,
+     "net": 11891963,
+     "wageTax": 6937600,
+     "solidarity": 313962,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 629494,
+     "care": 90675
+    },
+    {
+     "gross": 21663698,
+     "net": 12295780,
+     "wageTax": 7242200,
+     "solidarity": 330709,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 629494,
+     "care": 90675
+    },
+    {
+     "gross": 22549826,
+     "net": 12789237,
+     "wageTax": 7614400,
+     "solidarity": 351180,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 629494,
+     "care": 90675
+    },
+    {
+     "gross": 23267073,
+     "net": 13188718,
+     "wageTax": 7915600,
+     "solidarity": 367746,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 629494,
+     "care": 90675
+    },
+    {
+     "gross": 23999713,
+     "net": 13596729,
+     "wageTax": 8223300,
+     "solidarity": 384675,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 629494,
+     "care": 90675
+    },
+    {
+     "gross": 24380191,
+     "net": 13808623,
+     "wageTax": 8383100,
+     "solidarity": 393459,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 629494,
+     "care": 90675
+    },
+    {
+     "gross": 30000000,
+     "net": 16924810,
+     "wageTax": 10756900,
+     "solidarity": 523281,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 629494,
+     "care": 90675
+    },
+    {
+     "gross": 10000000000,
+     "net": 5253671402,
+     "wageTax": 4497256900,
+     "solidarity": 247276689,
+     "churchBase": 0,
+     "churchTax": 0,
+     "pension": 943020,
+     "unemployment": 131820,
+     "health": 629494,
+     "care": 90675
+    }
+   ]
+  }
+ ],
+ "inverse": [
+  {
+   "profile": {},
+   "period": "month",
+   "windowStart": 200001,
+   "windowEnd": 220000,
+   "targets": [
+    {
+     "net": 153686,
+     "lowestGross": 210183
+    },
+    {
+     "net": 153692,
+     "lowestGross": 210192
+    },
+    {
+     "net": 153826,
+     "lowestGross": 210416
+    },
+    {
+     "net": 154042,
+     "lowestGross": 210788
+    },
+    {
+     "net": 154096,
+     "lowestGross": 210878
+    },
+    {
+     "net": 154252,
+     "lowestGross": 211141
+    },
+    {
+     "net": 154368,
+     "lowestGross": 211333
+    },
+    {
+     "net": 154629,
+     "lowestGross": 211783
+    },
+    {
+     "net": 154810,
+     "lowestGross": 212089
+    },
+    {
+     "net": 154981,
+     "lowestGross": 212381
+    },
+    {
+     "net": 155095,
+     "lowestGross": 212582
+    },
+    {
+     "net": 155347,
+     "lowestGross": 212999
+    },
+    {
+     "net": 155460,
+     "lowestGross": 213197
+    },
+    {
+     "net": 155469,
+     "lowestGross": 213208
+    },
+    {
+     "net": 155474,
+     "lowestGross": 213225
+    },
+    {
+     "net": 155571,
+     "lowestGross": 213381
+    },
+    {
+     "net": 155669,
+     "lowestGross": 213548
+    },
+    {
+     "net": 155856,
+     "lowestGross": 213873
+    },
+    {
+     "net": 155937,
+     "lowestGross": 214009
+    },
+    {
+     "net": 156122,
+     "lowestGross": 214320
+    },
+    {
+     "net": 156575,
+     "lowestGross": 215099
+    },
+    {
+     "net": 156800,
+     "lowestGross": 215473
+    },
+    {
+     "net": 157074,
+     "lowestGross": 215951
+    },
+    {
+     "net": 157129,
+     "lowestGross": 216044
+    },
+    {
+     "net": 157419,
+     "lowestGross": 216530
+    }
+   ]
+  },
+  {
+   "profile": {},
+   "period": "month",
+   "windowStart": 575000,
+   "windowEnd": 594999,
+   "targets": [
+    {
+     "net": 356008,
+     "lowestGross": 585384
+    },
+    {
+     "net": 356463,
+     "lowestGross": 586191
+    },
+    {
+     "net": 356476,
+     "lowestGross": 586215
+    },
+    {
+     "net": 356559,
+     "lowestGross": 586364
+    },
+    {
+     "net": 356645,
+     "lowestGross": 586516
+    },
+    {
+     "net": 356743,
+     "lowestGross": 586691
+    },
+    {
+     "net": 356860,
+     "lowestGross": 586906
+    },
+    {
+     "net": 356882,
+     "lowestGross": 586939
+    },
+    {
+     "net": 356995,
+     "lowestGross": 587141
+    },
+    {
+     "net": 357321,
+     "lowestGross": 587729
+    },
+    {
+     "net": 357325,
+     "lowestGross": 587743
+    },
+    {
+     "net": 357333,
+     "lowestGross": 587752
+    },
+    {
+     "net": 357415,
+     "lowestGross": 587900
+    },
+    {
+     "net": 358129,
+     "lowestGross": 589173
+    },
+    {
+     "net": 358165,
+     "lowestGross": 589241
+    },
+    {
+     "net": 358454,
+     "lowestGross": 589761
+    },
+    {
+     "net": 358487,
+     "lowestGross": 589817
+    },
+    {
+     "net": 358539,
+     "lowestGross": 589912
+    },
+    {
+     "net": 358820,
+     "lowestGross": 590412
+    },
+    {
+     "net": 358827,
+     "lowestGross": 590430
+    },
+    {
+     "net": 358834,
+     "lowestGross": 590438
+    },
+    {
+     "net": 358992,
+     "lowestGross": 590725
+    },
+    {
+     "net": 359029,
+     "lowestGross": 590786
+    },
+    {
+     "net": 359067,
+     "lowestGross": 590857
+    },
+    {
+     "net": 359190,
+     "lowestGross": 591078
+    }
+   ]
+  },
+  {
+   "profile": {},
+   "period": "month",
+   "windowStart": 838000,
+   "windowEnd": 857999,
+   "targets": [
+    {
+     "net": 490865,
+     "lowestGross": 848415
+    },
+    {
+     "net": 491100,
+     "lowestGross": 848864
+    },
+    {
+     "net": 491268,
+     "lowestGross": 849182
+    },
+    {
+     "net": 491408,
+     "lowestGross": 849443
+    },
+    {
+     "net": 491466,
+     "lowestGross": 849548
+    },
+    {
+     "net": 491482,
+     "lowestGross": 849582
+    },
+    {
+     "net": 491830,
+     "lowestGross": 850238
+    },
+    {
+     "net": 491964,
+     "lowestGross": 850494
+    },
+    {
+     "net": 492391,
+     "lowestGross": 851302
+    },
+    {
+     "net": 492467,
+     "lowestGross": 851444
+    },
+    {
+     "net": 492615,
+     "lowestGross": 851722
+    },
+    {
+     "net": 492698,
+     "lowestGross": 851880
+    },
+    {
+     "net": 492850,
+     "lowestGross": 852163
+    },
+    {
+     "net": 492899,
+     "lowestGross": 852258
+    },
+    {
+     "net": 492990,
+     "lowestGross": 852424
+    },
+    {
+     "net": 493111,
+     "lowestGross": 852657
+    },
+    {
+     "net": 493148,
+     "lowestGross": 852722
+    },
+    {
+     "net": 493254,
+     "lowestGross": 852931
+    },
+    {
+     "net": 493294,
+     "lowestGross": 852999
+    },
+    {
+     "net": 493334,
+     "lowestGross": 853085
+    },
+    {
+     "net": 493389,
+     "lowestGross": 853186
+    },
+    {
+     "net": 493454,
+     "lowestGross": 853298
+    },
+    {
+     "net": 493465,
+     "lowestGross": 853327
+    },
+    {
+     "net": 493743,
+     "lowestGross": 853848
+    },
+    {
+     "net": 493750,
+     "lowestGross": 853864
+    }
+   ]
+  },
+  {
+   "profile": {
+    "taxClass": 3,
+    "children": 2,
+    "childAllowance": "2",
+    "churchTax": 9
+   },
+   "period": "month",
+   "windowStart": 420000,
+   "windowEnd": 439999,
+   "targets": [
+    {
+     "net": 313334,
+     "lowestGross": 430237
+    },
+    {
+     "net": 313567,
+     "lowestGross": 430636
+    },
+    {
+     "net": 313610,
+     "lowestGross": 430711
+    },
+    {
+     "net": 313717,
+     "lowestGross": 430890
+    },
+    {
+     "net": 314054,
+     "lowestGross": 431463
+    },
+    {
+     "net": 314081,
+     "lowestGross": 431519
+    },
+    {
+     "net": 314153,
+     "lowestGross": 431628
+    },
+    {
+     "net": 314252,
+     "lowestGross": 431797
+    },
+    {
+     "net": 314690,
+     "lowestGross": 432540
+    },
+    {
+     "net": 315159,
+     "lowestGross": 433344
+    },
+    {
+     "net": 315286,
+     "lowestGross": 433547
+    },
+    {
+     "net": 315334,
+     "lowestGross": 433627
+    },
+    {
+     "net": 315383,
+     "lowestGross": 433712
+    },
+    {
+     "net": 315491,
+     "lowestGross": 433890
+    },
+    {
+     "net": 315612,
+     "lowestGross": 434106
+    },
+    {
+     "net": 315632,
+     "lowestGross": 434131
+    },
+    {
+     "net": 316068,
+     "lowestGross": 434872
+    },
+    {
+     "net": 316193,
+     "lowestGross": 435094
+    },
+    {
+     "net": 316445,
+     "lowestGross": 435519
+    },
+    {
+     "net": 316550,
+     "lowestGross": 435692
+    },
+    {
+     "net": 316723,
+     "lowestGross": 435976
+    },
+    {
+     "net": 316793,
+     "lowestGross": 436105
+    },
+    {
+     "net": 316920,
+     "lowestGross": 436329
+    },
+    {
+     "net": 316944,
+     "lowestGross": 436359
+    },
+    {
+     "net": 316983,
+     "lowestGross": 436431
+    }
+   ]
+  },
+  {
+   "profile": {
+    "taxClass": 6,
+    "churchTax": 9
+   },
+   "period": "month",
+   "windowStart": 300000,
+   "windowEnd": 319999,
+   "targets": [
+    {
+     "net": 166810,
+     "lowestGross": 310032
+    },
+    {
+     "net": 166838,
+     "lowestGross": null
+    },
+    {
+     "net": 166877,
+     "lowestGross": 310163
+    },
+    {
+     "net": 166961,
+     "lowestGross": 310388
+    },
+    {
+     "net": 167603,
+     "lowestGross": 311811
+    },
+    {
+     "net": 167664,
+     "lowestGross": 311958
+    },
+    {
+     "net": 167678,
+     "lowestGross": 311977
+    },
+    {
+     "net": 167725,
+     "lowestGross": 312083
+    },
+    {
+     "net": 167832,
+     "lowestGross": 312336
+    },
+    {
+     "net": 168030,
+     "lowestGross": 312776
+    },
+    {
+     "net": 168241,
+     "lowestGross": 313231
+    },
+    {
+     "net": 168280,
+     "lowestGross": 313327
+    },
+    {
+     "net": 168286,
+     "lowestGross": 313335
+    },
+    {
+     "net": 168346,
+     "lowestGross": 313483
+    },
+    {
+     "net": 168347,
+     "lowestGross": null
+    },
+    {
+     "net": 168646,
+     "lowestGross": 314144
+    },
+    {
+     "net": 168665,
+     "lowestGross": 314214
+    },
+    {
+     "net": 168667,
+     "lowestGross": 314216
+    },
+    {
+     "net": 168771,
+     "lowestGross": 314419
+    },
+    {
+     "net": 168882,
+     "lowestGross": 314676
+    },
+    {
+     "net": 168951,
+     "lowestGross": null
+    },
+    {
+     "net": 168995,
+     "lowestGross": 314914
+    },
+    {
+     "net": 169004,
+     "lowestGross": 314971
+    },
+    {
+     "net": 169096,
+     "lowestGross": 315138
+    }
+   ]
+  },
+  {
+   "profile": {
+    "children": 6,
+    "childAllowance": "3",
+    "saxony": true,
+    "healthSurcharge": "3.45"
+   },
+   "period": "month",
+   "windowStart": 700000,
+   "windowEnd": 719999,
+   "targets": [
+    {
+     "net": 426038,
+     "lowestGross": 710153
+    },
+    {
+     "net": 426113,
+     "lowestGross": 710302
+    },
+    {
+     "net": 426314,
+     "lowestGross": 710695
+    },
+    {
+     "net": 426375,
+     "lowestGross": 710810
+    },
+    {
+     "net": 426422,
+     "lowestGross": 710900
+    },
+    {
+     "net": 426808,
+     "lowestGross": 711647
+    },
+    {
+     "net": 426819,
+     "lowestGross": 711670
+    },
+    {
+     "net": 426940,
+     "lowestGross": 711899
+    },
+    {
+     "net": 426971,
+     "lowestGross": 711970
+    },
+    {
+     "net": 427573,
+     "lowestGross": 713138
+    },
+    {
+     "net": 427602,
+     "lowestGross": 713188
+    },
+    {
+     "net": 427673,
+     "lowestGross": 713324
+    },
+    {
+     "net": 427761,
+     "lowestGross": 713496
+    },
+    {
+     "net": 427779,
+     "lowestGross": 713536
+    },
+    {
+     "net": 427801,
+     "lowestGross": 713580
+    },
+    {
+     "net": 427818,
+     "lowestGross": 713607
+    },
+    {
+     "net": 427913,
+     "lowestGross": 713788
+    },
+    {
+     "net": 427938,
+     "lowestGross": 713844
+    },
+    {
+     "net": 428091,
+     "lowestGross": 714137
+    },
+    {
+     "net": 428251,
+     "lowestGross": 714446
+    },
+    {
+     "net": 428555,
+     "lowestGross": 715037
+    },
+    {
+     "net": 428748,
+     "lowestGross": 715411
+    },
+    {
+     "net": 428810,
+     "lowestGross": 715537
+    },
+    {
+     "net": 428955,
+     "lowestGross": 715821
+    },
+    {
+     "net": 429056,
+     "lowestGross": 716008
+    }
+   ]
+  },
+  {
+   "profile": {},
+   "period": "year",
+   "windowStart": 6000000,
+   "windowEnd": 6019999,
+   "targets": [
+    {
+     "net": 3761298,
+     "lowestGross": 6009966
+    },
+    {
+     "net": 3761667,
+     "lowestGross": 6010693
+    },
+    {
+     "net": 3761721,
+     "lowestGross": 6010890
+    },
+    {
+     "net": 3761725,
+     "lowestGross": 6010894
+    },
+    {
+     "net": 3761813,
+     "lowestGross": 6011007
+    },
+    {
+     "net": 3761856,
+     "lowestGross": 6011062
+    },
+    {
+     "net": 3762375,
+     "lowestGross": 6012108
+    },
+    {
+     "net": 3762615,
+     "lowestGross": 6012542
+    },
+    {
+     "net": 3762784,
+     "lowestGross": 6012887
+    },
+    {
+     "net": 3762968,
+     "lowestGross": 6013249
+    },
+    {
+     "net": 3763012,
+     "lowestGross": 6013433
+    },
+    {
+     "net": 3763285,
+     "lowestGross": 6013911
+    },
+    {
+     "net": 3763345,
+     "lowestGross": 6013988
+    },
+    {
+     "net": 3763396,
+     "lowestGross": 6014053
+    },
+    {
+     "net": 3763428,
+     "lowestGross": 6014093
+    },
+    {
+     "net": 3763454,
+     "lowestGross": 6014254
+    },
+    {
+     "net": 3763458,
+     "lowestGross": 6014259
+    },
+    {
+     "net": 3763486,
+     "lowestGross": 6014295
+    },
+    {
+     "net": 3763546,
+     "lowestGross": 6014373
+    },
+    {
+     "net": 3763550,
+     "lowestGross": 6014377
+    },
+    {
+     "net": 3763602,
+     "lowestGross": 6014444
+    },
+    {
+     "net": 3763603,
+     "lowestGross": 6014445
+    },
+    {
+     "net": 3763714,
+     "lowestGross": 6014842
+    },
+    {
+     "net": 3763953,
+     "lowestGross": 6015277
+    },
+    {
+     "net": 3764123,
+     "lowestGross": 6015493
+    }
+   ]
+  },
+  {
+   "profile": {
+    "taxClass": 2,
+    "children": 1,
+    "childAllowance": "0.5",
+    "churchTax": 8
+   },
+   "period": "year",
+   "windowStart": 4100000,
+   "windowEnd": 4119999,
+   "targets": [
+    {
+     "net": 2869614,
+     "lowestGross": 4110136
+    },
+    {
+     "net": 2869627,
+     "lowestGross": 4110152
+    },
+    {
+     "net": 2869664,
+     "lowestGross": 4110325
+    },
+    {
+     "net": 2869669,
+     "lowestGross": 4110332
+    },
+    {
+     "net": 2869670,
+     "lowestGross": 4110333
+    },
+    {
+     "net": 2869835,
+     "lowestGross": 4110542
+    },
+    {
+     "net": 2869945,
+     "lowestGross": 4110691
+    },
+    {
+     "net": 2869991,
+     "lowestGross": 4110878
+    },
+    {
+     "net": 2870302,
+     "lowestGross": 4111419
+    },
+    {
+     "net": 2870308,
+     "lowestGross": 4111428
+    },
+    {
+     "net": 2870313,
+     "lowestGross": 4111433
+    },
+    {
+     "net": 2870594,
+     "lowestGross": 4111927
+    },
+    {
+     "net": 2871069,
+     "lowestGross": 4112792
+    },
+    {
+     "net": 2871092,
+     "lowestGross": 4112822
+    },
+    {
+     "net": 2871338,
+     "lowestGross": 4113271
+    },
+    {
+     "net": 2871884,
+     "lowestGross": 4114237
+    },
+    {
+     "net": 2871906,
+     "lowestGross": 4114265
+    },
+    {
+     "net": 2871938,
+     "lowestGross": 4114443
+    },
+    {
+     "net": 2872229,
+     "lowestGross": 4114948
+    },
+    {
+     "net": 2872357,
+     "lowestGross": 4115110
+    },
+    {
+     "net": 2872483,
+     "lowestGross": 4115271
+    },
+    {
+     "net": 2872640,
+     "lowestGross": 4115734
+    },
+    {
+     "net": 2872864,
+     "lowestGross": 4116026
+    },
+    {
+     "net": 2873008,
+     "lowestGross": 4116346
+    }
+   ]
+  }
+ ]
+}

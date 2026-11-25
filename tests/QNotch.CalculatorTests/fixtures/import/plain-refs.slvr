@@ -1,0 +1,6 @@
+price = 40
+qty = 3
+price * qty
+line3 * 2
+// line9 stays in comments
+line9 + 1

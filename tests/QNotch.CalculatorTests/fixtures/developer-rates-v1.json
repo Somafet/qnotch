@@ -1,0 +1,8282 @@
+{
+  "model": "Python Fraction; independent SI/IEC scales, 8 bits/byte, elapsed seconds and flat supplied-price formulas; no production imports",
+  "seed": 2026103107,
+  "cases": [
+    {
+      "kind": "speed",
+      "source": "1bps",
+      "exact": [
+        "1",
+        "1"
+      ]
+    },
+    {
+      "kind": "speed",
+      "source": "1Bps",
+      "exact": [
+        "8",
+        "1"
+      ]
+    },
+    {
+      "kind": "speed",
+      "source": "1kbps",
+      "exact": [
+        "1000",
+        "1"
+      ]
+    },
+    {
+      "kind": "speed",
+      "source": "1kBps",
+      "exact": [
+        "8000",
+        "1"
+      ]
+    },
+    {
+      "kind": "speed",
+      "source": "1Mbps",
+      "exact": [
+        "1000000",
+        "1"
+      ]
+    },
+    {
+      "kind": "speed",
+      "source": "1MBps",
+      "exact": [
+        "8000000",
+        "1"
+      ]
+    },
+    {
+      "kind": "speed",
+      "source": "1Gbps",
+      "exact": [
+        "1000000000",
+        "1"
+      ]
+    },
+    {
+      "kind": "speed",
+      "source": "1GBps",
+      "exact": [
+        "8000000000",
+        "1"
+      ]
+    },
+    {
+      "kind": "speed",
+      "source": "1Tbps",
+      "exact": [
+        "1000000000000",
+        "1"
+      ]
+    },
+    {
+      "kind": "speed",
+      "source": "1TBps",
+      "exact": [
+        "8000000000000",
+        "1"
+      ]
+    },
+    {
+      "kind": "speed",
+      "source": "1Pbps",
+      "exact": [
+        "1000000000000000",
+        "1"
+      ]
+    },
+    {
+      "kind": "speed",
+      "source": "1PBps",
+      "exact": [
+        "8000000000000000",
+        "1"
+      ]
+    },
+    {
+      "kind": "speed",
+      "source": "1Ebps",
+      "exact": [
+        "1000000000000000000",
+        "1"
+      ]
+    },
+    {
+      "kind": "speed",
+      "source": "1EBps",
+      "exact": [
+        "8000000000000000000",
+        "1"
+      ]
+    },
+    {
+      "kind": "speed",
+      "source": "1Kibps",
+      "exact": [
+        "1024",
+        "1"
+      ]
+    },
+    {
+      "kind": "speed",
+      "source": "1KiBps",
+      "exact": [
+        "8192",
+        "1"
+      ]
+    },
+    {
+      "kind": "speed",
+      "source": "1Mibps",
+      "exact": [
+        "1048576",
+        "1"
+      ]
+    },
+    {
+      "kind": "speed",
+      "source": "1MiBps",
+      "exact": [
+        "8388608",
+        "1"
+      ]
+    },
+    {
+      "kind": "speed",
+      "source": "1Gibps",
+      "exact": [
+        "1073741824",
+        "1"
+      ]
+    },
+    {
+      "kind": "speed",
+      "source": "1GiBps",
+      "exact": [
+        "8589934592",
+        "1"
+      ]
+    },
+    {
+      "kind": "speed",
+      "source": "1Tibps",
+      "exact": [
+        "1099511627776",
+        "1"
+      ]
+    },
+    {
+      "kind": "speed",
+      "source": "1TiBps",
+      "exact": [
+        "8796093022208",
+        "1"
+      ]
+    },
+    {
+      "kind": "speed",
+      "source": "1Pibps",
+      "exact": [
+        "1125899906842624",
+        "1"
+      ]
+    },
+    {
+      "kind": "speed",
+      "source": "1PiBps",
+      "exact": [
+        "9007199254740992",
+        "1"
+      ]
+    },
+    {
+      "kind": "speed",
+      "source": "1Eibps",
+      "exact": [
+        "1152921504606846976",
+        "1"
+      ]
+    },
+    {
+      "kind": "speed",
+      "source": "1EiBps",
+      "exact": [
+        "9223372036854775808",
+        "1"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(9332359/2) GiB at 70612 Mbps",
+      "exact": [
+        "156571002732544",
+        "275828125"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((9332359/2) GiB,(68003/10) s)",
+      "exact": [
+        "400821766995312640",
+        "68003"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(4684559/5) GB at 44218 Tibps",
+      "exact": [
+        "1829905859375",
+        "11869678993408"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((4684559/5) GB,85242 day)",
+      "exact": [
+        "1171139750000",
+        "1150767"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(2615077/100) KiB at (55031/10) PBps",
+      "exact": [
+        "2615077",
+        "537412109375000000"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((2615077/100) KiB,(9786/5) h)",
+      "exact": [
+        "167364928",
+        "5504625"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "4184922 MiB at 10734 Ebps",
+      "exact": [
+        "22319584",
+        "6824493408203125"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput(4184922 MiB,87525 min)",
+      "exact": [
+        "2925472514048",
+        "437625"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "159276 B at 6046 KiBps",
+      "exact": [
+        "39819",
+        "1547776"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput(159276 B,59517 day)",
+      "exact": [
+        "13273",
+        "53565300"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(2324817/10) TB at (88139/2) GiBps",
+      "exact": [
+        "113516455078125",
+        "23105110016"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((2324817/10) TB,30765 h)",
+      "exact": [
+        "103325200000000",
+        "6153"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(1369001/2) GB at (8121/5) Tibps",
+      "exact": [
+        "13369150390625",
+        "4359928676352"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((1369001/2) GB,(35779/2) s)",
+      "exact": [
+        "10952008000000000",
+        "35779"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "6019942 B at 39709 kBps",
+      "exact": [
+        "3009971",
+        "19854500"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput(6019942 B,38890 h)",
+      "exact": [
+        "3009971",
+        "8750250"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(2399321/50) MiB at 7091 TiBps",
+      "exact": [
+        "2399321",
+        "371772620800"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((2399321/50) MiB,80731 min)",
+      "exact": [
+        "2515870416896",
+        "30274125"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(1213269/2) GB at (19605/2) bps",
+      "exact": [
+        "647076800000000",
+        "1307"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((1213269/2) GB,38338 h)",
+      "exact": [
+        "2022115000000",
+        "57507"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(7219789/2) GB at 8828 bps",
+      "exact": [
+        "7219789000000000",
+        "2207"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((7219789/2) GB,30856 h)",
+      "exact": [
+        "9024736250000",
+        "34713"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(5669125/2) TB at (45679/10) Ebps",
+      "exact": [
+        "45353",
+        "9135800"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((5669125/2) TB,40299 h)",
+      "exact": [
+        "426250000000000",
+        "2727"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(2426043/100) B at 35324 Bps",
+      "exact": [
+        "2426043",
+        "3532400"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((2426043/100) B,83883 s)",
+      "exact": [
+        "1617362",
+        "699025"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(750257/2) MB at 40975 MBps",
+      "exact": [
+        "750257",
+        "81950"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((750257/2) MB,1838 day)",
+      "exact": [
+        "468910625",
+        "24813"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "268221 GiB at (21659/5) Gbps",
+      "exact": [
+        "4500001652736",
+        "8460546875"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput(268221 GiB,30336 h)",
+      "exact": [
+        "375000137728",
+        "17775"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "6449187 KiB at 25970 Mbps",
+      "exact": [
+        "412747968",
+        "202890625"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput(6449187 KiB,69630 s)",
+      "exact": [
+        "8805289984",
+        "11605"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(844737/20) GB at 16976 Mbps",
+      "exact": [
+        "21118425",
+        "1061"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((844737/20) GB,20805 s)",
+      "exact": [
+        "22526320000000",
+        "1387"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(2400472/25) B at 34704 Mibps",
+      "exact": [
+        "300059",
+        "14214758400"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((2400472/25) B,11255 h)",
+      "exact": [
+        "1200236",
+        "63309375"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(1549323/100) kB at 64225 Ebps",
+      "exact": [
+        "1549323",
+        "802812500000000000000"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((1549323/100) kB,92036 min)",
+      "exact": [
+        "516441",
+        "23009"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "1525185 TB at (11659/10) Pibps",
+      "exact": [
+        "1861798095703125",
+        "200300094816256"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput(1525185 TB,43098 day)",
+      "exact": [
+        "211831250000000",
+        "64647"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(4345311/2) bit at 32100 MBps",
+      "exact": [
+        "1448437",
+        "171200000000"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((4345311/2) bit,(15669/5) h)",
+      "exact": [
+        "1448437",
+        "7521120"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(2611143/2) B at (26222/5) Pbps",
+      "exact": [
+        "2611143",
+        "1311100000000000000"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((2611143/2) B,95670 s)",
+      "exact": [
+        "580254",
+        "5315"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(736063/25) GiB at (49266/5) Mbps",
+      "exact": [
+        "49396351762432",
+        "1924453125"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((736063/25) GiB,6916 s)",
+      "exact": [
+        "1580683256397824",
+        "43225"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(2819705/4) GB at 52641 TBps",
+      "exact": [
+        "563941",
+        "42112800"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((2819705/4) GB,239 s)",
+      "exact": [
+        "5639410000000000",
+        "239"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "3769358 TB at 39842 TiBps",
+      "exact": [
+        "460126708984375",
+        "5347502718976"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput(3769358 TB,(25493/10) s)",
+      "exact": [
+        "301548640000000000000",
+        "25493"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(8846151/100) B at 93401 EiBps",
+      "exact": [
+        "8846151",
+        "10768402145178411440537600"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((8846151/100) B,43487 s)",
+      "exact": [
+        "17692302",
+        "1087175"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(2891979/4) KiB at (96983/10) Pibps",
+      "exact": [
+        "14459895",
+        "26658484049149952"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((2891979/4) KiB,(44327/10) day)",
+      "exact": [
+        "10282592",
+        "664905"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "8774395 GB at 57209 Gibps",
+      "exact": [
+        "17137490234375",
+        "14996996096"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput(8774395 GB,(67723/2) s)",
+      "exact": [
+        "140390320000000000",
+        "67723"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(4278741/100) GB at 84098 MiBps",
+      "exact": [
+        "334276640625",
+        "688930816"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((4278741/100) GB,21287 h)",
+      "exact": [
+        "285249400000",
+        "63861"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(9018689/2) GiB at 11523 Ebps",
+      "exact": [
+        "147762200576",
+        "43956756591796875"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((9018689/2) GiB,42575 min)",
+      "exact": [
+        "9683743576948736",
+        "638625"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(559001/20) GiB at 28212 Tbps",
+      "exact": [
+        "73269379072",
+        "8609619140625"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((559001/20) GiB,77388 s)",
+      "exact": [
+        "300111376678912",
+        "96735"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(7876731/2) TB at (49955/2) PiBps",
+      "exact": [
+        "384606005859375",
+        "2746305168277504"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((7876731/2) TB,(67859/10) day)",
+      "exact": [
+        "32819712500000000",
+        "610731"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "7383999 GB at 14424 kbps",
+      "exact": [
+        "2461333000000",
+        "601"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput(7383999 GB,2069 day)",
+      "exact": [
+        "6153332500000",
+        "18621"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(1088671/2) KiB at 5417 Mibps",
+      "exact": [
+        "1088671",
+        "1386752"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((1088671/2) KiB,(12347/2) s)",
+      "exact": [
+        "8918392832",
+        "12347"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "1482472 GiB at (8906/5) MBps",
+      "exact": [
+        "12435876478976",
+        "13915625"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput(1482472 GiB,66269 s)",
+      "exact": [
+        "12734337514471424",
+        "66269"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(1516085/2) MiB at 42098 PiBps",
+      "exact": [
+        "1516085",
+        "90404766613504"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((1516085/2) MiB,40500 min)",
+      "exact": [
+        "79486517248",
+        "30375"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "9969762 GB at (17561/2) Bps",
+      "exact": [
+        "19939524000000000",
+        "17561"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput(9969762 GB,(21039/10) min)",
+      "exact": [
+        "13293016000000000",
+        "21039"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(910401/20) GiB at (68887/10) Pbps",
+      "exact": [
+        "119328079872",
+        "2102264404296875"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((910401/20) GiB,56323 min)",
+      "exact": [
+        "162922605051904",
+        "1408075"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "1722036 MB at (11569/2) Tibps",
+      "exact": [
+        "6726703125",
+        "3105529790464"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput(1722036 MB,16157 h)",
+      "exact": [
+        "11480240000",
+        "48471"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "6293081 kB at 76543 Pbps",
+      "exact": [
+        "6293081",
+        "9567875000000000"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput(6293081 kB,(46413/10) s)",
+      "exact": [
+        "503446480000",
+        "46413"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(6525363/2) GiB at 5800 kBps",
+      "exact": [
+        "54738712264704",
+        "90625"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((6525363/2) GiB,42106 s)",
+      "exact": [
+        "14013110339764224",
+        "21053"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(7107979/100) MiB at (74125/2) Tbps",
+      "exact": [
+        "7278570496",
+        "452423095703125"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((7107979/100) MiB,44639 day)",
+      "exact": [
+        "116457127936",
+        "753283125"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "2362688 KiB at 4667 Gibps",
+      "exact": [
+        "36917",
+        "9558016"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput(2362688 KiB,(66763/10) s)",
+      "exact": [
+        "193551400960",
+        "66763"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(458603/2) B at (29617/10) kbps",
+      "exact": [
+        "458603",
+        "740425"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((458603/2) B,(8641/2) s)",
+      "exact": [
+        "3668824",
+        "8641"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "4733296 bit at (8903/2) Eibps",
+      "exact": [
+        "295831",
+        "320764379859836207104"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput(4733296 bit,26840 s)",
+      "exact": [
+        "591662",
+        "3355"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(752225/2) GiB at (15003/5) Kibps",
+      "exact": [
+        "15775301632000",
+        "15003"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((752225/2) GiB,(63611/2) day)",
+      "exact": [
+        "2019238608896",
+        "1717497"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(1874121/50) TB at 23164 kbps",
+      "exact": [
+        "74964840000000",
+        "5791"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((1874121/50) TB,20190 h)",
+      "exact": [
+        "24988280000000",
+        "6057"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(3274197/2) B at (31341/2) Mbps",
+      "exact": [
+        "1091399",
+        "1305875000"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((3274197/2) B,(5171/5) min)",
+      "exact": [
+        "1091399",
+        "5171"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(3830519/2) TB at 56211 kbps",
+      "exact": [
+        "15322076000000000",
+        "56211"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((3830519/2) TB,(36027/5) min)",
+      "exact": [
+        "3830519000000000000",
+        "108081"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "8927006 TB at 27750 Tbps",
+      "exact": [
+        "35708024",
+        "13875"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput(8927006 TB,21088 min)",
+      "exact": [
+        "111587575000000000",
+        "1977"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(1640123/2) MB at 2026 kBps",
+      "exact": [
+        "410030750",
+        "1013"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((1640123/2) MB,(56705/2) s)",
+      "exact": [
+        "2624196800000",
+        "11341"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(819046/25) bit at 72006 EiBps",
+      "exact": [
+        "409523",
+        "8301726586072062335385600"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((819046/25) bit,34913 day)",
+      "exact": [
+        "409523",
+        "37706040000"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(362853/5) MB at (36807/10) Bps",
+      "exact": [
+        "241902000000",
+        "12269"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((362853/5) MB,6594 h)",
+      "exact": [
+        "26878000",
+        "1099"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(1007142/25) MiB at 18989 Gbps",
+      "exact": [
+        "16501014528",
+        "927197265625"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((1007142/25) MiB,8863 h)",
+      "exact": [
+        "176010821632",
+        "16618125"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "121761 MiB at (71247/2) Tbps",
+      "exact": [
+        "166244352",
+        "5798095703125"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput(121761 MiB,(16023/10) s)",
+      "exact": [
+        "3404684328960",
+        "5341"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(9871073/4) GiB at (51161/10) TBps",
+      "exact": [
+        "1293821280256",
+        "2498095703125"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((9871073/4) GiB,81307 min)",
+      "exact": [
+        "5299491963928576",
+        "1219605"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(3408723/10) GiB at 85438 Pibps",
+      "exact": [
+        "3408723",
+        "111985295360"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((3408723/10) GiB,(9435/2) min)",
+      "exact": [
+        "813352989229056",
+        "78625"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(1219319/2) B at 16832 GiBps",
+      "exact": [
+        "1219319",
+        "36146444763136"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((1219319/2) B,85218 h)",
+      "exact": [
+        "1219319",
+        "76696200"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(9843621/2) KiB at (38855/2) Kibps",
+      "exact": [
+        "78748968",
+        "38855"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((9843621/2) KiB,(6709/2) day)",
+      "exact": [
+        "209997248",
+        "1509525"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "6444440 GiB at (34247/10) Mbps",
+      "exact": [
+        "345983238012928",
+        "21404375"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput(6444440 GiB,98211 day)",
+      "exact": [
+        "86495809503232",
+        "13258485"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "247716 bit at (62523/2) Gibps",
+      "exact": [
+        "6881",
+        "932410556416"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput(247716 bit,50252 h)",
+      "exact": [
+        "6881",
+        "5025200"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(2239143/4) GiB at 37702 MiBps",
+      "exact": [
+        "286610304",
+        "18851"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((2239143/4) GiB,(28809/2) h)",
+      "exact": [
+        "200355124084736",
+        "2160675"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "1121743 TB at (87781/10) Eibps",
+      "exact": [
+        "1369315185546875",
+        "1544259683164880896"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput(1121743 TB,(34305/2) s)",
+      "exact": [
+        "3589577600000000000",
+        "6861"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(408129/2) MiB at (13051/2) EiBps",
+      "exact": [
+        "408129",
+        "14349726254104576"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((408129/2) MiB,23987 day)",
+      "exact": [
+        "4457857024",
+        "5397075"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "432070 MB at (64171/10) PiBps",
+      "exact": [
+        "16877734375",
+        "282227042664054784"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput(432070 MB,31968 min)",
+      "exact": [
+        "5400875000",
+        "2997"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(4936548/5) B at (8586/5) kbps",
+      "exact": [
+        "822758",
+        "178875"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((4936548/5) B,268 day)",
+      "exact": [
+        "411379",
+        "1206000"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(446383/2) B at 6013 KiBps",
+      "exact": [
+        "63769",
+        "1759232"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((446383/2) B,(87713/2) day)",
+      "exact": [
+        "446383",
+        "947300400"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "653790 MB at 14726 MBps",
+      "exact": [
+        "8835",
+        "199"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput(653790 MB,(12591/2) s)",
+      "exact": [
+        "3486880000000",
+        "4197"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(4796637/4) KiB at 22612 TBps",
+      "exact": [
+        "4796637",
+        "88328125000000"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((4796637/4) KiB,(41242/5) day)",
+      "exact": [
+        "12791032",
+        "927945"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(1761112/25) B at 41718 MiBps",
+      "exact": [
+        "220139",
+        "136701542400"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((1761112/25) B,88279 min)",
+      "exact": [
+        "3522224",
+        "33104625"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(624209/50) MB at (7436/5) TBps",
+      "exact": [
+        "624209",
+        "74360000000"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((624209/50) MB,(56307/10) min)",
+      "exact": [
+        "49936720000",
+        "168921"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(1837225/2) MB at 679 Tibps",
+      "exact": [
+        "28706640625",
+        "2916282793984"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((1837225/2) MB,(42449/5) day)",
+      "exact": [
+        "11482656250",
+        "1146123"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(3263675/4) GB at 69153 TBps",
+      "exact": [
+        "130547",
+        "11064480"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((3263675/4) GB,(76887/10) day)",
+      "exact": [
+        "20397968750000",
+        "2075949"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(2048175/2) bit at 39517 KiBps",
+      "exact": [
+        "2048175",
+        "647446528"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((2048175/2) bit,(48153/2) h)",
+      "exact": [
+        "9103",
+        "770448"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(3714759/2) GB at (35896/5) Tbps",
+      "exact": [
+        "3714759",
+        "1794800"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((3714759/2) GB,(40619/10) min)",
+      "exact": [
+        "2476506000000000",
+        "40619"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(7402483/100) MB at (15753/2) PiBps",
+      "exact": [
+        "4626551875",
+        "554259413515370496"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((7402483/100) MB,10113 h)",
+      "exact": [
+        "1480496600",
+        "91017"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(713819/4) B at 12490 Tbps",
+      "exact": [
+        "713819",
+        "6245000000000000"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((713819/4) B,78116 day)",
+      "exact": [
+        "713819",
+        "3374611200"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "4786425 GiB at 6791 MBps",
+      "exact": [
+        "3212115443712",
+        "4244375"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput(4786425 GiB,47070 h)",
+      "exact": [
+        "1903475818496",
+        "7845"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(2202107/2) GB at 50802 kbps",
+      "exact": [
+        "4404214000000",
+        "25401"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((2202107/2) GB,(98171/2) h)",
+      "exact": [
+        "44042140000000",
+        "883539"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(418737/10) GiB at 7472 MiBps",
+      "exact": [
+        "13399584",
+        "2335"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((418737/10) GiB,7727 s)",
+      "exact": [
+        "1798461720625152",
+        "38635"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(4078113/4) MB at (88919/2) Pbps",
+      "exact": [
+        "4078113",
+        "22229750000000"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((4078113/4) MB,(61111/10) h)",
+      "exact": [
+        "67968550000",
+        "183333"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(1926247/2) MiB at (37689/5) MiBps",
+      "exact": [
+        "9631235",
+        "75378"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((1926247/2) MiB,(75057/2) day)",
+      "exact": [
+        "126238523392",
+        "50663475"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(4977509/5) MiB at (23119/2) EiBps",
+      "exact": [
+        "4977509",
+        "63549023306383360"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((4977509/5) MiB,2028 s)",
+      "exact": [
+        "10438592954368",
+        "2535"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "6351902 GiB at (11877/2) Mbps",
+      "exact": [
+        "1705075709837312",
+        "185578125"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput(6351902 GiB,96380 s)",
+      "exact": [
+        "13640605678698496",
+        "24095"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(1681007/50) bit at (38997/5) Eibps",
+      "exact": [
+        "1681007",
+        "449604799151532115230720"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((1681007/50) bit,(64607/10) h)",
+      "exact": [
+        "1681007",
+        "1162926000"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "4380668 KiB at 69752 EiBps",
+      "exact": [
+        "1095167",
+        "19633442575521677312"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput(4380668 KiB,70866 min)",
+      "exact": [
+        "4485804032",
+        "531495"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(4486539/100) MB at 44452 MBps",
+      "exact": [
+        "4486539",
+        "4445200"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((4486539/100) MB,(94613/2) min)",
+      "exact": [
+        "11964104000",
+        "94613"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(8235297/2) GiB at (32366/5) Tibps",
+      "exact": [
+        "41176485",
+        "8285696"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((8235297/2) GiB,(7579/10) day)",
+      "exact": [
+        "20468941717504",
+        "37895"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(4591036/5) GiB at 3772 Gbps",
+      "exact": [
+        "19256200658944",
+        "9208984375"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((4591036/5) GiB,17066 day)",
+      "exact": [
+        "154049605271552",
+        "28798875"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(1416597/4) GB at (12716/5) Mbps",
+      "exact": [
+        "3541492500",
+        "3179"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((1416597/4) GB,(5351/2) s)",
+      "exact": [
+        "5666388000000000",
+        "5351"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "3311749 GiB at 9681 MBps",
+      "exact": [
+        "7937418330112",
+        "21609375"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput(3311749 GiB,7467 h)",
+      "exact": [
+        "1777981705945088",
+        "1680075"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "3417124 MB at 32532 MBps",
+      "exact": [
+        "854281",
+        "8133"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput(3417124 MB,43262 h)",
+      "exact": [
+        "34171240000",
+        "194679"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(1221539/4) GB at 26860 Pbps",
+      "exact": [
+        "1221539",
+        "13430000000"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((1221539/4) GB,(7027/10) s)",
+      "exact": [
+        "24430780000000000",
+        "7027"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "250802 bit at 4120 Tbps",
+      "exact": [
+        "125401",
+        "2060000000000000"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput(250802 bit,(47827/5) day)",
+      "exact": [
+        "125401",
+        "413225280"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(78923/2) kB at (57093/10) Mbps",
+      "exact": [
+        "78923",
+        "1427325"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((78923/2) kB,(9712/5) h)",
+      "exact": [
+        "1973075",
+        "43704"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(9205121/2) GiB at 15720 Mbps",
+      "exact": [
+        "77218151661568",
+        "30703125"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((9205121/2) GiB,95868 min)",
+      "exact": [
+        "2470980853170176",
+        "359505"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(3021454/5) kB at 44974 bps",
+      "exact": [
+        "2417163200",
+        "22487"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((3021454/5) kB,(28427/5) min)",
+      "exact": [
+        "1208581600",
+        "85281"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "2493470 B at 5605 MiBps",
+      "exact": [
+        "249347",
+        "587726848"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput(2493470 B,(6677/10) min)",
+      "exact": [
+        "9973880",
+        "20031"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(9850463/10) kB at 91536 Eibps",
+      "exact": [
+        "246261575",
+        "3297931963927885774848"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((9850463/10) kB,(1321/2) s)",
+      "exact": [
+        "15760740800",
+        "1321"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(6567573/4) GiB at (83397/10) Mbps",
+      "exact": [
+        "146914121089024",
+        "86871875"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((6567573/4) GiB,(60371/2) h)",
+      "exact": [
+        "587656484356096",
+        "4527825"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(4624614/5) KiB at 68467 kBps",
+      "exact": [
+        "591950592",
+        "42791875"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((4624614/5) KiB,(29269/10) day)",
+      "exact": [
+        "21924096",
+        "731725"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(3104049/2) GB at 2597 Tbps",
+      "exact": [
+        "3104049",
+        "649250"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((3104049/2) GB,39305 h)",
+      "exact": [
+        "2069366000000",
+        "23583"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(5262309/10) TB at 37126 Bps",
+      "exact": [
+        "263115450000000000",
+        "18563"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((5262309/10) TB,40721 day)",
+      "exact": [
+        "146175250000000",
+        "122163"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(2410583/10) B at (24587/10) TBps",
+      "exact": [
+        "2410583",
+        "24587000000000000"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((2410583/10) B,88156 s)",
+      "exact": [
+        "2410583",
+        "110195"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(6692783/10) GB at (10761/10) GiBps",
+      "exact": [
+        "13071841796875",
+        "22567452672"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((6692783/10) GB,46472 s)",
+      "exact": [
+        "669278300000000",
+        "5809"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "1736109 GB at (4189/2) Gibps",
+      "exact": [
+        "3390837890625",
+        "549060608"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput(1736109 GB,9043 min)",
+      "exact": [
+        "231481200000000",
+        "9043"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "7310915 MiB at 947 kbps",
+      "exact": [
+        "1533210001408",
+        "23675"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput(7310915 MiB,94752 day)",
+      "exact": [
+        "2994550784",
+        "399735"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "3054800 GiB at (31552/5) Mbps",
+      "exact": [
+        "256255197184",
+        "61625"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput(3054800 GiB,33151 day)",
+      "exact": [
+        "8200166309888",
+        "895077"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(4668169/100) MB at (16263/2) Gbps",
+      "exact": [
+        "4668169",
+        "101643750"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((4668169/100) MB,(95449/2) h)",
+      "exact": [
+        "1867267600",
+        "859041"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "1460019 B at 47284 Kibps",
+      "exact": [
+        "1460019",
+        "6052352"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput(1460019 B,(83367/2) day)",
+      "exact": [
+        "486673",
+        "150060600"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(2010549/2) TB at 24627 Pbps",
+      "exact": [
+        "670183",
+        "2052250"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((2010549/2) TB,(4663/2) s)",
+      "exact": [
+        "16084392000000000000",
+        "4663"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(930997/10) bit at 229 kBps",
+      "exact": [
+        "930997",
+        "18320000"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((930997/10) bit,(20999/5) h)",
+      "exact": [
+        "930997",
+        "151192800"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(329457/10) MiB at 63290 Pbps",
+      "exact": [
+        "21085248",
+        "4828643798828125"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((329457/10) MiB,97119 s)",
+      "exact": [
+        "460614270976",
+        "161865"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(1315947/2) GB at 26019 Eibps",
+      "exact": [
+        "856736328125",
+        "4882464946023038976"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((1315947/2) GB,(9589/10) h)",
+      "exact": [
+        "43864900000000",
+        "28767"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(2412401/2) KiB at (44271/10) Tibps",
+      "exact": [
+        "12062005",
+        "5941953036288"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((2412401/2) KiB,(39015/2) h)",
+      "exact": [
+        "1235149312",
+        "8778375"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "693316 MB at (7781/2) Kibps",
+      "exact": [
+        "10833062500",
+        "7781"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput(693316 MB,(52659/2) day)",
+      "exact": [
+        "3466580000",
+        "1421793"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(942079/10) GB at (15333/2) MBps",
+      "exact": [
+        "188415800",
+        "15333"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((942079/10) GB,38944 h)",
+      "exact": [
+        "58879937500",
+        "10953"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "6220005 MB at (45661/5) kbps",
+      "exact": [
+        "22618200000",
+        "4151"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput(6220005 MB,38227 min)",
+      "exact": [
+        "829334000000",
+        "38227"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "1679344 kB at 7230 kbps",
+      "exact": [
+        "6717376",
+        "3615"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput(1679344 kB,(78389/2) h)",
+      "exact": [
+        "67173760",
+        "705501"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(2076883/50) TB at 80947 GBps",
+      "exact": [
+        "41537660",
+        "80947"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((2076883/50) TB,(3419/5) day)",
+      "exact": [
+        "519220750000000",
+        "92313"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "1267348 GB at 27003 kbps",
+      "exact": [
+        "10138784000000",
+        "27003"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput(1267348 GB,(78979/2) h)",
+      "exact": [
+        "50693920000000",
+        "710811"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(290645/2) MB at (7451/5) Gibps",
+      "exact": [
+        "22706640625",
+        "31251759104"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((290645/2) MB,22117 day)",
+      "exact": [
+        "363306250",
+        "597159"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "640171 MiB at 40387 GiBps",
+      "exact": [
+        "640171",
+        "41356288"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput(640171 MiB,(47309/5) min)",
+      "exact": [
+        "1342535892992",
+        "141927"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(14928/5) KiB at 4099 Mbps",
+      "exact": [
+        "1910784",
+        "320234375"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((14928/5) KiB,(40721/5) s)",
+      "exact": [
+        "122290176",
+        "40721"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(4282333/10) KiB at 68481 MiBps",
+      "exact": [
+        "4282333",
+        "701245440"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((4282333/10) KiB,(95615/2) min)",
+      "exact": [
+        "8770217984",
+        "7171125"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(4075619/5) GiB at (17968/5) EBps",
+      "exact": [
+        "1043358464",
+        "4283905029296875"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((4075619/5) GiB,(6018/5) day)",
+      "exact": [
+        "136755080593408",
+        "2031075"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(8562825/2) MiB at (46099/10) MiBps",
+      "exact": [
+        "42814125",
+        "46099"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((8562825/2) MiB,(45883/5) h)",
+      "exact": [
+        "49882071040",
+        "45883"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(4676017/2) MB at (40727/10) Tibps",
+      "exact": [
+        "365313828125",
+        "87460566532096"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((4676017/2) MB,89792 s)",
+      "exact": [
+        "292251062500",
+        "1403"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "7305424 KiB at 72364 kBps",
+      "exact": [
+        "233773568",
+        "2261375"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput(7305424 KiB,52971 min)",
+      "exact": [
+        "14961508352",
+        "794565"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(1185609/5) GiB at 71421 Tbps",
+      "exact": [
+        "828800761856",
+        "29061279296875"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((1185609/5) GiB,(7283/5) s)",
+      "exact": [
+        "10184303761686528",
+        "7283"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(576217/10) GiB at 39190 EBps",
+      "exact": [
+        "590046208",
+        "373744964599609375"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((576217/10) GiB,(65453/2) min)",
+      "exact": [
+        "1237416585199616",
+        "4908975"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "8662203 B at 92275 KiBps",
+      "exact": [
+        "8662203",
+        "94489600"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput(8662203 B,(57171/10) s)",
+      "exact": [
+        "3915120",
+        "323"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(2976977/100) bit at (32889/5) Tibps",
+      "exact": [
+        "156683",
+        "38065092553605120"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((2976977/100) bit,28034 day)",
+      "exact": [
+        "2976977",
+        "242213760000"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "5329797 kB at (15446/5) kbps",
+      "exact": [
+        "106595940",
+        "7723"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput(5329797 kB,69806 min)",
+      "exact": [
+        "32301800",
+        "3173"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(5237443/100) GB at 80315 Ebps",
+      "exact": [
+        "5237443",
+        "1003937500000000"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((5237443/100) GB,(12783/10) day)",
+      "exact": [
+        "1309360750000",
+        "345141"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(8458953/10) bit at (29833/2) kBps",
+      "exact": [
+        "8458953",
+        "1193320000"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((8458953/10) bit,38771 h)",
+      "exact": [
+        "2819651",
+        "465252000"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(4894403/2) B at 35131 Gbps",
+      "exact": [
+        "4894403",
+        "8782750000000"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((4894403/2) B,16191 min)",
+      "exact": [
+        "4894403",
+        "242865"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(926799/100) MiB at 15553 Mbps",
+      "exact": [
+        "30369349632",
+        "6075390625"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((926799/100) MiB,(32861/5) s)",
+      "exact": [
+        "1943638376448",
+        "164305"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "9639759 GiB at 29003 Pbps",
+      "exact": [
+        "2527004983296",
+        "885101318359375"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput(9639759 GiB,(18393/10) s)",
+      "exact": [
+        "276016330975477760",
+        "6131"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "3779422 TB at (35551/2) kbps",
+      "exact": [
+        "60470752000000000",
+        "35551"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput(3779422 TB,(17897/10) h)",
+      "exact": [
+        "755884400000000000",
+        "161073"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "700037 B at 77526 MiBps",
+      "exact": [
+        "700037",
+        "81291902976"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput(700037 B,93306 s)",
+      "exact": [
+        "2800148",
+        "46653"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "1136087 GiB at 25900 TBps",
+      "exact": [
+        "74454597632",
+        "1580810546875"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput(1136087 GiB,16147 min)",
+      "exact": [
+        "2439728255205376",
+        "242205"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(1921417/100) B at 87664 kbps",
+      "exact": [
+        "1921417",
+        "1095800000"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((1921417/100) B,(6171/10) min)",
+      "exact": [
+        "1921417",
+        "462825"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "339976 bit at 53919 TBps",
+      "exact": [
+        "42497",
+        "53919000000000000"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput(339976 bit,94080 h)",
+      "exact": [
+        "6071",
+        "6048000"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "1529356 kB at 10125 Pbps",
+      "exact": [
+        "382339",
+        "316406250000000"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput(1529356 kB,(28071/2) day)",
+      "exact": [
+        "7646780",
+        "757917"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "1134790 MB at (58389/2) Ebps",
+      "exact": [
+        "113479",
+        "364931250000000"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput(1134790 MB,32916 day)",
+      "exact": [
+        "709243750",
+        "222183"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "9059044 bit at (17565/2) Mbps",
+      "exact": [
+        "2264761",
+        "2195625000"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput(9059044 bit,(10949/10) h)",
+      "exact": [
+        "2264761",
+        "985410"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "501098 GB at 53443 Ebps",
+      "exact": [
+        "19273",
+        "256937500000"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput(501098 GB,(1518/5) min)",
+      "exact": [
+        "501098000000000",
+        "2277"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(2433627/4) TB at 50748 TiBps",
+      "exact": [
+        "198049072265625",
+        "18163416694784"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((2433627/4) TB,20958 h)",
+      "exact": [
+        "96572500000000",
+        "1497"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "395026 TB at 41858 MiBps",
+      "exact": [
+        "48220947265625",
+        "5357824"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput(395026 TB,84024 day)",
+      "exact": [
+        "123445625000000",
+        "283581"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "1266705 kB at 79870 Kibps",
+      "exact": [
+        "31667625",
+        "255584"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput(1266705 kB,55472 min)",
+      "exact": [
+        "10555875",
+        "3467"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "1075328 GiB at 7024 Pibps",
+      "exact": [
+        "8401",
+        "7192576"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput(1075328 GiB,(7059/2) day)",
+      "exact": [
+        "144328081014784",
+        "4764825"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "2812218 GiB at 35335 Bps",
+      "exact": [
+        "3019596084805632",
+        "35335"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput(2812218 GiB,4044 h)",
+      "exact": [
+        "125816503533568",
+        "75825"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "343945 KiB at 84873 MiBps",
+      "exact": [
+        "343945",
+        "86909952"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput(343945 KiB,(56083/10) min)",
+      "exact": [
+        "1408798720",
+        "168249"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "9242839 MB at 8926 Eibps",
+      "exact": [
+        "144419359375",
+        "20099565136954523648"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput(9242839 MB,(41529/5) h)",
+      "exact": [
+        "924283900000",
+        "373761"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "233507 GB at (59061/10) Eibps",
+      "exact": [
+        "2280341796875",
+        "8312096799754027008"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput(233507 GB,(2127/5) day)",
+      "exact": [
+        "2918837500000",
+        "57429"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "1736867 KiB at (36797/10) TiBps",
+      "exact": [
+        "8684335",
+        "19755238948864"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput(1736867 KiB,89646 day)",
+      "exact": [
+        "55579744",
+        "30255525"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(4314346/5) MiB at 74911 Mibps",
+      "exact": [
+        "34514768",
+        "374555"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((4314346/5) MiB,(24431/5) h)",
+      "exact": [
+        "2261959835648",
+        "5496975"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(2928101/2) KiB at 414 MiBps",
+      "exact": [
+        "2928101",
+        "847872"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((2928101/2) KiB,(89689/2) s)",
+      "exact": [
+        "23987003392",
+        "89689"
+      ]
+    },
+    {
+      "kind": "transfer",
+      "source": "(4605497/2) B at (13882/5) EiBps",
+      "exact": [
+        "23027485",
+        "32009712653904499441664"
+      ]
+    },
+    {
+      "kind": "throughput",
+      "source": "throughput((4605497/2) B,(41247/10) min)",
+      "exact": [
+        "9210994",
+        "123741"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens((271811181681/2)),tokenPrice((35979/5000) USD,1000000))",
+      "exact": [
+        "9779494505700699",
+        "10000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "75753 req/s at usagePrice((35979/5000) USD,1000000) for (7/2) min",
+      "exact": [
+        "57235860927",
+        "500000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((35979/5000) USD/s) for (7/2) min",
+      "exact": [
+        "755559",
+        "500"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests((80986067521/5)),requestPrice((4811/625) USD,1000000000))",
+      "exact": [
+        "389623970843531",
+        "3125000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "48113 req/min at usagePrice((4811/625) USD,1000000000) for 5943 min",
+      "exact": [
+        "1375635974349",
+        "625000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((4811/625) USD/min) for 5943 min",
+      "exact": [
+        "28591773",
+        "625"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests((145416397591/10)),requestPrice((407/200) USD,1000000000))",
+      "exact": [
+        "59184473819537",
+        "2000000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "93552 req/s at usagePrice((407/200) USD,1000000000) for (1121/10) day",
+      "exact": [
+        "72027257643",
+        "39062500"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((407/200) USD/s) for (1121/10) day",
+      "exact": [
+        "98549352",
+        "5"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests((135767597632/5)),requestPrice((9819/2500) USD,1000000))",
+      "exact": [
+        "20829719392947",
+        "195312500"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(41935/2) req/s at usagePrice((9819/2500) USD,1000000) for (1947/10) s",
+      "exact": [
+        "160339252491",
+        "10000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((9819/2500) USD/s) for (1947/10) s",
+      "exact": [
+        "19117593",
+        "25000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests(156745034982),requestPrice((47163/5000) USD,1000))",
+      "exact": [
+        "3696283042428033",
+        "2500000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(75881/10) req/s at usagePrice((47163/5000) USD,1000) for 9727 s",
+      "exact": [
+        "34810750290381",
+        "50000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((47163/5000) USD/s) for 9727 s",
+      "exact": [
+        "458754501",
+        "5000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests((212495271192/5)),requestPrice((73189/10000) USD,1))",
+      "exact": [
+        "1944039550408911",
+        "6250"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "26456 req/h at usagePrice((73189/10000) USD,1) for (3193/2) s",
+      "exact": [
+        "772821021439",
+        "9000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((73189/10000) USD/h) for (3193/2) s",
+      "exact": [
+        "233692477",
+        "72000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens((406480226716/5)),tokenPrice((27239/10000) USD,1000000))",
+      "exact": [
+        "2768028723879281",
+        "12500000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(60933/10) req/h at usagePrice((27239/10000) USD,1000000) for 2029 s",
+      "exact": [
+        "1122546946541",
+        "120000000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((27239/10000) USD/h) for 2029 s",
+      "exact": [
+        "55267931",
+        "36000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens(78592153733),tokenPrice((11803/5000) USD,1000000))",
+      "exact": [
+        "927623190510599",
+        "5000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "61559 req/s at usagePrice((11803/5000) USD,1000000) for 9198 min",
+      "exact": [
+        "10024636359969",
+        "125000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((11803/5000) USD/s) for 9198 min",
+      "exact": [
+        "162845991",
+        "125"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens((316383521667/5)),tokenPrice((37431/5000) USD,1000000000))",
+      "exact": [
+        "11842551599517477",
+        "25000000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(44332/5) req/min at usagePrice((37431/5000) USD,1000000000) for 2852 s",
+      "exact": [
+        "98595487383",
+        "31250000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((37431/5000) USD/min) for 2852 s",
+      "exact": [
+        "8896101",
+        "25000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens(340807460452),tokenPrice((13689/10000) USD,1000000000))",
+      "exact": [
+        "1166328331531857",
+        "2500000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(11099/2) req/s at usagePrice((13689/10000) USD,1000000000) for (295/2) day",
+      "exact": [
+        "242031198123",
+        "2500000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((13689/10000) USD/s) for (295/2) day",
+      "exact": [
+        "87226308",
+        "5"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens((624160985371/2)),tokenPrice((15027/2000) USD,1))",
+      "exact": [
+        "9379267127170017",
+        "4000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(28813/10) req/h at usagePrice((15027/2000) USD,1) for (4431/2) h",
+      "exact": [
+        "1918503145881",
+        "40000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((15027/2000) USD/h) for (4431/2) h",
+      "exact": [
+        "66584637",
+        "4000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens(929608112630),tokenPrice((1497/2000) USD,1000000000))",
+      "exact": [
+        "139162334460711",
+        "200000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(18113/10) req/min at usagePrice((1497/2000) USD,1000000000) for (2577/5) s",
+      "exact": [
+        "23291923299",
+        "2000000000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((1497/2000) USD/min) for (2577/5) s",
+      "exact": [
+        "1285923",
+        "200000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests(48972745600),requestPrice((5099/10000) USD,1000000))",
+      "exact": [
+        "78035009317",
+        "3125000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "72652 req/min at usagePrice((5099/10000) USD,1000000) for 2205 day",
+      "exact": [
+        "367581540753",
+        "3125000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((5099/10000) USD/min) for 2205 day",
+      "exact": [
+        "40475862",
+        "25"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens((768066264089/10)),tokenPrice((29233/5000) USD,1000000000))",
+      "exact": [
+        "22452881098113737",
+        "50000000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(78027/10) req/h at usagePrice((29233/5000) USD,1000000000) for (2116/5) min",
+      "exact": [
+        "402209860313",
+        "1250000000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((29233/5000) USD/h) for (2116/5) min",
+      "exact": [
+        "15464257",
+        "375000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests(180481595216),requestPrice((3059/400) USD,1000))",
+      "exact": [
+        "34505824985359",
+        "25000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(58565/2) req/min at usagePrice((3059/400) USD,1000) for 875 s",
+      "exact": [
+        "250810469",
+        "76800"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((3059/400) USD/min) for 875 s",
+      "exact": [
+        "21413",
+        "192"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests((45261374891/2)),requestPrice((14211/2500) USD,1000))",
+      "exact": [
+        "643209398576001",
+        "5000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "5754 req/min at usagePrice((14211/2500) USD,1000) for 1725 min",
+      "exact": [
+        "2821068243",
+        "50000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((14211/2500) USD/min) for 1725 min",
+      "exact": [
+        "980559",
+        "100"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens((497317089382/5)),tokenPrice((23663/2500) USD,1))",
+      "exact": [
+        "5884007143023133",
+        "6250"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(61993/2) req/s at usagePrice((23663/2500) USD,1) for 7403 min",
+      "exact": [
+        "32579278433031",
+        "250"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((23663/2500) USD/s) for 7403 min",
+      "exact": [
+        "525531567",
+        "125"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests(399116287483),requestPrice((1979/200) USD,1000000))",
+      "exact": [
+        "789851132928857",
+        "200000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "11810 req/min at usagePrice((1979/200) USD,1000000) for 9368 min",
+      "exact": [
+        "2736860029",
+        "2500000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((1979/200) USD/min) for 9368 min",
+      "exact": [
+        "2317409",
+        "25"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens(546641603431),tokenPrice((82941/10000) USD,1000000000))",
+      "exact": [
+        "45339001230170571",
+        "10000000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "7377 req/min at usagePrice((82941/10000) USD,1000000000) for (9467/2) day",
+      "exact": [
+        "52131946063671",
+        "125000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((82941/10000) USD/min) for (9467/2) day",
+      "exact": [
+        "7066822023",
+        "125"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests(488699286419),requestPrice((8803/5000) USD,1000000000))",
+      "exact": [
+        "4302019818346457",
+        "5000000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "45277 req/h at usagePrice((8803/5000) USD,1000000000) for (2142/5) day",
+      "exact": [
+        "1280616433803",
+        "1562500000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((8803/5000) USD/h) for (2142/5) day",
+      "exact": [
+        "56568078",
+        "3125"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests((404414431099/5)),requestPrice((14087/2000) USD,1000))",
+      "exact": [
+        "5696986090891613",
+        "10000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(96059/10) req/s at usagePrice((14087/2000) USD,1000) for 4347 s",
+      "exact": [
+        "5882287079151",
+        "20000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((14087/2000) USD/s) for 4347 s",
+      "exact": [
+        "61236189",
+        "2000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests((32340573145/2)),requestPrice((73231/10000) USD,1000))",
+      "exact": [
+        "473666502396299",
+        "4000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "1175 req/h at usagePrice((73231/10000) USD,1000) for (9279/2) h",
+      "exact": [
+        "31936991103",
+        "800000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((73231/10000) USD/h) for (9279/2) h",
+      "exact": [
+        "679510449",
+        "20000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests(29885475828),requestPrice((40667/5000) USD,1000))",
+      "exact": [
+        "303838161374319",
+        "1250000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "10102 req/min at usagePrice((40667/5000) USD,1000) for (2477/2) min",
+      "exact": [
+        "508798135109",
+        "5000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((40667/5000) USD/min) for (2477/2) min",
+      "exact": [
+        "100732159",
+        "10000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens((55624565629/5)),tokenPrice((40859/10000) USD,1000000000))",
+      "exact": [
+        "2272764127035311",
+        "50000000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "85994 req/h at usagePrice((40859/10000) USD,1000000000) for (897/2) min",
+      "exact": [
+        "525287512477",
+        "200000000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((40859/10000) USD/h) for (897/2) min",
+      "exact": [
+        "12216841",
+        "400000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens(951662989415),tokenPrice((69769/10000) USD,1))",
+      "exact": [
+        "13279315021699027",
+        "2000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "16032 req/min at usagePrice((69769/10000) USD,1) for (969/2) min",
+      "exact": [
+        "33870686661",
+        "625"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((69769/10000) USD/min) for (969/2) min",
+      "exact": [
+        "67606161",
+        "20000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests((23775547029/2)),requestPrice((37241/5000) USD,1000000000))",
+      "exact": [
+        "885425146906989",
+        "10000000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "93676 req/min at usagePrice((37241/5000) USD,1000000000) for (3915/2) day",
+      "exact": [
+        "6146019761013",
+        "3125000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((37241/5000) USD/min) for (3915/2) day",
+      "exact": [
+        "524874654",
+        "25"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests(327210991304),requestPrice((96049/10000) USD,1000000))",
+      "exact": [
+        "3928536062969737",
+        "1250000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "29260 req/min at usagePrice((96049/10000) USD,1000000) for 1767 s",
+      "exact": [
+        "82766095643",
+        "10000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((96049/10000) USD/min) for 1767 s",
+      "exact": [
+        "56572861",
+        "200000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens(87509522535),tokenPrice((71421/10000) USD,1))",
+      "exact": [
+        "1250003521794447",
+        "2000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(9337/5) req/h at usagePrice((71421/10000) USD,1) for (4185/2) s",
+      "exact": [
+        "62017782561",
+        "8000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((71421/10000) USD/h) for (4185/2) s",
+      "exact": [
+        "6642153",
+        "1600000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens(920093618312),tokenPrice((79667/10000) USD,1))",
+      "exact": [
+        "9162637286257763",
+        "1250"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "71604 req/h at usagePrice((79667/10000) USD,1) for 3128 min",
+      "exact": [
+        "185870838699",
+        "6250"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((79667/10000) USD/h) for 3128 min",
+      "exact": [
+        "31149797",
+        "75000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests(453934907621),requestPrice((3907/625) USD,1000000))",
+      "exact": [
+        "1773523684075247",
+        "625000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "15481 req/s at usagePrice((3907/625) USD,1000000) for (3528/5) h",
+      "exact": [
+        "480124111446",
+        "1953125"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((3907/625) USD/s) for (3528/5) h",
+      "exact": [
+        "1984881024",
+        "125"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests(447786132425),requestPrice((47563/5000) USD,1000000))",
+      "exact": [
+        "851922072661211",
+        "200000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "13435 req/s at usagePrice((47563/5000) USD,1000000) for 222 day",
+      "exact": [
+        "383021937657",
+        "156250"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((47563/5000) USD/s) for 222 day",
+      "exact": [
+        "4561481952",
+        "25"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens((105380878144/5)),tokenPrice((60493/10000) USD,1000))",
+      "exact": [
+        "99606335336953",
+        "781250"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(49337/2) req/min at usagePrice((60493/10000) USD,1000) for 2063 min",
+      "exact": [
+        "6157112499883",
+        "20000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((60493/10000) USD/min) for 2063 min",
+      "exact": [
+        "124797059",
+        "10000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens(461051485778),tokenPrice((157/1000) USD,1))",
+      "exact": [
+        "36192541633573",
+        "500"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(28999/2) req/s at usagePrice((157/1000) USD,1) for (7115/2) s",
+      "exact": [
+        "6478695589",
+        "800"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((157/1000) USD/s) for (7115/2) s",
+      "exact": [
+        "223411",
+        "400"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens((157301925457/2)),tokenPrice((50177/10000) USD,1))",
+      "exact": [
+        "7892938713655889",
+        "20000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(42897/10) req/s at usagePrice((50177/10000) USD,1) for (123/2) s",
+      "exact": [
+        "264750460587",
+        "200000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((50177/10000) USD/s) for (123/2) s",
+      "exact": [
+        "6171771",
+        "20000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens(345468245244),tokenPrice((61287/10000) USD,1000))",
+      "exact": [
+        "5293178086567257",
+        "2500000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(39763/5) req/h at usagePrice((61287/10000) USD,1000) for 5608 min",
+      "exact": [
+        "569435147227",
+        "125000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((61287/10000) USD/h) for 5608 min",
+      "exact": [
+        "14320729",
+        "25000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens(344639051795),tokenPrice((10723/5000) USD,1000))",
+      "exact": [
+        "739112910479557",
+        "1000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(95601/2) req/min at usagePrice((10723/5000) USD,1000) for 9706 h",
+      "exact": [
+        "14924860725357",
+        "250000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((10723/5000) USD/min) for 9706 h",
+      "exact": [
+        "156116157",
+        "125"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens((116498784781/5)),tokenPrice((151/500) USD,1000000))",
+      "exact": [
+        "17591316501931",
+        "2500000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "30260 req/min at usagePrice((151/500) USD,1000000) for (4779/5) day",
+      "exact": [
+        "9826422093",
+        "781250"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((151/500) USD/min) for (4779/5) day",
+      "exact": [
+        "51957288",
+        "125"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests(176840158401),requestPrice((13747/2500) USD,1000))",
+      "exact": [
+        "2431021657538547",
+        "2500000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(37077/10) req/s at usagePrice((13747/2500) USD,1000) for 4514 s",
+      "exact": [
+        "1150387300383",
+        "12500000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((13747/2500) USD/s) for 4514 s",
+      "exact": [
+        "31026979",
+        "1250"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens((433274655077/2)),tokenPrice((463/500) USD,1))",
+      "exact": [
+        "200606165300651",
+        "1000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(26441/2) req/h at usagePrice((463/500) USD,1) for 6331 day",
+      "exact": [
+        "232515781719",
+        "125"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((463/500) USD/h) for 6331 day",
+      "exact": [
+        "17587518",
+        "125"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens((980991331829/2)),tokenPrice((6291/1250) USD,1000))",
+      "exact": [
+        "6171416468536239",
+        "2500000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(39563/2) req/min at usagePrice((6291/1250) USD,1000) for (3981/10) min",
+      "exact": [
+        "990834406173",
+        "25000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((6291/1250) USD/min) for (3981/10) min",
+      "exact": [
+        "25044471",
+        "12500"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens((899137430963/10)),tokenPrice((55417/10000) USD,1000))",
+      "exact": [
+        "49827499011676571",
+        "100000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "11279 req/h at usagePrice((55417/10000) USD,1000) for 4756 min",
+      "exact": [
+        "743182479827",
+        "150000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((55417/10000) USD/h) for 4756 min",
+      "exact": [
+        "65890813",
+        "150000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests(2244832038),requestPrice((12781/2000) USD,1000000))",
+      "exact": [
+        "14345599138839",
+        "1000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "23306 req/s at usagePrice((12781/2000) USD,1000000) for 7679 s",
+      "exact": [
+        "1143687169247",
+        "1000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((12781/2000) USD/s) for 7679 s",
+      "exact": [
+        "98145299",
+        "2000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens(63883424888),tokenPrice((15197/10000) USD,1000))",
+      "exact": [
+        "121354551002867",
+        "1250000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "99206 req/s at usagePrice((15197/10000) USD,1000) for 6663 day",
+      "exact": [
+        "271224789035382",
+        "3125"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((15197/10000) USD/s) for 6663 day",
+      "exact": [
+        "21871643976",
+        "25"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests((494471419438/5)),requestPrice((3806/625) USD,1000))",
+      "exact": [
+        "470489555595257",
+        "781250"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "88463 req/h at usagePrice((3806/625) USD,1000) for 3146 min",
+      "exact": [
+        "264806824997",
+        "9375000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((3806/625) USD/h) for 3146 min",
+      "exact": [
+        "2993419",
+        "9375"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests((438969427599/10)),requestPrice((98893/10000) USD,1000000))",
+      "exact": [
+        "43411003603547907",
+        "100000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(44826/5) req/h at usagePrice((98893/10000) USD,1000000) for 8570 min",
+      "exact": [
+        "633176969771",
+        "50000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((98893/10000) USD/h) for 8570 min",
+      "exact": [
+        "84751301",
+        "60000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens(696545436663),tokenPrice((1683/250) USD,1))",
+      "exact": [
+        "1172285969903829",
+        "250"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "56875 req/min at usagePrice((1683/250) USD,1) for (5979/2) s",
+      "exact": [
+        "305233929",
+        "16"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((1683/250) USD/min) for (5979/2) s",
+      "exact": [
+        "3354219",
+        "10000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests(43244428664),requestPrice((80101/10000) USD,1))",
+      "exact": [
+        "432990247551883",
+        "1250"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "49669 req/min at usagePrice((80101/10000) USD,1) for (1203/2) h",
+      "exact": [
+        "14358538477521",
+        "1000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((80101/10000) USD/min) for (1203/2) h",
+      "exact": [
+        "289084509",
+        "1000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests(700916452030),requestPrice((74721/10000) USD,1000000000))",
+      "exact": [
+        "5237317821213363",
+        "1000000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "2784 req/h at usagePrice((74721/10000) USD,1000000000) for 1961 s",
+      "exact": [
+        "1416436183",
+        "125000000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((74721/10000) USD/h) for 1961 s",
+      "exact": [
+        "48842627",
+        "12000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens((453862919729/5)),tokenPrice((41393/5000) USD,1000000000))",
+      "exact": [
+        "18786747836342497",
+        "25000000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(3603/2) req/s at usagePrice((41393/5000) USD,1000000000) for (4453/10) min",
+      "exact": [
+        "1992347620461",
+        "5000000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((41393/5000) USD/s) for (4453/10) min",
+      "exact": [
+        "552969087",
+        "2500"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests(791364230404),requestPrice((17707/2500) USD,1))",
+      "exact": [
+        "3503171606940907",
+        "625"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "88188 req/min at usagePrice((17707/2500) USD,1) for 2735 h",
+      "exact": [
+        "2562495207156",
+        "25"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((17707/2500) USD/min) for 2735 h",
+      "exact": [
+        "29057187",
+        "25"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens((17485427963/5)),tokenPrice((8899/2500) USD,1000))",
+      "exact": [
+        "155602823442737",
+        "12500000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "3467 req/min at usagePrice((8899/2500) USD,1000) for (3987/10) day",
+      "exact": [
+        "1107092206539",
+        "156250"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((8899/2500) USD/min) for (3987/10) day",
+      "exact": [
+        "1277291268",
+        "625"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests((713450802437/10)),requestPrice((41029/10000) USD,1000))",
+      "exact": [
+        "29272172973187673",
+        "100000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "9065 req/h at usagePrice((41029/10000) USD,1000) for 4556 h",
+      "exact": [
+        "84725172203",
+        "500000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((41029/10000) USD/h) for 4556 h",
+      "exact": [
+        "46732031",
+        "2500"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests(970413869873),requestPrice((20439/2500) USD,1000000000))",
+      "exact": [
+        "19834289086334247",
+        "2500000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "28945 req/s at usagePrice((20439/2500) USD,1000000000) for (2055/2) day",
+      "exact": [
+        "1313012253987",
+        "62500000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((20439/2500) USD/s) for (2055/2) day",
+      "exact": [
+        "3628985328",
+        "5"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests((178958255214/5)),requestPrice((854/625) USD,1))",
+      "exact": [
+        "152830349952756",
+        "3125"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "13788 req/h at usagePrice((854/625) USD,1) for (4078/5) day",
+      "exact": [
+        "1152438102144",
+        "3125"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((854/625) USD/h) for (4078/5) day",
+      "exact": [
+        "83582688",
+        "3125"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests(271526151161),requestPrice((43269/5000) USD,1000))",
+      "exact": [
+        "11748665034585309",
+        "5000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "16512 req/s at usagePrice((43269/5000) USD,1000) for (2978/5) day",
+      "exact": [
+        "114893376155136",
+        "15625"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((43269/5000) USD/s) for (2978/5) day",
+      "exact": [
+        "55665395424",
+        "125"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests((190467808959/10)),requestPrice((1061/5000) USD,1000))",
+      "exact": [
+        "202086345305499",
+        "50000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(77783/10) req/h at usagePrice((1061/5000) USD,1000) for (2022/5) h",
+      "exact": [
+        "83435568393",
+        "125000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((1061/5000) USD/h) for (2022/5) h",
+      "exact": [
+        "1072671",
+        "12500"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests((143140199453/10)),requestPrice((854/125) USD,1000000))",
+      "exact": [
+        "61120865166431",
+        "625000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "57794 req/h at usagePrice((854/125) USD,1000000) for 3537 h",
+      "exact": [
+        "43643110203",
+        "31250000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((854/125) USD/h) for 3537 h",
+      "exact": [
+        "3020598",
+        "125"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens((155566908001/2)),tokenPrice((3339/10000) USD,1000))",
+      "exact": [
+        "519437905815339",
+        "20000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "78627 req/s at usagePrice((3339/10000) USD,1000) for (3323/2) min",
+      "exact": [
+        "2617216927857",
+        "1000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((3339/10000) USD/s) for (3323/2) min",
+      "exact": [
+        "33286491",
+        "1000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens((506488406143/10)),tokenPrice((35233/5000) USD,1000))",
+      "exact": [
+        "17845106013636319",
+        "50000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(14363/2) req/h at usagePrice((35233/5000) USD,1000) for 801 min",
+      "exact": [
+        "135115771593",
+        "200000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((35233/5000) USD/h) for 801 min",
+      "exact": [
+        "9407211",
+        "100000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens(496969657571),tokenPrice((38663/10000) USD,1))",
+      "exact": [
+        "19214337870667573",
+        "10000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(25328/5) req/h at usagePrice((38663/10000) USD,1) for 7962 day",
+      "exact": [
+        "11695259949552",
+        "3125"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((38663/10000) USD/h) for 7962 day",
+      "exact": [
+        "461752209",
+        "625"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests((912255367243/2)),requestPrice((233/250) USD,1000000000))",
+      "exact": [
+        "212555500567619",
+        "500000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "322 req/h at usagePrice((233/250) USD,1000000000) for (6647/2) min",
+      "exact": [
+        "249348911",
+        "15000000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((233/250) USD/h) for (6647/2) min",
+      "exact": [
+        "1548751",
+        "30000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens(421606224179),tokenPrice((2481/1000) USD,1000))",
+      "exact": [
+        "1046005042188099",
+        "1000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "81506 req/h at usagePrice((2481/1000) USD,1000) for 7100 h",
+      "exact": [
+        "7178681703",
+        "5000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((2481/1000) USD/h) for 7100 h",
+      "exact": [
+        "176151",
+        "10"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens((755194966257/2)),tokenPrice((14509/5000) USD,1))",
+      "exact": [
+        "10957123765422813",
+        "10000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(20146/5) req/min at usagePrice((14509/5000) USD,1) for 681 s",
+      "exact": [
+        "33175858639",
+        "250000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((14509/5000) USD/min) for 681 s",
+      "exact": [
+        "3293543",
+        "100000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests((623175026325/2)),requestPrice((541/1000) USD,1000))",
+      "exact": [
+        "13485507569673",
+        "80000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "75106 req/s at usagePrice((541/1000) USD,1000) for (1961/2) day",
+      "exact": [
+        "2151360823662",
+        "625"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((541/1000) USD/s) for (1961/2) day",
+      "exact": [
+        "229154616",
+        "5"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests((119615927583/2)),requestPrice((49667/10000) USD,1))",
+      "exact": [
+        "5940964275264861",
+        "20000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "92877 req/min at usagePrice((49667/10000) USD,1) for 3979 day",
+      "exact": [
+        "330386696547498",
+        "125"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((49667/10000) USD/min) for 3979 day",
+      "exact": [
+        "3557249874",
+        "125"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests((337887142881/10)),requestPrice((1417/2500) USD,1000))",
+      "exact": [
+        "478786081462377",
+        "25000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "66738 req/h at usagePrice((1417/2500) USD,1000) for (1751/10) day",
+      "exact": [
+        "248382184869",
+        "1562500"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((1417/2500) USD/h) for (1751/10) day",
+      "exact": [
+        "7443501",
+        "3125"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests((331570988693/2)),requestPrice((23/5) USD,1000000000))",
+      "exact": [
+        "7626132739939",
+        "10000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(55559/10) req/s at usagePrice((23/5) USD,1000000000) for (8533/2) h",
+      "exact": [
+        "98135584029",
+        "250000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((23/5) USD/s) for (8533/2) h",
+      "exact": [
+        "70653240",
+        "1"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens((691074904883/2)),tokenPrice((33391/10000) USD,1000000000))",
+      "exact": [
+        "23075682148948253",
+        "20000000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(47578/5) req/h at usagePrice((33391/10000) USD,1000000000) for (2459/5) day",
+      "exact": [
+        "5859835107123",
+        "15625000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((33391/10000) USD/h) for (2459/5) day",
+      "exact": [
+        "246325407",
+        "6250"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens((542910751231/2)),tokenPrice((28411/10000) USD,1000))",
+      "exact": [
+        "15424637353223941",
+        "20000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "2968 req/h at usagePrice((28411/10000) USD,1000) for 403 day",
+      "exact": [
+        "12743441529",
+        "156250"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((28411/10000) USD/h) for 403 day",
+      "exact": [
+        "34348899",
+        "1250"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens(455177467616),tokenPrice((35877/10000) USD,1))",
+      "exact": [
+        "1020650125353702",
+        "625"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "3143 req/min at usagePrice((35877/10000) USD,1) for 5648 s",
+      "exact": [
+        "13268259361",
+        "12500"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((35877/10000) USD/min) for 5648 s",
+      "exact": [
+        "4221527",
+        "12500"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens((388356342366/5)),tokenPrice((22453/2500) USD,1000))",
+      "exact": [
+        "4359882477571899",
+        "6250000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(6711/10) req/min at usagePrice((22453/2500) USD,1000) for (2921/5) s",
+      "exact": [
+        "146714121481",
+        "2500000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((22453/2500) USD/min) for (2921/5) s",
+      "exact": [
+        "65585213",
+        "750000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests(59430974524),requestPrice((22187/5000) USD,1000000))",
+      "exact": [
+        "329648757940997",
+        "1250000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "5494 req/s at usagePrice((22187/5000) USD,1000000) for 6803 h",
+      "exact": [
+        "3731644154403",
+        "6250000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((22187/5000) USD/s) for 6803 h",
+      "exact": [
+        "2716886898",
+        "25"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens(82625912661),tokenPrice((28723/10000) USD,1000))",
+      "exact": [
+        "2373264089361903",
+        "10000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(1581/2) req/h at usagePrice((28723/10000) USD,1000) for 8386 s",
+      "exact": [
+        "63469529053",
+        "12000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((28723/10000) USD/h) for 8386 s",
+      "exact": [
+        "120435539",
+        "18000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests(28890671615),requestPrice((96419/10000) USD,1000000))",
+      "exact": [
+        "557121933289337",
+        "2000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "49951 req/h at usagePrice((96419/10000) USD,1000000) for (2097/2) h",
+      "exact": [
+        "10099624808493",
+        "20000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((96419/10000) USD/h) for (2097/2) h",
+      "exact": [
+        "202190643",
+        "20000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens((230186238733/10)),tokenPrice((18471/2000) USD,1000000))",
+      "exact": [
+        "4251770015637243",
+        "20000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "84917 req/min at usagePrice((18471/2000) USD,1000000) for 1846 day",
+      "exact": [
+        "13029545341449",
+        "6250000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((18471/2000) USD/min) for 1846 day",
+      "exact": [
+        "613754388",
+        "25"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens((385990668089/2)),tokenPrice((8423/2500) USD,1000000000))",
+      "exact": [
+        "3251199397313647",
+        "5000000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(39123/10) req/h at usagePrice((8423/2500) USD,1000000000) for (793/5) day",
+      "exact": [
+        "783959075991",
+        "15625000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((8423/2500) USD/h) for (793/5) day",
+      "exact": [
+        "40076634",
+        "3125"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests(16115290699),requestPrice((9803/2500) USD,1000))",
+      "exact": [
+        "157978194722297",
+        "2500000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(49667/2) req/min at usagePrice((9803/2500) USD,1000) for 8500 s",
+      "exact": [
+        "8277055217",
+        "600000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((9803/2500) USD/min) for 8500 s",
+      "exact": [
+        "166651",
+        "300"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens(52491892257),tokenPrice((45961/5000) USD,1000000000))",
+      "exact": [
+        "2412579860023977",
+        "5000000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(243/2) req/min at usagePrice((45961/5000) USD,1000000000) for 6759 s",
+      "exact": [
+        "25162682319",
+        "200000000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((45961/5000) USD/min) for 6759 s",
+      "exact": [
+        "103550133",
+        "100000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens(284157821023),tokenPrice((89429/10000) USD,1000000000))",
+      "exact": [
+        "25411949776265867",
+        "10000000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "17711 req/h at usagePrice((89429/10000) USD,1000000000) for 2056 s",
+      "exact": [
+        "407056393883",
+        "4500000000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((89429/10000) USD/h) for 2056 s",
+      "exact": [
+        "22983253",
+        "4500000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests((441705996009/10)),requestPrice((12933/5000) USD,1000000))",
+      "exact": [
+        "5712583646384397",
+        "50000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "27408 req/s at usagePrice((12933/5000) USD,1000000) for 9447 h",
+      "exact": [
+        "1883619012267",
+        "781250"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((12933/5000) USD/s) for 9447 h",
+      "exact": [
+        "2199204918",
+        "25"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens(417128775552),tokenPrice((42999/5000) USD,1))",
+      "exact": [
+        "2242015027495056",
+        "625"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "21333 req/h at usagePrice((42999/5000) USD,1) for (314/5) min",
+      "exact": [
+        "48005244573",
+        "250000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((42999/5000) USD/h) for (314/5) min",
+      "exact": [
+        "2250281",
+        "250000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens((984285616167/10)),tokenPrice((533/100) USD,1))",
+      "exact": [
+        "524624233417011",
+        "1000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "35507 req/min at usagePrice((533/100) USD,1) for 8854 s",
+      "exact": [
+        "83781997637",
+        "3000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((533/100) USD/min) for 8854 s",
+      "exact": [
+        "2359591",
+        "3000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens((165029858316/5)),tokenPrice((7233/2000) USD,1))",
+      "exact": [
+        "298415241299907",
+        "2500"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "84109 req/min at usagePrice((7233/2000) USD,1) for 330 day",
+      "exact": [
+        "722732151636",
+        "5"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((7233/2000) USD/min) for 330 day",
+      "exact": [
+        "8592804",
+        "5"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests(153081124714),requestPrice((94921/10000) USD,1000))",
+      "exact": [
+        "7265306719488797",
+        "5000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(59657/2) req/s at usagePrice((94921/10000) USD,1000) for 627 min",
+      "exact": [
+        "10651542644457",
+        "1000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((94921/10000) USD/s) for 627 min",
+      "exact": [
+        "178546401",
+        "500"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests((248983263549/10)),requestPrice((4701/1000) USD,1000))",
+      "exact": [
+        "1170470321943849",
+        "10000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "16833 req/s at usagePrice((4701/1000) USD,1000) for 5809 h",
+      "exact": [
+        "4137096589173",
+        "2500"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((4701/1000) USD/s) for 5809 h",
+      "exact": [
+        "491545962",
+        "5"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens(273836059099),tokenPrice((494/625) USD,1))",
+      "exact": [
+        "135275013194906",
+        "625"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(51641/2) req/h at usagePrice((494/625) USD,1) for 3004 day",
+      "exact": [
+        "919608055392",
+        "625"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((494/625) USD/h) for 3004 day",
+      "exact": [
+        "35615424",
+        "625"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests((42465248717/5)),requestPrice((591/1250) USD,1000000))",
+      "exact": [
+        "25096961991747",
+        "6250000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(43109/2) req/h at usagePrice((591/1250) USD,1000000) for 4783 s",
+      "exact": [
+        "40619498359",
+        "3000000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((591/1250) USD/h) for 4783 s",
+      "exact": [
+        "942251",
+        "1500000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests((236559599437/5)),requestPrice((18579/2500) USD,1000))",
+      "exact": [
+        "4395040797940023",
+        "12500000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "42718 req/h at usagePrice((18579/2500) USD,1000) for 998 s",
+      "exact": [
+        "66005867213",
+        "750000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((18579/2500) USD/h) for 998 s",
+      "exact": [
+        "3090307",
+        "1500000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests(795897143115),requestPrice((16357/2500) USD,1000000))",
+      "exact": [
+        "2603697913986411",
+        "500000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(73007/2) req/h at usagePrice((16357/2500) USD,1000000) for 7498 s",
+      "exact": [
+        "4476963945751",
+        "9000000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((16357/2500) USD/h) for 7498 s",
+      "exact": [
+        "61322393",
+        "4500000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests((285410376046/5)),requestPrice((61073/10000) USD,1000000000))",
+      "exact": [
+        "8715433948128679",
+        "25000000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "62723 req/h at usagePrice((61073/10000) USD,1000000000) for 7233 min",
+      "exact": [
+        "9235773769169",
+        "200000000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((61073/10000) USD/h) for 7233 min",
+      "exact": [
+        "147247003",
+        "200000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens((52965042039/2)),tokenPrice((21219/5000) USD,1))",
+      "exact": [
+        "1123865227025541",
+        "10000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "16041 req/s at usagePrice((21219/5000) USD,1) for (9033/10) s",
+      "exact": [
+        "3074598152307",
+        "50000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((21219/5000) USD/s) for (9033/10) s",
+      "exact": [
+        "191671227",
+        "50000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests(829519993741),requestPrice((13903/5000) USD,1))",
+      "exact": [
+        "11532816472981123",
+        "5000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "23124 req/h at usagePrice((13903/5000) USD,1) for 693 day",
+      "exact": [
+        "668383888788",
+        "625"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((13903/5000) USD/h) for 693 day",
+      "exact": [
+        "28904337",
+        "625"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests(304354942223),requestPrice((53741/10000) USD,1000))",
+      "exact": [
+        "16356338950006243",
+        "10000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "27787 req/s at usagePrice((53741/10000) USD,1000) for 1212 min",
+      "exact": [
+        "1357410760803",
+        "125000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((53741/10000) USD/s) for 1212 min",
+      "exact": [
+        "48850569",
+        "125"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens((922880147773/10)),tokenPrice((9571/5000) USD,1))",
+      "exact": [
+        "8832885894335383",
+        "50000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "25738 req/h at usagePrice((9571/5000) USD,1) for (8441/2) day",
+      "exact": [
+        "3119013626277",
+        "625"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((9571/5000) USD/h) for (8441/2) day",
+      "exact": [
+        "242366433",
+        "1250"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens((330481662337/5)),tokenPrice((11/40) USD,1000000))",
+      "exact": [
+        "3635298285707",
+        "200000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "29731 req/h at usagePrice((11/40) USD,1000000) for (4489/2) s",
+      "exact": [
+        "1468087049",
+        "288000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((11/40) USD/h) for (4489/2) s",
+      "exact": [
+        "49379",
+        "288000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens(104344540645),tokenPrice((1387/200) USD,1))",
+      "exact": [
+        "28945175574923",
+        "40"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(30563/5) req/s at usagePrice((1387/200) USD,1) for (3847/5) min",
+      "exact": [
+        "489233157621",
+        "250"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((1387/200) USD/s) for (3847/5) min",
+      "exact": [
+        "16007367",
+        "50"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests(31693386770),requestPrice((11593/10000) USD,1000000000))",
+      "exact": [
+        "36742143282461",
+        "1000000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "18123 req/min at usagePrice((11593/10000) USD,1000000000) for 4922 h",
+      "exact": [
+        "1551167849637",
+        "250000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((11593/10000) USD/min) for 4922 h",
+      "exact": [
+        "85591119",
+        "250"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens(3333362070),tokenPrice((1973/1000) USD,1000))",
+      "exact": [
+        "657672336411",
+        "100000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "46156 req/min at usagePrice((1973/1000) USD,1000) for (3733/5) day",
+      "exact": [
+        "1529768639718",
+        "15625"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((1973/1000) USD/min) for (3733/5) day",
+      "exact": [
+        "265147524",
+        "125"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests(23100878662),requestPrice((62231/10000) USD,1000000))",
+      "exact": [
+        "718795390007461",
+        "5000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "3563 req/h at usagePrice((62231/10000) USD,1000000) for 3052 s",
+      "exact": [
+        "169179267439",
+        "9000000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((62231/10000) USD/h) for 3052 s",
+      "exact": [
+        "47482253",
+        "9000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests(318535229699),requestPrice((431/50) USD,1000000000))",
+      "exact": [
+        "137288684000269",
+        "50000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "84734 req/h at usagePrice((431/50) USD,1000000000) for 9591 h",
+      "exact": [
+        "175133357607",
+        "25000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((431/50) USD/h) for 9591 h",
+      "exact": [
+        "4133721",
+        "50"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens(3355420545),tokenPrice((83729/10000) USD,1000000000))",
+      "exact": [
+        "56189201362461",
+        "2000000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(87307/10) req/min at usagePrice((83729/10000) USD,1000000000) for (6839/2) s",
+      "exact": [
+        "49993964044717",
+        "12000000000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((83729/10000) USD/min) for (6839/2) s",
+      "exact": [
+        "572622631",
+        "1200000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests(365115814954),requestPrice((79973/10000) USD,1000000000))",
+      "exact": [
+        "14599703534658121",
+        "5000000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(19089/10) req/min at usagePrice((79973/10000) USD,1000000000) for 9363 h",
+      "exact": [
+        "42880796525133",
+        "5000000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((79973/10000) USD/min) for 9363 h",
+      "exact": [
+        "2246361597",
+        "500"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests(278238936983),requestPrice((206/625) USD,1))",
+      "exact": [
+        "57317221018498",
+        "625"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "87505 req/min at usagePrice((206/625) USD,1) for 4291 s",
+      "exact": [
+        "7734969473",
+        "3750"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((206/625) USD/min) for 4291 s",
+      "exact": [
+        "441973",
+        "18750"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens((415115264727/2)),tokenPrice((9411/1250) USD,1000000000))",
+      "exact": [
+        "3906649756345797",
+        "2500000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "56227 req/s at usagePrice((9411/1250) USD,1000000000) for 9242 s",
+      "exact": [
+        "2445212764437",
+        "625000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((9411/1250) USD/s) for 9242 s",
+      "exact": [
+        "43488231",
+        "625"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens(261581503400),tokenPrice((7357/1000) USD,1))",
+      "exact": [
+        "9622275602569",
+        "5"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(16506/5) req/h at usagePrice((7357/1000) USD,1) for 4466 day",
+      "exact": [
+        "1626981333516",
+        "625"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((7357/1000) USD/h) for 4466 day",
+      "exact": [
+        "98569086",
+        "125"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens(137562410014),tokenPrice((66447/10000) USD,1000000000))",
+      "exact": [
+        "4570304729100129",
+        "5000000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "49688 req/h at usagePrice((66447/10000) USD,1000000000) for 2390 min",
+      "exact": [
+        "32878617921",
+        "2500000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((66447/10000) USD/h) for 2390 min",
+      "exact": [
+        "5293611",
+        "20000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens(883069467597),tokenPrice((3771/2000) USD,1))",
+      "exact": [
+        "3330054962308287",
+        "2000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(37246/5) req/min at usagePrice((3771/2000) USD,1) for 404 s",
+      "exact": [
+        "2364320211",
+        "25000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((3771/2000) USD/min) for 404 s",
+      "exact": [
+        "126957",
+        "10000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens(403357633425),tokenPrice((92557/10000) USD,1000))",
+      "exact": [
+        "1493342899076709",
+        "400000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "72655 req/min at usagePrice((92557/10000) USD,1000) for 2340 s",
+      "exact": [
+        "52452884913",
+        "2000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((92557/10000) USD/min) for 2340 s",
+      "exact": [
+        "3609723",
+        "10000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens((980405815697/10)),tokenPrice((11921/1250) USD,1000000000))",
+      "exact": [
+        "11687417728923937",
+        "12500000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(74755/2) req/h at usagePrice((11921/1250) USD,1000000000) for (1295/2) min",
+      "exact": [
+        "46161795589",
+        "12000000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((11921/1250) USD/h) for (1295/2) min",
+      "exact": [
+        "3087539",
+        "30000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens((50011329449/2)),tokenPrice((8983/10000) USD,1000))",
+      "exact": [
+        "449251772440367",
+        "20000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(61893/2) req/s at usagePrice((8983/10000) USD,1000) for (7601/2) min",
+      "exact": [
+        "12678121827657",
+        "2000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((8983/10000) USD/s) for (7601/2) min",
+      "exact": [
+        "204839349",
+        "1000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens(426171640891),tokenPrice((1529/10000) USD,1000000))",
+      "exact": [
+        "651616438922339",
+        "10000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "58729 req/h at usagePrice((1529/10000) USD,1000000) for (279/10) h",
+      "exact": [
+        "25053262839",
+        "100000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((1529/10000) USD/h) for (279/10) h",
+      "exact": [
+        "426591",
+        "100000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests(415871505135),requestPrice((45131/10000) USD,1))",
+      "exact": [
+        "3753739379649537",
+        "2000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "89846 req/min at usagePrice((45131/10000) USD,1) for 6685 day",
+      "exact": [
+        "97583775252516",
+        "25"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((45131/10000) USD/min) for 6685 day",
+      "exact": [
+        "1086122646",
+        "25"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens((467564043844/5)),tokenPrice((2329/10000) USD,1000000))",
+      "exact": [
+        "272239164528169",
+        "12500000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "19050 req/s at usagePrice((2329/10000) USD,1000000) for (3325/2) h",
+      "exact": [
+        "1062156753",
+        "40000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((2329/10000) USD/s) for (3325/2) h",
+      "exact": [
+        "2787813",
+        "2"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens(270797193427),tokenPrice((28991/5000) USD,1))",
+      "exact": [
+        "7850681434642157",
+        "5000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(12889/10) req/s at usagePrice((28991/5000) USD,1) for (5711/10) min",
+      "exact": [
+        "6402002427867",
+        "25000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((28991/5000) USD/s) for (5711/10) min",
+      "exact": [
+        "496702803",
+        "2500"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens(689878185384),tokenPrice((22719/10000) USD,1000))",
+      "exact": [
+        "1959167811717387",
+        "1250000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "47829 req/s at usagePrice((22719/10000) USD,1000) for (6069/2) min",
+      "exact": [
+        "19784218717557",
+        "1000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((22719/10000) USD/s) for (6069/2) min",
+      "exact": [
+        "413644833",
+        "1000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens(519083451269),tokenPrice((42719/5000) USD,1000000))",
+      "exact": [
+        "22174725954760411",
+        "5000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(22637/5) req/min at usagePrice((42719/5000) USD,1000000) for 379 min",
+      "exact": [
+        "366504371137",
+        "25000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((42719/5000) USD/min) for 379 min",
+      "exact": [
+        "16190501",
+        "5000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests((63823207732/5)),requestPrice((1031/1250) USD,1000))",
+      "exact": [
+        "16450431792923",
+        "1562500"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "14248 req/min at usagePrice((1031/1250) USD,1000) for (923/2) min",
+      "exact": [
+        "1694822753",
+        "312500"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((1031/1250) USD/min) for (923/2) min",
+      "exact": [
+        "951613",
+        "2500"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests(868586879643),requestPrice((16893/10000) USD,1000000000))",
+      "exact": [
+        "14673038157809199",
+        "10000000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(4315/2) req/min at usagePrice((16893/10000) USD,1000000000) for (4149/2) day",
+      "exact": [
+        "544381705719",
+        "50000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((16893/10000) USD/min) for (4149/2) day",
+      "exact": [
+        "630801513",
+        "125"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests(439747797123),requestPrice((8479/5000) USD,1000000))",
+      "exact": [
+        "3728621571805917",
+        "5000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "21086 req/min at usagePrice((8479/5000) USD,1000000) for (4049/5) s",
+      "exact": [
+        "361956698753",
+        "750000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((8479/5000) USD/min) for (4049/5) s",
+      "exact": [
+        "34331471",
+        "1500000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens(79616415842),tokenPrice((33463/5000) USD,1000))",
+      "exact": [
+        "1332102061660423",
+        "2500000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(40098/5) req/s at usagePrice((33463/5000) USD,1000) for (9195/2) h",
+      "exact": [
+        "11104060719537",
+        "12500"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((33463/5000) USD/s) for (9195/2) h",
+      "exact": [
+        "553846113",
+        "5"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests(235459572567),requestPrice((70313/10000) USD,1))",
+      "exact": [
+        "16555868925903471",
+        "10000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(20987/10) req/min at usagePrice((70313/10000) USD,1) for 59 s",
+      "exact": [
+        "87063876929",
+        "6000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((70313/10000) USD/min) for 59 s",
+      "exact": [
+        "4148467",
+        "600000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens(564850676306),tokenPrice((391/2500) USD,1000000000))",
+      "exact": [
+        "110428307217823",
+        "1250000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "15841 req/s at usagePrice((391/2500) USD,1000000000) for (1976/5) min",
+      "exact": [
+        "4589628771",
+        "78125000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((391/2500) USD/s) for (1976/5) min",
+      "exact": [
+        "2317848",
+        "625"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens((262981924629/10)),tokenPrice((783/100) USD,1000000000))",
+      "exact": [
+        "205914846984507",
+        "1000000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(20969/5) req/min at usagePrice((783/100) USD,1000000000) for 9953 s",
+      "exact": [
+        "54471863277",
+        "10000000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((783/100) USD/min) for 9953 s",
+      "exact": [
+        "2597733",
+        "2000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens(625602974614),tokenPrice((11203/10000) USD,1000))",
+      "exact": [
+        "3504315062300321",
+        "5000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(7175/2) req/min at usagePrice((11203/10000) USD,1000) for (825/2) h",
+      "exact": [
+        "318310839",
+        "3200"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((11203/10000) USD/min) for (825/2) h",
+      "exact": [
+        "1109097",
+        "40"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests(25627689626),requestPrice((15233/2000) USD,1))",
+      "exact": [
+        "195193298036429",
+        "1000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "31468 req/h at usagePrice((15233/2000) USD,1) for 2279 day",
+      "exact": [
+        "1638664962414",
+        "125"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((15233/2000) USD/h) for 2279 day",
+      "exact": [
+        "104148021",
+        "250"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens(497648051630),tokenPrice((2477/1250) USD,1000000))",
+      "exact": [
+        "123267422388751",
+        "125000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(82763/10) req/s at usagePrice((2477/1250) USD,1000000) for (7173/10) h",
+      "exact": [
+        "13234440064707",
+        "312500000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((2477/1250) USD/s) for (7173/10) h",
+      "exact": [
+        "639630756",
+        "125"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens((437502078986/5)),tokenPrice((3149/2500) USD,1000000000))",
+      "exact": [
+        "688847023363457",
+        "6250000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "3487 req/h at usagePrice((3149/2500) USD,1000000000) for (2228/5) day",
+      "exact": [
+        "18348520773",
+        "390625000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((3149/2500) USD/h) for (2228/5) day",
+      "exact": [
+        "42095832",
+        "3125"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests(214928705622),requestPrice((2643/1250) USD,1000))",
+      "exact": [
+        "284028284479473",
+        "625000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "50793 req/s at usagePrice((2643/1250) USD,1000) for 495 min",
+      "exact": [
+        "39871032003",
+        "12500"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((2643/1250) USD/s) for 495 min",
+      "exact": [
+        "1569942",
+        "25"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests(445572314034),requestPrice((7643/5000) USD,1))",
+      "exact": [
+        "1702754598080931",
+        "2500"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(7083/2) req/s at usagePrice((7643/5000) USD,1) for (6567/2) min",
+      "exact": [
+        "1066520904669",
+        "1000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((7643/5000) USD/s) for (6567/2) min",
+      "exact": [
+        "150574743",
+        "500"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens((760911109943/10)),tokenPrice((37541/5000) USD,1000000))",
+      "exact": [
+        "28565363978370163",
+        "50000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "424 req/h at usagePrice((37541/5000) USD,1000000) for 4441 h",
+      "exact": [
+        "8836137793",
+        "625000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((37541/5000) USD/h) for 4441 h",
+      "exact": [
+        "166719581",
+        "5000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens(14980667420),tokenPrice((1952/625) USD,1000))",
+      "exact": [
+        "731056570096",
+        "15625"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "18534 req/min at usagePrice((1952/625) USD,1000) for 8820 day",
+      "exact": [
+        "2297471081472",
+        "3125"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((1952/625) USD/min) for 8820 day",
+      "exact": [
+        "991678464",
+        "25"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests((542847159643/10)),requestPrice((4059/2000) USD,1000000000))",
+      "exact": [
+        "2203416620990937",
+        "20000000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "28832 req/min at usagePrice((4059/2000) USD,1000000000) for (2432/5) h",
+      "exact": [
+        "416916126",
+        "244140625"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((4059/2000) USD/min) for (2432/5) h",
+      "exact": [
+        "7403616",
+        "125"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests((233980675763/2)),requestPrice((34687/5000) USD,1000000))",
+      "exact": [
+        "8116087700191181",
+        "10000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "35100 req/h at usagePrice((34687/5000) USD,1000000) for 5523 min",
+      "exact": [
+        "22414427217",
+        "1000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((34687/5000) USD/h) for 5523 min",
+      "exact": [
+        "63858767",
+        "100000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens((3375799483/10)),tokenPrice((43097/10000) USD,1000))",
+      "exact": [
+        "145486830318851",
+        "100000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(20869/10) req/s at usagePrice((43097/10000) USD,1000) for (1601/2) s",
+      "exact": [
+        "1439925460093",
+        "200000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((43097/10000) USD/s) for (1601/2) s",
+      "exact": [
+        "68998297",
+        "20000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens(403519299006),tokenPrice((837/400) USD,1000000000))",
+      "exact": [
+        "168872826634011",
+        "200000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(39269/2) req/h at usagePrice((837/400) USD,1000000000) for 1231 day",
+      "exact": [
+        "121382089029",
+        "100000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((837/400) USD/h) for 1231 day",
+      "exact": [
+        "3091041",
+        "50"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens(89845027972),tokenPrice((29519/10000) USD,1000))",
+      "exact": [
+        "663033845176367",
+        "2500000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(47269/2) req/h at usagePrice((29519/10000) USD,1000) for (2561/2) min",
+      "exact": [
+        "3573449377771",
+        "2400000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((29519/10000) USD/h) for (2561/2) min",
+      "exact": [
+        "75598159",
+        "1200000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests(455124444684),requestPrice((87/1250) USD,1))",
+      "exact": [
+        "19797913343754",
+        "625"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(27676/5) req/h at usagePrice((87/1250) USD,1) for 3694 s",
+      "exact": [
+        "370602397",
+        "937500"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((87/1250) USD/h) for 3694 s",
+      "exact": [
+        "53563",
+        "750000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests(17200885774),requestPrice((13761/5000) USD,1000))",
+      "exact": [
+        "118350694568007",
+        "2500000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "7926 req/h at usagePrice((13761/5000) USD,1000) for (8583/10) h",
+      "exact": [
+        "468072557469",
+        "25000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((13761/5000) USD/h) for (8583/10) h",
+      "exact": [
+        "118110663",
+        "50000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens(406216526990),tokenPrice((5219/2000) USD,1000))",
+      "exact": [
+        "212004405436081",
+        "200000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(25941/5) req/s at usagePrice((5219/2000) USD,1000) for 3622 h",
+      "exact": [
+        "2206657701621",
+        "12500"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((5219/2000) USD/s) for 3622 h",
+      "exact": [
+        "170128962",
+        "5"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens(936038582602),tokenPrice((24527/10000) USD,1))",
+      "exact": [
+        "11479109157739627",
+        "5000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "86291 req/h at usagePrice((24527/10000) USD,1) for 7875 day",
+      "exact": [
+        "400010818473",
+        "10"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((24527/10000) USD/h) for 7875 day",
+      "exact": [
+        "4635603",
+        "10"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens((100160038367/2)),tokenPrice((3817/400) USD,1000))",
+      "exact": [
+        "382310866446839",
+        "800000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(38877/5) req/s at usagePrice((3817/400) USD,1000) for (7495/2) s",
+      "exact": [
+        "222441869991",
+        "800000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((3817/400) USD/s) for (7495/2) s",
+      "exact": [
+        "5721683",
+        "160"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens((350271746433/5)),tokenPrice((11883/10000) USD,1000000000))",
+      "exact": [
+        "4162279162863339",
+        "50000000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(23785/2) req/min at usagePrice((11883/10000) USD,1000000000) for (1699/2) min",
+      "exact": [
+        "96040105269",
+        "8000000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((11883/10000) USD/min) for (1699/2) min",
+      "exact": [
+        "20189217",
+        "20000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests((47638882522/5)),requestPrice((14693/2500) USD,1000))",
+      "exact": [
+        "349979050447873",
+        "6250000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(72917/2) req/h at usagePrice((14693/2500) USD,1000) for (73/2) h",
+      "exact": [
+        "78209972113",
+        "10000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((14693/2500) USD/h) for (73/2) h",
+      "exact": [
+        "1072589",
+        "5000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens((142972486739/10)),tokenPrice((15267/5000) USD,1000000))",
+      "exact": [
+        "2182760955044313",
+        "50000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(32824/5) req/h at usagePrice((15267/5000) USD,1000000) for (8081/2) day",
+      "exact": [
+        "1518593665743",
+        "781250000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((15267/5000) USD/h) for (8081/2) day",
+      "exact": [
+        "370117881",
+        "1250"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests((1450912742/5)),requestPrice((3051/2500) USD,1))",
+      "exact": [
+        "2213367387921",
+        "6250"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(67199/2) req/s at usagePrice((3051/2500) USD,1) for 2973 day",
+      "exact": [
+        "263319895430064",
+        "25"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((3051/2500) USD/s) for 2973 day",
+      "exact": [
+        "7837018272",
+        "25"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests(953219496397),requestPrice((7287/1000) USD,1000))",
+      "exact": [
+        "6946110470244939",
+        "1000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "6943 req/s at usagePrice((7287/1000) USD,1000) for 8362 s",
+      "exact": [
+        "211532013021",
+        "500000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((7287/1000) USD/s) for 8362 s",
+      "exact": [
+        "30466947",
+        "500"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens(774922200996),tokenPrice((93967/10000) USD,1))",
+      "exact": [
+        "18204278615247783",
+        "2500"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "2730 req/min at usagePrice((93967/10000) USD,1) for 3434 min",
+      "exact": [
+        "44046185547",
+        "500"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((93967/10000) USD/min) for 3434 min",
+      "exact": [
+        "161341339",
+        "5000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests((89652182469/5)),requestPrice((45731/5000) USD,1000000000))",
+      "exact": [
+        "4099883956489839",
+        "25000000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "58222 req/s at usagePrice((45731/5000) USD,1000000000) for (751/10) s",
+      "exact": [
+        "999787630891",
+        "25000000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((45731/5000) USD/s) for (751/10) s",
+      "exact": [
+        "34343981",
+        "50000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens(277437096718),tokenPrice((2313/625) USD,1000))",
+      "exact": [
+        "320856002354367",
+        "312500"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(13835/2) req/h at usagePrice((2313/625) USD,1000) for (9991/10) day",
+      "exact": [
+        "191829328083",
+        "312500"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((2313/625) USD/h) for (9991/10) day",
+      "exact": [
+        "277310196",
+        "3125"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests((265063280266/5)),requestPrice((6393/5000) USD,1000))",
+      "exact": [
+        "847274775370269",
+        "12500000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(31183/10) req/min at usagePrice((6393/5000) USD,1000) for 9875 min",
+      "exact": [
+        "15748880601",
+        "400000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((6393/5000) USD/min) for 9875 min",
+      "exact": [
+        "505047",
+        "40"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests((151137796115/2)),requestPrice((3103/500) USD,1000000))",
+      "exact": [
+        "93796116268969",
+        "200000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "22574 req/h at usagePrice((3103/500) USD,1000000) for 8111 h",
+      "exact": [
+        "284076103271",
+        "250000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((3103/500) USD/h) for 8111 h",
+      "exact": [
+        "25168433",
+        "500"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests(287187473879),requestPrice((13777/10000) USD,1000))",
+      "exact": [
+        "3956581827630983",
+        "10000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(48497/2) req/h at usagePrice((13777/10000) USD,1000) for 1318 min",
+      "exact": [
+        "440306348371",
+        "600000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((13777/10000) USD/h) for 1318 min",
+      "exact": [
+        "9079043",
+        "300000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens((380365090813/5)),tokenPrice((7387/5000) USD,1))",
+      "exact": [
+        "2809756925835631",
+        "25000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(15338/5) req/min at usagePrice((7387/5000) USD,1) for 3262 h",
+      "exact": [
+        "554385736758",
+        "625"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((7387/5000) USD/min) for 3262 h",
+      "exact": [
+        "36144591",
+        "125"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests(985673537367),requestPrice((25569/10000) USD,1000))",
+      "exact": [
+        "25202686676936823",
+        "10000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(42983/2) req/min at usagePrice((25569/10000) USD,1000) for (1913/2) h",
+      "exact": [
+        "6307346524653",
+        "2000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((25569/10000) USD/min) for (1913/2) h",
+      "exact": [
+        "146740491",
+        "1000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(requests(138894809623),requestPrice((11307/5000) USD,1000))",
+      "exact": [
+        "1570483612407261",
+        "5000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "33251 req/h at usagePrice((11307/5000) USD,1000) for 7567 s",
+      "exact": [
+        "948319284773",
+        "6000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((11307/5000) USD/h) for 7567 s",
+      "exact": [
+        "28520023",
+        "6000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens((801890526457/2)),tokenPrice((81253/10000) USD,1000000000))",
+      "exact": [
+        "65156010946210621",
+        "20000000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(51883/2) req/h at usagePrice((81253/10000) USD,1000000000) for 7572 min",
+      "exact": [
+        "2660074770769",
+        "100000000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((81253/10000) USD/h) for 7572 min",
+      "exact": [
+        "51270643",
+        "50000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens(448866628202),tokenPrice((92957/10000) USD,1000000))",
+      "exact": [
+        "20862647578886657",
+        "5000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(43438/5) req/min at usagePrice((92957/10000) USD,1000000) for 7560 h",
+      "exact": [
+        "1144735058061",
+        "31250000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((92957/10000) USD/min) for 7560 h",
+      "exact": [
+        "105413238",
+        "25"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens(570089483599),tokenPrice((46263/10000) USD,1000000))",
+      "exact": [
+        "26374049779740537",
+        "10000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(2419/10) req/min at usagePrice((46263/10000) USD,1000000) for (1617/2) min",
+      "exact": [
+        "180958788549",
+        "200000000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((46263/10000) USD/min) for (1617/2) min",
+      "exact": [
+        "74807271",
+        "20000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens(347893738832),tokenPrice((1659/500) USD,1000000))",
+      "exact": [
+        "36072232045143",
+        "31250000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "44231 req/min at usagePrice((1659/500) USD,1000000) for (7857/10) h",
+      "exact": [
+        "1729621806759",
+        "250000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((1659/500) USD/min) for (7857/10) h",
+      "exact": [
+        "39104289",
+        "250"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "usageCost(tokens(335143451192),tokenPrice((22477/2500) USD,1))",
+      "exact": [
+        "1883254838110646",
+        "625"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "(39145/2) req/h at usagePrice((22477/2500) USD,1) for (2003/5) s",
+      "exact": [
+        "352472783299",
+        "18000000"
+      ]
+    },
+    {
+      "kind": "cost",
+      "source": "((22477/2500) USD/h) for (2003/5) s",
+      "exact": [
+        "45021431",
+        "45000000"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((12547/500)%,627593 h)",
+      "exact": [
+        "211547165661",
+        "125"
+      ],
+      "interval": [
+        "2259334800",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((757/200)%,(697891/10) min)",
+      "exact": [
+        "40288549539",
+        "10000"
+      ],
+      "interval": [
+        "4187346",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((42921/1000)%,(124471/2) min)",
+      "exact": [
+        "21314040627",
+        "10000"
+      ],
+      "interval": [
+        "3734130",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((8723/500)%,14748 s)",
+      "exact": [
+        "152188299",
+        "12500"
+      ],
+      "interval": [
+        "14748",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((59543/1000)%,(867753/10) h)",
+      "exact": [
+        "315960148089",
+        "2500"
+      ],
+      "interval": [
+        "312391080",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((7003/250)%,(239486/5) h)",
+      "exact": [
+        "77580531756",
+        "625"
+      ],
+      "interval": [
+        "172429920",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((9339/500)%,(272313/10) s)",
+      "exact": [
+        "11072518893",
+        "500000"
+      ],
+      "interval": [
+        "272313",
+        "10"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((24243/500)%,710827 min)",
+      "exact": [
+        "54926313117",
+        "2500"
+      ],
+      "interval": [
+        "42649620",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((3634/125)%,384470 h)",
+      "exact": [
+        "24542719344",
+        "25"
+      ],
+      "interval": [
+        "1384092000",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((17949/200)%,(356969/10) h)",
+      "exact": [
+        "6589290771",
+        "500"
+      ],
+      "interval": [
+        "128508840",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((29823/1000)%,(891789/2) min)",
+      "exact": [
+        "187749229959",
+        "10000"
+      ],
+      "interval": [
+        "26753670",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((12123/200)%,(163977/10) day)",
+      "exact": [
+        "69748928766",
+        "125"
+      ],
+      "interval": [
+        "1416761280",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((32627/500)%,(387979/2) h)",
+      "exact": [
+        "60663232503",
+        "250"
+      ],
+      "interval": [
+        "698362200",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((7297/200)%,432167 h)",
+      "exact": [
+        "49408356609",
+        "50"
+      ],
+      "interval": [
+        "1555801200",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((12773/1000)%,238811 h)",
+      "exact": [
+        "187476903873",
+        "250"
+      ],
+      "interval": [
+        "859719600",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((20307/1000)%,(585793/2) s)",
+      "exact": [
+        "46683601549",
+        "200000"
+      ],
+      "interval": [
+        "585793",
+        "2"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((19653/250)%,208884 day)",
+      "exact": [
+        "482501987136",
+        "125"
+      ],
+      "interval": [
+        "18047577600",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((89877/1000)%,435677 min)",
+      "exact": [
+        "13231074813",
+        "5000"
+      ],
+      "interval": [
+        "26140620",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((27461/1000)%,(815633/10) h)",
+      "exact": [
+        "532486819683",
+        "2500"
+      ],
+      "interval": [
+        "293627880",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((7793/100)%,(13827/5) h)",
+      "exact": [
+        "274645701",
+        "125"
+      ],
+      "interval": [
+        "9955440",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((2611/40)%,(488166/5) day)",
+      "exact": [
+        "73230757992",
+        "25"
+      ],
+      "interval": [
+        "8435508480",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((55827/1000)%,317140 min)",
+      "exact": [
+        "2101353783",
+        "250"
+      ],
+      "interval": [
+        "19028400",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((35907/1000)%,237853 min)",
+      "exact": [
+        "45734136987",
+        "5000"
+      ],
+      "interval": [
+        "14271180",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((8099/200)%,785227 min)",
+      "exact": [
+        "28034959581",
+        "1000"
+      ],
+      "interval": [
+        "47113620",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((20393/250)%,(370697/2) day)",
+      "exact": [
+        "368885033064",
+        "125"
+      ],
+      "interval": [
+        "16014110400",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((738/25)%,130352 min)",
+      "exact": [
+        "689040672",
+        "125"
+      ],
+      "interval": [
+        "7821120",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((12069/250)%,(160041/10) min)",
+      "exact": [
+        "6208470513",
+        "12500"
+      ],
+      "interval": [
+        "960246",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((7504/125)%,312759 s)",
+      "exact": [
+        "390635991",
+        "3125"
+      ],
+      "interval": [
+        "312759",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((19699/250)%,(728775/2) s)",
+      "exact": [
+        "154529451",
+        "2000"
+      ],
+      "interval": [
+        "728775",
+        "2"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((9743/1000)%,844470 day)",
+      "exact": [
+        "1646337501864",
+        "25"
+      ],
+      "interval": [
+        "72962208000",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((1021/25)%,326295 day)",
+      "exact": [
+        "83391604704",
+        "5"
+      ],
+      "interval": [
+        "28191888000",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((18441/500)%,285795 s)",
+      "exact": [
+        "1803880881",
+        "10000"
+      ],
+      "interval": [
+        "285795",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((49621/500)%,(895187/2) h)",
+      "exact": [
+        "3053482857",
+        "250"
+      ],
+      "interval": [
+        "1611336600",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((16187/500)%,(22683/10) s)",
+      "exact": [
+        "766980279",
+        "500000"
+      ],
+      "interval": [
+        "22683",
+        "10"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((5713/500)%,(396149/10) min)",
+      "exact": [
+        "52632752289",
+        "25000"
+      ],
+      "interval": [
+        "2376894",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((3531/125)%,(887087/2) min)",
+      "exact": [
+        "23868849909",
+        "1250"
+      ],
+      "interval": [
+        "26612610",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((3467/100)%,(194115/2) h)",
+      "exact": [
+        "2282675931",
+        "10"
+      ],
+      "interval": [
+        "349407000",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((78631/1000)%,50906 min)",
+      "exact": [
+        "1631715471",
+        "2500"
+      ],
+      "interval": [
+        "3054360",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((45973/1000)%,(26289/2) min)",
+      "exact": [
+        "4260947409",
+        "10000"
+      ],
+      "interval": [
+        "788670",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((14001/500)%,79646 s)",
+      "exact": [
+        "1433588177",
+        "25000"
+      ],
+      "interval": [
+        "79646",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((38757/1000)%,(147385/2) day)",
+      "exact": [
+        "97484035194",
+        "25"
+      ],
+      "interval": [
+        "6367032000",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((17443/500)%,(386148/5) h)",
+      "exact": [
+        "113146383924",
+        "625"
+      ],
+      "interval": [
+        "278026560",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((80193/1000)%,874814 day)",
+      "exact": [
+        "1871363616984",
+        "125"
+      ],
+      "interval": [
+        "75583929600",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((19577/200)%,505478 s)",
+      "exact": [
+        "106908597",
+        "10000"
+      ],
+      "interval": [
+        "505478",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((43001/1000)%,765739 h)",
+      "exact": [
+        "392817215349",
+        "250"
+      ],
+      "interval": [
+        "2756660400",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((4297/50)%,(340669/5) h)",
+      "exact": [
+        "4310825526",
+        "125"
+      ],
+      "interval": [
+        "245281680",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((13419/200)%,(454193/10) s)",
+      "exact": [
+        "2989044133",
+        "200000"
+      ],
+      "interval": [
+        "454193",
+        "10"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((93093/1000)%,(492461/2) h)",
+      "exact": [
+        "30612853143",
+        "500"
+      ],
+      "interval": [
+        "886429800",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((44571/1000)%,(846737/10) day)",
+      "exact": [
+        "2534424399342",
+        "625"
+      ],
+      "interval": [
+        "7315807680",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((3549/40)%,(401759/2) s)",
+      "exact": [
+        "181193309",
+        "8000"
+      ],
+      "interval": [
+        "401759",
+        "2"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((15387/500)%,(273599/2) h)",
+      "exact": [
+        "85230739683",
+        "250"
+      ],
+      "interval": [
+        "492478200",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((9951/250)%,(70811/5) min)",
+      "exact": [
+        "3196904217",
+        "6250"
+      ],
+      "interval": [
+        "849732",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((39173/1000)%,(809227/10) min)",
+      "exact": [
+        "147668552187",
+        "50000"
+      ],
+      "interval": [
+        "4855362",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((32459/1000)%,56616 day)",
+      "exact": [
+        "412981335648",
+        "125"
+      ],
+      "interval": [
+        "4891622400",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((5041/1000)%,94612 min)",
+      "exact": [
+        "6738195681",
+        "1250"
+      ],
+      "interval": [
+        "5676720",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((631/125)%,438915 day)",
+      "exact": [
+        "900198512928",
+        "25"
+      ],
+      "interval": [
+        "37922256000",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((13469/500)%,813538 s)",
+      "exact": [
+        "14859678339",
+        "25000"
+      ],
+      "interval": [
+        "813538",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((14093/250)%,407925 min)",
+      "exact": [
+        "533908557",
+        "50"
+      ],
+      "interval": [
+        "24475500",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((13591/1000)%,208292 min)",
+      "exact": [
+        "13498727571",
+        "1250"
+      ],
+      "interval": [
+        "12497520",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((8989/1000)%,(264979/2) h)",
+      "exact": [
+        "217044033921",
+        "500"
+      ],
+      "interval": [
+        "476962200",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((10893/1000)%,(364403/10) day)",
+      "exact": [
+        "1753426338534",
+        "625"
+      ],
+      "interval": [
+        "3148441920",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((2621/200)%,49346 day)",
+      "exact": [
+        "92619086472",
+        "25"
+      ],
+      "interval": [
+        "4263494400",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((4927/200)%,89697 day)",
+      "exact": [
+        "146016311148",
+        "25"
+      ],
+      "interval": [
+        "7749820800",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((10117/200)%,(901983/10) day)",
+      "exact": [
+        "481372091406",
+        "125"
+      ],
+      "interval": [
+        "7793133120",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((6201/100)%,109454 day)",
+      "exact": [
+        "89816201136",
+        "25"
+      ],
+      "interval": [
+        "9456825600",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((59509/1000)%,920206 s)",
+      "exact": [
+        "18630030573",
+        "50000"
+      ],
+      "interval": [
+        "920206",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((71921/1000)%,370712 h)",
+      "exact": [
+        "46841500116",
+        "125"
+      ],
+      "interval": [
+        "1334563200",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((2197/50)%,169248 day)",
+      "exact": [
+        "204941726208",
+        "25"
+      ],
+      "interval": [
+        "14623027200",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((38159/1000)%,186206 day)",
+      "exact": [
+        "1243637846568",
+        "125"
+      ],
+      "interval": [
+        "16088198400",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((43999/1000)%,92264 day)",
+      "exact": [
+        "558022636512",
+        "125"
+      ],
+      "interval": [
+        "7971609600",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((87141/1000)%,(7989/2) h)",
+      "exact": [
+        "924574959",
+        "500"
+      ],
+      "interval": [
+        "14380200",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((3967/125)%,(865219/10) s)",
+      "exact": [
+        "7382913727",
+        "125000"
+      ],
+      "interval": [
+        "865219",
+        "10"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((4567/200)%,(687697/10) day)",
+      "exact": [
+        "573114301254",
+        "125"
+      ],
+      "interval": [
+        "5941702080",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((30381/500)%,293443 day)",
+      "exact": [
+        "1243524574872",
+        "125"
+      ],
+      "interval": [
+        "25353475200",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((9457/1000)%,470865 h)",
+      "exact": [
+        "76740353451",
+        "50"
+      ],
+      "interval": [
+        "1695114000",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((97231/1000)%,(424718/5) h)",
+      "exact": [
+        "5292198639",
+        "625"
+      ],
+      "interval": [
+        "305796960",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((4218/125)%,(35798/5) min)",
+      "exact": [
+        "889437108",
+        "3125"
+      ],
+      "interval": [
+        "429576",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((80037/1000)%,80448 s)",
+      "exact": [
+        "50186982",
+        "3125"
+      ],
+      "interval": [
+        "80448",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((10821/200)%,349249 day)",
+      "exact": [
+        "346221709668",
+        "25"
+      ],
+      "interval": [
+        "30175113600",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((5207/250)%,187993 min)",
+      "exact": [
+        "11162836347",
+        "1250"
+      ],
+      "interval": [
+        "11279580",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((8747/250)%,479772 min)",
+      "exact": [
+        "11696601474",
+        "625"
+      ],
+      "interval": [
+        "28786320",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((38437/1000)%,(6347/2) day)",
+      "exact": [
+        "21099979494",
+        "125"
+      ],
+      "interval": [
+        "274190400",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((13547/500)%,(708457/10) h)",
+      "exact": [
+        "232428447189",
+        "1250"
+      ],
+      "interval": [
+        "255044520",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((22949/500)%,53193 h)",
+      "exact": [
+        "12950314587",
+        "125"
+      ],
+      "interval": [
+        "191494800",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((18441/1000)%,(999227/2) h)",
+      "exact": [
+        "733463594037",
+        "500"
+      ],
+      "interval": [
+        "1798608600",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((10744/125)%,(193708/5) s)",
+      "exact": [
+        "85037812",
+        "15625"
+      ],
+      "interval": [
+        "193708",
+        "5"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((1877/250)%,226680 h)",
+      "exact": [
+        "18869477904",
+        "25"
+      ],
+      "interval": [
+        "816048000",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((13359/1000)%,121523 h)",
+      "exact": [
+        "94759868187",
+        "250"
+      ],
+      "interval": [
+        "437482800",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((3158/125)%,492507 h)",
+      "exact": [
+        "165636014184",
+        "125"
+      ],
+      "interval": [
+        "1773025200",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((15183/500)%,105681 min)",
+      "exact": [
+        "11038486131",
+        "2500"
+      ],
+      "interval": [
+        "6340860",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((67313/1000)%,667010 day)",
+      "exact": [
+        "470935206792",
+        "25"
+      ],
+      "interval": [
+        "57629664000",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((51481/1000)%,(125977/2) h)",
+      "exact": [
+        "55010502567",
+        "500"
+      ],
+      "interval": [
+        "226758600",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((45119/500)%,(793793/10) h)",
+      "exact": [
+        "34870532697",
+        "1250"
+      ],
+      "interval": [
+        "285765480",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((58217/1000)%,785089 h)",
+      "exact": [
+        "295230363183",
+        "250"
+      ],
+      "interval": [
+        "2826320400",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((46443/1000)%,666504 s)",
+      "exact": [
+        "4461994341",
+        "12500"
+      ],
+      "interval": [
+        "666504",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((13823/250)%,43649 day)",
+      "exact": [
+        "210757625136",
+        "125"
+      ],
+      "interval": [
+        "3771273600",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((29813/500)%,150767 s)",
+      "exact": [
+        "3043533429",
+        "50000"
+      ],
+      "interval": [
+        "150767",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((75081/1000)%,712547 h)",
+      "exact": [
+        "159803628237",
+        "250"
+      ],
+      "interval": [
+        "2565169200",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((43903/1000)%,427088 h)",
+      "exact": [
+        "107812599912",
+        "125"
+      ],
+      "interval": [
+        "1537516800",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((9257/1000)%,855444 s)",
+      "exact": [
+        "19406388723",
+        "25000"
+      ],
+      "interval": [
+        "855444",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((17057/200)%,(602749/10) min)",
+      "exact": [
+        "5321670921",
+        "10000"
+      ],
+      "interval": [
+        "3616494",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((27769/500)%,(449317/10) h)",
+      "exact": [
+        "89898896043",
+        "1250"
+      ],
+      "interval": [
+        "161754120",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((56583/1000)%,228304 min)",
+      "exact": [
+        "3717103038",
+        "625"
+      ],
+      "interval": [
+        "13698240",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((32817/1000)%,(526877/10) min)",
+      "exact": [
+        "106191532473",
+        "50000"
+      ],
+      "interval": [
+        "3161262",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((60853/1000)%,(305228/5) min)",
+      "exact": [
+        "8961570387",
+        "6250"
+      ],
+      "interval": [
+        "3662736",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((10396/125)%,(86579/2) day)",
+      "exact": [
+        "78694077312",
+        "125"
+      ],
+      "interval": [
+        "3740212800",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((82823/1000)%,378816 h)",
+      "exact": [
+        "29281150944",
+        "125"
+      ],
+      "interval": [
+        "1363737600",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((20779/1000)%,(398246/5) min)",
+      "exact": [
+        "47324169549",
+        "12500"
+      ],
+      "interval": [
+        "4778952",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((68713/1000)%,(229639/5) day)",
+      "exact": [
+        "775949262444",
+        "625"
+      ],
+      "interval": [
+        "3968161920",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((13163/500)%,(123132/5) s)",
+      "exact": [
+        "1133953371",
+        "62500"
+      ],
+      "interval": [
+        "123132",
+        "5"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((16661/250)%,331295 h)",
+      "exact": [
+        "9945608418",
+        "25"
+      ],
+      "interval": [
+        "1192662000",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((2109/100)%,268231 day)",
+      "exact": [
+        "457187937336",
+        "25"
+      ],
+      "interval": [
+        "23175158400",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((35967/500)%,55024 min)",
+      "exact": [
+        "579113844",
+        "625"
+      ],
+      "interval": [
+        "3301440",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((63847/1000)%,685672 day)",
+      "exact": [
+        "2677222780128",
+        "125"
+      ],
+      "interval": [
+        "59242060800",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((2639/200)%,714797 s)",
+      "exact": [
+        "12409590717",
+        "20000"
+      ],
+      "interval": [
+        "714797",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((39407/1000)%,(61547/5) h)",
+      "exact": [
+        "33563856339",
+        "1250"
+      ],
+      "interval": [
+        "44313840",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((25643/1000)%,(341601/2) s)",
+      "exact": [
+        "25400425557",
+        "200000"
+      ],
+      "interval": [
+        "341601",
+        "2"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((12549/250)%,182716 s)",
+      "exact": [
+        "568749229",
+        "6250"
+      ],
+      "interval": [
+        "182716",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((4487/250)%,(510763/2) s)",
+      "exact": [
+        "10477281419",
+        "50000"
+      ],
+      "interval": [
+        "510763",
+        "2"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((10613/200)%,(775189/2) s)",
+      "exact": [
+        "7276699143",
+        "40000"
+      ],
+      "interval": [
+        "775189",
+        "2"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((47361/1000)%,427230 day)",
+      "exact": [
+        "485761535352",
+        "25"
+      ],
+      "interval": [
+        "36912672000",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((27187/1000)%,(64885/2) min)",
+      "exact": [
+        "2834682903",
+        "2000"
+      ],
+      "interval": [
+        "1946550",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((68583/1000)%,(782171/10) day)",
+      "exact": [
+        "1326967180578",
+        "625"
+      ],
+      "interval": [
+        "6757957440",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((37241/500)%,228089 h)",
+      "exact": [
+        "26191687959",
+        "125"
+      ],
+      "interval": [
+        "821120400",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((51527/1000)%,464826 min)",
+      "exact": [
+        "33797266047",
+        "2500"
+      ],
+      "interval": [
+        "27889560",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((87/100)%,(323477/2) s)",
+      "exact": [
+        "3206627501",
+        "20000"
+      ],
+      "interval": [
+        "323477",
+        "2"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((30507/1000)%,(263016/5) s)",
+      "exact": [
+        "2284721361",
+        "62500"
+      ],
+      "interval": [
+        "263016",
+        "5"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "downtime((5987/250)%,(153322/5) s)",
+      "exact": [
+        "1457555593",
+        "62500"
+      ],
+      "interval": [
+        "153322",
+        "5"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "uptime(0%)",
+      "exact": [
+        "2629800",
+        "1"
+      ],
+      "interval": [
+        "2629800",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "uptime(50%)",
+      "exact": [
+        "1314900",
+        "1"
+      ],
+      "interval": [
+        "2629800",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "uptime(90%)",
+      "exact": [
+        "262980",
+        "1"
+      ],
+      "interval": [
+        "2629800",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "uptime(95%)",
+      "exact": [
+        "131490",
+        "1"
+      ],
+      "interval": [
+        "2629800",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "uptime(99%)",
+      "exact": [
+        "26298",
+        "1"
+      ],
+      "interval": [
+        "2629800",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "uptime((199/2)%)",
+      "exact": [
+        "13149",
+        "1"
+      ],
+      "interval": [
+        "2629800",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "uptime((999/10)%)",
+      "exact": [
+        "13149",
+        "5"
+      ],
+      "interval": [
+        "2629800",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "uptime((1999/20)%)",
+      "exact": [
+        "13149",
+        "10"
+      ],
+      "interval": [
+        "2629800",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "uptime((9999/100)%)",
+      "exact": [
+        "13149",
+        "50"
+      ],
+      "interval": [
+        "2629800",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "uptime((99999/1000)%)",
+      "exact": [
+        "13149",
+        "500"
+      ],
+      "interval": [
+        "2629800",
+        "1"
+      ]
+    },
+    {
+      "kind": "uptime",
+      "source": "uptime(100%)",
+      "exact": [
+        "0",
+        "1"
+      ],
+      "interval": [
+        "2629800",
+        "1"
+      ]
+    }
+  ]
+}

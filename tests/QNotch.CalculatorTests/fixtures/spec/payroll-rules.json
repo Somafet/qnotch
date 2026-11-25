@@ -1,0 +1,186 @@
+{
+  "version": "2026-11-06-v4",
+  "reviewedOn": "2026-11-06",
+  "status": "Audited annualized US/UK, dated whole-leu Romanian, German 2026 current-wage and Hungarian 2026 employee/átalányadó cases; complete statutory payroll coverage remains open",
+  "maximumAnnualGross": "100000000",
+  "models": [
+    {
+      "id": "US-single-2026-v1",
+      "country": "US",
+      "taxYear": 2026,
+      "validFrom": "2026-01-01",
+      "validThrough": "2026-12-31",
+      "currency": "USD",
+      "scope": "Single employee under 65, not blind/dependent; standard deduction; federal ordinary income tax and employee Social Security/Medicare; no state/local tax, credits, itemized/special deductions, pension or other income",
+      "arithmetic": "Annualized continuous rate schedule before withholding/return/pay-period/cent settlement",
+      "sources": [
+        "https://www.irs.gov/irb/2025-45_IRB",
+        "https://www.irs.gov/taxtopics/tc751",
+        "https://www.ssa.gov/OACT/cola/cbb.html"
+      ]
+    },
+    {
+      "id": "UK-EWNI-A-2026-27-v1",
+      "country": "UK",
+      "taxYear": 2026,
+      "validFrom": "2026-04-06",
+      "validThrough": "2027-04-05",
+      "currency": "GBP",
+      "scope": "England, Wales and Northern Ireland; standard personal allowance with continuous taper; Class 1 category A employee below pension age; annual NI thresholds; no Scotland, student loans, pension, benefits, other income or additional reliefs",
+      "arithmetic": "Annualized continuous rate schedule before allowance/PAYE/pay-period/cent settlement; monthly basis scales the annual model",
+      "sources": [
+        "https://www.gov.uk/guidance/rates-and-thresholds-for-employers-2026-to-2027",
+        "https://www.gov.uk/income-tax-rates",
+        "https://www.gov.uk/government/publications/rates-and-allowances-income-tax/income-tax-rates-and-allowances-current-and-past"
+      ],
+      "attribution": "Contains public sector information licensed under the Open Government Licence v3.0. https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/"
+    },
+    {
+      "id": "RO-employee-2026-H1-v1",
+      "country": "RO",
+      "taxYear": 2026,
+      "validFrom": "2026-01-01",
+      "validThrough": "2026-06-30",
+      "currency": "RON",
+      "minimumMonthlyGross": 4050,
+      "minimumRelief": 300,
+      "minimumReliefGrossCeiling": 4300,
+      "scope": "Normal-condition full-month employee; whole-leu monthly input; main job by default, declared total eligible dependants and school-child/youth eligibility; basic salary defaults to gross; minimum relief assumes full-time eligibility and no disqualifying pay reduction; CAM employer cost",
+      "arithmetic": "Whole-leu monthly contribution/deduction/tax rounding, half up; annual fields project twelve identical selected-rule months, not calendar-year settlement; lowest exact-net whole-leu inverse across every relief/deduction interval",
+      "sources": [
+        "https://static.anaf.ro/static/10/Anaf/legislatie/Cod_fiscal_norme_2023.htm",
+        "https://static.anaf.ro/static/10/Anaf/legislatie/OUG_89_2025.pdf",
+        "https://static.anaf.ro/static/10/Anaf/legislatie/HG_1506_2024.pdf",
+        "https://static.anaf.ro/static/10/Anaf/Declaratii_R/AplicatiiDec/structura_D112_0126_300326.pdf"
+      ]
+    },
+    {
+      "id": "RO-employee-2026-H2-v1",
+      "country": "RO",
+      "taxYear": 2026,
+      "validFrom": "2026-07-01",
+      "validThrough": "2026-12-31",
+      "currency": "RON",
+      "minimumMonthlyGross": 4325,
+      "minimumRelief": 200,
+      "minimumReliefGrossCeiling": 4600,
+      "scope": "Same normal-condition full-month and declared eligibility profile as H1; whole-leu monthly input, deductions and employer CAM cost",
+      "arithmetic": "Whole-leu monthly contribution/deduction/tax rounding, half up; annual fields project twelve identical selected-rule months, not calendar-year settlement; lowest exact-net whole-leu inverse across every relief/deduction interval",
+      "sources": [
+        "https://static.anaf.ro/static/10/Anaf/legislatie/Cod_fiscal_norme_2023.htm",
+        "https://static.anaf.ro/static/10/Anaf/legislatie/OUG_89_2025.pdf",
+        "https://static.anaf.ro/static/10/Anaf/legislatie/HG_146_2026.pdf",
+        "https://static.anaf.ro/static/10/Anaf/Declaratii_R/AplicatiiDec/structura_D112_0726_070926.pdf"
+      ]
+    },
+    {
+      "id": "DE-employee-2026-v1",
+      "country": "DE",
+      "taxYear": 2026,
+      "validFrom": "2026-01-01",
+      "validThrough": "2026-12-31",
+      "currency": "EUR",
+      "wageTaxProgram": "BMF Programmablaufplan 2026 (BMF-Schreiben 12.11.2025, IV C 5 - S 2361/00025/016/028, BStBl 2025 I S. 1948, Anlage 1); Lohnsteuer2026.xml version 1.0, Stand 2025-10-23, SHA-256 63d8981646d139eba2f4dd990c13b43c4fb3883b402a5a40cddf253aa7aa96b4",
+      "annualCeilings": {
+        "healthAndCare": 69750,
+        "pensionAndUnemployment": 101400
+      },
+      "employeeRatesPercent": {
+        "pension": "9.3",
+        "unemployment": "1.3",
+        "healthGeneral": "7.3",
+        "healthSurchargeDefaultFull": "2.9",
+        "care": "1.8",
+        "careSaxony": "2.3",
+        "childlessCareSurcharge": "0.6",
+        "careDiscountPerChildFromSecondToFifth": "0.25"
+      },
+      "scope": "Current wage (laufender Arbeitslohn) of an employee in statutory pension, unemployment, health and care insurance; tax classes I-VI, declared child allowances (ZKF), care-insurance children (under 25 assumed for discounts), full kassenindividueller Zusatzbeitrag (default 2026 average), Saxony care split, optional 8%/9% church tax; monthly gross above 2000 EUR or annual gross above 24000 EUR; no Minijob/Uebergangsbereich, private insurance, Versorgungsbezuege, age relief, tax-card allowances, factor method, sonstige Bezuege, levies or employer cost",
+      "arithmetic": "Monthly input runs one PAP payroll period (LZZ 2) with monthly ceilings; annual input runs the annual table (LZZ 1) with annual ceilings; wage tax/solidarity/church base per PAP; employee contribution shares half up to cents per branch; church tax truncated to cents; lowest whole-cent exact-net inverse with a bounded rounding-dip scan",
+      "sources": [
+        "https://www.bmf-steuerrechner.de/javax.faces.resource/daten/xmls/Lohnsteuer2026.xml.xhtml",
+        "https://www.ihk-muenchen.de/ihk/documents/Recht-Steuern/Steuerrecht/Einkommensteuer/2025-11-12-PAP-2026-anlage-1.pdf",
+        "https://www.gesetze-im-internet.de/svbezgrv_2026/__4.html",
+        "https://www.gesetze-im-internet.de/sgb_5/__241.html",
+        "https://www.bundesanzeiger.de/pub/publication/oUJYVk8GYRXybnb9Y4h/content/oUJYVk8GYRXybnb9Y4h/BAnz%20AT%2010.11.2025%20B7.pdf"
+      ]
+    },
+    {
+      "id": "HU-employee-2026-v1",
+      "country": "HU",
+      "taxYear": 2026,
+      "validFrom": "2026-01-01",
+      "validThrough": "2026-12-31",
+      "currency": "HUF",
+      "minimumWage": 322800,
+      "guaranteedMinimumWage": 373200,
+      "ratesPercent": {
+        "personalIncomeTax": "15",
+        "socialSecurity": "18.5",
+        "employerSocialContributionTax": "13"
+      },
+      "monthlyAllowances": {
+        "youthCap": 715765,
+        "firstMarriage": 33335,
+        "familyPerBeneficiary": {
+          "oneDependant": 133340,
+          "twoDependants": 266660,
+          "threeOrMoreDependants": 440000
+        }
+      },
+      "scope": "Full-month employee; whole-forint monthly gross; declared mothers exemption, under-25, first-marriage and family allowance (claimed in full by this person) in statutory order; family contribution relief; employer szocho cost; no benefits, cafeteria, part-month, disability allowance, employer reliefs or minimum-base cases",
+      "arithmetic": "Each amount rounded half up to whole forints; yearly amounts are twelve identical months; lowest whole-forint exact-net inverse with a 3 HUF rounding-dip bound",
+      "sources": [
+        "https://nav.gov.hu/pfile/file?path=/ugyfeliranytu/nezzen-utana/inf_fuz/2026/73.-Szja-adoalap-kedvezmenyek-2026.-03.19",
+        "https://njt.hu/jogszabaly/1995-117-00-00",
+        "https://njt.hu/jogszabaly/2019-122-00-00",
+        "https://njt.hu/jogszabaly/2018-52-00-00",
+        "https://njt.hu/jogszabaly/2025-426-20-22"
+      ]
+    },
+    {
+      "id": "HU-atalanyado-2026-v1",
+      "country": "HU",
+      "taxYear": 2026,
+      "validFrom": "2026-01-01",
+      "validThrough": "2026-12-31",
+      "currency": "HUF",
+      "costRatiosPercent": [
+        45,
+        80,
+        90
+      ],
+      "taxFreeIncome": 1936800,
+      "revenueCeiling": 38736000,
+      "retailRevenueCeiling": 193680000,
+      "minimumMonthlyBase": {
+        "minimumWage": 322800,
+        "guaranteedMinimumWage": 373200,
+        "szochoMultiplier": "1"
+      },
+      "ratesPercent": {
+        "personalIncomeTax": "15",
+        "socialSecurity": "18.5",
+        "socialContributionTax": "13"
+      },
+      "scope": "Whole insured tax year, revenue earned evenly; main occupation (monthly minimum base, optional guaranteed minimum), secondary beside 36-hour employment/full-time study, or pensioner; declared allowances applied annually; net before actual costs, HIPA, VAT and chamber fees; no suspension, sick pay or part-year activity; activity-code eligibility for 80%/90% is declared",
+      "arithmetic": "Quarterly cumulative (gongyolites) contribution bases per NAV booklet 100; monthly contributions and annual SZJA/relief rounded half up to whole forints; lowest whole-forint exact-net revenue inverse with a 40 HUF rounding-dip bound",
+      "sources": [
+        "https://nav.gov.hu/pfile/file?path=/ugyfeliranytu/nezzen-utana/inf_fuz/2026/100.-Az-egyeni-vallalkozok-atalanyadozasanak-alapveto-szabalyai-2026.-02.-20",
+        "https://nav.gov.hu/pfile/file?path=/ugyfeliranytu/nezzen-utana/inf_fuz/2026/73.-Szja-adoalap-kedvezmenyek-2026.-03.19",
+        "https://njt.hu/jogszabaly/1995-117-00-00",
+        "https://njt.hu/jogszabaly/2019-122-00-00",
+        "https://njt.hu/jogszabaly/2018-52-00-00",
+        "https://njt.hu/jogszabaly/2025-426-20-22"
+      ]
+    }
+  ],
+  "notYetSupported": [
+    "Full Romanian taxpayer profiles/settlement beyond the separate romanian-tax-rules.json rate models",
+    "Other tax years/profiles",
+    "Romanian fractional-leu/part-time/partial-month/leave/benefit/special-sector settlement",
+    "US/UK statutory payroll settlement",
+    "German Minijob/Uebergangsbereich, private insurance, pension payments, other payments (sonstige Bezuege), tax-card allowances, factor method and employer cost",
+    "Hungarian benefits/cafeteria, partial months, disability and shared family allowance, employer reliefs, átalányadó suspension/sick pay/part-year activity, local business tax and vállalkozói SZJA/KATA"
+  ]
+}
