@@ -152,7 +152,8 @@ final class CardView: FillView {
 /// A borderless button with hover and press feedback. Keyboard focus, accessibility and actions
 /// stay native (NSButton); only the look is custom. The fill is the button's own layer background.
 final class HoverButton: NSButton, OutlineRoleProviding {
-    enum Style { case icon, plain, accent, accentCircle, chip, tab, row }
+    /// `link`: a small grey text action for a page's caption strip (10 pt, no fill until hovered).
+    enum Style { case icon, plain, accent, accentCircle, chip, tab, row, link }
 
     let style: Style
     var handler: () -> Void
@@ -188,13 +189,14 @@ final class HoverButton: NSButton, OutlineRoleProviding {
         }
         imagePosition = symbol == nil ? .noImage : title.isEmpty ? .imageOnly : .imageLeading
         imageHugsTitle = true
-        font = .systemFont(ofSize: style == .chip ? 12 : 13, weight: style == .accent || style == .chip ? .semibold : .medium)
+        font = .systemFont(ofSize: style == .link ? 10 : style == .chip ? 12 : 13, weight: style == .accent || style == .chip ? .semibold : .medium)
         switch style {
         case .icon: fixedSize = NSSize(width: 32, height: 30)
         case .tab: fixedSize = NSSize(width: 40, height: 28)
         case .accentCircle: fixedSize = NSSize(width: 44, height: 44); radius = 22; layer?.cornerCurve = .circular
         case .chip: padding = NSSize(width: 12, height: 5); radius = 7
         case .row: padding = NSSize(width: 10, height: 8)
+        case .link: padding = NSSize(width: 5, height: 0); radius = 5
         default: break
         }
         layer?.cornerRadius = radius
@@ -274,6 +276,9 @@ final class HoverButton: NSButton, OutlineRoleProviding {
         case .tab:
             fill = pressing ? Palette.control : nil
             foreground = isSelectedLook ? Palette.accent : hovering ? Palette.textPrimary : Palette.textSecondary
+        case .link:
+            fill = pressing ? Palette.controlPressed : hovering ? Palette.controlHover : nil
+            if tint == nil { foreground = hovering ? Palette.textSecondary : Palette.textTertiary }
         case .icon, .row:
             fill = pressing ? Palette.controlPressed : hovering ? Palette.controlHover : nil
             if style == .icon, tint == nil { foreground = hovering ? Palette.textPrimary : Palette.textSecondary }
@@ -553,7 +558,8 @@ enum SettingsStyle {
 /// A System Settings–style row: title and optional detail on the left, control on the right.
 func settingsRow(_ title: String, detail: String? = nil, control: NSView? = nil, width: CGFloat, detailLabel onDetail: ((NSTextField) -> Void)? = nil) -> NSView {
     let titleLabel = label(title, size: 13)
-    var text: [NSView] = [titleLabel]
+    // An untitled row (a follow-up action under the row above) starts with its detail.
+    var text: [NSView] = title.isEmpty ? [] : [titleLabel]
     let available = SettingsStyle.textWidth(contentWidth: width, control: control)
     titleLabel.preferredMaxLayoutWidth = available
     if let detail {
@@ -572,23 +578,10 @@ func settingsRow(_ title: String, detail: String? = nil, control: NSView? = nil,
     return container
 }
 
-/// Rows grouped into one rounded box with hairline separators.
+/// Rows grouped into one rounded box with hairline separators. A separator shows only between two
+/// visible rows, so hiding a row (or an empty note) never leaves two lines stacked.
 func settingsGroup(_ rows: [NSView], header: String? = nil, footer: String? = nil, width: CGFloat) -> NSView {
-    let box = FillView(fill: SettingsStyle.groupFill, stroke: SettingsStyle.groupStroke, radius: 10)
-    var items: [NSView] = []
-    for (index, item) in rows.enumerated() {
-        if index > 0 {
-            let separator = NSBox()
-            separator.boxType = .separator
-            let inset = NSView()
-            embed(separator, in: inset, inset: NSEdgeInsets(top: 0, left: 14, bottom: 0, right: 14), fill: true)
-            items.append(inset)
-        }
-        items.append(item)
-    }
-    let stack = column(items, spacing: 0)
-    embed(stack, in: box, inset: 0, fill: true)
-    items.forEach { $0.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true }
+    let box = SettingsGroupBox(rows: rows)
     var outer: [NSView] = []
     if let header {
         let title = label(header, size: 13, weight: .semibold)
@@ -605,6 +598,66 @@ func settingsGroup(_ rows: [NSView], header: String? = nil, footer: String? = ni
     let group = column(outer, spacing: 8)
     box.widthAnchor.constraint(equalToConstant: width).isActive = true
     return group
+}
+
+/// The rounded box of a settings group. Each row after the first has a separator above it, shown
+/// only while that row and some row before it are visible; it follows rows hidden or shown later.
+final class SettingsGroupBox: FillView {
+    private let rows: [NSView]
+    private var separators: [NSView] = []
+    private var observations: [NSKeyValueObservation] = []
+
+    init(rows: [NSView]) {
+        self.rows = rows
+        super.init(fill: SettingsStyle.groupFill, stroke: SettingsStyle.groupStroke, radius: 10)
+        var items: [NSView] = []
+        for (index, item) in rows.enumerated() {
+            if index > 0 {
+                let separator = NSBox()
+                separator.boxType = .separator
+                let inset = NSView()
+                embed(separator, in: inset, inset: NSEdgeInsets(top: 0, left: 14, bottom: 0, right: 14), fill: true)
+                items.append(inset)
+                separators.append(inset)
+            }
+            items.append(item)
+        }
+        let stack = column(items, spacing: 0)
+        stack.detachesHiddenViews = true
+        embed(stack, in: self, inset: 0, fill: true)
+        items.forEach { $0.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true }
+        observations = rows.map { $0.observe(\.isHidden) { [weak self] _, _ in self?.updateSeparators() } }
+        updateSeparators()
+    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    private func updateSeparators() {
+        guard let first = rows.first else { return }
+        var seenVisible = !first.isHidden
+        for (index, row) in rows.enumerated().dropFirst() {
+            separators[index - 1].isHidden = row.isHidden || !seenVisible
+            if !row.isHidden { seenVisible = true }
+        }
+    }
+}
+
+/// A wrapping note inside a settings group (a check or test result). Its row hides while the
+/// text is empty, so an unused note adds neither space nor a separator.
+func settingsNote(_ text: String = "", width: CGFloat) -> (row: NSView, note: NSTextField) {
+    let note = SettingsNoteField(wrappingLabelWithString: text)
+    note.font = .systemFont(ofSize: 11)
+    note.textColor = .secondaryLabelColor
+    note.isSelectable = false
+    note.preferredMaxLayoutWidth = width - 30
+    let row = NSView()
+    embed(note, in: row, inset: NSEdgeInsets(top: 0, left: 14, bottom: 8, right: 14), fill: true)
+    note.updateRow()
+    return (row, note)
+}
+
+final class SettingsNoteField: NSTextField {
+    override var stringValue: String { didSet { updateRow() } }
+    func updateRow() { superview?.isHidden = stringValue.isEmpty }
 }
 
 /// Native switch with a closure.

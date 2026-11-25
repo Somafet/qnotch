@@ -176,9 +176,12 @@ private final class TaildropFooter: NSView {
 
 // MARK: - Taildrop tab
 
-final class TaildropTabView: NSView, TaildropDisplay, TabHeaderProviding {
-    private(set) var tabHeaderActions: NSView = NSView()
+final class TaildropTabView: NSView, TaildropDisplay {
     private weak var module: TaildropModule?
+    /// A small grey caption strip like Terminal's: the device count and a quiet Refresh link.
+    /// The list refreshes on its own while visible, so the manual refresh stays unobtrusive.
+    private let caption = line("", size: 10, color: Palette.textTertiary)
+    private let captionStrip: NSStackView
     private let banner = FillView(fill: Palette.accentSoft, radius: 10)
     private let bannerText = line("", size: 12, weight: .medium, color: Palette.textPrimary)
     private let saveButton: HoverButton
@@ -196,9 +199,12 @@ final class TaildropTabView: NSView, TaildropDisplay, TabHeaderProviding {
         self.module = module
         saveButton = HoverButton("Save to Downloads", style: .accent) { [weak module] in module?.saveWaiting() }
         footer = TaildropFooter(module: module)
+        let refresh = HoverButton("Refresh", symbol: "arrow.clockwise", style: .link, symbolSize: 9, label: "Refresh devices") { [weak module] in module?.refresh() }
+        refresh.identifier = NSUserInterfaceItemIdentifier("taildrop-refresh")
+        refresh.toolTip = "Refresh devices"
+        caption.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        captionStrip = row([caption, spacer(), refresh], spacing: 6)
         super.init(frame: .zero)
-        let refresh = HoverButton(symbol: "arrow.clockwise", style: .icon, symbolSize: 11, label: "Refresh devices") { [weak module] in module?.refresh() }
-        tabHeaderActions = row([refresh], spacing: 8)
 
         bannerText.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         embed(row([symbol("tray.and.arrow.down.fill", size: 13, color: Palette.accent), bannerText, spacer(), saveButton], spacing: 8),
@@ -221,7 +227,7 @@ final class TaildropTabView: NSView, TaildropDisplay, TabHeaderProviding {
             document.topAnchor.constraint(equalTo: scroll.contentView.topAnchor)
         ])
 
-        let stack = column([banner, message, scroll, noticeHost, footer], spacing: 10)
+        let stack = column([captionStrip, banner, message, scroll, noticeHost, footer], spacing: 10)
         for view in [scroll, noticeHost] {
             view.setContentHuggingPriority(.init(1), for: .vertical)
             view.setContentCompressionResistancePriority(.init(1), for: .vertical)
@@ -245,6 +251,9 @@ final class TaildropTabView: NSView, TaildropDisplay, TabHeaderProviding {
         }
         message.stringValue = state.message ?? ""
         message.isHidden = state.message == nil
+        let count = state.targets.count
+        caption.stringValue = (count == 1 ? "1 device" : "\(count) devices") + " · Updates automatically"
+        captionStrip.isHidden = notice != nil
         scroll.isHidden = notice != nil
         noticeHost.isHidden = notice == nil
         if notice != shownNotice {

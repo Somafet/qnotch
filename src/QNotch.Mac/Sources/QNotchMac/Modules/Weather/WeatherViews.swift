@@ -151,9 +151,12 @@ extension WeatherModule {
         results.orientation = .vertical
         results.alignment = .leading
         results.spacing = 2
-        let note = label("", size: 11, color: .secondaryLabelColor)
-        note.preferredMaxLayoutWidth = width - 30
-        field.onAction { [weak self, weak field, weak results, weak note] in
+        // The search message and the results are rows of their own, hidden while empty.
+        let (noteRow, note) = settingsNote(width: width)
+        let searchBox = NSView()
+        embed(results, in: searchBox, inset: NSEdgeInsets(top: 0, left: 14, bottom: 8, right: 14), fill: true)
+        searchBox.isHidden = true
+        field.onAction { [weak self, weak field, weak results, weak note, weak searchBox] in
             guard let self, let field, field.stringValue.trimmingCharacters(in: .whitespaces).count >= 2 else { note?.stringValue = "Type at least two letters."; return }
             note?.stringValue = "Searching…"
             self.search(field.stringValue) { result in
@@ -169,6 +172,7 @@ extension WeatherModule {
                     }
                 case .failure(let error): note?.stringValue = error.message
                 }
+                searchBox?.isHidden = results?.arrangedSubviews.isEmpty ?? true
             }
         }
         let units = ActionPopUp("Units", items: ["°C, m/s", "°F, mph"], selected: settings.units == .metric ? 0 : 1) { [weak self] index in
@@ -177,11 +181,10 @@ extension WeatherModule {
         let pill = ActionSwitch("Show in the notch", value: settings.showInPill) { [weak self] value in Analytics.setting("weather_show_in_pill", enabled: value); self?.set { $0.showInPill = value } }
         let refreshButton = actionButton("Refresh Now") { [weak self] in Analytics.record("weather", "refresh"); self?.refresh() }
         let place = settings.place.map { $0.detail.isEmpty ? $0.name : "\($0.name), \($0.detail)" } ?? "No place yet"
-        let searchBox = NSView()
-        embed(column([note, results], spacing: 4), in: searchBox, inset: NSEdgeInsets(top: 0, left: 14, bottom: 8, right: 14), fill: true)
         return settingsGroup([
             settingsRow("Place", detail: place, width: width),
             settingsRow("Find a place", detail: "Search the yr.no places, then pick one. QNotch never asks for your location.", control: field, width: width),
+            noteRow,
             searchBox,
             settingsRow("Units", control: units, width: width),
             settingsRow("Show in the notch", detail: "The current temperature beside the notch.", control: pill, width: width),

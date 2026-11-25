@@ -334,8 +334,7 @@ extension GithubModule {
         field.placeholderString = hasToken ? "Saved in your Keychain" : "ghp_…"
         field.widthAnchor.constraint(equalToConstant: 180).isActive = true
         field.setAccessibilityLabel("Personal access token")
-        let note = label(message, size: 11, color: .secondaryLabelColor)
-        note.preferredMaxLayoutWidth = width - 30
+        let (noteRow, note) = settingsNote(message, width: width)
         let save = actionButton("Save") { [weak self, weak field, weak note] in
             Analytics.record("github", "connect")
             guard let self, let field else { return }
@@ -353,8 +352,6 @@ extension GithubModule {
         remove.isEnabled = hasToken
         let refresh = actionButton("Refresh Now") { [weak self] in Analytics.record("github", "refresh"); self?.refresh() }
         refresh.isEnabled = hasToken
-        let box = NSView()
-        embed(note, in: box, inset: NSEdgeInsets(top: 0, left: 14, bottom: 8, right: 14), fill: true)
         var signIn: [NSView] = []
         if GithubOAuth.available {
             let view = GithubSignInView(look: .settings) { [weak self] token in self?.save(token) ?? false }
@@ -366,7 +363,7 @@ extension GithubModule {
             settingsRow(GithubOAuth.available ? "Or use a personal access token" : "Personal access token",
                         detail: "A classic token with read:user; add repo to count private activity.", control: row([field, save], spacing: 6), width: width),
             settingsRow("Connection", detail: "Test checks the token in the box, or the saved one.", control: row([test, remove], spacing: 6), width: width),
-            box,
+            noteRow,
             settingsRow("Activity", detail: "Refreshes every hour.", control: refresh, width: width)
         ], footer: "The token is stored in your Keychain, never in a file, and sent only to api.github.com." +
             (GithubOAuth.available ? " Signing in talks to github.com only until you approve or cancel." : ""), width: width)
