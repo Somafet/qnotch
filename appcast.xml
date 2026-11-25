@@ -5,6 +5,33 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
 <title>QNotch for Mac</title>
 <link>https://github.com/Somafet/qnotch</link>
 <item>
+<title>QNotch 0.7.0</title>
+<pubDate>Wed, 25 Nov 2026 23:12:43 GMT</pubDate>
+<sparkle:version>15</sparkle:version>
+<sparkle:shortVersionString>0.7.0</sparkle:shortVersionString>
+<sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+<sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+<sparkle:fullReleaseNotesLink>https://github.com/Somafet/qnotch/releases/tag/macos-v0.7.0</sparkle:fullReleaseNotesLink>
+<description sparkle:format="markdown">## What's Changed
+* Mac: open the drop screen before a dragged file hits the top edge by @Somafet in https://github.com/Somafet/qnotch/pull/136
+* Agents: fix Claude Code hooks without Git Bash, and say what is still missing after Connect by @Somafet in https://github.com/Somafet/qnotch/pull/137
+* Add a notepad Calculator tab on Windows by @Somafet in https://github.com/Somafet/qnotch/pull/138
+* Add the notepad Calculator tab on Mac by @Somafet in https://github.com/Somafet/qnotch/pull/139
+* Windows: Taildrop refresh in a caption strip, and Click mode hides Close delay by @Somafet in https://github.com/Somafet/qnotch/pull/140
+* Mac: tidy Taildrop refresh, Click-mode panel settings, and setup-code divider by @Somafet in https://github.com/Somafet/qnotch/pull/141
+* Docs: shared UI contracts and cross-platform rules for agents by @Somafet in https://github.com/Somafet/qnotch/pull/142
+* Windows: mark a clean exit when the session ends by @Somafet in https://github.com/Somafet/qnotch/pull/143
+* Windows: keep the notch in one spot for every app, or one spot per app by @Somafet in https://github.com/Somafet/qnotch/pull/144
+* Mac: drag the notch by the open panel's empty header by @Somafet in https://github.com/Somafet/qnotch/pull/145
+* Both: short panel header date so it fits beside a full tab strip by @Somafet in https://github.com/Somafet/qnotch/pull/146
+* Windows: make cards in the panel's bottom corners concentric with the panel by @Somafet in https://github.com/Somafet/qnotch/pull/147
+* Mac: make cards in the panel's bottom corners concentric with the panel by @Somafet in https://github.com/Somafet/qnotch/pull/148
+
+
+**Full Changelog**: https://github.com/Somafet/qnotch/compare/macos-v0.6.0...macos-v0.7.0</description>
+<enclosure url="https://github.com/Somafet/qnotch/releases/download/macos-v0.7.0/QNotch-macos-arm64.zip" length="6735089" type="application/octet-stream" sparkle:edSignature="sLosRRiNPpRvUOkjHvgKsrVSt/K2uDFn+GkTdkOecXLLtOKzzOJ0ynuWbc4zGf9NqkYfzLWunM/uum0nnw+6Cw=="/>
+</item>
+<item>
 <title>QNotch 0.6.0</title>
 <pubDate>Sun, 22 Nov 2026 14:19:54 GMT</pubDate>
 <sparkle:version>14</sparkle:version>
@@ -239,6 +266,6 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
 </channel>
 </rss>
 <!-- sparkle-signatures:
-edSignature: 3h0qxsgsVIfkNEsXsYt1XKFMgAQaUVxJy8oX2jSo1zvRrFtuqDQ7qXfTal7ZPL5FHXqX9UjS5/vAYe9jUNTxAA==
-length: 18301
+edSignature: TI5TiND/0D+jaTVnuM/nV8yjpujLoGTFNjOM0CKgexwrXs70IeBnYvdPnrUJHx68hgW+H/q51ZUemeRAQhRtDw==
+length: 20799
 -->
