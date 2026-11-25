@@ -28,6 +28,7 @@ Button labels follow each platform's capitalization: sentence case on Windows ("
 - **Action placement.** Actions sit at the trailing (right) end of their row, strip or banner.
 - **Hide, don't disable, options that don't apply.** An option that does nothing in the current mode is hidden. It comes back as soon as the mode changes, and its saved value is kept. Disable only an option that applies but cannot be used right now, such as Share usage data when the environment turns telemetry off.
 - **Descriptions match the current mode.** A description says what the option does now. When a mode change changes that, swap the text; don't add "Not used with …".
+- **Panel header date.** The line under the profile name shows the short date ("Wed, Nov 25"), so it fits beside a full tab strip. Windows always formats it in English, like the rest of its UI; macOS follows the system locale. On Windows, a date that still runs out of room ends with an ellipsis.
 - **Identifiers.** When both platforms give a control an accessibility identifier that checks or the debug channel use, it is the same string on both (for example `open-on`). [Diagnostics](diagnostics.md) lists the identifiers that checks rely on.
 
 ## Deliberate platform differences

@@ -299,7 +299,7 @@ public sealed class ShellController : IShell
         StopTimers();
         MemoryTrim.Cancel();
         var now = DateTime.Now;
-        _vm.DateText = now.ToString("dddd, MMMM d", UiCulture.Value);
+        _vm.DateText = now.ToString("ddd, MMM d", UiCulture.Value);
         SetMode(ShellMode.Expanded);
         _w.SetOpen(true);
     }

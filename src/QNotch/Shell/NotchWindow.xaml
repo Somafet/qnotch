@@ -37,18 +37,19 @@
                     <Grid Margin="23,10,17,0">
                         <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                         <!-- Profile -->
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Grid VerticalAlignment="Center" Margin="0,0,10,0">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                             <Grid Width="32" Height="32">
                                 <Ellipse Fill="{DynamicResource AccentSoftBrush}"/>
                                 <TextBlock Text="{Binding ProfileInitial}" FontWeight="SemiBold" FontSize="14" Foreground="{DynamicResource AccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 <Ellipse><Ellipse.Fill><ImageBrush ImageSource="{Binding ProfileImage}" Stretch="UniformToFill"/></Ellipse.Fill></Ellipse>
                                 <Ellipse Stroke="{DynamicResource StrokeBrush}" StrokeThickness="1"/>
                             </Grid>
-                            <StackPanel VerticalAlignment="Center" Margin="10,0,0,0">
-                                <TextBlock Text="{Binding Settings.ProfileName}" FontWeight="SemiBold" FontSize="13" MaxWidth="150" TextTrimming="CharacterEllipsis"/>
-                                <TextBlock Text="{Binding DateText}" Style="{StaticResource Muted}" Margin="0,1,0,0"/>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="10,0,0,0">
+                                <TextBlock Text="{Binding Settings.ProfileName}" FontWeight="SemiBold" FontSize="13" MaxWidth="150" HorizontalAlignment="Left" TextTrimming="CharacterEllipsis"/>
+                                <TextBlock Text="{Binding DateText}" Style="{StaticResource Muted}" Margin="0,1,0,0" TextTrimming="CharacterEllipsis"/>
                             </StackPanel>
-                        </StackPanel>
+                        </Grid>
                         <!-- Tabs: one sliding indicator behind the icon buttons -->
                         <Border Grid.Column="1" VerticalAlignment="Center" Padding="3" CornerRadius="12" Background="{DynamicResource ControlBrush}">
                             <Grid>
