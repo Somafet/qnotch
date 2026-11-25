@@ -284,6 +284,7 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
 
     private func setupGroup(width: CGFloat) -> NSView {
         // Results replace their row's own detail, so there is no separate (often empty) note row.
+        let shareDetail = "A code with your layout, features and preferences (no accounts, tokens, history, display or hotkeys). It also works with QNotch for Windows."
         var shared: NSTextField?
         var note: NSTextField?
         let copy = actionButton("Copy Code") { [weak self] in
@@ -292,6 +293,7 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
             NSPasteboard.general.clearContents()
             NSPasteboard.general.setString(SetupCode.export(self.setupSnapshot), forType: .string)
             shared?.stringValue = "Copied. Paste it into QNotch on another Mac or PC."
+            DispatchQueue.main.asyncAfter(deadline: .now() + 4) { [weak shared] in shared?.stringValue = shareDetail }
         }
         let field = NSTextField()
         field.placeholderString = "qnotch-setup-1:…"
@@ -318,7 +320,7 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
         }
         let applyRow = settingsRow("", detail: "Check a code to see what it changes.", control: apply, width: width) { note = $0 }
         return settingsGroup([
-            settingsRow("Share your setup", detail: "A code with your layout, features and preferences (no accounts, tokens, history, display or hotkeys). It also works with QNotch for Windows.", control: copy, width: width) { shared = $0 },
+            settingsRow("Share your setup", detail: shareDetail, control: copy, width: width) { shared = $0 },
             settingsRow("Apply a setup code", control: row([field, check], spacing: 6), width: width),
             applyRow
         ], width: width)

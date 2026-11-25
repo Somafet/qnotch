@@ -253,7 +253,8 @@ final class TaildropTabView: NSView, TaildropDisplay {
         message.isHidden = state.message == nil
         let count = state.targets.count
         caption.stringValue = (count == 1 ? "1 device" : "\(count) devices") + " · Updates automatically"
-        captionStrip.isHidden = notice != nil
+        // Refresh stays available over a notice (after starting or signing in to Tailscale).
+        caption.isHidden = notice != nil
         scroll.isHidden = notice != nil
         noticeHost.isHidden = notice == nil
         if notice != shownNotice {

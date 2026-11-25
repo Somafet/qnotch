@@ -196,7 +196,7 @@ final class HoverButton: NSButton, OutlineRoleProviding {
         case .accentCircle: fixedSize = NSSize(width: 44, height: 44); radius = 22; layer?.cornerCurve = .circular
         case .chip: padding = NSSize(width: 12, height: 5); radius = 7
         case .row: padding = NSSize(width: 10, height: 8)
-        case .link: padding = NSSize(width: 5, height: 0); radius = 5
+        case .link: padding = NSSize(width: 5, height: 2); radius = 5
         default: break
         }
         layer?.cornerRadius = radius
@@ -557,11 +557,14 @@ enum SettingsStyle {
 
 /// A System Settings–style row: title and optional detail on the left, control on the right.
 func settingsRow(_ title: String, detail: String? = nil, control: NSView? = nil, width: CGFloat, detailLabel onDetail: ((NSTextField) -> Void)? = nil) -> NSView {
-    let titleLabel = label(title, size: 13)
-    // An untitled row (a follow-up action under the row above) starts with its detail.
-    var text: [NSView] = title.isEmpty ? [] : [titleLabel]
     let available = SettingsStyle.textWidth(contentWidth: width, control: control)
-    titleLabel.preferredMaxLayoutWidth = available
+    // An untitled row (a follow-up action under the row above) starts with its detail.
+    var text: [NSView] = []
+    if !title.isEmpty {
+        let titleLabel = label(title, size: 13)
+        titleLabel.preferredMaxLayoutWidth = available
+        text.append(titleLabel)
+    }
     if let detail {
         let detailLabel = label(detail, size: 11, color: .secondaryLabelColor)
         detailLabel.preferredMaxLayoutWidth = available
