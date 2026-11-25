@@ -98,6 +98,7 @@ internal sealed class TaildropTab : Grid
     readonly WrapPanel _tiles = new() { Margin = new Thickness(0, 0, 0, 8) };
     readonly ScrollViewer _scroll;
     readonly ContentControl _empty = new() { Focusable = false };
+    readonly TextBlock _caption = UiKit.Text("", "Muted");
     readonly Border _waiting = new() { CornerRadius = new CornerRadius(8), Padding = new Thickness(12, 8, 8, 8), Margin = new Thickness(0, 0, 0, 10) };
     readonly TextBlock _waitingText = new() { FontSize = 12, VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis };
     readonly TextBlock _line = new() { FontSize = 12, VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis };
@@ -111,17 +112,25 @@ internal sealed class TaildropTab : Grid
         _module = module;
         _st = st;
         _shell = shell;
-        Margin = new Thickness(19, 0, 19, 12);
-        RowDefinitions.Add(new RowDefinition { Height = new GridLength(46) });
+        Margin = new Thickness(19, 2, 19, 12);
+        RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         RowDefinitions.Add(new RowDefinition());
         RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
-        // Actions only: the tab strip already names the page.
-        var refresh = TaildropUi.IconButton(Glyphs.Refresh, "Refresh devices", module.Refresh);
-        refresh.HorizontalAlignment = HorizontalAlignment.Right;
-        refresh.VerticalAlignment = VerticalAlignment.Center;
-        Children.Add(refresh);
+        // A muted caption strip like the Terminal tab's, its action on the right. The list refreshes on its own,
+        // so the manual refresh is a small link; it stays when a notice replaces the devices.
+        _caption.TextWrapping = TextWrapping.NoWrap;
+        _caption.TextTrimming = TextTrimming.CharacterEllipsis;
+        _caption.VerticalAlignment = VerticalAlignment.Center;
+        var refresh = new Button { Content = "Refresh", Style = (Style)Application.Current.FindResource("LinkButton"), FontSize = 11, Padding = new Thickness(3, 0, 3, 0), VerticalAlignment = VerticalAlignment.Center, ToolTip = "Refresh devices" };
+        AutomationProperties.SetName(refresh, "Refresh devices");
+        refresh.Click += (_, _) => module.Refresh();
+        DockPanel.SetDock(refresh, Dock.Right);
+        var top = new DockPanel { Margin = new Thickness(0, 0, 0, 8) };
+        top.Children.Add(refresh);
+        top.Children.Add(_caption);
+        Children.Add(top);
 
         // Files waiting in the inbox
         _waiting.SetResourceReference(Border.BackgroundProperty, "AccentSoftBrush");
@@ -176,6 +185,8 @@ internal sealed class TaildropTab : Grid
         _empty.Content = empty is { } e ? EmptyView(e.Title, e.Message, e.Action) : null;
         _empty.Visibility = empty is null ? Visibility.Collapsed : Visibility.Visible;
         _scroll.Visibility = empty is null ? Visibility.Visible : Visibility.Collapsed;
+        var count = _st.Devices.Count;
+        _caption.Text = empty is not null ? "" : (count == 1 ? "1 device" : $"{count} devices") + " · Updates automatically";
 
         var waiting = _st.Availability == TaildropAvailability.Ready ? _st.Waiting : [];
         _waiting.Visibility = waiting.Count > 0 ? Visibility.Visible : Visibility.Collapsed;

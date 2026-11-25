@@ -26,16 +26,28 @@ public static class GeneralSection
 
         var openOn = new ComboBox { Width = 160, Items = { "Hover", "Click" }, SelectedIndex = gs.OpenOn == PanelOpenTrigger.Click ? 1 : 0 };
         System.Windows.Automation.AutomationProperties.SetAutomationId(openOn, "open-on");
+        page.Children.Add(UiKit.Row("Open on", "Hover opens the panel when the pointer rests on the pill. Click opens it only when you click the pill, so heading for tabs near the top edge never pops it open; a click outside, Esc or the hotkey closes it.", openOn));
+        var hoverDelay = UiKit.Row("Hover delay", "",
+            SliderBox(0, 600, 10, gs.HoverDwellMs, v => { Analytics.Track("settings", "change", target: "hover_delay"); gs.HoverDwellMs = v; }, "ms"));
+        page.Children.Add(hoverDelay);
+        // Click mode shows only what it uses: a dragged file still waits for the hover delay, and a click outside closes the panel.
+        var closeDelay = UiKit.Row("Close delay", "Grace period after the pointer leaves before the panel closes.",
+            SliderBox(100, 1500, 50, gs.LeaveDelayMs, v => { Analytics.Track("settings", "change", target: "close_delay"); gs.LeaveDelayMs = v; }, "ms"));
+        page.Children.Add(closeDelay);
+        void ShowTrigger(bool click)
+        {
+            UiKit.SetRowHint(hoverDelay, click
+                ? "How long files dragged onto the pill rest there before the panel opens."
+                : "How long the pointer must rest on the pill before the panel opens.");
+            closeDelay.Visibility = click ? Visibility.Collapsed : Visibility.Visible;
+        }
+        ShowTrigger(gs.OpenOn == PanelOpenTrigger.Click);
         openOn.SelectionChanged += (_, _) =>
         {
             Analytics.Track("settings", "change", target: "open_on");
             gs.OpenOn = openOn.SelectedIndex == 1 ? PanelOpenTrigger.Click : PanelOpenTrigger.Hover;
+            ShowTrigger(gs.OpenOn == PanelOpenTrigger.Click);
         };
-        page.Children.Add(UiKit.Row("Open on", "Hover opens the panel when the pointer rests on the pill. Click opens it only when you click the pill, so heading for tabs near the top edge never pops it open; a click outside, Esc or the hotkey closes it.", openOn));
-        page.Children.Add(UiKit.Row("Hover delay", "How long the pointer must rest on the pill before the panel opens. With Open on Click it still applies to files dragged onto the pill.",
-            SliderBox(0, 600, 10, gs.HoverDwellMs, v => { Analytics.Track("settings", "change", target: "hover_delay"); gs.HoverDwellMs = v; }, "ms")));
-        page.Children.Add(UiKit.Row("Close delay", "Grace period after the pointer leaves before the panel closes. Not used with Open on Click, where a click outside closes the panel.",
-            SliderBox(100, 1500, 50, gs.LeaveDelayMs, v => { Analytics.Track("settings", "change", target: "close_delay"); gs.LeaveDelayMs = v; }, "ms")));
 
         page.Children.Add(UiKit.Row("Keep panel open", "Pinned: the panel stays open when the pointer leaves.", BoundToggle(gs, nameof(GeneralSettings.Pinned))));
         page.Children.Add(UiKit.Row("Start with Windows", "Adds QNotch to your sign-in items.", BoundToggle(gs, nameof(GeneralSettings.StartWithWindows))));
