@@ -31,6 +31,12 @@ public static class UiKit
     /// <summary>A padded row for a SettingsGroup, with readable secondary text.</summary>
     public static Grid SettingsRow(string label, string? hint, FrameworkElement control) => CreateRow(label, hint, control, grouped: true);
 
+    /// <summary>Changes the hint of a row made by <see cref="Row"/> or <see cref="SettingsRow"/> with a hint.</summary>
+    public static void SetRowHint(Grid row, string hint)
+    {
+        if (row.Children[0] is StackPanel { Children.Count: > 1 } left && left.Children[1] is TextBlock t) t.Text = hint;
+    }
+
     static Grid CreateRow(string label, string? hint, FrameworkElement control, bool grouped)
     {
         var g = new Grid { Margin = grouped ? new Thickness(16, 10, 16, 10) : new Thickness(0, 0, 0, 16), MinHeight = grouped ? 24 : 0 };

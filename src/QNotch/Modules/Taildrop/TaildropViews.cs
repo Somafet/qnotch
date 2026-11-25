@@ -111,17 +111,24 @@ internal sealed class TaildropTab : Grid
         _module = module;
         _st = st;
         _shell = shell;
-        Margin = new Thickness(19, 0, 19, 12);
-        RowDefinitions.Add(new RowDefinition { Height = new GridLength(46) });
+        Margin = new Thickness(19, 2, 19, 12);
+        RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         RowDefinitions.Add(new RowDefinition());
         RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
-        // Actions only: the tab strip already names the page.
-        var refresh = TaildropUi.IconButton(Glyphs.Refresh, "Refresh devices", module.Refresh);
-        refresh.HorizontalAlignment = HorizontalAlignment.Right;
-        refresh.VerticalAlignment = VerticalAlignment.Center;
-        Children.Add(refresh);
+        // A muted hint strip like the Terminal tab's. The list refreshes on its own, so the manual refresh is a small link.
+        var hint = UiKit.Text("Click a device to send files · the list updates on its own ·", "Muted");
+        hint.TextWrapping = TextWrapping.NoWrap;
+        hint.TextTrimming = TextTrimming.CharacterEllipsis;
+        hint.VerticalAlignment = VerticalAlignment.Center;
+        var refresh = new Button { Content = "Refresh", Style = (Style)Application.Current.FindResource("LinkButton"), FontSize = 11, Padding = new Thickness(3, 0, 3, 0), VerticalAlignment = VerticalAlignment.Center, ToolTip = "Refresh devices" };
+        AutomationProperties.SetName(refresh, "Refresh devices");
+        refresh.Click += (_, _) => module.Refresh();
+        var top = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 8) };
+        top.Children.Add(hint);
+        top.Children.Add(refresh);
+        Children.Add(top);
 
         // Files waiting in the inbox
         _waiting.SetResourceReference(Border.BackgroundProperty, "AccentSoftBrush");
