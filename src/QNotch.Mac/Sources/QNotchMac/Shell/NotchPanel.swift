@@ -66,9 +66,24 @@ final class NotchPanel: NSPanel {
 
 /// Notch outline. With a camera housing, the top corners flare concavely into the bezel and
 /// only the bottom corners round; a floating pill rounds all four corners. Every path has the
-/// same element structure so Core Animation can morph between sizes.
+/// same element structure so Core Animation can morph between sizes: the bottom corners are always
+/// cubic curves. `circular` makes them circular arcs, so cards inset in them stay concentric (the
+/// open panel, `PanelMetrics`); otherwise their handles reproduce the pill's softer quadratic corner.
 enum NotchShape {
-    static func path(_ rect: CGRect, integrated: Bool, top: CGFloat, bottom: CGFloat) -> CGPath {
+    /// Handle length, as a fraction of the radius: a circular quarter arc, or a quadratic corner
+    /// (its control point at the corner) raised to a cubic.
+    static func handle(circular: Bool) -> CGFloat { circular ? 0.5523 : 2.0 / 3.0 }
+
+    /// The bottom-left and bottom-right corners, from the end of a side to the start of the bottom
+    /// edge and back up the other side.
+    private static func addBottomLeft(_ path: CGMutablePath, x: CGFloat, y: CGFloat, radius b: CGFloat, handle h: CGFloat) {
+        path.addCurve(to: CGPoint(x: x + b, y: y), control1: CGPoint(x: x, y: y + b * (1 - h)), control2: CGPoint(x: x + b * (1 - h), y: y))
+    }
+    private static func addBottomRight(_ path: CGMutablePath, x: CGFloat, y: CGFloat, radius b: CGFloat, handle h: CGFloat) {
+        path.addCurve(to: CGPoint(x: x, y: y + b), control1: CGPoint(x: x - b * (1 - h), y: y), control2: CGPoint(x: x, y: y + b * (1 - h)))
+    }
+
+    static func path(_ rect: CGRect, integrated: Bool, top: CGFloat, bottom: CGFloat, circular: Bool = false) -> CGPath {
         let flare = integrated ? DisplayLayout.flare : 0
         let x0 = rect.minX + flare, x1 = rect.maxX - flare
         let width = max(0, x1 - x0)
@@ -77,10 +92,11 @@ enum NotchShape {
         let path = CGMutablePath()
         path.move(to: integrated ? CGPoint(x: rect.minX, y: rect.maxY) : CGPoint(x: x0 + k, y: rect.maxY))
         path.addQuadCurve(to: CGPoint(x: x0, y: rect.maxY - k), control: CGPoint(x: x0, y: rect.maxY))
+        let h = handle(circular: circular)
         path.addLine(to: CGPoint(x: x0, y: rect.minY + b))
-        path.addQuadCurve(to: CGPoint(x: x0 + b, y: rect.minY), control: CGPoint(x: x0, y: rect.minY))
+        addBottomLeft(path, x: x0, y: rect.minY, radius: b, handle: h)
         path.addLine(to: CGPoint(x: x1 - b, y: rect.minY))
-        path.addQuadCurve(to: CGPoint(x: x1, y: rect.minY + b), control: CGPoint(x: x1, y: rect.minY))
+        addBottomRight(path, x: x1, y: rect.minY, radius: b, handle: h)
         path.addLine(to: CGPoint(x: x1, y: rect.maxY - k))
         path.addQuadCurve(to: integrated ? CGPoint(x: rect.maxX, y: rect.maxY) : CGPoint(x: x1 - k, y: rect.maxY),
                           control: CGPoint(x: x1, y: rect.maxY))
@@ -91,7 +107,7 @@ enum NotchShape {
     /// Hairline just inside the silhouette: up the sides and bottom, and (with a camera housing) around
     /// each top shoulder flare to where the shape meets the top edge. A floating pill's outline is the
     /// closed rounded rectangle.
-    static func outline(_ rect: CGRect, integrated: Bool, top: CGFloat, bottom: CGFloat) -> CGPath {
+    static func outline(_ rect: CGRect, integrated: Bool, top: CGFloat, bottom: CGFloat, circular: Bool = false) -> CGPath {
         let inner = integrated ? CGRect(x: rect.minX + 0.5, y: rect.minY + 0.5, width: rect.width - 1, height: rect.height - 0.5)
                                : rect.insetBy(dx: 0.5, dy: 0.5)
         let flare = integrated ? DisplayLayout.flare : 0
@@ -103,10 +119,13 @@ enum NotchShape {
         if integrated { path.move(to: CGPoint(x: inner.minX, y: inner.maxY)) }
         else { path.move(to: CGPoint(x: x0, y: inner.maxY - k)) }
         if integrated { path.addQuadCurve(to: CGPoint(x: x0, y: inner.maxY - k), control: CGPoint(x: x0, y: inner.maxY)) }
+        // Inset by half the hairline with the radius shrunk to match, so a circular outline stays
+        // concentric with the fill.
+        let h = handle(circular: circular)
         path.addLine(to: CGPoint(x: x0, y: inner.minY + b))
-        path.addQuadCurve(to: CGPoint(x: x0 + b, y: inner.minY), control: CGPoint(x: x0, y: inner.minY))
+        addBottomLeft(path, x: x0, y: inner.minY, radius: b, handle: h)
         path.addLine(to: CGPoint(x: x1 - b, y: inner.minY))
-        path.addQuadCurve(to: CGPoint(x: x1, y: inner.minY + b), control: CGPoint(x: x1, y: inner.minY))
+        addBottomRight(path, x: x1, y: inner.minY, radius: b, handle: h)
         path.addLine(to: CGPoint(x: x1, y: inner.maxY - k))
         if integrated {
             path.addQuadCurve(to: CGPoint(x: inner.maxX, y: inner.maxY), control: CGPoint(x: x1, y: inner.maxY))
@@ -272,14 +291,14 @@ final class NotchSurfaceView: NSView {
     /// Morphs to `rect` from the shape on screen, so a reversal mid-flight never jumps. `velocity`:
     /// the gesture's speed in Core Animation's spring units (`Fluid.relativeVelocity`). With reduced
     /// motion the old and new surfaces crossfade instead.
-    func morph(to rect: CGRect, bottom: CGFloat, top: CGFloat, outlined: Bool, style: Morph, velocity: CGFloat = 0,
+    func morph(to rect: CGRect, bottom: CGFloat, top: CGFloat, circular: Bool = false, outlined: Bool, style: Morph, velocity: CGFloat = 0,
                completion: @escaping () -> Void) {
         generation += 1
         let token = generation
         shapeRect = rect
         let target = local(rect)
-        let shapePath = NotchShape.path(target, integrated: integrated, top: top, bottom: bottom)
-        let edgePath = NotchShape.outline(target, integrated: integrated, top: top, bottom: bottom)
+        let shapePath = NotchShape.path(target, integrated: integrated, top: top, bottom: bottom, circular: circular)
+        let edgePath = NotchShape.outline(target, integrated: integrated, top: top, bottom: bottom, circular: circular)
         let fromShape = backdrop.shape.presentation()?.path ?? backdrop.shape.path
         let fromEdge = outline.shape.presentation()?.path ?? outline.shape.path
         let fromOpacity = outline.shape.presentation()?.opacity ?? outline.shape.opacity

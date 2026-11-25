@@ -41,3 +41,4 @@ Button labels follow each platform's capitalization: sentence case on Windows ("
 | Where a moved notch stays ([Notch position](notch-position.md)) | One spot, or a spot per app | One spot per display | Capability |
 | Moving the notch | Every display | Only displays without a camera housing | Capability |
 | Open hovered feature | Not yet | Available | Capability |
+| Surfaces in the panel's bottom corners ([Concentric corners](#shared-patterns)) | Home grid, Calculator sheet, Files tray, its drop zones and phone-sharing list, Terminal card | Home grid, Calculator sheet and the full-tab placeholder card. The Terminal card ends above its status line, so its corners sit away from the panel's, and there is no rounded Files tray surface | Look |

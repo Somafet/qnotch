@@ -115,10 +115,11 @@ class FillView: NSView {
     }
 }
 
-/// Windows-style card: raised fill, hairline stroke, 14 pt continuous corners, optional title.
+/// Windows-style card: raised fill, hairline stroke, the panel's concentric card corners, optional title.
 final class CardView: FillView {
     init(title: String?, content: NSView, padding: CGFloat = 14) {
-        super.init(fill: Palette.card, stroke: Palette.stroke, radius: 14)
+        super.init(fill: Palette.card, stroke: Palette.stroke, radius: PanelMetrics.cardRadius)
+        layer?.cornerCurve = PanelMetrics.cardCorner
         content.translatesAutoresizingMaskIntoConstraints = false
         addSubview(content)
         var top = topAnchor
