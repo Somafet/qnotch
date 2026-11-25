@@ -45,7 +45,7 @@ final class PanelView: NSView {
             NSLayoutConstraint.activate([initial.centerXAnchor.constraint(equalTo: avatar.centerXAnchor), initial.centerYAnchor.constraint(equalTo: avatar.centerYAnchor)])
         }
         let formatter = DateFormatter()
-        formatter.setLocalizedDateFormatFromTemplate("EEEEMMMMd")
+        formatter.setLocalizedDateFormatFromTemplate("EEEMMMd")
         let greeting = column([line(name, size: 13, weight: .semibold, color: Palette.textPrimary),
                                line(formatter.string(from: Date()), size: 11, color: Palette.textTertiary)], spacing: 1)
         let profile = row([avatar, greeting], spacing: 9)
