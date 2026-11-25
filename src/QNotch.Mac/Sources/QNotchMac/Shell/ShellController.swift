@@ -107,8 +107,10 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         surface.setAccessibilityRole(.group)
         updateSurfaceLabel()
         surface.identifier = NSUserInterfaceItemIdentifier("pill")
-        panel.clicked = { [weak self] in
+        panel.clicked = { [weak self] point in
             guard let self else { return false }
+            // A plain press on the open panel's empty header is only a drag handle: it does nothing.
+            if self.state.expanded, self.panel.canNudge?(point) == true { return true }
             let opening = !self.state.expanded
             let target = opening ? self.segmentID(at: NSEvent.mouseLocation) : nil
             if !self.state.acceptsKeyboard { self.open(keyboard: true) }
@@ -116,10 +118,11 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
             return opening
         }
         panel.escaped = { [weak self] in self?.closePanel() }
-        panel.canNudge = { [weak self] in
-            guard let self, let layout = self.layout else { return false }
-            return !layout.integratesCameraHousing && !self.state.expanded && !self.gameActive
+        panel.canNudge = { [weak self] point in
+            guard let self, let layout = self.layout, !layout.integratesCameraHousing, !self.gameActive else { return false }
+            return !self.state.expanded || self.onHeaderHandle(point)
         }
+        panel.nudgeBegan = { [weak self] in self?.beginNudge() }
         panel.nudged = { [weak self] dx in self?.nudge(by: dx) }
         panel.nudgeEnded = { [weak self] doubleClick, velocity in self?.endNudge(center: doubleClick, velocity: velocity) }
         panel.typed = { [weak self] text in self?.typeToSearch(text) }
@@ -1317,24 +1320,82 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
     private var nudgeStart: CGFloat?
     /// Where the dragged pill shows, rubber-banded at the edges; nil when not dragging.
     private var nudgeOffset: CGFloat?
+    /// A drag that began on the open panel: the panel is still folding into the carried notch.
+    private var nudgeFolding = false
+    /// Keep panel open was on when a drag folded the panel: it opens again once the notch lands.
+    private(set) var reopensAfterNudge = false
+
+    /// The open panel's empty header (window coordinates): the strip above the tab content, between
+    /// and around its controls. Tabs, buttons, active status segments and a tab strip in edit mode
+    /// keep their own presses.
+    func onHeaderHandle(_ point: NSPoint) -> Bool {
+        guard state.expanded, let panelView, panelView.dropScreen == nil, let content = panel.contentView,
+              expectedFrame?.containsPointer(panel.convertPoint(toScreen: point)) == true,
+              panelView.convert(point, from: nil).y > panelView.contentTop else { return false }
+        var view = content.hitTest(content.superview?.convert(point, from: nil) ?? point)
+        guard view != nil else { return false }
+        while let current = view, current !== content.superview {
+            switch current {
+            case let slot as SegmentSlotView where slot.activate != nil: return false
+            case is SegmentSlotView: break
+            case let field as NSTextField where field.isEditable || field.isSelectable: return false
+            case is NSTextField: break
+            case let image as NSImageView where image.isEditable: return false
+            case is NSImageView: break
+            case is NSControl: return false
+            case let bar as TabBar where bar.editing: return false
+            default: break
+            }
+            view = current.superview
+        }
+        return true
+    }
+
+    /// The panel folds back into the notch being carried (Windows NotchNudge).
+    private func beginNudge() {
+        guard state.expanded else { return }
+        let reopen = general.pinned
+        nudgeFolding = true
+        close()
+        // Set after closing: an instant close settles at once, before the notch has moved.
+        reopensAfterNudge = reopen
+    }
 
     private func nudge(by dx: CGFloat) {
         guard let screen, let layout else { return }
         if nudgeStart == nil { nudgeStart = CGFloat(general.pillOffsets[String(Self.displayID(screen))] ?? 0) }
         nudgeOffset = layout.dragged(offset: (nudgeStart ?? 0) + dx, width: layout.surface(expanded: false, wing: wing).width)
-        present(.none)
+        // While the panel folds, the shape chases the pointer on a short spring; once it has caught
+        // up it follows 1:1, as a drag of the collapsed notch does.
+        if nudgeFolding, let target = self.layout.map({ surfaceRect($0) }) {
+            let shown = surface.visibleShapeBounds
+            nudgeFolding = max(abs(shown.minX - target.minX), abs(shown.maxX - target.maxX),
+                               abs(shown.minY - target.minY), abs(shown.maxY - target.maxY)) > 1
+        }
+        present(nudgeFolding ? .hover : .none)
     }
 
     /// Settles the pill at the center or an edge when it would coast close to one, and remembers
     /// the spot per display. A flick throws it and the spring carries on at the pointer's `velocity`.
-    private func endNudge(center: Bool, velocity: CGFloat) { Analytics.record("shell", "move_notch");
+    private func endNudge(center: Bool, velocity: CGFloat) { Analytics.withSurface("ui") { Analytics.record("shell", "move_notch") }
         guard let screen, let layout else { return }
         let width = layout.surface(expanded: false, wing: wing).width
         let current = layout.offset
         let target = center ? 0 : layout.snapped(offset: current, width: width, velocity: velocity)
+        let panelFrame = panelView?.frame
         nudgeStart = nil
         nudgeOffset = nil
-        updateGeneral { $0.pillOffsets[String(Self.displayID(screen))] = target == 0 ? nil : Double(target) }
+        nudgeFolding = false
+        // Saved without `updateGeneral`: its surface rebuild would jump the notch to its spot
+        // before the release spring starts from where it shows.
+        general.pillOffsets[String(Self.displayID(screen))] = target == 0 ? nil : Double(target)
+        store.save("general", general)
+        // A double-click on the open panel's header: the panel glides along with its notch.
+        if let panelView, let panelFrame, let moved = self.layout {
+            surface.place(panelView, at: moved.panelBody)
+            Motion.settle(panelView, from: CGPoint(x: panelFrame.minX - panelView.frame.minX, y: 0))
+        }
+        // Lands, then opens again once settled when Keep panel open is on (`settle`).
         present(.release, velocity: center ? 0 : Fluid.relativeVelocity(velocity, from: current, to: target))
     }
 
@@ -1502,6 +1563,11 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
             closingPanel.removeFromSuperview()
             closingPanel.layer?.removeAllAnimations()
             self.closingPanel = nil
+        }
+        // A drag folded a pinned panel: it opens again once the dropped notch has landed.
+        if reopensAfterNudge, nudgeOffset == nil {
+            reopensAfterNudge = false
+            if general.pinned, !state.expanded { open(keyboard: false, recordAction: false) }
         }
     }
 

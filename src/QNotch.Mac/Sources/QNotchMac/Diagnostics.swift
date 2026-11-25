@@ -145,6 +145,7 @@ enum NativeSmokeTest {
         try StatusGutterSmoke.check(run, phase: "collapsed")
         try StatusGutterSmoke.exercise(run)
         try checkNudge(run)
+        try shell.withDiagnosticLayout(SnapshotViews.notchedDisplay) { try checkNudge(run, prefix: "placement-housing-nudge") }
         try shell.withDiagnosticLayout(SnapshotViews.virtualDisplay) {
             guard let virtual = shell.layout else { throw Failure("virtual-housing", "No diagnostic layout") }
             try checkPlacement(shell: shell, layout: virtual)
@@ -612,38 +613,118 @@ enum NativeSmokeTest {
         }
     }
 
-    /// Exercise the real drag callbacks and persistence without moving the system pointer.
+    /// Exercise the real drag callbacks and persistence without moving the system pointer. The
+    /// collapsed notch and the open panel's empty header are handles; header controls and tab
+    /// content are not, and a notch that wraps a camera housing never moves.
     private static func checkNudge(_ run: SnapshotRun, prefix: String = "placement-nudge") throws {
         let shell = run.shell
         guard let original = shell.layout else { return }
+        let name = prefix == "placement-nudge" ? "notch-nudge" : prefix == "placement-housing-nudge" ? "housing-notch-nudge" : "virtual-notch-nudge"
+        let content = shell.panel.contentView
+        /// A window point at the middle of a view.
+        func middle(of view: NSView) -> NSPoint { view.convert(NSPoint(x: view.bounds.midX, y: view.bounds.midY), to: nil) }
+        /// Window points in the open panel: an empty header spot left of the profile, on the tab
+        /// row, and one in the tab content.
+        func panelPoints() throws -> (header: NSPoint, body: NSPoint) {
+            guard let panel = find("panel", in: content) as? PanelView else { throw Failure(name, "No open panel") }
+            panel.layoutSubtreeIfNeeded()
+            let header = NSPoint(x: 6, y: (panel.contentTop + panel.bounds.maxY) / 2)
+            let body = NSPoint(x: panel.bounds.midX, y: panel.contentTop / 2)
+            return (panel.convert(header, to: nil), panel.convert(body, to: nil))
+        }
+        func checkHeaderControls() throws {
+            for id in ["tab-home", "panel-pin", "open-settings"] {
+                guard let control = find(id, in: content) else { throw Failure(name, "No \(id) in the header") }
+                guard shell.panel.canNudge?(middle(of: control)) == false else { throw Failure(name, "\(id) became a drag handle") }
+            }
+            guard shell.panel.canNudge?(try panelPoints().body) == false else { throw Failure(name, "Tab content became a drag handle") }
+        }
+        /// A press and release in place at a window point, through NotchPanel.sendEvent as a real
+        /// click arrives. The nudge tracker reads the release from the queue.
+        func press(at point: NSPoint) {
+            func event(_ type: NSEvent.EventType) -> NSEvent {
+                NSEvent.mouseEvent(with: type, location: point, modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime,
+                                   windowNumber: shell.panel.windowNumber, context: nil, eventNumber: 0, clickCount: 1, pressure: type == .leftMouseDown ? 1 : 0)!
+            }
+            NSApp.postEvent(event(.leftMouseUp), atStart: false)
+            shell.panel.sendEvent(event(.leftMouseDown))
+        }
         if original.integratesCameraHousing {
-            guard shell.panel.canNudge?() == false else { throw Failure("notch-nudge", "Physical housing is movable") }
-            run.pass(prefix == "placement-nudge" ? "notch-nudge" : "virtual-notch-nudge")
+            guard let surface = shell.expectedFrame, shell.panel.canNudge?(shell.panel.convertPoint(fromScreen: CGPoint(x: surface.midX, y: surface.midY))) == false else {
+                throw Failure(name, "Physical housing is movable")
+            }
+            shell.open(keyboard: false)
+            defer { shell.close(restoreFocus: false) }
+            // No press starts the tracker, so neither a drag nor a double-click reaches the notch.
+            guard shell.panel.canNudge?(try panelPoints().header) == false else { throw Failure(name, "The open panel's header moves a physical housing") }
+            run.pass(name)
             return
         }
-        let saved = shell.general.pillOffsets
-        defer { shell.updateGeneral { $0.pillOffsets = saved } }
-        shell.updateGeneral { $0.pillOffsets = [:] }
-        guard shell.panel.canNudge?() == true, let centered = shell.layout else { throw Failure("notch-nudge", "Virtual housing cannot be nudged") }
+        let saved = shell.general.pillOffsets, pinned = shell.general.pinned
+        defer { shell.updateGeneral { $0.pillOffsets = saved; $0.pinned = pinned } }
+        shell.updateGeneral { $0.pillOffsets = [:]; $0.pinned = false }
+        guard shell.panel.canNudge?(.zero) == true, let centered = shell.layout else { throw Failure(name, "Virtual housing cannot be nudged") }
+        shell.gameMode.override = .on
+        let gameBlocks = shell.panel.canNudge?(.zero) == false
+        shell.gameMode.override = .auto
+        guard gameBlocks else { throw Failure(name, "The notch can be dragged in game mode") }
         let width = centered.surface(expanded: false, wing: shell.wing).width
+        let limit = centered.offsetLimit(width: width)
         for direction in [CGFloat(-1), 1] {
             shell.panel.nudged?(direction * 100)
-            guard let moved = shell.layout, abs(moved.offset - direction * 100) < 0.5 else { throw Failure("notch-nudge", "Drag did not follow the pointer") }
+            guard let moved = shell.layout, abs(moved.offset - direction * 100) < 0.5 else { throw Failure(name, "Drag did not follow the pointer") }
             try checkPlacement(shell: shell, layout: moved)
             shell.panel.nudgeEnded?(false, direction * 100_000)
-            guard let settled = shell.layout, abs(settled.offset - direction * centered.offsetLimit(width: width)) < 0.5,
-                  shell.general.pillOffsets.values.contains(Double(settled.offset)) else { throw Failure("notch-nudge", "Flick did not snap and save a per-display offset") }
+            guard let settled = shell.layout, abs(settled.offset - direction * limit) < 0.5,
+                  shell.general.pillOffsets.values.contains(Double(settled.offset)) else { throw Failure(name, "Flick did not snap and save a per-display offset") }
             try checkPlacement(shell: shell, layout: settled)
             run.notch(prefix + (direction < 0 ? "-left" : "-right"))
             shell.open(keyboard: false)
-            guard shell.panel.canNudge?() == false else { throw Failure("notch-nudge", "Open panel can be dragged") }
+            guard shell.panel.canNudge?(try panelPoints().header) == true else { throw Failure(name, "The open panel's header cannot be dragged") }
+            try checkHeaderControls()
+            // A plain press on the empty header does nothing: no drag, no keyboard, no reopening click.
+            let before = shell.layout?.offset
+            press(at: try panelPoints().header)
+            guard shell.state.expanded, !shell.state.acceptsKeyboard, !shell.panel.isKeyWindow, shell.layout?.offset == before else {
+                throw Failure(name, "A plain press on the open panel's header did something")
+            }
             if let layout = shell.layout { try checkPlacement(shell: shell, layout: layout) }
             run.notch(prefix + (direction < 0 ? "-left-open" : "-right-open"))
-            shell.close(restoreFocus: false)
+            // Dragging the header folds the panel into the carried notch; without Keep panel open it stays closed.
+            // It is carried halfway back, clear of the center and edge snaps on any display width.
+            let carry = limit / 2
+            shell.panel.nudgeBegan?()
+            guard !shell.state.expanded else { throw Failure(name, "Dragging the header did not fold the panel") }
+            shell.panel.nudged?(-direction * carry)
+            guard let carried = shell.layout, abs(carried.offset - direction * (limit - carry)) < 0.5 else { throw Failure(name, "The folded notch did not follow the pointer") }
+            shell.panel.nudgeEnded?(false, 0)
+            guard !shell.state.expanded, !shell.reopensAfterNudge, let dropped = shell.layout, abs(dropped.offset - direction * (limit - carry)) < 0.5 else {
+                throw Failure(name, "A header drop without Keep panel open reopened the panel or did not land: expanded=\(shell.state.expanded) reopens=\(shell.reopensAfterNudge) offset=\(shell.layout?.offset ?? .nan) expected=\(direction * (limit - carry))")
+            }
             shell.panel.nudgeEnded?(true, 0)
-            guard shell.layout?.offset == 0, shell.general.pillOffsets.isEmpty else { throw Failure("notch-nudge", "Double click did not recenter") }
+            guard shell.layout?.offset == 0, shell.general.pillOffsets.isEmpty else { throw Failure(name, "Double click did not recenter") }
         }
-        run.pass(prefix == "placement-nudge" ? "notch-nudge" : "virtual-notch-nudge")
+        // With Keep panel open, a header drag folds the panel and it opens again where the notch lands.
+        shell.updateGeneral { $0.pinned = true }
+        shell.open(keyboard: false)
+        shell.panel.nudgeBegan?()
+        guard !shell.state.expanded, shell.reopensAfterNudge else { throw Failure(name, "Dragging a pinned panel's header did not fold it") }
+        shell.panel.nudged?(200)
+        shell.panel.nudgeEnded?(false, 100_000)
+        guard shell.state.expanded, !shell.reopensAfterNudge, let landed = shell.layout, abs(landed.offset - limit) < 0.5 else {
+            throw Failure(name, "A pinned panel did not open again where its notch landed")
+        }
+        try checkPlacement(shell: shell, layout: landed)
+        // A double-click on the open header centers the notch and the panel goes with it.
+        shell.panel.nudgeEnded?(true, 0)
+        guard shell.state.expanded, shell.layout?.offset == 0, shell.general.pillOffsets.isEmpty,
+              let panel = find("panel", in: content), let body = shell.layout?.panelBody,
+              abs(panel.convert(panel.bounds, to: nil).midX - shell.panel.convertFromScreen(body).midX) < 1 else {
+            throw Failure(name, "Double click on the open header did not center the panel")
+        }
+        shell.updateGeneral { $0.pinned = pinned }
+        shell.close(restoreFocus: false)
+        run.pass(name)
     }
 
     /// A failed check: its name and what went wrong.

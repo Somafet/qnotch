@@ -281,7 +281,7 @@ final class DebugCommands {
         // The notch itself: a click opens the panel with the keyboard.
         if id == "pill" {
             try requirePanel()
-            _ = shell.panel.clicked?()
+            _ = shell.panel.clicked?(shell.expectedFrame.map { shell.panel.convertPoint(fromScreen: CGPoint(x: $0.midX, y: $0.midY)) } ?? .zero)
             return
         }
         let view = try find(id)
