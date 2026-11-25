@@ -123,9 +123,10 @@ public sealed class FolderSyncSessionTests : IDisposable
         Directory.CreateDirectory(Shared);
         session.Request(); // A save after the volume came back.
         Assert.Equal(SyncStatus.Synchronized, (await NextReport()).Status);
-        Assert.True(session.Watching);
-        // One more pass covers a file that arrived between that pass's scan and the watcher.
+        // One more pass covers a file that arrived between that pass's scan and the watcher. The watcher is installed
+        // after a pass reports, so it is checked once that follow-up pass has run.
         await NextReport();
+        Assert.True(session.Watching);
     }
 
     [Fact]
