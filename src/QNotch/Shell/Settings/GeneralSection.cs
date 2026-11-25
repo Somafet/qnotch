@@ -9,7 +9,8 @@ namespace QNotch.Shell.Settings;
 
 public static class GeneralSection
 {
-    public static FrameworkElement Create(GeneralSettings gs, SettingsStore store, IReadOnlyList<SetupCode.Section> share, Action restart, Action resetSpots)
+    public static FrameworkElement Create(GeneralSettings gs, SettingsStore store, IReadOnlyList<SetupCode.Section> share, Action restart, Action resetSpots,
+        Action<NotchPositionMode> setNotchPosition)
     {
         var page = UiKit.Page("General");
 
@@ -20,9 +21,26 @@ public static class GeneralSection
         combo.SelectionChanged += (_, _) => { if (combo.IsKeyboardFocusWithin) { QNotch.Core.Analytics.Track("settings", "change", target: "display"); }  if (combo.SelectedIndex >= 0) gs.MonitorIndex = combo.SelectedIndex; };
         page.Children.Add(UiKit.Row("Monitor", "The display that hosts the notch. You can also drag the pill onto another display. Follows resolution and DPI changes live.", combo));
 
-        var reset = new Button { Content = "Reset positions", Padding = new Thickness(14, 6, 14, 6) };
+        // spec/notch-position.md: one spot for every app, or a spot per app; Reset centers it (and forgets the app spots).
+        var position = new ComboBox { Width = 200, Items = { "Same for every app", "Each app has its own" },
+            SelectedIndex = gs.NotchPosition == NotchPositionMode.PerApp ? 1 : 0 };
+        System.Windows.Automation.AutomationProperties.SetAutomationId(position, "notch-position");
+        var reset = new Button { Content = "Reset", Padding = new Thickness(14, 6, 14, 6), Margin = new Thickness(8, 0, 0, 0) };
         reset.Click += (_, _) => { QNotch.Core.Analytics.Track("settings", "reset_positions", "ui"); resetSpots(); };
-        page.Children.Add(UiKit.Row("Notch position", "Drag the pill sideways to move it out of the way, or onto another display. It remembers the spot for each app. Double-click it to center it again.", reset));
+        var positionControls = new StackPanel { Orientation = Orientation.Horizontal, Children = { position, reset } };
+        var positionRow = UiKit.Row("Notch position", "", positionControls);
+        page.Children.Add(positionRow);
+        void ShowPosition(bool perApp) => UiKit.SetRowHint(positionRow, perApp
+            ? "Drag the pill sideways to move it out of the way, or onto another display. Each app keeps its own spot, and the pill moves there when that app comes to the front. Double-click it to center it again."
+            : "Drag the pill sideways to move it out of the way, or onto another display. It stays there whatever app is in front. Double-click it to center it again.");
+        ShowPosition(position.SelectedIndex == 1);
+        position.SelectionChanged += (_, _) =>
+        {
+            Analytics.Track("settings", "change", target: "notch_position");
+            var perApp = position.SelectedIndex == 1;
+            setNotchPosition(perApp ? NotchPositionMode.PerApp : NotchPositionMode.Everywhere);
+            ShowPosition(perApp);
+        };
 
         var openOn = new ComboBox { Width = 160, Items = { "Hover", "Click" }, SelectedIndex = gs.OpenOn == PanelOpenTrigger.Click ? 1 : 0 };
         System.Windows.Automation.AutomationProperties.SetAutomationId(openOn, "open-on");

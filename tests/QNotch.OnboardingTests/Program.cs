@@ -99,6 +99,49 @@ await Test("quit question answers: six fixed ids plus skip", () =>
     return Task.CompletedTask;
 });
 
+// ---------- notch position (spec/notch-position.md) ----------
+
+await Test("notch position: new installs get one spot, installs with app spots keep them, a saved choice wins", () =>
+{
+    Assert(new GeneralSettings().NotchPosition is null);
+    Assert(NotchPlacement.Resolve(null, 0) == NotchPositionMode.Everywhere);
+    Assert(NotchPlacement.Resolve(null, 2) == NotchPositionMode.PerApp);
+    Assert(NotchPlacement.Resolve(NotchPositionMode.Everywhere, 2) == NotchPositionMode.Everywhere);
+    Assert(NotchPlacement.Resolve(NotchPositionMode.PerApp, 0) == NotchPositionMode.PerApp);
+    return Task.CompletedTask;
+});
+await Test("notch position: one spot ignores the app in front; per app uses its spot or the center", () =>
+{
+    var spots = new Dictionary<string, double> { ["chrome.exe"] = -10000, ["code.exe"] = 140 };
+    Assert(NotchPlacement.Spot(NotchPositionMode.Everywhere, 80, spots, "chrome.exe") == 80);
+    Assert(NotchPlacement.Spot(NotchPositionMode.Everywhere, 80, spots, "notepad.exe") == 80);
+    Assert(NotchPlacement.Spot(NotchPositionMode.PerApp, 80, spots, "chrome.exe") == -10000);
+    Assert(NotchPlacement.Spot(NotchPositionMode.PerApp, 80, spots, "notepad.exe") == 0);
+    return Task.CompletedTask;
+});
+await Test("notch position: the per-app hint peeks once, on a real move, only where a peek can show", () =>
+{
+    Assert(NotchPlacement.ShouldHint(NotchPositionMode.PerApp, shown: false, from: 0, to: 140, collapsed: true, gameMode: false));
+    Assert(!NotchPlacement.ShouldHint(NotchPositionMode.Everywhere, false, 0, 140, true, false)); // one spot never moves by itself
+    Assert(!NotchPlacement.ShouldHint(NotchPositionMode.PerApp, shown: true, 0, 140, true, false));
+    Assert(!NotchPlacement.ShouldHint(NotchPositionMode.PerApp, false, 140, 140, true, false));   // the same spot is not a move
+    Assert(!NotchPlacement.ShouldHint(NotchPositionMode.PerApp, false, 0, 140, collapsed: false, false));
+    Assert(!NotchPlacement.ShouldHint(NotchPositionMode.PerApp, false, 0, 140, true, gameMode: true));
+    Assert(NotchPlacement.HintText.Length <= 45 && !NotchPlacement.HintText.Contains('—'));
+    return Task.CompletedTask;
+});
+await Test("notch position: settings round-trip; setup codes leave the spots and the choice out", () =>
+{
+    var gs = new GeneralSettings { NotchPosition = NotchPositionMode.PerApp, NotchX = -10000, NotchSpotHintShown = true };
+    var back = System.Text.Json.JsonSerializer.Deserialize<GeneralSettings>(System.Text.Json.JsonSerializer.Serialize(gs, SettingsStore.Json), SettingsStore.Json)!;
+    Assert(back.NotchPosition == NotchPositionMode.PerApp && back.NotchX == -10000 && back.NotchSpotHintShown);
+    Assert(System.Text.Json.JsonSerializer.Serialize(gs, SettingsStore.Json).Contains("\"PerApp\""));
+    var general = SetupCode.ShellSections.Single(s => s.Id == "general");
+    var shared = string.Join(" ", general.Shared.Fields);
+    Assert(!shared.Contains("Notch"), shared);
+    return Task.CompletedTask;
+});
+
 // ---------- feature choices ----------
 
 await Test("declared feature defaults apply; DisabledModules lists switched-off default-on modules in order", () =>

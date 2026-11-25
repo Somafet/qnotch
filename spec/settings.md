@@ -20,6 +20,10 @@ Behavior:
 - A hidden row keeps its saved value, and that value is still used where it applies. With Open on set to Click, a panel opened by a file drag or by a feature (a timer or a notification) still closes after the close delay once the pointer is outside it.
 - Storage: Windows saves `OpenOn` (`"Hover"` or `"Click"`) in `general.json`. macOS saves `openOnClick` there and carries Windows' `OpenOn` form in setup codes.
 
+## General: notch position
+
+Windows only. The Notch position row is defined in [Notch position](notch-position.md#settings-notch-position-windows).
+
 ## Known gaps
 
 These are places where the current apps don't follow this file yet. Fix them the next time you change the row.
