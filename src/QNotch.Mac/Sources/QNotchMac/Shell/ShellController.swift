@@ -1522,7 +1522,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
             } else { view.removeFromSuperview(); closingPanel = nil }
         }
         let integrated = layout.integratesTopBand
-        let bottom: CGFloat = expanded ? 22 : integrated ? 11 : 16
+        let bottom: CGFloat = expanded ? PanelMetrics.bottomRadius : integrated ? 11 : 16
         var window = target
         if animated {
             let visible = surface.visibleShapeBounds
@@ -1544,7 +1544,7 @@ final class ShellController: NSObject, ModuleShell, NSWindowDelegate {
         let wasHidden = pill.isHidden
         layoutStatus()
         if moving, !integrated, wasHidden, !pill.isHidden { Motion.enter(pill, delay: 0.1, duration: 0.24) }
-        surface.morph(to: target, bottom: bottom, top: expanded ? 20 : 16, outlined: expanded, style: animated ? style : .none,
+        surface.morph(to: target, bottom: bottom, top: expanded ? 20 : 16, circular: expanded, outlined: expanded, style: animated ? style : .none,
                       velocity: velocity) { [weak self] in
             self?.settle()
         }

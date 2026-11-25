@@ -71,9 +71,9 @@ final class PanelView: NSView {
             actions.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -12),
             actions.centerYAnchor.constraint(equalTo: tabBar.centerYAnchor),
             host.topAnchor.constraint(equalTo: tabBar.bottomAnchor, constant: 12),
-            host.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 12),
-            host.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -12),
-            host.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -12)
+            host.leadingAnchor.constraint(equalTo: leadingAnchor, constant: PanelMetrics.inset),
+            host.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -PanelMetrics.inset),
+            host.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -PanelMetrics.inset)
         ])
         host.wantsLayer = true
         chrome = [profile, tabBar, actions, host]
@@ -348,7 +348,7 @@ func placeholder(symbol name: String, title: String, detail: String, action: (ti
     let stack = column(views, spacing: 8, alignment: .centerX)
     stack.setCustomSpacing(12, after: views[0])
     if views.count > 3 { stack.setCustomSpacing(16, after: views[2]) }
-    let card = FillView(fill: Palette.card, stroke: Palette.stroke, radius: 14)
+    let card = FillView.panelCard()
     stack.translatesAutoresizingMaskIntoConstraints = false
     card.addSubview(stack)
     NSLayoutConstraint.activate([stack.centerXAnchor.constraint(equalTo: card.centerXAnchor), stack.centerYAnchor.constraint(equalTo: card.centerYAnchor)])

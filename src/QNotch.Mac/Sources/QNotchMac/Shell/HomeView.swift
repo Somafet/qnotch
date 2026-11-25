@@ -5,7 +5,7 @@ import QNotchMacCore
 /// (Windows EditMode) cards jiggle and can be dragged to a new place; their content is not
 /// clickable. The jiggle loops only while editing and is skipped when motion is reduced.
 final class HomeView: NSScrollView {
-    static let columns = 3, rowHeight: CGFloat = 148, gap: CGFloat = 10
+    static let columns = 3, rowHeight: CGFloat = 148, gap = PanelMetrics.cardGap
     private let document = GridDocument()
 
     /// Called with the new order of the shown cards after a drag.
@@ -102,12 +102,16 @@ private final class GridDocument: NSView {
 
     private func frames() -> [NSRect] {
         let slots = CardGrid.place(spans: cards.map(\.span), columns: HomeView.columns)
-        let columns = CGFloat(HomeView.columns), gap = HomeView.gap
-        let unit = floor((width - gap * (columns - 1)) / columns)
+        let gap = HomeView.gap
+        // Whole-point column edges; the last column takes the rounding remainder, so the grid ends
+        // exactly at the content inset and a corner card stays concentric with the panel's corner.
+        func edge(_ column: Int) -> CGFloat {
+            column >= HomeView.columns ? width + gap : floor(CGFloat(column) * (width + gap) / CGFloat(HomeView.columns))
+        }
         return slots.map { slot in
-            let span = CGFloat(slot.span)
-            return NSRect(x: CGFloat(slot.column) * (unit + gap), y: CGFloat(slot.row) * (HomeView.rowHeight + gap),
-                          width: unit * span + gap * (span - 1), height: HomeView.rowHeight)
+            let x = edge(slot.column)
+            return NSRect(x: x, y: CGFloat(slot.row) * (HomeView.rowHeight + gap),
+                          width: edge(slot.column + slot.span) - gap - x, height: HomeView.rowHeight)
         }
     }
 

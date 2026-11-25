@@ -73,7 +73,7 @@ final class TerminalTabView: NSView, PanelKeyboardContent {
     private let help = line("Quick commands · ⌘V paste · ⌘C copy selection · ⌘F search · ⌃⌥N close", size: 10, color: Palette.textTertiary)
     /// The terminal's container: the same card surface (fill, border, radius) other pages use,
     /// spanning the page's content edges. Hint and footer sit just outside it on those edges.
-    private let card = FillView(fill: Palette.card, stroke: Palette.stroke, radius: 14)
+    private let card = FillView.panelCard()
     private static let cardPadding: CGFloat = 6
 
     init(module: TerminalModule) {

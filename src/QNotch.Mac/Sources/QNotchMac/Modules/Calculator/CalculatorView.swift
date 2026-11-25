@@ -76,7 +76,7 @@ final class CalculatorTabView: NSView, SheetEditorHost, ResultPillHost, SheetTab
     /// Dice in the air over the sheet; nil until a roll plays.
     var diceLayer: DiceTossView?
     var replacingText = false
-    let card = FillView(fill: Palette.card, stroke: Palette.stroke, radius: 14)
+    let card = FillView.panelCard()
     let scroll = SheetScrollView()
     let results = ResultsColumn()
     let notice = NoticeBar()

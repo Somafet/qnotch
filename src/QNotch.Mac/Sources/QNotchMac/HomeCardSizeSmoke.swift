@@ -19,6 +19,9 @@ extension NativeSmokeTest {
             if !value { throw Failure("home-card-sizes", message) }
         }
         func descendants(_ view: NSView) -> [NSView] { [view] + view.subviews.flatMap(descendants) }
+        // Columns are whole points and the last takes the remainder (so the grid ends at the panel
+        // inset), so a card can be up to a point wider than whole units of the first column.
+        let slack: CGFloat = 2
         func boundedViews(_ view: NSView) -> [NSView] {
             guard !view.isHidden else { return [] }
             return [view] + (view is NSScrollView ? [] : view.subviews.flatMap(boundedViews))
@@ -64,7 +67,7 @@ extension NativeSmokeTest {
                 guard let host = hosts[card.id], let unit = hosts["system"]?.frame.width else {
                     throw Failure("home-card-sizes", "Missing resized host")
                 }
-                try require(abs(host.frame.width - (unit * CGFloat(size.rawValue) + HomeView.gap * CGFloat(size.rawValue - 1))) < 1,
+                try require(abs(host.frame.width - (unit * CGFloat(size.rawValue) + HomeView.gap * CGFloat(size.rawValue - 1))) < slack,
                             "Wrong \(size.title) width for \(card.id)")
                 for view in descendants(host) where !view.isHiddenOrHasHiddenAncestor && view !== host {
                     let rect = view.convert(view.bounds, to: host)
@@ -84,7 +87,7 @@ extension NativeSmokeTest {
         let unit = hosts["system"]?.frame.width ?? 0
         for card in cards {
             guard let host = hosts[card.id] else { throw Failure("home-card-sizes", "Missing \(card.id)") }
-            try require(abs(host.frame.width - unit) < 1, "Small is not one column for \(card.id)")
+            try require(abs(host.frame.width - unit) < slack, "Small is not one column for \(card.id)")
             try require(hosts.values.allSatisfy { $0 === host || !$0.frame.intersects(host.frame) }, "Cards overlap after resizing")
             for view in boundedViews(host) {
                 try require(host.bounds.insetBy(dx: -1, dy: -1).contains(view.convert(view.bounds, to: host)),
@@ -95,7 +98,7 @@ extension NativeSmokeTest {
         shell.updateGeneral { $0.setCardVisible("weather", false) }
         shell.updateGeneral { $0.setCardVisible("weather", true) }
         shell.panel.contentView?.layoutSubtreeIfNeeded()
-        try require(SnapshotViews.cardViews(shell).values.allSatisfy { abs($0.frame.width - unit) < 1 }, "Rebuilt Home lost the saved sizes")
+        try require(SnapshotViews.cardViews(shell).values.allSatisfy { abs($0.frame.width - unit) < slack }, "Rebuilt Home lost the saved sizes")
         shell.setEditing(false)
         try require((shell.currentBody.map(descendants) ?? []).compactMap { $0 as? HomeResizeHandle }.allSatisfy(\.isHidden), "Resize controls remain outside edit mode")
         timer?.reset()
