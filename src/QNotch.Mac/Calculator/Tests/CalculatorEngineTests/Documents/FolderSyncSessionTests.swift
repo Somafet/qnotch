@@ -121,9 +121,10 @@ final class FolderSyncSessionTests: XCTestCase {
         try NetFile.createDirectory(shared)
         session.request() // A save after the volume came back.
         XCTAssertEqual(.synchronized, try XCTUnwrap(nextReport()).status)
-        XCTAssertTrue(session.watching)
-        // One more pass covers a file that arrived between that pass's scan and the watcher.
+        // One more pass covers a file that arrived between that pass's scan and the watcher. The watcher is installed
+        // after a pass reports, so it is checked once that follow-up pass has run.
         _ = try XCTUnwrap(nextReport())
+        XCTAssertTrue(session.watching)
     }
 
     func testDisposeStopsWatcher() throws {

@@ -115,6 +115,8 @@ public final class CalculatorRateStore {
         defer { timeout.cancel() }
         do {
             if offline { throw CalcError.io("Demo runs never go online") }
+            // Closed while the cache loaded: no connection, so no URLSession that nothing would invalidate.
+            if token.isCancellationRequested { throw CalcError.cancelled }
             if connection == nil { connection = EcbRateConnection() }
             var seen = Set<DateOnlyKey>()
             for day in dates where seen.insert(DateOnlyKey(date: day?.date)).inserted {

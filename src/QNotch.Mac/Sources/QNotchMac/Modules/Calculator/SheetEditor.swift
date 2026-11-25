@@ -641,7 +641,9 @@ final class SheetTextView: NSTextView, NSTextViewDelegate, NSTextStorageDelegate
 
     /// Return keeps inserting its line break; the line the caret just left is then submitted (Windows SheetEditor.Dice).
     override func insertNewline(_ sender: Any?) {
+        let before = textStorage?.length ?? 0
         super.insertNewline(sender)
+        guard textStorage?.length ?? 0 != before else { return } // Refused (a sheet limit): nothing was submitted.
         let current = line(at: selectedRange().location)
         if current > 0, !hasMarkedText() { host?.editorRoll(self, line: current - 1, again: false) }
     }
