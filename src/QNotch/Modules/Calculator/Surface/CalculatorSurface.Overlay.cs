@@ -38,7 +38,7 @@ public partial class CalculatorSurface
         card.SetResourceReference(Border.BorderBrushProperty, "StrokeStrongBrush");
         KeyboardNavigation.SetTabNavigation(card, KeyboardNavigationMode.Cycle);
         card.MouseDown += (_, e) => e.Handled = true; // A click inside is not a click outside.
-        var backdrop = new Border { Background = dim ? new SolidColorBrush(Color.FromArgb(0x70, 0, 0, 0)) : Brushes.Transparent, CornerRadius = new CornerRadius(10) };
+        var backdrop = new Border { Background = dim ? new SolidColorBrush(Color.FromArgb(0x70, 0, 0, 0)) : Brushes.Transparent, CornerRadius = QNotch.Theme.PanelMetrics.Card }; // covers the card, so it shares its corners
         // Any button outside closes, the middle one included: it never reaches a tab under the overlay.
         backdrop.MouseDown += (_, e) => { e.Handled = true; CloseOverlay(); };
         OverlayHost.Children.Add(backdrop);

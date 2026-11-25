@@ -2,6 +2,7 @@
  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
  xmlns:local="clr-namespace:Calc.Windows"
+ xmlns:theme="clr-namespace:QNotch.Theme"
  FontFamily="{DynamicResource UiFont}" FontSize="13" Foreground="{DynamicResource TextPrimaryBrush}">
  <UserControl.Resources>
   <Style x:Key="SheetResult" TargetType="Button">
@@ -40,14 +41,14 @@
  </UserControl.Resources>
  <Grid x:Name="Root">
   <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition/></Grid.RowDefinitions>
-  <DockPanel x:Name="Header" Height="32" Margin="0,0,0,6">
+  <DockPanel x:Name="Header" Height="32" Margin="11,0,11,6">
    <Button x:Name="MoreButton" DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE712;" Margin="2,0,0,0" VerticalAlignment="Center" Click="ShowSheetMenu" AutomationProperties.AutomationId="calculator-more"/>
    <Button x:Name="Share" DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE72D;" Margin="2,0,0,0" VerticalAlignment="Center" Click="ShowShare" AutomationProperties.AutomationId="calculator-share"/>
    <Button x:Name="CurrencyRatesAction" DockPanel.Dock="Right" FontSize="11" Padding="8,3" Margin="4,0,0,0" VerticalAlignment="Center" Click="ShowCurrencyRates" Visibility="Collapsed" AutomationProperties.AutomationId="calculator-rates"/>
    <TextBlock x:Name="SaveState" DockPanel.Dock="Right" MaxWidth="170" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="11" Margin="6,0,2,0" TextTrimming="CharacterEllipsis" AutomationProperties.LiveSetting="Polite" AutomationProperties.AutomationId="calculator-status"/>
    <local:SheetTabStrip x:Name="Tabs"/>
   </DockPanel>
-  <Border x:Name="Card" Grid.Row="1" CornerRadius="10" BorderThickness="1" Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource StrokeBrush}">
+  <Border x:Name="Card" Grid.Row="1" CornerRadius="{x:Static theme:PanelMetrics.Card}" BorderThickness="1" Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource StrokeBrush}">
    <Grid x:Name="ResultGrid" Margin="14,0,4,0" ClipToBounds="True">
     <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition x:Name="ResultColumn" Width="220"/></Grid.ColumnDefinitions>
     <!-- The editor spans the gutter so its scrollbar lands on the card edge, not between source and results. -->

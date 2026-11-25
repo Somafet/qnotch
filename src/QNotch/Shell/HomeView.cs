@@ -9,8 +9,9 @@ namespace QNotch.Shell;
 /// <summary>Home tab: responsive card grid rendered from CardLayout. Card bodies are created once and reused.</summary>
 public sealed class HomeView : ScrollViewer
 {
-    /// <summary>Column width, gap between cards, row height (DIPs). A card spanning n columns is n * Unit + (n - 1) * Gap wide.</summary>
-    public const double Unit = 218, Gap = 10, RowHeight = 148;
+    /// <summary>Column width, gap between cards, row height (DIPs). A card spanning n columns is n * Unit + (n - 1) * Gap wide.
+    /// The grid keeps <see cref="PanelMetrics.Gap"/> to the panel's sides, between cards and, with two rows, to the bottom.</summary>
+    public const double Gap = PanelMetrics.Gap, Unit = (NotchWindow.PanelW - 4 * Gap) / 3, RowHeight = 149;
 
     readonly CardLayout _layout;
     readonly ShellController _shell;
@@ -25,7 +26,7 @@ public sealed class HomeView : ScrollViewer
         Style = (Style)Application.Current.FindResource(typeof(ScrollViewer)); // implicit styles skip subclasses
         VerticalScrollBarVisibility = ScrollBarVisibility.Auto;
         HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled;
-        Padding = new Thickness(0, 0, 0, 12);
+        Padding = new Thickness(0); // each card's bottom margin is the gap
         Content = _root;
         layout.Changed += Rebuild;
         shell.EditModeChanged += () => { foreach (var h in _hosts.Values) h.IsEditMode = shell.IsEditMode; };
