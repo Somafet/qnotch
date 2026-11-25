@@ -36,7 +36,7 @@ Behavior:
 
 - **Default.** A new install uses Same for every app. An install that already has saved app spots when it first meets this setting uses Each app has its own, so nobody's layout changes on update.
 - **Changing the choice** applies at once, and the description swaps.
-  - Switching to Same for every app keeps the pill where it is now. That spot becomes the one spot.
+  - Switching to Same for every app keeps the pill where it is now. If it is still sliding, it finishes the slide, and the spot it lands on becomes the one spot.
   - Switching to Each app has its own moves the pill to the saved spot of the app in front, or the center if that app has none. Saved app spots are kept while the other choice is active.
 - **Reset** centers the pill. With Each app has its own, it also forgets every app's spot. Analytics: `settings`/`reset_positions`. Changing the choice records `settings`/`change` with target `notch_position`.
 - **Storage.** `general.json` holds:
