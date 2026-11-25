@@ -274,6 +274,13 @@ enum SnapshotViews {
         }
     }
 
+    /// A built-in display whose notch wraps the camera housing.
+    static var notchedDisplay: DisplayLayout {
+        DisplayLayout(frame: CGRect(x: -100, y: 200, width: 1512, height: 982),
+                      visibleFrame: CGRect(x: -100, y: 200, width: 1512, height: 945),
+                      safeTop: 37, cameraGap: CGRect(x: 560, y: 1145, width: 192, height: 37))
+    }
+
     static var virtualDisplay: DisplayLayout {
         DisplayLayout(frame: CGRect(x: -1920, y: -100, width: 1920, height: 1080),
                       visibleFrame: CGRect(x: -1920, y: -100, width: 1920, height: 1055), safeTop: 0, cameraGap: nil)

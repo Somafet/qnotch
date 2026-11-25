@@ -84,6 +84,9 @@ final class PanelView: NSView {
         edit.isHidden = selected != "home"
     }
 
+    /// The top of the tab content, in this view's coordinates: the header is the strip above it.
+    var contentTop: CGFloat { host.frame.maxY }
+
     func setEditing(_ editing: Bool, onHome: Bool) {
         tabBar.editing = editing
         edit.isHidden = !onHome && !editing

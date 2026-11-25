@@ -8,8 +8,10 @@ enum RenderDiagnostics {
 final class NotchPanel: NSPanel {
     var keyboardAllowed = false
     var clicked: (() -> Bool)?
-    /// Sideways drags of a floating pill: whether one may start, then each move and the release.
-    var canNudge: (() -> Bool)?
+    /// Sideways drags of a floating notch: whether a press at a window point may start one (the
+    /// collapsed notch, or the open panel's empty header), the drag starting, each move and the release.
+    var canNudge: ((NSPoint) -> Bool)?
+    var nudgeBegan: (() -> Void)?
     var nudged: ((CGFloat) -> Void)?
     var nudgeEnded: ((_ doubleClick: Bool, _ velocity: CGFloat) -> Void)?
     var escaped: (() -> Void)?
@@ -22,15 +24,15 @@ final class NotchPanel: NSPanel {
     override func constrainFrameRect(_ frameRect: NSRect, to screen: NSScreen?) -> NSRect { frameRect }
     override func sendEvent(_ event: NSEvent) {
         // Consume the opening click so it cannot also hit a newly revealed control.
-        if event.type == .leftMouseDown, canNudge?() == true, trackNudge(event) { return }
+        if event.type == .leftMouseDown, canNudge?(event.locationInWindow) == true, trackNudge(event) { return }
         if event.type == .leftMouseDown, clicked?() == true { return }
         super.sendEvent(event)
     }
     override func cancelOperation(_ sender: Any?) { escaped?() }
 
-    /// A press that moves 5 points sideways drags the pill; a double-click re-centers it. The
-    /// release reports the pointer's sideways speed, so a flick can throw the pill.
-    /// Returns false for a plain click, which then opens the panel as usual.
+    /// A press that moves 5 points sideways drags the notch; a double-click re-centers it. The
+    /// release reports the pointer's sideways speed, so a flick can throw it.
+    /// Returns false for a plain click, which then goes on as usual (on the collapsed notch, it opens the panel).
     private func trackNudge(_ down: NSEvent) -> Bool {
         if down.clickCount == 2 { nudgeEnded?(true, 0); return true }
         let start = NSEvent.mouseLocation
@@ -40,7 +42,7 @@ final class NotchPanel: NSPanel {
         while let event = nextEvent(matching: [.leftMouseDragged, .leftMouseUp], until: .distantFuture, inMode: .eventTracking, dequeue: true) {
             let location = NSEvent.mouseLocation
             let dx = location.x - start.x
-            if !dragging, abs(dx) > 5 { dragging = true }
+            if !dragging, abs(dx) > 5 { dragging = true; nudgeBegan?() }
             if dragging { nudged?(dx) }
             if event.type == .leftMouseUp { released = event.timestamp; break }
             tracker.add(location, at: event.timestamp)

@@ -266,7 +266,7 @@ extension HoverTargetSmoke {
                     NSEvent.mouseEvent(with: type, location: local, modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime,
                                        windowNumber: shell.panel.windowNumber, context: nil, eventNumber: 0, clickCount: 1, pressure: type == .leftMouseDown ? 1 : 0)!
                 }
-                let floating = shell.panel.canNudge?() == true
+                let floating = shell.panel.canNudge?(local) == true
                 // The nudge tracker reads the release from the queue, as it would a real one.
                 if floating { NSApp.postEvent(event(.leftMouseUp), atStart: false) }
                 shell.panel.sendEvent(event(.leftMouseDown))
