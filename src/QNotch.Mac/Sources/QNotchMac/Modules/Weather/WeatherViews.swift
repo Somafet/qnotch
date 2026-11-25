@@ -157,6 +157,9 @@ extension WeatherModule {
         embed(results, in: searchBox, inset: NSEdgeInsets(top: 0, left: 14, bottom: 8, right: 14), fill: true)
         searchBox.isHidden = true
         field.onAction { [weak self, weak field, weak results, weak note, weak searchBox] in
+            // A new search drops the old results, so they never sit under the new message.
+            results?.arrangedSubviews.forEach { $0.removeFromSuperview() }
+            searchBox?.isHidden = true
             guard let self, let field, field.stringValue.trimmingCharacters(in: .whitespaces).count >= 2 else { note?.stringValue = "Type at least two letters."; return }
             note?.stringValue = "Searching…"
             self.search(field.stringValue) { result in

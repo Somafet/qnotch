@@ -228,10 +228,12 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
         }
         // Rows that only matter for hover opening; hidden (not disabled) while Open on is Click.
         var hoverOnly: [NSView] = []
+        var hoverDetail: NSTextField?
         let openOn = ActionPopUp("Open on", items: ["Hover", "Click"], selected: shell.general.openOnClick ? 1 : 0) { [weak self] index in
             guard let self, self.shell.general.openOnClick != (index == 1) else { return }
             Analytics.setting("open_on"); self.shell.updateGeneral { $0.openOnClick = index == 1 }
             hoverOnly.forEach { $0.isHidden = index == 1 }
+            hoverDetail?.stringValue = Self.hoverDelayDetail(click: index == 1)
         }
         openOn.identifier = NSUserInterfaceItemIdentifier("open-on")
         let segmentHover = ActionSwitch("Open hovered feature", value: shell.general.hoverOpensSegment) { [weak self] value in
@@ -260,7 +262,7 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
             ], width: width),
             settingsGroup([
                 settingsRow("Open on", detail: "Hover opens the panel when the pointer rests on the notch. Click opens it only when you click the notch, so heading for tabs or the menu bar never pops it open; a click outside, Escape or the toggle hotkey closes it.", control: openOn, width: width),
-                settingsRow("Hover delay", detail: "How long the pointer rests on the notch before the panel opens. With Open on Click it applies to files dragged onto the notch.", control: hover, width: width),
+                settingsRow("Hover delay", detail: Self.hoverDelayDetail(click: shell.general.openOnClick), control: hover, width: width) { hoverDetail = $0 },
                 segmentRow,
                 leaveRow,
                 settingsRow("Keep panel open", detail: "The panel stays open until you close it with Escape, the pin, or the toggle hotkey. Also the pin in the panel header.", control: pin, width: width)
@@ -269,6 +271,12 @@ final class SettingsController: NSObject, NSTextFieldDelegate {
             setupGroup(width: width),
             settingsGroup([settingsRow("Share usage data", control: usage, width: width)], width: width)
         ])
+    }
+
+    /// With Open on Click the hover delay only applies to files dragged onto the notch.
+    private static func hoverDelayDetail(click: Bool) -> String {
+        click ? "How long files dragged onto the notch rest there before the panel opens."
+              : "How long the pointer must rest on the notch before the panel opens."
     }
 
     // MARK: Setup codes

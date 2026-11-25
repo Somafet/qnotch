@@ -152,7 +152,7 @@ final class CardView: FillView {
 /// A borderless button with hover and press feedback. Keyboard focus, accessibility and actions
 /// stay native (NSButton); only the look is custom. The fill is the button's own layer background.
 final class HoverButton: NSButton, OutlineRoleProviding {
-    /// `link`: a small grey text action for a page's caption strip (10 pt, no fill until hovered).
+    /// `link`: a small accent-colored text action for a page's caption strip (10 pt, no fill until hovered).
     enum Style { case icon, plain, accent, accentCircle, chip, tab, row, link }
 
     let style: Style
@@ -278,7 +278,8 @@ final class HoverButton: NSButton, OutlineRoleProviding {
             foreground = isSelectedLook ? Palette.accent : hovering ? Palette.textPrimary : Palette.textSecondary
         case .link:
             fill = pressing ? Palette.controlPressed : hovering ? Palette.controlHover : nil
-            if tint == nil { foreground = hovering ? Palette.textSecondary : Palette.textTertiary }
+            // Accent, like links elsewhere (Windows LinkButton); a lighter accent on hover, as the accent button does.
+            if tint == nil { foreground = hovering || pressing ? Palette.accent.blended(withFraction: 0.15, of: .white) ?? Palette.accent : Palette.accent }
         case .icon, .row:
             fill = pressing ? Palette.controlPressed : hovering ? Palette.controlHover : nil
             if style == .icon, tint == nil { foreground = hovering ? Palette.textPrimary : Palette.textSecondary }
