@@ -8,6 +8,9 @@ public enum ThemeChoice { System, Dark, Light }
 /// <summary>What opens the panel from the pill: resting the pointer on it (with <see cref="GeneralSettings.HoverDwellMs"/>) or a click.</summary>
 public enum PanelOpenTrigger { Hover, Click }
 
+/// <summary>Where a moved pill stays (spec/notch-position.md): one spot whatever app is in front, or a spot per app.</summary>
+public enum NotchPositionMode { Everywhere, PerApp }
+
 /// <summary>Shell settings (general.json). Live object: bind to it, mutate it; the shell persists changes automatically.</summary>
 public sealed partial class GeneralSettings : ObservableObject
 {
@@ -54,6 +57,15 @@ public sealed partial class GeneralSettings : ObservableObject
     /// <summary>Where the notch sits while an app is in front: process name ("chrome.exe") to DIPs from the monitor center
     /// (+-10000 means flush with that edge). Missing means centered. Saved by NotchNudge, not through PropertyChanged.</summary>
     public Dictionary<string, double> NotchSpots { get; set; } = new();
+
+    /// <summary>Settings, General, Notch position. Null only until startup decides it (<see cref="NotchPlacement.Resolve"/>). A local preference: never in setup codes.</summary>
+    [ObservableProperty] NotchPositionMode? _notchPosition;
+
+    /// <summary>The one spot used with <see cref="NotchPositionMode.Everywhere"/>, stored like a <see cref="NotchSpots"/> value. Saved by NotchNudge.</summary>
+    public double NotchX { get; set; }
+
+    /// <summary>The one-time "Each app keeps its own pill spot" peek was shown, or the user changed Notch position. Saved by NotchNudge.</summary>
+    public bool NotchSpotHintShown { get; set; }
 
     /// <summary>Explicit visibility overrides by card id; missing means the descriptor default.</summary>
     public Dictionary<string, bool> CardVisible { get; set; } = new();

@@ -35,5 +35,7 @@ Button labels follow each platform's capitalization: sentence case on Windows ("
 | Area | Windows | macOS | Kind |
 | --- | --- | --- | --- |
 | Settings layout | Flat rows, no dividers | Grouped rounded boxes with dividers, like System Settings | Look |
-| Settings, General | Notch position reset | Show menu-bar icon | Capability |
+| Settings, General | Notch position (one spot or one per app, and Reset) | Show menu-bar icon | Capability |
+| Where a moved notch stays ([Notch position](notch-position.md)) | One spot, or a spot per app | One spot per display | Capability |
+| Moving the notch | Every display | Only displays without a camera housing | Capability |
 | Open hovered feature | Not yet | Available | Capability |

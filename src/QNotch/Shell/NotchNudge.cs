@@ -5,6 +5,7 @@ using System.Windows.Media;
 using QNotch.Core;
 using QNotch.Interop;
 using QNotch.Shell.GameMode;
+using QNotch.Theme;
 
 namespace QNotch.Shell;
 
@@ -12,7 +13,9 @@ namespace QNotch.Shell;
 /// Moving the notch sideways, out of the way of tab strips. Grab the pill (or the empty part of the open panel's header) and
 /// fling it: it keeps its momentum, springs into place and snaps to the center or a screen edge when it lands near one.
 /// Carry it onto another display and it moves there (<see cref="GeneralSettings.MonitorIndex"/>).
-/// The spot is remembered per app (<see cref="GeneralSettings.NotchSpots"/>) and restored when that app comes to the front.
+/// Settings, General, Notch position decides where it stays (spec/notch-position.md): one spot whatever app is in front
+/// (<see cref="GeneralSettings.NotchX"/>), or a spot per app (<see cref="GeneralSettings.NotchSpots"/>) restored when that app comes to the
+/// front, with a one-time peek the first time it moves by itself.
 /// Nothing runs while idle: the spring hooks Rendering only while the notch moves, the app lookup runs on foreground change.
 /// </summary>
 internal sealed class NotchNudge
@@ -56,13 +59,27 @@ internal sealed class NotchNudge
         Jump(_target = Spot(_app));
     }
 
-    /// <summary>Settings, General: forget every app's spot.</summary>
+    /// <summary>Settings, General, Reset: centers the pill, and with a spot per app forgets every app's spot.</summary>
     public void ResetAll()
     {
-        _gs.NotchSpots.Clear();
+        _gs.NotchX = 0;
+        if (Mode == NotchPositionMode.PerApp) _gs.NotchSpots.Clear();
         _store.Save("general", _gs);
         Glide(0, fling: false);
     }
+
+    /// <summary>Settings, General, Notch position changed. One spot keeps the pill where it is now; per app moves it to the front app's
+    /// spot. Either way the user has seen the choice, so the per-app hint never peeks.</summary>
+    public void SetMode(NotchPositionMode mode)
+    {
+        if (mode == NotchPositionMode.Everywhere) _gs.NotchX = _target;
+        _gs.NotchSpotHintShown = true;
+        _gs.NotchPosition = mode;
+        _store.Save("general", _gs);
+        if (mode == NotchPositionMode.PerApp) Glide(Spot(_app), fling: false);
+    }
+
+    NotchPositionMode Mode => _gs.NotchPosition ?? NotchPositionMode.Everywhere;
 
     // ---------- pointer ----------
 
@@ -149,7 +166,15 @@ internal sealed class NotchNudge
     {
         if (_dragging || AppOf(hwnd) is not { } app || app == _app) return;
         _app = app;
-        Glide(Spot(app), fling: false);
+        if (Mode != NotchPositionMode.PerApp) return; // one spot: switching apps never moves it
+        var to = Spot(app);
+        if (NotchPlacement.ShouldHint(Mode, _gs.NotchSpotHintShown, _target, to, _shell.Mode == ShellMode.Collapsed, _shell.Mode == ShellMode.GameBar)
+            && _shell.Peek(Glyphs.Settings, NotchPlacement.HintText, "AccentBrush", NotchPlacement.HintMs) is not null)
+        {
+            _gs.NotchSpotHintShown = true;
+            _store.Save("general", _gs);
+        }
+        Glide(to, fling: false);
     }
 
     /// <summary>The app a foreground window belongs to ("chrome.exe"), or null for windows that must not move the notch:
@@ -165,12 +190,13 @@ internal sealed class NotchNudge
         return app.ToLowerInvariant();
     }
 
-    double Spot(string app) => _gs.NotchSpots.TryGetValue(app, out var x) ? x : 0;
+    double Spot(string app) => NotchPlacement.Spot(Mode, _gs.NotchX, _gs.NotchSpots, app);
 
     void Remember(double x)
     { QNotch.Core.Analytics.Track("shell", "move_notch", "ui");
-        if (_app.Length == 0) return;
-        if (x == 0) _gs.NotchSpots.Remove(_app);
+        if (Mode == NotchPositionMode.Everywhere) _gs.NotchX = x;
+        else if (_app.Length == 0) return;
+        else if (x == 0) _gs.NotchSpots.Remove(_app);
         else _gs.NotchSpots[_app] = x;
         _store.Save("general", _gs);
     }

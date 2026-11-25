@@ -113,6 +113,8 @@ public partial class App : Application
         // A fresh install records its first run, whether the tour is finished or skipped; it is saved with the tour's own save. Installs from
         // before this have no value and are never asked the quit question. Set before the shell exists, so nothing writes general.json early.
         if (tour == TourStart.Show && !_debugControl) gs.FirstRunAt = DateTimeOffset.UtcNow;
+        // Notch position: settings from before it existed keep their per-app spots; everyone else gets one spot. Saved with the next save.
+        gs.NotchPosition ??= NotchPlacement.Resolve(null, gs.NotchSpots.Count);
         Motion.Refresh(gs.ReduceMotion);
         ThemeManager.Apply(gs);
         var bus = new EventBus(Dispatcher);
@@ -156,7 +158,7 @@ public partial class App : Application
         // Built-in tab and settings sections (modules add theirs in Initialize).
         tabs.Register(new TabDescriptor("home", "Home", Glyphs.Home, 0, () => new HomeView(layout, shell)));
         sections.Register(new SettingsSectionDescriptor("features", "Features", Glyphs.Apps, 5, () => FeaturesSection.Create(gs, _store!, ModuleList.All, bootDisabled, Restart, layout, tabs, segments)));
-        sections.Register(new SettingsSectionDescriptor("general", "General", Glyphs.Settings, 0, () => GeneralSection.Create(gs, _store!, SetupCode.All(ModuleList.All), Restart, shell.Nudge.ResetAll)));
+        sections.Register(new SettingsSectionDescriptor("general", "General", Glyphs.Settings, 0, () => GeneralSection.Create(gs, _store!, SetupCode.All(ModuleList.All), Restart, shell.Nudge.ResetAll, shell.Nudge.SetMode)));
         sections.Register(new SettingsSectionDescriptor("about", "About", "\uE946", 1000, () => AboutSection.Create(gs, updates, () => ShowTour(gs, _store!, shortcuts, shell), () => QuitByUser(gs, "ui"))));
         sections.Register(new SettingsSectionDescriptor("appearance", "Appearance", Glyphs.Color, 10, () => AppearanceSection.Create(gs, layout)));
         sections.Register(new SettingsSectionDescriptor("hotkeys", "Hotkeys", "", 7, () => HotkeysSection.Create(shortcuts)));
