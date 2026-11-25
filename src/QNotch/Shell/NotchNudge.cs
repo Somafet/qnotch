@@ -72,7 +72,8 @@ internal sealed class NotchNudge
     /// spot. Either way the user has seen the choice, so the per-app hint never peeks.</summary>
     public void SetMode(NotchPositionMode mode)
     {
-        if (mode == NotchPositionMode.Everywhere) _gs.NotchX = _target;
+        // Where the pill is now: its target once it has settled there (keeps "flush with the edge"), else where a click stopped its slide.
+        if (mode == NotchPositionMode.Everywhere) _gs.NotchX = Math.Abs(_x - Math.Clamp(_target, -_w.MaxNotchX, _w.MaxNotchX)) < 0.5 ? _target : _x;
         _gs.NotchSpotHintShown = true;
         _gs.NotchPosition = mode;
         _store.Save("general", _gs);
