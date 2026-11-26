@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Http;
 using System.Text.Json;
 using QNotch.Core;
+using QNotch.Modules;
 
 internal static class AnalyticsChecks
 {
@@ -148,6 +149,8 @@ internal static class AnalyticsChecks
             Check(Analytics.Hash(vector.GetProperty("raw").GetString()!) == vector.GetProperty("sha256").GetString());
         var targets = catalog.RootElement.GetProperty("targets").EnumerateArray().Select(t => t.GetString()!).ToHashSet();
         Check(targets.SetEquals(AnalyticsCatalog.Targets));
+        // Every module can be named: qnotch_active's modules, tab and feature events drop an id the catalog lacks.
+        foreach (var m in ModuleList.All) Check(AnalyticsCatalog.Targets.Contains(Analytics.Canonical(m.Id)!));
         await QuitReasonAsync(targets);
         var lifecycle = catalog.RootElement.GetProperty("lifecycle");
         Check(lifecycle.GetProperty("event").GetString() == "qnotch_active");

@@ -1,6 +1,6 @@
 # Action analytics, schema 1
 
-QNotch Windows and Mac use explicit `qnotch_action` events. The versioned [catalog](../tests/fixtures/analytics/catalog-v1.json) defines fixed module/action pairs, targets, surfaces and outcomes. Native module ids `timer`, `note`, `filetray`, `colorpicker` map to `pomodoro`, `notes`, `files`, `color_picker` in analytics. The catalog is a union, not a claim of platform feature parity.
+QNotch Windows and Mac use explicit `qnotch_action` events. The versioned [catalog](../tests/fixtures/analytics/catalog-v1.json) defines fixed module/action pairs, targets, surfaces and outcomes. Native module ids `timer`, `note`, `filetray`, `colorpicker` map to `pomodoro`, `notes`, `files`, `color_picker` in analytics. The catalog is a union, not a claim of platform feature parity. Every module id (after that mapping) is a catalog target, so the lifecycle `modules` list and tab, card and feature events can name it; each platform's checks fail when a module is missing. A new module adds its id to the catalog and to both platforms' target lists.
 
 Every event has a generated UUID, capture timestamp and top-level `distinct_id`. Properties are `schema_version`, `platform` (`windows`/`macos`), `app_version`, `module`, `action`, `surface` (`ui`, `hotkey`, `cli`, `tray`, `onboarding`), `outcome` (`requested`), `install_id`, `identity_source` (`codex`, `claude`, `anonymous`) and `$process_person_profile: false`. Optional `target` must be in the fixed catalog; optional `enabled` is boolean. There is no arbitrary property bag or text/value field.
 
