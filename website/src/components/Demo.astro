@@ -171,5 +171,26 @@ const dock = [
 
 <script>
   import { initDemo } from '../scripts/demo';
-  initDemo(document.getElementById('demo')!);
+  import { track } from '../scripts/stats';
+  import { SCENARIOS } from '../lib/stats';
+
+  const root = document.getElementById('demo')!;
+  initDemo(root);
+
+  // Analytics: the first time a visitor touches the demo on this page, and each scenario they pick.
+  let touched = false;
+  const first = (control: 'pill' | 'scenario' | 'desktop') => {
+    if (touched) return;
+    touched = true;
+    track('demo_interacted', { first_control: control });
+  };
+  root.addEventListener('pointerdown', e => {
+    const t = e.target as Element;
+    first(t.closest('[data-scenario]') ? 'scenario' : t.closest('[data-pill]') ? 'pill' : 'desktop');
+  });
+  root.querySelector('[data-pill]')?.addEventListener('mouseenter', () => first('pill'));
+  root.querySelectorAll<HTMLElement>('[data-scenario]').forEach(chip => chip.addEventListener('click', () => {
+    const scenario = SCENARIOS.find(s => s === chip.dataset.scenario);
+    if (scenario) track('demo_scenario_played', { scenario });
+  }));
 </script>

@@ -1,0 +1,7 @@
+# The analytics proxy for qnot.ch. Deploy with `npx wrangler deploy` from this folder; set
+# CLOUDFLARE_ACCOUNT_ID in the environment rather than here. See README.md.
+name = "qnotch-site-relay"
+main = "worker.js"
+compatibility_date = "2026-11-01"
+workers_dev = false
+routes = [{ pattern = "qnot.ch/qn/*", zone_name = "qnot.ch" }]

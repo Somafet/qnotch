@@ -14,12 +14,15 @@ const { links, small } = Astro.props;
 
 <script>
   import { currentOS, onOS, setOS, type OS } from '../scripts/platform';
+  import { track } from '../scripts/stats';
 
   const buttons = [...document.querySelectorAll<HTMLButtonElement>('[data-os-pick]')];
   const pages = document.querySelector<HTMLElement>('[data-os-pages]')?.dataset.osPages;
   const pick = (os: OS) => {
+    if (os === currentOS()) return;
+    track('os_switched', { to: os, method: pages ? 'page' : 'switch' }, !!pages);
     if (!pages) return setOS(os);
-    if (os !== currentOS()) location.assign((JSON.parse(pages) as Record<OS, string>)[os]);
+    location.assign((JSON.parse(pages) as Record<OS, string>)[os]);
   };
   function sync() {
     const os = currentOS();
@@ -42,6 +45,7 @@ const { links, small } = Astro.props;
   // Links elsewhere on the page ("Also on Mac") switch too.
   document.querySelectorAll<HTMLElement>('[data-os-link]').forEach(a => a.addEventListener('click', e => {
     e.preventDefault();
+    if (a.dataset.osLink !== currentOS()) track('os_switched', { to: a.dataset.osLink as OS, method: 'link' });
     setOS(a.dataset.osLink as OS);
     document.getElementById('top')?.scrollIntoView({ behavior: 'smooth' });
   }));

@@ -12,6 +12,7 @@ import InstallDialog from '../components/InstallDialog.astro';
 import StoreLogo from '../components/StoreLogo.astro';
 import og from '../assets/og.png';
 import { GH, DL, STORE, releases } from '../lib/releases';
+import { faqId, storeCampaign } from '../lib/stats';
 import type { OS } from '../scripts/platform';
 
 // One page at three addresses. / describes both apps behind the Windows/Mac switch; /windows/ and /mac/ each
@@ -117,7 +118,7 @@ const about: Record<OS, { eyebrow: string; h: string; p: string[]; facts: Fact[]
     ],
     facts: [
       { t: 'Runs on', d: 'Windows 11, and Windows 10 version 2004 or newer, on x64.' },
-      { t: 'Microsoft Store', d: 'The same app, installed and updated by the Store. Buying it funds development.', href: STORE },
+      { t: 'Microsoft Store', d: 'The same app, installed and updated by the Store. Buying it funds development.', href: storeCampaign(STORE, 'other') },
       { t: 'Download', d: 'The 80 MB self-contained ZIP: unzip and run. A smaller exe for the .NET 10 Desktop Runtime is on GitHub.' },
       ...(WINGET ? [{ t: 'winget', d: 'Built into Windows 10 and 11.', code: ['winget install Somafet.QNotch'] }] : []),
       ...(SCOOP ? [{ t: 'Scoop', d: 'From the QNotch bucket.', code: ['scoop bucket add qnotch https://github.com/Somafet/scoop-bucket', 'scoop install qnotch/qnotch'] }] : []),
@@ -234,9 +235,9 @@ const jsonLd = {
         </h1>
         {shows('win') && <p class="lead hero-lead os-win">A little pill at the top of your screen for music, system stats and coding agents. When Claude Code or Codex is waiting on you, it says so.</p>}
         {shows('mac') && <p class="lead hero-lead os-mac">Music, system stats and coding agents in the wings beside the notch. When Claude Code or Codex is waiting on you, it says so.</p>}
-        <div class="hero-cta cta">
+        <div class="hero-cta cta" data-placement="hero">
           <SendLink />
-          {shows('win') && <a class="btn btn-primary btn-store os-win" href={STORE}><StoreLogo /><span><b>Get QNotch</b><small>From the Microsoft Store</small></span></a>}
+          {shows('win') && <a class="btn btn-primary btn-store os-win" href={storeCampaign(STORE, 'hero')}><StoreLogo /><span><b>Get QNotch</b><small>From the Microsoft Store</small></span></a>}
           {shows('win') && <a class="btn btn-ghost btn-tall os-win" href={DL} data-install-open><Icon name="download" />Other ways to install</a>}
           {shows('mac') && <a class="btn btn-primary os-mac" href={MAC.url}><Icon name="apple" />Download for Mac</a>}
           {shows('mac') && <a class="btn btn-ghost os-mac" href={GH}><Icon name="github" />Star on GitHub</a>}
@@ -343,7 +344,7 @@ const jsonLd = {
         </div>
         <div class="faq">
           {shownFaq.map(f => (
-            <details class={f.os && `os-${f.os}`}>
+            <details class={f.os && `os-${f.os}`} data-faq={faqId(f.q)}>
               <summary>{f.q}<span class="plus" aria-hidden="true"></span></summary>
               <p>{f.a}</p>
             </details>
@@ -359,9 +360,9 @@ const jsonLd = {
         {shows('mac') && <h2 class="os-mac">Try QNotch on<br />your Mac.</h2>}
         {shows('win') && <p class="lead final-lead os-win">I saw a really nice notch app on Reddit, but it was Mac only. Well, I'm on Windows. So I built one.</p>}
         {shows('mac') && <p class="lead final-lead os-mac">I built QNotch for Windows because the nice notch apps were Mac only. Then I wanted it on my MacBook too, so I rebuilt it natively in Swift.</p>}
-        <div class="hero-cta cta">
+        <div class="hero-cta cta" data-placement="final">
           <SendLink />
-          {shows('win') && <a class="btn btn-primary btn-store os-win" href={STORE}><StoreLogo /><span><b>Get QNotch</b><small>From the Microsoft Store</small></span></a>}
+          {shows('win') && <a class="btn btn-primary btn-store os-win" href={storeCampaign(STORE, 'final')}><StoreLogo /><span><b>Get QNotch</b><small>From the Microsoft Store</small></span></a>}
           {shows('win') && <a class="btn btn-ghost btn-tall os-win" href={DL} data-install-open><Icon name="download" />Other ways to install</a>}
           {shows('mac') && <a class="btn btn-primary os-mac" href={MAC.url}><Icon name="apple" />Download for Mac</a>}
           {shows('mac') && <a class="btn btn-ghost os-mac" href={GH}><Icon name="github" />View the source</a>}
@@ -372,10 +373,17 @@ const jsonLd = {
     </section>
   </main>
 
-  <InstallDialog gh={GH} store={STORE} winget={WINGET} scoop={SCOOP} chocolatey={CHOCOLATEY} />
+  <InstallDialog gh={GH} store={storeCampaign(STORE, 'install')} winget={WINGET} scoop={SCOOP} chocolatey={CHOCOLATEY} />
 
   <SiteFooter />
 </Base>
+
+<script>
+  import { track } from '../scripts/stats';
+  document.querySelectorAll<HTMLDetailsElement>('details[data-faq]').forEach(d => d.addEventListener('toggle', () => {
+    if (d.open) track('faq_opened', { question: d.dataset.faq! });
+  }));
+</script>
 
 <style>
   .hero { padding-top: clamp(32px, 5vw, 64px); padding-bottom: clamp(64px, 9vw, 120px); }

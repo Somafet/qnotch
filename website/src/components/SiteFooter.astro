@@ -50,6 +50,7 @@ const columns = [
       <nav aria-label={c.title}>
         <h2>{c.title}</h2>
         {c.links.map(l => <a href={l.href}>{l.t}</a>)}
+        {c.title === 'About' && <button type="button" class="foot-btn" data-cookie-settings hidden>Cookie settings</button>}
       </nav>
     ))}
   </div>
@@ -100,7 +101,17 @@ const columns = [
     color: var(--ink-3);
   }
 
-  nav a:hover { color: var(--ink); }
+  nav a:hover,
+  .foot-btn:hover { color: var(--ink); }
+
+  .foot-btn {
+    padding: 0;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+  }
+
+  .foot-btn[hidden] { display: none; }
 
   .foot-note {
     margin-top: 40px;

@@ -2,11 +2,11 @@
 import Base from '../layouts/Base.astro';
 import ThemeSwitch from '../components/ThemeSwitch.astro';
 
-// Keep this page true to the apps. It mirrors spec/analytics.md, docs/windows/README.md#privacy-and-data and
-// docs/macos/README.md#data-permissions-and-diagnostics: change it in the same pull request as any new network
-// request, identifier or stored data, and move the date.
+// Keep this page true to the apps and the site. It mirrors spec/analytics.md, spec/website-analytics.md,
+// docs/windows/README.md#privacy-and-data and docs/macos/README.md#data-permissions-and-diagnostics: change it in
+// the same pull request as any new network request, identifier or stored data, and move the date.
 const GH = 'https://github.com/Somafet/qnotch';
-const updated = { iso: '2026-11-04', text: '4 November 2026' };
+const updated = { iso: '2026-11-26', text: '26 November 2026' };
 
 const online = [
   { what: 'Update checks', who: 'GitHub', sends: 'A request for the latest QNotch release, with no token or identifier. The update itself downloads only when you choose to install it.', when: 'Automatically, unless you turn update checks off in Settings or the welcome tour.' },
@@ -41,6 +41,7 @@ const online = [
         <li>Your notes, clipboard, files, settings and coding agent sessions stay on your computer.</li>
         <li>By default QNotch sends usage events: which features and commands you use, never what you typed, copied or opened. You can turn this off.</li>
         <li>Online features contact only the service they are for, and only when you use them.</li>
+        <li>This website counts visits. It sets a cookie only if you say yes.</li>
       </ul>
     </section>
 
@@ -89,7 +90,12 @@ const online = [
 
     <section aria-labelledby="site">
       <h2 id="site">This website</h2>
-      <p>qnot.ch uses no cookies, analytics, ads or third party scripts, and serves its fonts itself. Your browser remembers your light or dark choice and, for the open tab, your Windows or Mac choice; neither is sent anywhere. The server that hosts the site may keep ordinary access logs, such as IP address, page and browser, to keep it running and secure. Download buttons link to GitHub, and the Store button to the Microsoft Store.</p>
+      <p>qnot.ch counts visits with <a href="https://posthog.com/privacy">PostHog</a>, in its EU Cloud, to learn which pages bring people to QNotch and where they come from. The counting script is part of the site, and it sends through qnot.ch itself, which passes the events on to PostHog. The site shows no ads and serves its fonts itself.</p>
+      <p><b>What a visit sends:</b> the page address and title, the page you came from, campaign tags in the link (such as <code>utm_source</code>, or an ad click ID), your browser, operating system, device type, screen and window size, language and time zone, how far you scrolled, whether the page shows the Windows or Mac version, and the time. Clicks on a fixed set of buttons count too: the download and Store buttons, Other ways to install and its tabs, copying an install command, the Windows/Mac switch, the demo, the button that sends the link to your computer, FAQ questions and links to GitHub. Nothing you type is sent, and there is no session recording or automatic click tracking.</p>
+      <p><b>The cookie, only if you accept.</b> On your first visit a box asks whether qnot.ch can use a cookie. If you accept, PostHog's cookie <code>ph_phc_…_posthog</code> and a copy in your browser's local storage keep a random ID for up to a year, so a later visit counts as the same visitor, and PostHog looks up your country from your IP address. If you decline or don't answer, nothing is stored on your device, apart from your answer if you gave one, and PostHog counts the visit without a cookie: it recognizes your browser for one day from a scrambled mix of your IP address and browser details, and records no country. Either way, the IP address itself is not stored with the visit.</p>
+      <p><b>Not counted at all</b> when your browser sends Do Not Track or Global Privacy Control: the counting script doesn't load.</p>
+      <p data-cookie-settings hidden><button type="button" class="settings">Change your cookie choice</button></p>
+      <p>Your browser also remembers your light or dark choice and, for the open tab, your Windows or Mac choice; neither is sent anywhere. The server that hosts the site may keep ordinary access logs, such as IP address, page and browser, to keep it running and secure. Download buttons link to GitHub, and Store buttons to the Microsoft Store, with a campaign tag that tells the Store which button you clicked.</p>
     </section>
 
     <section aria-labelledby="children">
@@ -99,7 +105,7 @@ const online = [
 
     <section aria-labelledby="rights">
       <h2 id="rights">Your choices</h2>
-      <p>You can turn off usage data and every online feature, and remove all local data by uninstalling QNotch and deleting its folder. Depending on where you live, for example in the EU or UK, you may have the right to access or delete usage data linked to your identifiers, or to object to its use. We rely on our legitimate interest in improving QNotch to collect it, and you can always switch it off.</p>
+      <p>You can turn off usage data and every online feature, and remove all local data by uninstalling QNotch and deleting its folder. Depending on where you live, for example in the EU or UK, you may have the right to access or delete usage data linked to your identifiers, or to object to its use. We rely on our legitimate interest in improving QNotch to collect it, and you can always switch it off. On this website, the cookie is set only with your consent, which you can change at any time; counting visits without a cookie relies on our legitimate interest in knowing how people find QNotch.</p>
     </section>
 
     <section aria-labelledby="changes">
@@ -168,6 +174,17 @@ const online = [
   p + p { margin-top: 14px; }
 
   b { color: var(--ink); }
+
+  [data-cookie-settings][hidden] { display: none; }
+
+  .settings {
+    padding: 0;
+    color: var(--accent);
+    font: inherit;
+    font-weight: 600;
+  }
+
+  .settings:hover { text-decoration: underline; }
 
   ul {
     margin: 0;

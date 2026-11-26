@@ -31,12 +31,17 @@ npm run build    # static site in dist/
 | `src/lib/guides.ts` + `src/pages/guides/` + `src/layouts/Guide.astro` | The guides at `/guides/`. Add an entry to the list and a page with the same slug; the index, footer and `llms.txt` pick it up |
 | `src/components/SiteHeader.astro` + `SiteFooter.astro` | The header and footer every page except the privacy policy and 404 shares |
 | `src/components/SendLink.astro` | The phone-only button that sends the page to a computer |
+| `src/lib/stats.ts` + `src/scripts/stats.ts` | Visit counting with PostHog: the fixed list of events and values, and the loader that sends them. [The website analytics spec](../spec/website-analytics.md) is the contract |
+| `src/components/ConsentBanner.astro` | The cookie question on every page, and the Cookie settings links that reopen it |
+| `edge/` | The Cloudflare Worker on `qnot.ch/qn/*` that passes events on to PostHog. [Its README](edge/README.md) covers deploying it |
 | `src/icons.ts` | Stroke icons used everywhere |
 | `og/og.html` | Source of the social preview `src/assets/og.png`; rerender with `node og/render.mjs` (needs Edge or Chrome) |
 | `src/layouts/Base.astro` | The head: title, description, canonical, Open Graph and Twitter tags. Pass `noindex` for pages search engines should skip |
 | `src/pages/404.astro` | The not-found page (`noindex`, left out of the sitemap) |
 | `src/pages/llms.txt.ts` | `/llms.txt`, a plain summary for AI assistants, built from the same release checks. Keep its claims in line with the page |
 | `public/robots.txt` | Points crawlers at `sitemap-index.xml`, which `@astrojs/sitemap` writes on every build |
+
+Analytics run only on `qnot.ch`, so `npm run dev` and preview builds send nothing. To try the whole path locally, build with `PUBLIC_STATS_HOST=localhost` and serve `/qn/*` through `edge/worker.js`. A new button that should be counted needs a `[data-placement]` around it, or a `track()` call with an event from `src/lib/stats.ts`. Add new events to the spec and the privacy policy too. A link to the Microsoft Store uses `storeCampaign()`.
 
 Rule for the demo: anything that looks clickable must work. If a control can't be backed by real behavior, remove it.
 

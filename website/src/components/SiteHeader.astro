@@ -3,6 +3,7 @@ import Icon from './Icon.astro';
 import ThemeSwitch from './ThemeSwitch.astro';
 import StoreLogo from './StoreLogo.astro';
 import { GH, STORE, releases } from '../lib/releases';
+import { storeCampaign } from '../lib/stats';
 
 // home: on the landing page the section links scroll in place; everywhere else they go back to it.
 interface Props { home?: boolean }
@@ -12,7 +13,7 @@ const { mac: MAC } = await releases();
 const path = Astro.url.pathname;
 const here = (p: string) => (path.startsWith(p) ? 'page' : undefined);
 ---
-<header class="nav">
+<header class="nav" data-placement="header">
   <div class="wrap nav-in">
     <a class="logo" href={home ? '#top' : '/'} aria-label="QNotch home"><span class="logo-mark"><i></i></span>QNotch</a>
     <nav class="nav-links" aria-label="Site">
@@ -25,7 +26,7 @@ const here = (p: string) => (path.startsWith(p) ? 'page' : undefined);
     <div class="nav-cta">
       <ThemeSwitch />
       <a class="gh-link" href={GH} aria-label="QNotch on GitHub"><Icon name="github" /></a>
-      <a class="btn btn-primary btn-sm os-win" href={STORE}><StoreLogo class="sm" />Get</a>
+      <a class="btn btn-primary btn-sm os-win" href={storeCampaign(STORE, 'header')}><StoreLogo class="sm" />Get</a>
       <a class="btn btn-primary btn-sm os-mac" href={MAC.url}><Icon name="download" />Download</a>
     </div>
   </div>
