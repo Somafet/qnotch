@@ -1,0 +1,84 @@
+---
+// The cookie question, on every page (Base.astro). It appears once analytics has loaded and the visitor hasn't
+// answered yet, and never where the site doesn't count visits (Do Not Track, Global Privacy Control, other
+// hosts). Any [data-cookie-settings] button opens it again. Wording and behavior: spec/website-analytics.md.
+---
+<section class="consent card" id="consent" aria-labelledby="consent-title" hidden>
+  <h2 class="consent-title" id="consent-title">Can qnot.ch use a cookie?</h2>
+  <p>It shows me which pages bring people to QNotch and where they come from. No ads, and nothing follows you to other sites. If you say no, your visit still counts, without a cookie. <a class="inline" href="/privacy#site">Privacy policy</a></p>
+  <div class="consent-actions">
+    <button type="button" class="btn btn-ghost btn-sm" data-consent="accept">Accept</button>
+    <button type="button" class="btn btn-ghost btn-sm" data-consent="decline">No thanks</button>
+  </div>
+</section>
+
+<script>
+  import { consentStatus, onStatsReady, setConsent, startStats, statsOn } from '../scripts/stats';
+
+  const banner = document.getElementById('consent')!;
+  const show = () => { banner.hidden = false; };
+
+  banner.querySelectorAll<HTMLButtonElement>('[data-consent]').forEach(b => b.addEventListener('click', () => {
+    setConsent(b.dataset.consent as 'accept' | 'decline');
+    banner.hidden = true;
+  }));
+
+  // Cookie settings links exist only where the site counts visits.
+  document.querySelectorAll<HTMLElement>('[data-cookie-settings]').forEach(el => {
+    el.hidden = !statsOn();
+    el.addEventListener('click', () => onStatsReady(() => { show(); banner.querySelector('button')?.focus(); }));
+  });
+
+  onStatsReady(() => { if (consentStatus() === 'pending') show(); });
+  startStats();
+</script>
+
+<style>
+  .consent {
+    position: fixed;
+    left: 20px;
+    bottom: 20px;
+    z-index: 60;
+    width: min(380px, 100% - 40px);
+    padding: 18px 20px 20px;
+    border-color: var(--line-2);
+    animation: consent-in 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  .consent[hidden] { display: none; }
+
+  @keyframes consent-in {
+    from { opacity: 0; transform: translateY(8px); }
+  }
+
+  .consent-title {
+    font-family: var(--font);
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0;
+    line-height: 1.4;
+  }
+
+  .consent p {
+    margin-top: 6px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--ink-2);
+  }
+
+  .consent-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 14px;
+  }
+
+  .consent-actions .btn { flex: 1; justify-content: center; }
+
+  @media (max-width: 560px) {
+    .consent { left: 12px; bottom: 12px; width: calc(100% - 24px); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .consent { animation: none; }
+  }
+</style>

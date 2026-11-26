@@ -6,6 +6,7 @@ import SiteFooter from '../components/SiteFooter.astro';
 import SendLink from '../components/SendLink.astro';
 import StoreLogo from '../components/StoreLogo.astro';
 import { GH, DL, STORE, releases } from '../lib/releases';
+import { storeCampaign } from '../lib/stats';
 import { guides, guideUrl } from '../lib/guides';
 
 // One guide under /guides/: the title and description come from src/lib/guides.ts, the body from the page.
@@ -62,7 +63,7 @@ const jsonLd = {
       <div class="prose"><slot /></div>
     </article>
 
-    <aside class="get card" aria-label="Get QNotch">
+    <aside class="get card" aria-label="Get QNotch" data-placement="guide">
       <div>
         <h2>Get QNotch</h2>
         {only !== 'mac' && <p class={win}>Free and open source for Windows 11 and 10. The Microsoft Store copy is the same app, and buying it funds development.</p>}
@@ -70,7 +71,7 @@ const jsonLd = {
       </div>
       <div class="cta">
         <SendLink />
-        {only !== 'mac' && <a class:list={['btn btn-primary', win]} href={STORE}><StoreLogo class="sm" />Microsoft Store</a>}
+        {only !== 'mac' && <a class:list={['btn btn-primary', win]} href={storeCampaign(STORE, 'guide')}><StoreLogo class="sm" />Microsoft Store</a>}
         {only !== 'mac' && <a class:list={['btn btn-ghost', win]} href={DL}><Icon name="download" />Free download</a>}
         {only !== 'windows' && <a class:list={['btn btn-primary', mac]} href={MAC.url}><Icon name="apple" />Download for Mac</a>}
         {only !== 'windows' && <a class:list={['btn btn-ghost', mac]} href={GH}><Icon name="github" />View the source</a>}

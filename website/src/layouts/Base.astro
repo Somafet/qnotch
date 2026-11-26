@@ -3,6 +3,7 @@ import '@fontsource-variable/inter';
 import '@fontsource-variable/bricolage-grotesque';
 import '../styles/global.css';
 import og from '../assets/og.png';
+import ConsentBanner from '../components/ConsentBanner.astro';
 
 // os: a page about one platform (/windows/, /mac/) shows that one, whatever the visitor's OS. See scripts/platform.ts.
 interface Props { title: string; description: string; noindex?: boolean; os?: 'win' | 'mac' }
@@ -68,5 +69,6 @@ const url = new URL(Astro.url.pathname, Astro.site).href;
   </head>
   <body>
     <slot />
+    <ConsentBanner />
   </body>
 </html>

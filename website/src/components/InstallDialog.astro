@@ -18,7 +18,7 @@ const channels: Channel[] = [
     command: ['choco install qnotch'], hint: 'Update with choco upgrade qnotch.' }] : []),
 ];
 ---
-<dialog class="install" id="install" aria-labelledby="install-title">
+<dialog class="install" id="install" aria-labelledby="install-title" data-placement="install">
   <form method="dialog" class="install-in">
     <h2 class="install-title" id="install-title">Other ways to install</h2>
     <div class:list={['install-body', { single: channels.length === 1 }]}>
@@ -80,6 +80,9 @@ const channels: Channel[] = [
 </dialog>
 
 <script>
+  import { track } from '../scripts/stats';
+  import { PLACEMENTS, type StatsEvents } from '../lib/stats';
+
   const dialog = document.getElementById('install') as HTMLDialogElement;
   const tabs = [...dialog.querySelectorAll<HTMLButtonElement>('[data-install-tab]')];
 
@@ -87,11 +90,16 @@ const channels: Channel[] = [
   document.querySelectorAll<HTMLAnchorElement>('[data-install-open]').forEach(a => a.addEventListener('click', e => {
     e.preventDefault();
     dialog.showModal();
+    const placement = a.closest<HTMLElement>('[data-placement]')?.dataset.placement;
+    track('install_dialog_opened', { placement: PLACEMENTS.find(p => p === placement) ?? 'other' });
   }));
   // A click on the backdrop lands on the dialog itself, outside its form.
   dialog.addEventListener('click', e => { if (e.target === dialog) dialog.close(); });
 
   function select(tab: HTMLButtonElement) {
+    if (tab.getAttribute('aria-selected') !== 'true') {
+      track('install_channel_viewed', { channel: tab.dataset.installTab as StatsEvents['install_channel_viewed']['channel'] });
+    }
     for (const t of tabs) {
       const on = t === tab;
       t.setAttribute('aria-selected', String(on));
@@ -115,6 +123,8 @@ const channels: Channel[] = [
   dialog.querySelectorAll<HTMLButtonElement>('[data-copy]').forEach(button => button.addEventListener('click', async () => {
     try {
       await navigator.clipboard.writeText(button.dataset.copy!);
+      const channel = button.dataset.for ?? button.closest('.install-panel')?.id.replace('install-', '');
+      track('install_command_copied', { channel: channel as StatsEvents['install_command_copied']['channel'] });
     } catch {
       // No clipboard access (an insecure origin or a denied permission): select the command instead.
       const panel = button.dataset.for ? document.getElementById(`install-${button.dataset.for}`) : button.closest('.install-panel');

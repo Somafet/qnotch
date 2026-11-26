@@ -8,6 +8,8 @@ import Icon from './Icon.astro';
 </button>
 
 <script>
+  import { track } from '../scripts/stats';
+
   const url = location.origin + location.pathname;
   document.querySelectorAll<HTMLButtonElement>('[data-send-link]').forEach(button => {
     const label = button.querySelector<HTMLElement>('[data-send-label]')!;
@@ -20,13 +22,16 @@ import Icon from './Icon.astro';
       if (navigator.share) {
         try {
           await navigator.share({ title: 'QNotch', text: 'QNotch: a free notch for Windows and Mac', url });
+          track('send_link_used', { method: 'share' });
         } catch { /* Closing the share sheet is not an error. */ }
         return;
       }
       try {
         await navigator.clipboard.writeText(url);
+        track('send_link_used', { method: 'copy' });
         say('Link copied');
       } catch {
+        track('send_link_used', { method: 'mailto' }, true);
         location.href = `mailto:?subject=QNotch&body=${encodeURIComponent(url)}`;
       }
     });
