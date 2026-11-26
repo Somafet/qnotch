@@ -1,37 +1,52 @@
 ---
 import Icon from './Icon.astro';
 // Shown on phones only (Base.astro sets <html data-phone>): QNotch runs on computers, so the useful thing a
-// phone can do is hand the page to one. Opens the share sheet, or copies the link where there is none.
+// phone can do is hand the page to one. Send opens the share sheet; Copy link skips it, which is quicker in an
+// in-app browser such as ChatGPT's. Without a share sheet Send copies too, so Copy link hides.
 ---
-<button type="button" class="btn btn-primary on-phone" data-send-link>
+<button type="button" class="btn btn-primary on-phone" data-send-link="send">
   <Icon name="external" /><span data-send-label>Send the link to my computer</span>
+</button>
+<button type="button" class="btn btn-ghost on-phone" data-send-link="copy">
+  <Icon name="link" /><span data-send-label>Copy link</span>
 </button>
 
 <script>
+  import { PLACEMENTS } from '../lib/stats';
   import { track } from '../scripts/stats';
 
   const url = location.origin + location.pathname;
+  const canShare = typeof navigator.share === 'function';
   document.querySelectorAll<HTMLButtonElement>('[data-send-link]').forEach(button => {
+    const kind = button.dataset.sendLink === 'copy' ? 'copy' : 'send';
+    if (kind === 'copy' && !canShare) return button.remove();
+    const raw = button.closest<HTMLElement>('[data-placement]')?.dataset.placement;
+    const placement = PLACEMENTS.find(p => p === raw) ?? 'other';
     const label = button.querySelector<HTMLElement>('[data-send-label]')!;
     const original = label.textContent!;
     const say = (text: string) => {
       label.textContent = text;
       setTimeout(() => (label.textContent = original), 2400);
     };
+    const used = (method: 'share' | 'copy' | 'mailto', outcome: 'done' | 'closed') =>
+      track('send_link_used', { button: kind, method, outcome, placement }, method === 'mailto');
+
     button.addEventListener('click', async () => {
-      if (navigator.share) {
+      if (kind === 'send' && canShare) {
         try {
           await navigator.share({ title: 'QNotch', text: 'QNotch: a free notch for Windows and Mac', url });
-          track('send_link_used', { method: 'share' });
-        } catch { /* Closing the share sheet is not an error. */ }
-        return;
+          return used('share', 'done');
+        } catch (e) {
+          // Closing the share sheet is not an error. Any other failure falls through to copying.
+          if ((e as DOMException).name === 'AbortError') return used('share', 'closed');
+        }
       }
       try {
         await navigator.clipboard.writeText(url);
-        track('send_link_used', { method: 'copy' });
+        used('copy', 'done');
         say('Link copied');
       } catch {
-        track('send_link_used', { method: 'mailto' }, true);
+        used('mailto', 'done');
         location.href = `mailto:?subject=QNotch&body=${encodeURIComponent(url)}`;
       }
     });
