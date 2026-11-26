@@ -5,6 +5,21 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
 <title>QNotch for Mac</title>
 <link>https://github.com/Somafet/qnotch</link>
 <item>
+<title>QNotch 0.7.1</title>
+<pubDate>Thu, 26 Nov 2026 09:29:29 GMT</pubDate>
+<sparkle:version>16</sparkle:version>
+<sparkle:shortVersionString>0.7.1</sparkle:shortVersionString>
+<sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+<sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+<sparkle:fullReleaseNotesLink>https://github.com/Somafet/qnotch/releases/tag/macos-v0.7.1</sparkle:fullReleaseNotesLink>
+<description sparkle:format="markdown">## What's Changed
+* Mac: fix crash when opening the Calculator tab by @Somafet in https://github.com/Somafet/qnotch/pull/149
+
+
+**Full Changelog**: https://github.com/Somafet/qnotch/compare/macos-v0.7.0...macos-v0.7.1</description>
+<enclosure url="https://github.com/Somafet/qnotch/releases/download/macos-v0.7.1/QNotch-macos-arm64.zip" length="6734751" type="application/octet-stream" sparkle:edSignature="dgqLD2GmtqYcgRRtAT2byqYI7uAgqjOnRiiQJfq/simbfXi96xFJk4YIjHaD7R0SAE/ELeV7yvMzaKtXhbyhCQ=="/>
+</item>
+<item>
 <title>QNotch 0.7.0</title>
 <pubDate>Wed, 25 Nov 2026 23:12:43 GMT</pubDate>
 <sparkle:version>15</sparkle:version>
@@ -266,6 +281,6 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
 </channel>
 </rss>
 <!-- sparkle-signatures:
-edSignature: TI5TiND/0D+jaTVnuM/nV8yjpujLoGTFNjOM0CKgexwrXs70IeBnYvdPnrUJHx68hgW+H/q51ZUemeRAQhRtDw==
-length: 20799
+edSignature: Z0tA84UA+EqIQ8nswoHE4yhD15D1RNA3aqlvQIlps8XjCBggK0rXUnqtoCL5vldwLorYyCign3fbcB2akffqBA==
+length: 21783
 -->
