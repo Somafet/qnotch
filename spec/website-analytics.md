@@ -53,7 +53,7 @@ posthog-js adds its standard properties: URL and path, referrer, `utm_*` campaig
 | `os_switched` | `to` `win`/`mac`; `method` `switch` (the Windows/Mac switch on `/`), `link` ("Also on Mac/Windows" on `/`), `page` (the switch on `/windows/` or `/mac/`, which opens the other page) | The page changes platform |
 | `demo_interacted` | `first_control` `pill`/`scenario`/`desktop` | The first pointer press in the demo, or the first hover over its notch, once per page view |
 | `demo_scenario_played` | `scenario` `open`/`agent`/`notify`/`files`/`clipboard`/`search`/`game` | A demo moment chip is clicked |
-| `send_link_used` | `method` `share`/`copy`/`mailto` | The phone-only **Send the link to my computer** button hands the link on |
+| `send_link_used` | `button` `send` (**Send the link to my computer**)/`copy` (**Copy link**); `method` `share`/`copy`/`mailto`; `outcome` `done`/`closed` (the share call ended with `AbortError`: the sheet was closed, or there was nothing to share to); `placement` | A phone-only button that hands the page to a computer is tapped, once the browser reports the share or copy, or just before the email fallback opens |
 | `outbound_clicked` | `target` `github`/`releases`/`issues`/`docs` (a file in the repo)/`sponsor`; optional `placement` | A link to the QNotch repository or GitHub Sponsors is clicked |
 | `faq_opened` | `question`: the question's own words, lowercased and joined with dashes | An FAQ answer is opened |
 | `consent_answered` | `choice` `accept`/`decline` | The banner is answered with a different choice than before |

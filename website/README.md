@@ -30,7 +30,7 @@ npm run build    # static site in dist/
 | `src/pages/developers.astro` + `src/components/OpenSource.astro` | `/developers/`: extensions, the five slots, the source layout, contributing, the script interface |
 | `src/lib/guides.ts` + `src/pages/guides/` + `src/layouts/Guide.astro` | The guides at `/guides/`. Add an entry to the list and a page with the same slug; the index, footer and `llms.txt` pick it up |
 | `src/components/SiteHeader.astro` + `SiteFooter.astro` | The header and footer every page except the privacy policy and 404 shares |
-| `src/components/SendLink.astro` | The phone-only button that sends the page to a computer |
+| `src/components/SendLink.astro` | The phone-only buttons that send or copy the page's link for a computer |
 | `src/lib/stats.ts` + `src/scripts/stats.ts` | Visit counting with PostHog: the fixed list of events and values, and the loader that sends them. [The website analytics spec](../spec/website-analytics.md) is the contract |
 | `src/components/ConsentBanner.astro` | The cookie question on every page, and the Cookie settings links that reopen it |
 | `edge/` | The Cloudflare Worker on `qnot.ch/qn/*` that passes events on to PostHog. [Its README](edge/README.md) covers deploying it |

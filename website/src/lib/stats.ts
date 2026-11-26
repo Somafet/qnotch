@@ -19,7 +19,7 @@ export interface StatsEvents {
   os_switched: { to: 'win' | 'mac'; method: 'switch' | 'link' | 'page' };
   demo_interacted: { first_control: 'pill' | 'scenario' | 'desktop' };
   demo_scenario_played: { scenario: (typeof SCENARIOS)[number] };
-  send_link_used: { method: 'share' | 'copy' | 'mailto' };
+  send_link_used: { button: 'send' | 'copy'; method: 'share' | 'copy' | 'mailto'; outcome: 'done' | 'closed'; placement: Placement };
   outbound_clicked: { target: (typeof OUTBOUND_TARGETS)[number]; placement?: Placement };
   faq_opened: { question: string };
   consent_answered: { choice: 'accept' | 'decline' };
