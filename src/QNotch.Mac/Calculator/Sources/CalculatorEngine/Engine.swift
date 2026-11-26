@@ -5,7 +5,7 @@ enum CalculatorEngine {
     private static let bundleName = "QNotchCalculator_CalculatorEngine.bundle"
     /// The engine's resource bundle: inside the app's Contents/Resources (where build.sh puts it), else SwiftPM's
     /// own location (tests, `swift run`). `Bundle.module` alone would look beside the .app, not inside it.
-    private static let bundle: Bundle = {
+    static let bundle: Bundle = {
         for base in [Bundle.main.resourceURL, Bundle.main.bundleURL].compactMap({ $0 }) {
             if let found = Bundle(url: base.appendingPathComponent(bundleName)) { return found }
         }

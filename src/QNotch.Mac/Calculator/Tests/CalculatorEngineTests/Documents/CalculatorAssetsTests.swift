@@ -18,6 +18,17 @@ final class CalculatorAssetsTests: XCTestCase {
         XCTAssertFalse(notices.contains("AvalonEdit")) // The Mac engine ships no editor component.
     }
 
+    /// In the packaged app SwiftPM's `Bundle.module` looks beside QNotch.app and then in the build machine's .build folder, so it
+    /// traps on a user's Mac (opening the Calculator tab crashed 0.7.0). Tests can't see that because the .build folder exists here,
+    /// so check that every resource read goes through `CalculatorEngine.bundle`, which also looks in Contents/Resources.
+    func testResourcesAreReadThroughTheAppAwareBundle() throws {
+        let sources = Fixtures.repositoryRoot.appendingPathComponent("src/QNotch.Mac/Calculator/Sources/CalculatorEngine")
+        let files = FileManager.default.enumerator(at: sources, includingPropertiesForKeys: nil)!.compactMap { $0 as? URL }.filter { $0.pathExtension == "swift" }
+        XCTAssertFalse(files.isEmpty)
+        let users = try files.filter { try String(contentsOf: $0, encoding: .utf8).contains("Bundle.module") }.map(\.lastPathComponent)
+        XCTAssertEqual(["Engine.swift"], users, "Only CalculatorEngine.bundle may fall back to Bundle.module")
+    }
+
     func testAssetsAreWrittenOnDemandAndOnlyWhenChanged() throws {
         let viewer = try CalculatorAssets.writeShareViewer(directory)
         XCTAssertEqual(TestFiles.path(directory, "ShareViewer", "index.html"), viewer)
