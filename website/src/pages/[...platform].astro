@@ -2,6 +2,7 @@
 import Base from '../layouts/Base.astro';
 import Icon from '../components/Icon.astro';
 import Demo from '../components/Demo.astro';
+import HeroBackdrop from '../components/HeroBackdrop.astro';
 import Features from '../components/Features.astro';
 import ExtendTeaser from '../components/ExtendTeaser.astro';
 import SiteHeader from '../components/SiteHeader.astro';
@@ -224,6 +225,7 @@ const jsonLd = {
 
   <main id="top">
     <section class="hero">
+      <HeroBackdrop />
       <div class="wrap center">
         <h1>
           {shows('win') && (pin
@@ -386,7 +388,12 @@ const jsonLd = {
 </script>
 
 <style>
-  .hero { padding-top: clamp(32px, 5vw, 64px); padding-bottom: clamp(64px, 9vw, 120px); }
+  .hero {
+    position: relative;
+    isolation: isolate;
+    padding-top: clamp(32px, 5vw, 64px);
+    padding-bottom: clamp(64px, 9vw, 120px);
+  }
 
   h1 {
     font-size: clamp(42px, 7.2vw, 92px);
@@ -422,6 +429,9 @@ const jsonLd = {
     font-size: 13.5px;
     color: var(--ink-3);
   }
+
+  /* The hero's fine print sits on the backdrop's glow: one step more contrast. */
+  .hero .fine { color: var(--ink-2); }
 
   .demo-wrap {
     margin-top: clamp(28px, 4vw, 44px);

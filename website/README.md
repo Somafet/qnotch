@@ -24,6 +24,7 @@ npm run build    # static site in dist/
 | `src/components/Demo.astro` + `src/scripts/demo.ts` | The notch itself (pill, panel, tabs, terminal, scenarios) |
 | `src/scripts/desktop.ts` + `src/styles/desktop.css` | The fake desktop around it: windows, taskbar, Start, calendar, tray menu, Explorer, Music, browser upload |
 | `src/styles/mac.css` | The Mac version of that desktop: menu bar, Dock, traffic lights, and the notch's wings around the camera housing |
+| `src/components/HeroBackdrop.astro` + `src/scripts/backdrop.ts` | The hero's backdrop: a WebGL glow from behind the demo, in its wallpaper's colors, with an ordered dither and grain. Colors and dither levels are custom properties per theme and OS; without WebGL a CSS gradient stands in |
 | `src/components/OsSwitch.astro` + `src/scripts/platform.ts` | The Windows/Mac switch and the shared platform state |
 | `src/components/Features.astro` | The feature grid |
 | `src/components/ExtendTeaser.astro` | The landing page's short extensions section, linking to `/developers/` |

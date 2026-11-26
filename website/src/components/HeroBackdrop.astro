@@ -1,0 +1,92 @@
+---
+// The hero's backdrop: light blooming from the notch, in the demo wallpaper's colors. A WebGL shader draws a
+// slowly drifting, domain-warped glow (src/scripts/backdrop.ts), drawn with an ordered dither; grain sits on top. Without WebGL the same
+// colors show as a static gradient. The glow is centered on [data-backdrop-focus], the top edge of the demo.
+---
+<div class="backdrop" aria-hidden="true" data-backdrop>
+  <canvas></canvas>
+  <div class="grain"></div>
+</div>
+
+<script>
+  import { mountBackdrop } from '../scripts/backdrop';
+  mountBackdrop(document.querySelector<HTMLElement>('[data-backdrop]')!);
+</script>
+
+<style>
+  .backdrop {
+    /* Palette: Windows wallpaper by default, sunset on Mac. Light theme keeps the hues, softer. */
+    --hb-1: #6ea2ff;
+    --hb-2: #a48dff;
+    --hb-3: #c4defc;
+    --hb-strength: 0.7;
+    --hb-grain: 0.08;
+    --hb-dither: 5; /* ordered dither: tone levels in the glow, 0 for a smooth gradient */
+
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+    background:
+      radial-gradient(60% 42% at 50% var(--hb-y, 62%), color-mix(in srgb, var(--hb-1) calc(var(--hb-strength) * 55%), transparent), transparent 72%),
+      radial-gradient(30% 30% at 32% calc(var(--hb-y, 62%) + 4%), color-mix(in srgb, var(--hb-2) calc(var(--hb-strength) * 40%), transparent), transparent 70%);
+  }
+
+  :global(:root[data-os='mac']) .backdrop {
+    --hb-1: #ffa27e;
+    --hb-2: #c78bff;
+    --hb-3: #ffd79c;
+  }
+
+  :global(:root[data-theme='dark']) .backdrop {
+    --hb-1: #3b7cff;
+    --hb-2: #7a5cff;
+    --hb-3: #8ec0ff;
+    --hb-strength: 1;
+    --hb-grain: 0.12;
+  }
+
+  :global(:root[data-theme='dark'][data-os='mac']) .backdrop {
+    --hb-1: #d8653c;
+    --hb-2: #9a4fe6;
+    --hb-3: #ffc46e;
+    --hb-strength: 0.85;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :global(:root:not([data-theme='light'])) .backdrop {
+      --hb-1: #3b7cff;
+      --hb-2: #7a5cff;
+      --hb-3: #8ec0ff;
+      --hb-strength: 1;
+      --hb-grain: 0.12;
+    }
+
+    :global(:root:not([data-theme='light'])[data-os='mac']) .backdrop {
+      --hb-1: #d8653c;
+      --hb-2: #9a4fe6;
+      --hb-3: #ffc46e;
+      --hb-strength: 0.85;
+    }
+  }
+
+  canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transition: opacity 900ms cubic-bezier(0.23, 1, 0.32, 1);
+  }
+
+  canvas[data-ready] { opacity: 1; }
+
+  .grain {
+    position: absolute;
+    inset: 0;
+    opacity: var(--hb-grain);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1.6 -.3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    mix-blend-mode: overlay;
+  }
+</style>
