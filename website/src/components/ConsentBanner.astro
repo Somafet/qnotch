@@ -21,7 +21,6 @@
   banner.querySelectorAll<HTMLButtonElement>('[data-consent]').forEach(b => b.addEventListener('click', () => {
     setConsent(b.dataset.consent as 'accept' | 'decline');
     banner.hidden = true;
-    document.dispatchEvent(new Event('qnotch:consent'));
   }));
 
   // Cookie settings links exist only where the site counts visits.

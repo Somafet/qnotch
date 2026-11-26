@@ -20,9 +20,9 @@ import Icon from './Icon.astro';
     };
     button.addEventListener('click', async () => {
       if (navigator.share) {
-        track('send_link_used', { method: 'share' });
         try {
           await navigator.share({ title: 'QNotch', text: 'QNotch: a free notch for Windows and Mac', url });
+          track('send_link_used', { method: 'share' });
         } catch { /* Closing the share sheet is not an error. */ }
         return;
       }

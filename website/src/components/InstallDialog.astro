@@ -121,10 +121,10 @@ const channels: Channel[] = [
   });
 
   dialog.querySelectorAll<HTMLButtonElement>('[data-copy]').forEach(button => button.addEventListener('click', async () => {
-    const channel = button.dataset.for ?? button.closest('.install-panel')?.id.replace('install-', '');
-    track('install_command_copied', { channel: channel as StatsEvents['install_command_copied']['channel'] });
     try {
       await navigator.clipboard.writeText(button.dataset.copy!);
+      const channel = button.dataset.for ?? button.closest('.install-panel')?.id.replace('install-', '');
+      track('install_command_copied', { channel: channel as StatsEvents['install_command_copied']['channel'] });
     } catch {
       // No clipboard access (an insecure origin or a denied permission): select the command instead.
       const panel = button.dataset.for ? document.getElementById(`install-${button.dataset.for}`) : button.closest('.install-panel');
