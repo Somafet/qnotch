@@ -10,7 +10,7 @@ enum CalculatorAssets {
     /// A bundled asset by its path under Resources, e.g. "Assets/Help.html".
     static func bytes(_ resource: String) throws -> [UInt8] {
         let folder = ("Resources/" + resource as NSString).deletingLastPathComponent
-        guard let url = Bundle.module.url(forResource: (resource as NSString).lastPathComponent, withExtension: nil, subdirectory: folder) else {
+        guard let url = CalculatorEngine.bundle.url(forResource: (resource as NSString).lastPathComponent, withExtension: nil, subdirectory: folder) else {
             throw DocumentError.fileNotFound("Missing resource " + resource)
         }
         return try NetFile.readAll(url.path)
