@@ -33,6 +33,9 @@ final class AnalyticsTests: XCTestCase {
             XCTAssertTrue(actions.isSubset(of: Set(modules[module] ?? [])), module)
         }
         XCTAssertFalse(AnalyticsCatalog.accepts(module: "notes", action: "private note text", surface: "ui"))
+        // Every module can be named: lifecycle modules and tab events drop an id the catalog lacks.
+        let ids = ModuleList.all.map(\.id)
+        XCTAssertEqual(AnalyticsCatalog.moduleTargets(ids).count, Set(ids).count, "a module is missing from the analytics catalog")
     }
     func testIdentityMatchesSharedSHA256Vectors() throws {
         let vectors = try XCTUnwrap(try fixture("identity-v1.json")["vectors"] as? [[String: String]])

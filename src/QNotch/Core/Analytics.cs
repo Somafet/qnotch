@@ -120,7 +120,7 @@ internal sealed class Analytics : IDisposable
         }
     }
 
-    static string? Canonical(string? id) => id switch { "timer" => "pomodoro", "note" => "notes", "filetray" => "files", "colorpicker" => "color_picker", _ => id };
+    internal static string? Canonical(string? id) => id switch { "timer" => "pomodoro", "note" => "notes", "filetray" => "files", "colorpicker" => "color_picker", _ => id };
 
     internal void Record(string module, string action, string surface = "ui", string? target = null, bool? enabled = null)
     {
