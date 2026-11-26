@@ -16,13 +16,13 @@ Running several Claude Code or Codex sessions? QNotch shows each one by title an
 
 It also lists the dev servers and test runners your agents started, including any left running after a session ended, each with a Stop button.
 
-![The pill changes to "api needs you", then the Agents tab opens with every session and its status](docs/images/features/agents.gif)
+![The pill goes from "2 working" to "api needs you", then the Agents tab opens with every session and its status](docs/images/features/agents.gif)
 
 ## Get notified by your scripts
 
 Post to the notch from the command line or local HTTP, add buttons, and wait for the answer. [Notification reference](docs/notifications.md).
 
-![A build notification appears in the pill, then the Notifications tab shows it with action buttons](docs/images/features/notifications.gif)
+![The pill shows a Claude Code permission request, then the Notifications tab lists it with Approve and Deny buttons, above a build and a deploy notification](docs/images/features/notifications.gif)
 
 ## Watch your AI limits
 
