@@ -8,13 +8,16 @@ public enum DiagnosticMode { None, Snapshot, SmokeTest, Measure, DebugControl }
 /// </summary>
 public sealed record DiagnosticOptions(DiagnosticMode Mode, string? Dir, string? DataDir, IReadOnlyList<string> Only, string? Appearance)
 {
+    /// <summary><c>--language &lt;code&gt;</c>: the interface language for this run. Render-and-exit modes default to English so their checks see fixed text.</summary>
+    public string? Language { get; init; }
+
     /// <summary>True for the modes that render and exit: no mutex, demo data, nothing saved.</summary>
     public bool RunsOnce => Mode is DiagnosticMode.Snapshot or DiagnosticMode.SmokeTest or DiagnosticMode.Measure;
 
     public static DiagnosticOptions Parse(IReadOnlyList<string> args)
     {
         var mode = DiagnosticMode.None;
-        string? dir = null, dataDir = null, appearance = null;
+        string? dir = null, dataDir = null, appearance = null, language = null;
         var only = new List<string>();
         for (var i = 0; i < args.Count; i++)
         {
@@ -28,10 +31,11 @@ public sealed record DiagnosticOptions(DiagnosticMode Mode, string? Dir, string?
                 case "--data-dir": dataDir = Full(Next()); break;
                 case "--only": only.AddRange((Next() ?? "").Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)); break;
                 case "--appearance": appearance = Next()?.ToLowerInvariant() is { } a && a is "light" or "dark" ? a : null; break;
+                case "--language": language = Next(); break;
                 case "light": appearance ??= "light"; break;
             }
         }
-        return new(mode, dir, dataDir, only, appearance);
+        return new(mode, dir, dataDir, only, appearance) { Language = language };
     }
 
     /// <summary>Whether a view's file name without <c>.png</c> passes <c>--only</c> (<c>*</c> matches any run of characters).</summary>

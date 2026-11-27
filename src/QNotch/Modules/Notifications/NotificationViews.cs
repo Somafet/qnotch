@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using QNotch.Core;
 using QNotch.Shell;
 using QNotch.Theme;
 
@@ -26,8 +27,8 @@ internal static class NotificationSegments
         p.Children.Add(bell);
         p.Children.Add(count);
         var muted = UiKit.Glyph(NotificationMuteViews.MutedGlyph, 12, "WarningBrush");
-        muted.ToolTip = "Notifications muted";
-        System.Windows.Automation.AutomationProperties.SetName(muted, "Notifications muted");
+        muted.ToolTip = L.T("Notifications muted");
+        System.Windows.Automation.AutomationProperties.SetName(muted, L.T("Notifications muted"));
         p.Children.Add(muted);
         void Sync()
         {
@@ -79,7 +80,7 @@ internal sealed class NotificationsCard : Grid
     readonly NotificationsState _st;
     readonly IShell _shell;
     readonly StackPanel _rows = new() { VerticalAlignment = VerticalAlignment.Top };
-    readonly FrameworkElement _empty = Placeholder.Create(NotifyIcons.Bell, "", "No notifications.");
+    readonly FrameworkElement _empty = Placeholder.Create(NotifyIcons.Bell, "", L.T("No notifications."));
 
     public NotificationsCard(NotificationsState st, IShell shell)
     {

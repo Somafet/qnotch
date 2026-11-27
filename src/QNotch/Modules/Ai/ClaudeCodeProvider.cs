@@ -21,7 +21,7 @@ internal sealed class ClaudeCodeProvider : IUsageProvider
 
     static readonly (string Key, string Label)[] Windows =
     [
-        ("five_hour", "5-hour"), ("seven_day", "Weekly"), ("seven_day_opus", "Weekly Opus"), ("seven_day_sonnet", "Weekly Sonnet"),
+        ("five_hour", L.N("5-hour")), ("seven_day", L.N("Weekly")), ("seven_day_opus", L.N("Weekly Opus")), ("seven_day_sonnet", L.N("Weekly Sonnet")),
     ];
 
     /// <summary>The newest version the native installer has unpacked; a known recent one when Claude Code came from npm.</summary>
@@ -54,7 +54,7 @@ internal sealed class ClaudeCodeProvider : IUsageProvider
         var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         var main = Environment.GetEnvironmentVariable("CLAUDE_CONFIG_DIR");
         if (string.IsNullOrWhiteSpace(main)) main = Path.Combine(home, ".claude");
-        var list = new List<ClaudeCodeProvider> { new(main, "claude", "Default") };
+        var list = new List<ClaudeCodeProvider> { new(main, "claude", L.N("Default")) };
         if (demo) return list;
         try
         {
@@ -72,7 +72,7 @@ internal sealed class ClaudeCodeProvider : IUsageProvider
     public async Task<UsageResult> FetchAsync(CancellationToken ct)
     {
         var file = Path.Combine(_dir, ".credentials.json");
-        if (!File.Exists(file)) return UsageResult.Unavailable("Not signed in. Sign in to Claude Code to see usage.", "not_signed_in");
+        if (!File.Exists(file)) return UsageResult.Unavailable(L.N("Not signed in. Sign in to Claude Code to see usage."), "not_signed_in");
 
         string token, plan;
         try
@@ -81,13 +81,13 @@ internal sealed class ClaudeCodeProvider : IUsageProvider
             using var doc = await JsonDocument.ParseAsync(fs, cancellationToken: ct);
             if (!doc.RootElement.TryGetProperty("claudeAiOauth", out var oauth) || oauth.ValueKind != JsonValueKind.Object
                 || oauth.GetStringOrNull("accessToken") is not { Length: > 0 } t)
-                return UsageResult.Unavailable("Signed in without a subscription. Usage needs a Claude Pro or Max login.", "subscription_required");
+                return UsageResult.Unavailable(L.N("Signed in without a subscription. Usage needs a Claude Pro or Max login."), "subscription_required");
             token = t;
             plan = PlanName(oauth.GetStringOrNull("subscriptionType"), oauth.GetStringOrNull("rateLimitTier"));
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            return UsageResult.Unavailable("Claude Code credentials could not be read.", "credentials_unreadable");
+            return UsageResult.Unavailable(L.N("Claude Code credentials could not be read."), "credentials_unreadable");
         }
 
         using var req = new HttpRequestMessage(HttpMethod.Get, Url);
@@ -98,13 +98,13 @@ internal sealed class ClaudeCodeProvider : IUsageProvider
         using var resp = await Http.Value.SendAsync(req, HttpCompletionOption.ResponseContentRead, ct);
 
         if (resp.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
-            return UsageResult.Unavailable("Sign-in expired. Open Claude Code once to renew it.", "sign_in_expired");
+            return UsageResult.Unavailable(L.N("Sign-in expired. Open Claude Code once to renew it."), "sign_in_expired");
         if (resp.StatusCode == HttpStatusCode.TooManyRequests)
-            return UsageResult.Unavailable("Rate limited by Anthropic. Will retry on the next refresh.", "rate_limited");
+            return UsageResult.Unavailable(L.N("Rate limited by Anthropic. Will retry on the next refresh."), "rate_limited");
         if (!resp.IsSuccessStatusCode)
         {
             Log.Warn($"Claude usage endpoint returned {(int)resp.StatusCode}");
-            return UsageResult.Unavailable($"Usage endpoint returned HTTP {(int)resp.StatusCode}.", "provider_error");
+            return UsageResult.Unavailable(L.N("Usage endpoint returned HTTP {0}."), "provider_error", (int)resp.StatusCode);
         }
 
         using var body = JsonDocument.Parse(await resp.Content.ReadAsStringAsync(ct));
@@ -130,7 +130,7 @@ internal sealed class ClaudeCodeProvider : IUsageProvider
             else if (eligible.ValueKind == JsonValueKind.True && ce.TryGetProperty("grants", out var grants) && grants.ValueKind == JsonValueKind.Array)
                 bankedStatus = grants.GetArrayLength() == 0 ? "none" : banked is { Count: > 0 } ? "available" : "unknown";
         }
-        return (list.Count > 0 ? UsageResult.Ok(list, plan, checkedAt, banked) : UsageResult.Unavailable("Unexpected response from the usage endpoint.", "invalid_response"))
+        return (list.Count > 0 ? UsageResult.Ok(list, plan, checkedAt, banked) : UsageResult.Unavailable(L.N("Unexpected response from the usage endpoint."), "invalid_response"))
             with { CheckedAt = checkedAt, BankedStatus = bankedStatus, BankedCheckedAt = checkedAt };
     }
 

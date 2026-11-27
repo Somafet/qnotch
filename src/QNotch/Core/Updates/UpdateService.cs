@@ -45,8 +45,8 @@ internal sealed class UpdateService : IDisposable
         {
             CurrentVersion = UpdateRelease.DisplayVersion(_installed),
             NeedsPreferenceChoice = !settings.UpdateChecksChoiceMade,
-            Status = settings.CheckForUpdates ? "Automatic checks are on. QNotch will check shortly after startup."
-                : "Automatic checks are off. You can check manually at any time.",
+            Status = settings.CheckForUpdates ? L.T("Automatic checks are on. QNotch will check shortly after startup.")
+                : L.T("Automatic checks are off. You can check manually at any time."),
         };
         _timer = new Timer(_ =>
         {
@@ -57,7 +57,7 @@ internal sealed class UpdateService : IDisposable
         {
             // Windows owns the package folder and the Store installs updates: no GitHub checks, no choice to ask for.
             State.NeedsPreferenceChoice = false;
-            State.Status = "The Microsoft Store keeps this copy of QNotch up to date.";
+            State.Status = L.T("The Microsoft Store keeps this copy of QNotch up to date.");
             return;
         }
         if (_readOnly)
@@ -65,7 +65,7 @@ internal sealed class UpdateService : IDisposable
             settings.CheckForUpdates = true;
             State.NeedsPreferenceChoice = true;
             State.AvailableVersion = "0.5.0";
-            State.Status = "A new version is ready. QNotch will restart after you choose Update and restart.";
+            State.Status = L.T("A new version is ready. QNotch will restart after you choose Update and restart.");
             return;
         }
         try
@@ -112,7 +112,7 @@ internal sealed class UpdateService : IDisposable
         {
             _timer.Change(Timeout.Infinite, Timeout.Infinite);
             if (_automaticCheck) _operation?.Cancel();
-            if (!State.HasUpdate && !State.IsBusy) State.Status = "Automatic checks are off. You can check manually at any time.";
+            if (!State.HasUpdate && !State.IsBusy) State.Status = L.T("Automatic checks are off. You can check manually at any time.");
         }
     }
 
@@ -126,7 +126,7 @@ internal sealed class UpdateService : IDisposable
         if (_disposed || _readOnly || StoreManaged || State.IsBusy || (automatic && !_settings.CheckForUpdates)) return;
         _timer.Change(Timeout.Infinite, Timeout.Infinite);
         State.IsBusy = true;
-        State.Status = "Checking GitHub for updates…";
+        State.Status = L.T("Checking GitHub for updates…");
         _automaticCheck = automatic;
         using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
         cancellation.CancelAfter(TimeSpan.FromSeconds(20));
@@ -138,19 +138,19 @@ internal sealed class UpdateService : IDisposable
             cancellation.Token.ThrowIfCancellationRequested();
             _release = release;
             State.AvailableVersion = release is null ? "" : UpdateRelease.DisplayVersion(release.Version);
-            State.Status = release is null ? $"You're up to date. Checked at {DateTime.Now:HH:mm}."
-                : "A new version is ready. QNotch will restart after you choose Update and restart.";
+            State.Status = release is null ? L.F("You're up to date. Checked at {0}.", DateTime.Now.ToString("HH:mm"))
+                : L.T("A new version is ready. QNotch will restart after you choose Update and restart.");
             if (release is not null) UpdateAvailable?.Invoke();
         }
         catch (OperationCanceledException)
         {
             if (!_disposed) State.Status = automatic && !_settings.CheckForUpdates
-                ? "Automatic checks are off." : "The update check timed out. Try again when you're online.";
+                ? L.T("Automatic checks are off.") : L.T("The update check timed out. Try again when you're online.");
         }
         catch (Exception ex)
         {
             Log.Warn("Checking for QNotch updates failed", ex);
-            State.Status = "Could not check for updates. " + ex.Message;
+            State.Status = L.F("Could not check for updates. {0}", ex.Message);
         }
         finally
         {
@@ -164,7 +164,7 @@ internal sealed class UpdateService : IDisposable
     {
         if (_disposed || _readOnly || StoreManaged || !State.CanUpdate || _release is not { } release) return;
         State.IsBusy = true; State.IsDownloading = true; State.DownloadPercent = 0;
-        State.Status = "Downloading the update…";
+        State.Status = L.T("Downloading the update…");
         _timer.Change(Timeout.Infinite, Timeout.Infinite);
         using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
         cancellation.CancelAfter(TimeSpan.FromMinutes(5));
@@ -173,7 +173,7 @@ internal sealed class UpdateService : IDisposable
         var handedOff = false;
         try
         {
-            var target = Environment.ProcessPath ?? throw new IOException("Could not locate QNotch.exe.");
+            var target = Environment.ProcessPath ?? throw new IOException(L.T("Could not locate QNotch.exe."));
             directory = Path.Combine(Path.GetDirectoryName(target)!, ".qnotch-update-" + Guid.NewGuid().ToString("N"));
             var progress = new Progress<int>(p => { if (!_disposed) State.DownloadPercent = p; });
             await Task.Run(async () =>
@@ -181,29 +181,29 @@ internal sealed class UpdateService : IDisposable
                 Directory.CreateDirectory(directory);
                 await new UpdateClient(_http).DownloadAsync(release, directory, progress, cancellation.Token);
                 using var resource = typeof(UpdateService).Assembly.GetManifestResourceStream("QNotch.Core.Updates.ApplyUpdate.ps1")
-                    ?? throw new IOException("The update helper is missing.");
+                    ?? throw new IOException(L.T("The update helper is missing."));
                 await using var file = File.Create(Path.Combine(directory, "apply.ps1"));
                 await resource.CopyToAsync(file, cancellation.Token);
             });
             State.IsDownloading = false;
-            State.Status = "Restarting QNotch to install the update…";
+            State.Status = L.T("Restarting QNotch to install the update…");
             await StartHelperAsync(target, directory, release.Tag, cancellation.Token);
             handedOff = true;
             _shutdown(); // OnExit flushes settings and releases the single-instance mutex.
         }
         catch (OperationCanceledException)
         {
-            if (!_disposed) State.Status = "The update download timed out. Nothing was installed. Try again.";
+            if (!_disposed) State.Status = L.T("The update download timed out. Nothing was installed. Try again.");
         }
         catch (UnauthorizedAccessException ex)
         {
             Log.Warn("The QNotch install folder is not writable", ex);
-            State.Status = "Could not write to the install folder. Move QNotch to a folder you can write to, then try again.";
+            State.Status = L.T("Could not write to the install folder. Move QNotch to a folder you can write to, then try again.");
         }
         catch (Exception ex)
         {
             Log.Warn("Installing the QNotch update failed", ex);
-            State.Status = "Could not install the update. " + ex.Message;
+            State.Status = L.F("Could not install the update. {0}", ex.Message);
         }
         finally
         {
@@ -231,17 +231,17 @@ internal sealed class UpdateService : IDisposable
             Path.Combine(directory, "apply.ps1"), "-Target", target, "-WorkDir", directory, "-ParentId", parent.Id.ToString(),
             "-ParentStarted", parent.StartTime.ToUniversalTime().Ticks.ToString(), "-ResultFile", ResultFile, "-Version", version })
             info.ArgumentList.Add(argument);
-        using var helper = Process.Start(info) ?? throw new IOException("Could not start the update helper.");
+        using var helper = Process.Start(info) ?? throw new IOException(L.T("Could not start the update helper."));
         try
         {
             for (var i = 0; i < 100; i++)
             {
                 cancellation.ThrowIfCancellationRequested();
-                if (helper.HasExited) throw new IOException("The update helper could not start. Nothing was installed.");
+                if (helper.HasExited) throw new IOException(L.T("The update helper could not start. Nothing was installed."));
                 if (File.Exists(Path.Combine(directory, "ready"))) return;
                 await Task.Delay(100, cancellation);
             }
-            throw new IOException("The update helper did not respond. Nothing was installed.");
+            throw new IOException(L.T("The update helper did not respond. Nothing was installed."));
         }
         catch
         {

@@ -50,17 +50,17 @@ public sealed partial class AiModule : INotchModule, ICadenceAware
         // Every Claude account is fetched, but they share one row: the dropdown picks which reading it shows.
         var claude = ClaudeCodeProvider.Discover(ctx.Settings.ReadOnly);
         _providers = [.. claude, new CodexProvider()];
-        List<AiAccount> accounts = [.. claude.Select(p => new AiAccount(p.Id, _s.AccountNames.GetValueOrDefault(p.Id) ?? p.Account, p.Dir))];
+        List<AiAccount> accounts = [.. claude.Select(p => new AiAccount(p.Id, _s.AccountNames.GetValueOrDefault(p.Id) ?? L.T(p.Account), p.Dir))];
         var shown = accounts.FirstOrDefault(a => a.Id == _s.ClaudeAccount) ?? accounts[0];
         _claudeId = shown.Id;
         foreach (var p in _providers) _items.TryAdd(Group(p), new AiProviderItem(Group(p), p.Name));
         _items["claude"] = new AiProviderItem("claude", claude[0].Name) { Accounts = accounts, Account = shown, AccountChanged = ShowClaudeAccount };
         ApplyProviderSelection();
         UpdateAppFlags();
-        St.AppsEmptyText = "Looking for AI apps...";
+        St.AppsEmptyText = L.T("Looking for AI apps...");
 
-        ctx.Cards.Register(new CardDescriptor("ai-usage", "AI usage", 40, () => new AiUsageCard(ctx.Shell) { DataContext = St }));
-        ctx.Cards.Register(new CardDescriptor("ai-apps", "AI apps", 70, () => new AiAppsCard { DataContext = St }));
+        ctx.Cards.Register(new CardDescriptor("ai-usage", L.T("AI usage"), 40, () => new AiUsageCard(ctx.Shell) { DataContext = St }));
+        ctx.Cards.Register(new CardDescriptor("ai-apps", L.T("AI apps"), 70, () => new AiAppsCard { DataContext = St }));
         ctx.Tabs.Register(new TabDescriptor("ai", "AI", Glyphs.Robot, 30, () => new AiTab(ctx.Shell) { DataContext = St }));
         ctx.SettingsSections.Register(new SettingsSectionDescriptor("ai", "AI", Glyphs.Robot, 40, () => AiSettingsSection.Create(this, _ctx)));
 
@@ -68,13 +68,13 @@ public sealed partial class AiModule : INotchModule, ICadenceAware
         for (var i = 0; i < AiSettings.SlotCount; i++)
         {
             var slot = i + 1;
-            _keys[i] = ctx.Shortcuts.Add($"ai.slot{slot}", $"Launch AI app {slot}", "The app in that slot (Settings, AI).", $"Alt+{slot}", () => LaunchSlot(slot), 30 + i, enabled: false);
+            _keys[i] = ctx.Shortcuts.Add($"ai.slot{slot}", L.F("Launch AI app {0}", slot), L.T("The app in that slot (Settings, AI)."), $"Alt+{slot}", () => LaunchSlot(slot), 30 + i, enabled: false);
         }
         ctx.Shortcuts.Changed += ApplySlots;
 
-        ctx.Search.Register(new SearchSource("ai-apps", "AI apps", Glyphs.Apps, 60, q => St.Apps
+        ctx.Search.Register(new SearchSource("ai-apps", L.T("AI apps"), Glyphs.Apps, 60, q => St.Apps
             .Where(a => a.Name.Contains(q, StringComparison.OrdinalIgnoreCase))
-            .Select(a => new SearchHit(a.Name, "opens the app", () => Launch(a)))));
+            .Select(a => new SearchHit(a.Name, L.T("opens the app"), () => Launch(a)))));
 
         ctx.Bus.Subscribe<AppsScanned>(OnScanned);
         ctx.Bus.Subscribe<ProviderResult>(OnProviderResult);
@@ -90,8 +90,8 @@ public sealed partial class AiModule : INotchModule, ICadenceAware
     void DemoUsage()
     {
         var now = DateTime.Now;
-        OnProviderResult(new(_claudeId, UsageResult.Ok([new("5-hour", 42, now.AddHours(2.4)), new("Weekly", 18, now.AddDays(3.2))], "Max", now)));
-        OnProviderResult(new("codex", UsageResult.Ok([new("5-hour", 12, now.AddHours(4.1)), new("Weekly", 31, now.AddDays(5.5))], "Plus", now)));
+        OnProviderResult(new(_claudeId, UsageResult.Ok([new(L.N("5-hour"), 42, now.AddHours(2.4)), new(L.N("Weekly"), 18, now.AddDays(3.2))], "Max", now)));
+        OnProviderResult(new("codex", UsageResult.Ok([new(L.N("5-hour"), 12, now.AddHours(4.1)), new(L.N("Weekly"), 31, now.AddDays(5.5))], "Plus", now)));
         OnRefreshDone(new(now));
     }
 
@@ -113,7 +113,7 @@ public sealed partial class AiModule : INotchModule, ICadenceAware
     internal void RenameAccount(AiAccount a, string name)
     { QNotch.Core.Analytics.Track("ai", "rename_account");
         name = name.Trim();
-        if (name.Length == 0) { _s.AccountNames.Remove(a.Id); name = _providers.OfType<ClaudeCodeProvider>().First(p => p.Id == a.Id).Account; }
+        if (name.Length == 0) { _s.AccountNames.Remove(a.Id); name = L.T(_providers.OfType<ClaudeCodeProvider>().First(p => p.Id == a.Id).Account); }
         else _s.AccountNames[a.Id] = name;
         if (a.Name == name) return;
         a.Name = name;
@@ -187,7 +187,7 @@ public sealed partial class AiModule : INotchModule, ICadenceAware
         if (_scanning) return;
         _scanning = true;
         St.IsScanning = true;
-        if (!St.HasApps) St.AppsEmptyText = "Looking for AI apps...";
+        if (!St.HasApps) St.AppsEmptyText = L.T("Looking for AI apps...");
         Changed?.Invoke();
         AppDetector.ScanAsync(_s.Custom.ToList()).ContinueWith(t => _ctx.Bus.Post(new AppsScanned(t.Result)));
     }
@@ -205,7 +205,7 @@ public sealed partial class AiModule : INotchModule, ICadenceAware
             if (d.Icon is not null) item.Icon = d.Icon;
             St.Apps.Add(item);
         }
-        St.AppsEmptyText = "No AI apps found.\nAdd your own in Settings.";
+        St.AppsEmptyText = L.T("No AI apps found.\nAdd your own in Settings.");
         UpdateAppFlags();
         AutoPlace();
         ApplySlots();
@@ -256,7 +256,8 @@ public sealed partial class AiModule : INotchModule, ICadenceAware
             St.Slotted.Clear();
             foreach (var a in slotted) St.Slotted.Add(a);
         }
-        St.HotkeyWarning = conflicts.Count == 0 ? "" : $"{string.Join(", ", conflicts)} already in use, so {(conflicts.Count == 1 ? "it" : "they")} will not launch anything.";
+        St.HotkeyWarning = conflicts.Count == 0 ? "" : conflicts.Count == 1 ? L.F("{0} already in use, so it will not launch anything.", conflicts[0])
+            : L.F("{0} already in use, so they will not launch anything.", string.Join(", ", conflicts));
         Changed?.Invoke();
     }
 
@@ -279,7 +280,7 @@ public sealed partial class AiModule : INotchModule, ICadenceAware
             catch (Exception ex)
             {
                 Log.Warn($"Launching '{app.Name}' failed", ex);
-                _ctx.Bus.Run(() => app.Error = "Could not launch: " + ex.Message);
+                _ctx.Bus.Run(() => app.Error = L.F("Could not launch: {0}", ex.Message));
             }
         });
         if (!_ctx.Shell.IsPinned) _ctx.Shell.ClosePanel();
@@ -328,9 +329,9 @@ public sealed partial class AiModule : INotchModule, ICadenceAware
                     using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(25));
                     r = await p.FetchAsync(cts.Token).WaitAsync(cts.Token);
                 }
-                catch (OperationCanceledException) { r = UsageResult.Unavailable("Timed out. Will retry on the next refresh.", "timeout"); }
-                catch (HttpRequestException) { r = UsageResult.Unavailable("Network unavailable. Will retry on the next refresh.", "network_unavailable"); }
-                catch (Exception ex) { Log.Warn($"Usage provider {p.Id} failed", ex); r = UsageResult.Unavailable("Unexpected error. See the log for details.", "internal_error"); }
+                catch (OperationCanceledException) { r = UsageResult.Unavailable(L.N("Timed out. Will retry on the next refresh."), "timeout"); }
+                catch (HttpRequestException) { r = UsageResult.Unavailable(L.N("Network unavailable. Will retry on the next refresh."), "network_unavailable"); }
+                catch (Exception ex) { Log.Warn($"Usage provider {p.Id} failed", ex); r = UsageResult.Unavailable(L.N("Unexpected error. See the log for details."), "internal_error"); }
                 bus.Post(new ProviderResult(p.Id, r with { CheckedAt = r.CheckedAt ?? DateTime.UtcNow }));
             }));
             bus.Post(new RefreshDone(DateTime.Now));
@@ -349,7 +350,7 @@ public sealed partial class AiModule : INotchModule, ICadenceAware
     {
         _refreshing = false;
         St.IsRefreshing = false;
-        St.LastUpdatedText = "Checked " + AiFormat.When(e.At);
+        St.LastUpdatedText = L.F("Checked {0}", AiFormat.When(e.At));
         if (_refreshAgain) { _refreshAgain = false; RefreshUsage(); }
         else ArmUsageTimer();
     }

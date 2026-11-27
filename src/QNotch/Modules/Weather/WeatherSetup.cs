@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Input;
+using QNotch.Core;
 using QNotch.Theme;
 
 namespace QNotch.Modules.Weather;
@@ -27,13 +28,13 @@ internal static class WeatherSetup
         }
         void ShowPlace(WeatherPlace? p)
         {
-            if (p is null) Status("No place picked", "TextTertiaryBrush");
+            if (p is null) Status(L.T("No place picked"), "TextTertiaryBrush");
             else Status(Label(p), "SuccessBrush");
         }
 
-        var box = new TextBox { Width = 170, MaxLength = 100, ToolTip = "Town or place name" };
-        AutomationProperties.SetName(box, "Find a place");
-        var hint = new TextBlock { Text = "Find a place", IsHitTestVisible = false, Margin = new Thickness(11, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center, FontSize = 12 };
+        var box = new TextBox { Width = 170, MaxLength = 100, ToolTip = L.T("Town or place name") };
+        AutomationProperties.SetName(box, L.T("Find a place"));
+        var hint = new TextBlock { Text = L.T("Find a place"), IsHitTestVisible = false, Margin = new Thickness(11, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center, FontSize = 12 };
         hint.SetResourceReference(TextBlock.ForegroundProperty, "TextTertiaryBrush");
         // The hint steps aside while the box has the caret, so it never sits under it.
         void ShowHint() => hint.Visibility = box.Text.Length == 0 && !box.IsKeyboardFocused ? Visibility.Visible : Visibility.Collapsed;
@@ -43,29 +44,29 @@ internal static class WeatherSetup
         var field = new Grid();
         field.Children.Add(box);
         field.Children.Add(hint);
-        var search = new Button { Content = "Search", Margin = new Thickness(8, 0, 0, 0) };
+        var search = new Button { Content = L.T("Search"), Margin = new Thickness(8, 0, 0, 0) };
         var action = new StackPanel { Orientation = Orientation.Horizontal };
         action.Children.Add(field);
         action.Children.Add(search);
 
         var list = new ListBox { Margin = new Thickness(0, 8, 0, 0), MaxHeight = 150, Visibility = Visibility.Collapsed };
-        AutomationProperties.SetName(list, "Places");
+        AutomationProperties.SetName(list, L.T("Places"));
 
         async void Search()
         {
             QNotch.Core.Analytics.Track("weather", "search");
             var q = box.Text.Trim();
-            if (q.Length < 2) { Status("Type at least two letters.", "WarningBrush"); return; }
+            if (q.Length < 2) { Status(L.T("Type at least two letters."), "WarningBrush"); return; }
             if (ctx.Demo) return;
             search.IsEnabled = false;
             list.Visibility = Visibility.Collapsed;
-            Status("Searching", "TextSecondaryBrush");
+            Status(L.T("Searching"), "TextSecondaryBrush");
             try
             {
                 var found = await WeatherService.SearchAsync(q);
                 list.Items.Clear();
                 foreach (var p in found.Take(6)) list.Items.Add(Row(p));
-                if (found.Count == 0) Status($"yr.no knows no place called \"{q}\".", "WarningBrush");
+                if (found.Count == 0) Status(L.F("yr.no knows no place called \"{0}\".", q), "WarningBrush");
                 else { ShowPlace(set.Place); list.Visibility = Visibility.Visible; }
             }
             catch (WeatherException ex) { Status(ex.Message, "DangerBrush"); }
@@ -105,7 +106,7 @@ internal static class WeatherSetup
 
         // Snapshot: a chosen place, no file or request.
         ShowPlace(ctx.Demo ? new WeatherPlace { Name = "Berlin", Detail = "Germany" } : set.Place);
-        return row = new SetupRow("Weather", WeatherModule.Sun, status, action, list);
+        return row = new SetupRow(L.T("Weather"), WeatherModule.Sun, status, action, list);
     }
 
     static string Label(WeatherPlace p) => p.Detail.Length > 0 ? $"{p.Name}, {p.Detail}" : p.Name;

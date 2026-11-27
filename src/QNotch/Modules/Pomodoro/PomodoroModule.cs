@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
+using QNotch.Core;
 using QNotch.Shell;
 using QNotch.Theme;
 
@@ -49,14 +50,14 @@ public sealed partial class PomodoroModule : INotchModule, ICadenceAware
         _tick = new DispatcherTimer(DispatcherPriority.Background, ctx.Dispatcher);
         _tick.Tick += (_, _) => Refresh();
 
-        ctx.Cards.Register(new CardDescriptor(Id, "Timer", 26, Card));
-        _sound = ctx.Sounds.Add("timer.done", "Timer is up", "A timer reached zero.", "SystemExclamation", 30);
+        ctx.Cards.Register(new CardDescriptor(Id, L.T("Timer"), 26, Card));
+        _sound = ctx.Sounds.Add("timer.done", L.T("Timer is up"), L.T("A timer reached zero."), "SystemExclamation", 30);
         ctx.Segments.Register(new SegmentDescriptor("timer.pill", SegmentSlot.PillRight, 7, () => Segment(gap: true)));
-        ctx.Segments.Register(new SegmentDescriptor("timer.game", SegmentSlot.GameBar, 65, () => Segment(gap: false), "Timer", "Time left, only while a timer runs."));
+        ctx.Segments.Register(new SegmentDescriptor("timer.game", SegmentSlot.GameBar, 65, () => Segment(gap: false), L.T("Timer"), L.T("Time left, only while a timer runs.")));
 
         SetMinutes(Math.Clamp(_s.Minutes, 1, 180), save: false);
         if (!ctx.Settings.ReadOnly) return;
-        _left = new TimeSpan(0, 18, 42); _st.IsActive = true; _st.Status = "Paused"; Refresh(); // snapshot run: frozen demo
+        _left = new TimeSpan(0, 18, 42); _st.IsActive = true; _st.Status = L.T("Paused"); Refresh(); // snapshot run: frozen demo
         ctx.Demos.Register(new DemoState("timer.idle", "idle", 10, () => Demo(running: false)));
         ctx.Demos.Register(new DemoState("timer.running", "running", 10, () => Demo(running: true)));
     }
@@ -83,7 +84,7 @@ public sealed partial class PomodoroModule : INotchModule, ICadenceAware
 
     void Toggle()
     { if (_st.IsRunning) { QNotch.Core.Analytics.Track("pomodoro", "pause", "ui"); } else { QNotch.Core.Analytics.Track("pomodoro", "start", "ui"); }
-        if (_st.IsRunning) { _left = _end - DateTime.UtcNow; _tick.Stop(); _st.IsRunning = false; _st.Status = "Paused"; }
+        if (_st.IsRunning) { _left = _end - DateTime.UtcNow; _tick.Stop(); _st.IsRunning = false; _st.Status = L.T("Paused"); }
         else
         {
             if (_left <= TimeSpan.Zero) _left = TimeSpan.FromMinutes(_st.Minutes);
@@ -115,7 +116,7 @@ public sealed partial class PomodoroModule : INotchModule, ICadenceAware
         // Pomodoro: a break is lined up after a focus block and the other way around. Other lengths just repeat.
         _st.Minutes = _st.Minutes switch { 25 or 50 => 5, 5 => 25, var m => m };
         _left = TimeSpan.FromMinutes(_st.Minutes);
-        _st.Status = _st.ShortText = "Time is up";
+        _st.Status = _st.ShortText = L.T("Time is up");
         _st.Text = Long(_left);
         _ctx.Sounds.Play(_sound);
         _ctx.Shell.TryOpenPanel("home", 5000);
@@ -158,15 +159,15 @@ public sealed partial class PomodoroModule : INotchModule, ICadenceAware
             return b;
         }
 
-        var time = new TextBlock { FontSize = 28, FontWeight = FontWeights.SemiBold, ToolTip = "Scroll to change the length" };
+        var time = new TextBlock { FontSize = 28, FontWeight = FontWeights.SemiBold, ToolTip = L.T("Scroll to change the length") };
         UiKit.Bind(time, TextBlock.TextProperty, _st, nameof(TimerState.Text));
         var status = UiKit.Text("", "Muted");
         status.VerticalAlignment = VerticalAlignment.Bottom;
         status.Margin = new Thickness(8, 0, 0, 6);
         UiKit.Bind(status, TextBlock.TextProperty, _st, nameof(TimerState.Status));
 
-        var play = Icon("Start or pause", Toggle);
-        var reset = Icon("Reset", () => SetMinutes(_st.Minutes));
+        var play = Icon(L.T("Start or pause"), Toggle);
+        var reset = Icon(L.T("Reset"), () => SetMinutes(_st.Minutes));
         reset.Content = Reset;
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
         buttons.Children.Add(play);
@@ -181,7 +182,7 @@ public sealed partial class PomodoroModule : INotchModule, ICadenceAware
         var radios = new Dictionary<int, RadioButton>();
         foreach (var m in Presets)
         {
-            var rb = new RadioButton { Style = (Style)Application.Current.FindResource("SegmentButton"), Content = m.ToString(), GroupName = "timer-preset", FontSize = 12, ToolTip = $"{m} minutes" };
+            var rb = new RadioButton { Style = (Style)Application.Current.FindResource("SegmentButton"), Content = m.ToString(), GroupName = "timer-preset", FontSize = 12, ToolTip = L.F("{0} minutes", m) };
             rb.Click += (_, _) => SetMinutes(m);
             radios[m] = rb;
             presets.Children.Add(rb);

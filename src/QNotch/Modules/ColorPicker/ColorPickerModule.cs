@@ -27,7 +27,7 @@ public sealed class ColorPickerModule : INotchModule
         _ctx = ctx;
         _s = ctx.Settings.Get<ColorPickerSettings>(Id);
         if (ctx.Settings.ReadOnly) _s = new() { Recent = ["#4ADE80", "#1ED760", "#FF0000", "#3B82F6", "#F59E0B"] }; // snapshot run: demo colors
-        ctx.Cards.Register(new CardDescriptor(Id, "Color picker", 27, Card));
+        ctx.Cards.Register(new CardDescriptor(Id, L.T("Color picker"), 27, Card));
     }
 
     void Pick()
@@ -61,12 +61,12 @@ public sealed class ColorPickerModule : INotchModule
         glyph.VerticalAlignment = VerticalAlignment.Center;
         glyph.Margin = new Thickness(0, 0, 8, 0);
         label.Children.Add(glyph);
-        label.Children.Add(new TextBlock { Text = "Pick a color", FontSize = 12 });
-        var pick = new Button { Content = label, ToolTip = "Left click picks, right click or Esc cancels" };
+        label.Children.Add(new TextBlock { Text = L.T("Pick a color"), FontSize = 12 });
+        var pick = new Button { Content = label, ToolTip = L.T("Left click picks, right click or Esc cancels") };
         pick.Click += (_, _) => { QNotch.Core.Analytics.Track("color_picker", "pick", "ui"); Pick(); };
 
         var recent = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 12, 0, 0) };
-        var empty = UiKit.Text("Picked colors show up here. Click one to copy it again.", "Muted");
+        var empty = UiKit.Text(L.T("Picked colors show up here. Click one to copy it again."), "Muted");
         empty.Margin = new Thickness(0, 10, 0, 0);
 
         var root = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
@@ -93,7 +93,7 @@ public sealed class ColorPickerModule : INotchModule
         catch { return null; } // hand-edited settings file
         var fill = new SolidColorBrush(c);
         fill.Freeze();
-        var b = new Border { Width = 22, Height = 22, CornerRadius = new CornerRadius(6), Margin = new Thickness(0, 0, 5, 0), Background = fill, BorderThickness = new Thickness(1), Cursor = Cursors.Hand, ToolTip = $"Copy {hex}" };
+        var b = new Border { Width = 22, Height = 22, CornerRadius = new CornerRadius(6), Margin = new Thickness(0, 0, 5, 0), Background = fill, BorderThickness = new Thickness(1), Cursor = Cursors.Hand, ToolTip = L.F("Copy {0}", hex) };
         b.SetResourceReference(Border.BorderBrushProperty, "StrokeBrush");
         b.MouseEnter += (_, _) => b.SetResourceReference(Border.BorderBrushProperty, "TextPrimaryBrush");
         b.MouseLeave += (_, _) => b.SetResourceReference(Border.BorderBrushProperty, "StrokeBrush");

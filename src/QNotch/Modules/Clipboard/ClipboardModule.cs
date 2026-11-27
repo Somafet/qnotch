@@ -51,12 +51,12 @@ public sealed class ClipboardModule : INotchModule, ICadenceAware
         _ctx = ctx;
         _cfg = ctx.Settings.Get<ClipboardSettings>("clipboard");
 
-        ctx.Tabs.Register(new TabDescriptor("clipboard", "Clipboard", Glyphs.Clipboard, 20, () => new ClipboardTab(this, _st), () => _st.Entries.Count == 0));
-        ctx.Cards.Register(new CardDescriptor("clipboard", "Clipboard", 30, () => new ClipboardCard(this, _st)));
-        ctx.SettingsSections.Register(new SettingsSectionDescriptor("clipboard", "Clipboard", Glyphs.Clipboard, 30, BuildSettings));
-        ctx.Search.Register(new SearchSource("clipboard", "Clipboard", Glyphs.Clipboard, 10, q => _st.Entries
+        ctx.Tabs.Register(new TabDescriptor("clipboard", L.T("Clipboard"), Glyphs.Clipboard, 20, () => new ClipboardTab(this, _st), () => _st.Entries.Count == 0));
+        ctx.Cards.Register(new CardDescriptor("clipboard", L.T("Clipboard"), 30, () => new ClipboardCard(this, _st)));
+        ctx.SettingsSections.Register(new SettingsSectionDescriptor("clipboard", L.T("Clipboard"), Glyphs.Clipboard, 30, BuildSettings));
+        ctx.Search.Register(new SearchSource("clipboard", L.T("Clipboard"), Glyphs.Clipboard, 10, q => _st.Entries
             .Where(e => e.Text.Contains(q, StringComparison.OrdinalIgnoreCase))
-            .Select(e => new SearchHit(SearchHit.Snippet(e.Text, q), $"{e.Meta} · copies it", () => { CopyAgain(e); ctx.Shell.ClosePanel(); }))));
+            .Select(e => new SearchHit(SearchHit.Snippet(e.Text, q), L.F("{0} · copies it", e.Meta), () => { CopyAgain(e); ctx.Shell.ClosePanel(); }))));
         ctx.Bus.Subscribe<ClipReady>(e => Add(e.Entry));
         ctx.Shell.TabChanged += _ => UpdateAgeTimer();
 
@@ -177,7 +177,7 @@ public sealed class ClipboardModule : INotchModule, ICadenceAware
     internal ContextMenu RowMenu(ClipEntry e)
     {
         IDisposable? hold = null;
-        var delete = new MenuItem { Header = "Delete" };
+        var delete = new MenuItem { Header = L.T("Delete") };
         delete.Click += (_, _) => Remove(e);
         var menu = new ContextMenu();
         menu.Items.Add(delete);
@@ -243,7 +243,7 @@ public sealed class ClipboardModule : INotchModule, ICadenceAware
     static string Subtitle(ClipEntry e)
     {
         var d = DateTime.Now - e.Created;
-        var age = d.TotalSeconds < 60 ? "Just now" : d.TotalMinutes < 60 ? $"{(int)d.TotalMinutes}m ago" : d.TotalHours < 24 ? $"{(int)d.TotalHours}h ago" : $"{(int)d.TotalDays}d ago";
+        var age = d.TotalSeconds < 60 ? L.T("Just now") : d.TotalMinutes < 60 ? L.F("{0}m ago", (int)d.TotalMinutes) : d.TotalHours < 24 ? L.F("{0}h ago", (int)d.TotalHours) : L.F("{0}d ago", (int)d.TotalDays);
         return $"{e.Meta} · {age}";
     }
 
@@ -281,23 +281,23 @@ public sealed class ClipboardModule : INotchModule, ICadenceAware
 
     FrameworkElement BuildSettings()
     {
-        var page = UiKit.Page("Clipboard");
+        var page = UiKit.Page(L.T("Clipboard"));
         var keep = UiKit.Toggle();
         keep.IsChecked = _cfg.Persist;
         keep.Checked += (_, _) => SetPersist(true);
         keep.Unchecked += (_, _) => SetPersist(false);
-        page.Children.Add(UiKit.Row("Keep history between sessions",
-            "Saves text entries (and pins) to clipboard.json as plain text. Images are never saved. Off by default, so secrets stay in memory only.", keep));
+        page.Children.Add(UiKit.Row(L.T("Keep history between sessions"),
+            L.T("Saves text entries (and pins) to clipboard.json as plain text. Images are never saved. Off by default, so secrets stay in memory only."), keep));
 
-        var clear = new Button { Content = "Clear history", Padding = new Thickness(12, 5, 12, 5) };
+        var clear = new Button { Content = L.T("Clear history"), Padding = new Thickness(12, 5, 12, 5) };
         clear.SetBinding(UIElement.IsEnabledProperty, new System.Windows.Data.Binding(nameof(ClipboardState.HasUnpinned)) { Source = _st });
         clear.Click += (_, _) => Clear();
-        page.Children.Add(UiKit.Row("Clear history", "Removes every entry that is not pinned. History holds the last 40 entries.", clear));
+        page.Children.Add(UiKit.Row(L.T("Clear history"), L.T("Removes every entry that is not pinned. History holds the last 40 entries."), clear));
 
-        page.Children.Add(UiKit.Text("Content that password managers flag as sensitive, and anything you copy again from QNotch, is never captured.", "Muted"));
+        page.Children.Add(UiKit.Text(L.T("Content that password managers flag as sensitive, and anything you copy again from QNotch, is never captured."), "Muted"));
         if (!_st.IsAvailable)
         {
-            var w = UiKit.Text("Clipboard monitoring is unavailable: the system refused the clipboard listener.", "Muted");
+            var w = UiKit.Text(L.T("Clipboard monitoring is unavailable: the system refused the clipboard listener."), "Muted");
             w.Margin = new Thickness(0, 8, 0, 0);
             page.Children.Add(w);
         }

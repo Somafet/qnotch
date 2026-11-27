@@ -46,6 +46,7 @@
   <ItemGroup>
     <EmbeddedResource Include="Core/Updates/ApplyUpdate.ps1" />
     <EmbeddedResource Include="analytics-config.json" />
+    <EmbeddedResource Include="Localization/*.json" LogicalName="QNotch.Localization.%(Filename).json" />
     <Resource Include="Modules/Weather/Icons/*.png" />
     <InternalsVisibleTo Include="QNotch.UpdateTests" />
     <InternalsVisibleTo Include="QNotch.PhoneShareTests" />

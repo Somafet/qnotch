@@ -213,7 +213,7 @@ sealed class PhoneShareServer(PhoneShareSession session, IPhoneShareEvents event
             }
             catch (Exception ex)
             {
-                if (id != 0) events.Failed(id, Why(ex, "Interrupted"));
+                if (id != 0) events.Failed(id, Why(ex, L.N("Interrupted")));
                 if (ex is IOException { InnerException: null } && !session.IsStopped) Log.Warn($"Phone sharing: sending {file.Name} failed", ex);
                 throw;
             }
@@ -295,7 +295,7 @@ sealed class PhoneShareServer(PhoneShareSession session, IPhoneShareEvents event
         {
             await fs!.DisposeAsync();
             TryDelete(part);
-            events.Failed(id, Why(ex, "Interrupted: the partial file was deleted"));
+            events.Failed(id, Why(ex, L.N("Interrupted: the partial file was deleted")));
             if (ex is not (EndOfStreamException or OperationCanceledException or IOException or SocketException or ObjectDisposedException))
                 Log.Warn($"Phone sharing: receiving {name} failed", ex);
             if (!session.IsStopped && ex is not (EndOfStreamException or OperationCanceledException)) await Send(s, 500, "The PC could not save this file");
@@ -310,10 +310,10 @@ sealed class PhoneShareServer(PhoneShareSession session, IPhoneShareEvents event
         await Send(s, 201, JsonSerializer.Serialize(new Dictionary<string, string> { ["name"] = Path.GetFileName(saved) }), "application/json; charset=utf-8");
     }
 
-    string Why(Exception ex, string otherwise) => session.IsStopped ? "Stopped" : ex switch
+    string Why(Exception ex, string otherwise) => session.IsStopped ? L.N("Stopped") : ex switch
     {
-        OperationCanceledException => "Timed out: the phone stopped sending",
-        EndOfStreamException => "Cancelled on the phone",
+        OperationCanceledException => L.N("Timed out: the phone stopped sending"),
+        EndOfStreamException => L.N("Cancelled on the phone"),
         _ => otherwise,
     };
 

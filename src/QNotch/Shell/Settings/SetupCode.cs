@@ -35,10 +35,10 @@ public static class SetupCode
     /// update choices, OnboardingDone, and the Game mode app lists (they name the user's games).</summary>
     public static readonly IReadOnlyList<Section> ShellSections =
     [
-        new("general", "Appearance and features", new(typeof(GeneralSettings), "HoverDwellMs:0..600", "LeaveDelayMs:100..1500", "OpenOn",
+        new("general", L.N("Appearance and features"), new(typeof(GeneralSettings), "HoverDwellMs:0..600", "LeaveDelayMs:100..1500", "OpenOn",
             "AccentColor", "Theme", "ReduceMotion", "DisabledModules", "CardOrder", "CardVisible", "CardSizes", "TabOrder")),
-        new("hotkeys", "Hotkeys", new(typeof(ShortcutSettings), "Keys")),
-        new("gamemode", "Game mode", new(typeof(GameModeSettings), "AutoDetect", "Opacity:0.3..1", "Height:16..40",
+        new("hotkeys", L.N("Hotkeys"), new(typeof(ShortcutSettings), "Keys")),
+        new("gamemode", L.N("Game mode"), new(typeof(GameModeSettings), "AutoDetect", "Opacity:0.3..1", "Height:16..40",
             "OffsetX:-1500..1500", "OffsetY:0..400", "Segments")),
     ];
 
@@ -67,8 +67,8 @@ public static class SetupCode
     {
         error = "";
         code = code.Trim();
-        if (!code.StartsWith(Prefix, StringComparison.OrdinalIgnoreCase)) { error = "This is not a QNotch setup code."; return null; }
-        if (code.Length > MaxCode) { error = "This code is too long."; return null; }
+        if (!code.StartsWith(Prefix, StringComparison.OrdinalIgnoreCase)) { error = L.T("This is not a QNotch setup code."); return null; }
+        if (code.Length > MaxCode) { error = L.T("This code is too long."); return null; }
 
         JsonObject root;
         try
@@ -77,13 +77,13 @@ public static class SetupCode
             var buf = new byte[MaxJson + 1];
             int n = 0, read;
             while (n < buf.Length && (read = z.Read(buf, n, buf.Length - n)) > 0) n += read;
-            if (n > MaxJson) { error = "This code is too long."; return null; }
+            if (n > MaxJson) { error = L.T("This code is too long."); return null; }
             root = JsonNode.Parse(buf.AsSpan(0, n), documentOptions: new JsonDocumentOptions { AllowDuplicateProperties = false }) as JsonObject
                 ?? throw new FormatException();
         }
         catch (Exception ex) when (ex is FormatException or InvalidDataException or JsonException)
         {
-            error = "This code is damaged or incomplete. Copy it again.";
+            error = L.T("This code is damaged or incomplete. Copy it again.");
             return null;
         }
 
@@ -101,7 +101,7 @@ public static class SetupCode
                 if (!Fits(v) || (range is var (min, max) && !(v is JsonValue jv && jv.TryGetValue(out double d) && d >= min && d <= max))
                     || (s.Id == "hotkeys" && name == "Keys" && !SafeGestures(v)))
                 {
-                    error = $"This code has a value QNotch cannot use ({s.Title}).";
+                    error = L.F("This code has a value QNotch cannot use ({0}).", L.T(s.Title));
                     return null;
                 }
                 merged[name] = v.DeepClone();
@@ -111,14 +111,14 @@ public static class SetupCode
             try { _ = JsonSerializer.Deserialize(merged, s.Shared.Type, Strict); }
             catch (JsonException)
             {
-                error = $"This code has a value QNotch cannot use ({s.Title}).";
+                error = L.F("This code has a value QNotch cannot use ({0}).", L.T(s.Title));
                 return null;
             }
             files[s.Id] = merged.ToJsonString(SettingsStore.Json);
-            titles.Add(s.Title);
+            titles.Add(L.T(s.Title));
             if (s.Id == "general") turnsOn.AddRange(TurnedOn(store, merged));
         }
-        if (files.Count == 0) { error = "This code has no settings this version of QNotch knows."; return null; }
+        if (files.Count == 0) { error = L.T("This code has no settings this version of QNotch knows."); return null; }
         return new Plan(files, titles, turnsOn);
     }
 
@@ -127,7 +127,7 @@ public static class SetupCode
     {
         var off = merged["DisabledModules"]?.AsArray().Select(n => n?.GetValue<string>()).ToHashSet(StringComparer.OrdinalIgnoreCase) ?? [];
         var now = store.Get<GeneralSettings>("general").DisabledModules;
-        return ModuleList.All.Where(m => m.DefaultEnabled && now.Contains(m.Id, StringComparer.OrdinalIgnoreCase) && !off.Contains(m.Id)).Select(m => m.Title);
+        return ModuleList.All.Where(m => m.DefaultEnabled && now.Contains(m.Id, StringComparer.OrdinalIgnoreCase) && !off.Contains(m.Id)).Select(m => L.T(m.Title));
     }
 
     /// <summary>Every gesture is empty (off) or parses and holds Alt or Win, so a code cannot take Ctrl+C or a plain key from other apps.</summary>

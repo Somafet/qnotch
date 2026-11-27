@@ -95,11 +95,11 @@ public sealed class ShellController : IShell
     /// module, so the shell's keys win a clash. They do nothing until <see cref="Start"/>.</summary>
     public void AddShortcuts()
     {
-        _shortcuts.Add("toggle", "Toggle panel", "Opens or closes the panel and takes the keyboard.", _general.ToggleHotkey, ToggleFromUser, 0, allowDuringInput: true);
-        _shortcuts.Add("gamemode", "Cycle Game mode", "Auto, Force on, Force off.", _general.GameModeHotkey, () => { if (_started) GameMode.CycleOverride(); }, 10, allowDuringInput: true);
+        _shortcuts.Add("toggle", L.T("Toggle panel"), L.T("Opens or closes the panel and takes the keyboard."), _general.ToggleHotkey, ToggleFromUser, 0, allowDuringInput: true);
+        _shortcuts.Add("gamemode", L.T("Cycle Game mode"), L.T("Auto, Force on, Force off."), _general.GameModeHotkey, () => { if (_started) GameMode.CycleOverride(); }, 10, allowDuringInput: true);
     }
 
-    static readonly ShortcutGroup TabKeys = new("Tabs", "Opens the panel on that tab. Press it again to close the panel.");
+    static readonly ShortcutGroup TabKeys = new(L.T("Tabs"), L.T("Opens the panel on that tab. Press it again to close the panel."));
     readonly List<(string Tab, Shortcut Key)> _tabKeys = [];
     bool _keepEmptyTab;
 
@@ -112,7 +112,7 @@ public sealed class ShellController : IShell
         {
             if (_shortcuts.Find(t.Id) is not null) continue;
             var id = t.Id;
-            _tabKeys.Add((id, _shortcuts.Add($"tab.{id}", $"Open {t.Title}", "", "", () => ToggleTabFromHotkey(id), order++, IsTabVisible(id), allowDuringInput: true, group: TabKeys)));
+            _tabKeys.Add((id, _shortcuts.Add($"tab.{id}", L.F("Open {0}", t.Title), "", "", () => ToggleTabFromHotkey(id), order++, IsTabVisible(id), allowDuringInput: true, group: TabKeys)));
         }
     }
 
@@ -299,7 +299,7 @@ public sealed class ShellController : IShell
         StopTimers();
         MemoryTrim.Cancel();
         var now = DateTime.Now;
-        _vm.DateText = now.ToString("ddd, MMM d", UiCulture.Value);
+        _vm.DateText = now.ToString(L.T("ddd, MMM d"), UiCulture.Dates);
         SetMode(ShellMode.Expanded);
         _w.SetOpen(true);
     }
@@ -631,7 +631,7 @@ public sealed class ShellController : IShell
         catch (Exception ex)
         {
             Log.Error($"Tab '{t.Id}' failed to build", ex);
-            v = Placeholder.Create(Glyphs.Warning, t.Title, "This tab failed to load. See logs.");
+            v = Placeholder.Create(Glyphs.Warning, t.Title, L.T("This tab failed to load. See logs."));
         }
         // Shell-owned slot: the fade/slide transition never touches the module's own element.
         slot = new Border { Child = v, Visibility = Visibility.Hidden, RenderTransform = new TranslateTransform() };

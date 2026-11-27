@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
+using QNotch.Core;
 
 namespace QNotch.Modules.FileTray;
 
@@ -37,7 +38,7 @@ public sealed partial class FileTrayState : ObservableObject
     public PhoneShareState Share { get; } = new();
 
     [ObservableProperty] int _count;
-    [ObservableProperty] string _countText = "No files";
+    [ObservableProperty] string _countText = L.T("No files");
     [ObservableProperty] string _missingText = "";
     [ObservableProperty, NotifyPropertyChangedFor(nameof(HasItems))] bool _isEmpty = true;
     /// <summary>Transient feedback line ("Added 2 files", "Exported to ..."). Empty when idle.</summary>

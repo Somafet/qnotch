@@ -17,7 +17,7 @@ internal sealed class UpdateClient(HttpClient http)
         using var response = await http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellation).ConfigureAwait(false);
         if (response.StatusCode == HttpStatusCode.NotFound) return null; // no published releases yet
         if (response.StatusCode is HttpStatusCode.Forbidden or HttpStatusCode.TooManyRequests)
-            throw new HttpRequestException("GitHub is limiting update checks. Try again later.");
+            throw new HttpRequestException(L.T("GitHub is limiting update checks. Try again later."));
         response.EnsureSuccessStatusCode();
         await response.Content.LoadIntoBufferAsync(1_048_576, cancellation).ConfigureAwait(false);
         return UpdateRelease.Read(await response.Content.ReadAsStringAsync(cancellation).ConfigureAwait(false), installed, selfContained);
@@ -33,9 +33,9 @@ internal sealed class UpdateClient(HttpClient http)
             using var response = await http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellation).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
             if (response.RequestMessage?.RequestUri?.Scheme != Uri.UriSchemeHttps)
-                throw new InvalidDataException("The update download did not use HTTPS.");
+                throw new InvalidDataException(L.T("The update download did not use HTTPS."));
             if (response.Content.Headers.ContentLength is { } length && length != release.Size)
-                throw new InvalidDataException("The update download size does not match the release.");
+                throw new InvalidDataException(L.T("The update download size does not match the release."));
             await using var input = await response.Content.ReadAsStreamAsync(cancellation).ConfigureAwait(false);
             await using var output = new FileStream(download, FileMode.CreateNew, FileAccess.Write, FileShare.None, 81920, true);
             using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
@@ -46,14 +46,14 @@ internal sealed class UpdateClient(HttpClient http)
             while ((read = await input.ReadAsync(buffer, cancellation).ConfigureAwait(false)) > 0)
             {
                 total += read;
-                if (total > release.Size) throw new InvalidDataException("The update download is larger than expected.");
+                if (total > release.Size) throw new InvalidDataException(L.T("The update download is larger than expected."));
                 hash.AppendData(buffer, 0, read);
                 await output.WriteAsync(buffer.AsMemory(0, read), cancellation).ConfigureAwait(false);
                 var percent = (int)(total * 100 / release.Size);
                 if (percent != lastPercent) { progress?.Report(percent); lastPercent = percent; }
             }
             if (total != release.Size || !string.Equals(Convert.ToHexString(hash.GetHashAndReset()), release.Sha256, StringComparison.OrdinalIgnoreCase))
-                throw new InvalidDataException("The update checksum did not match. Nothing was installed.");
+                throw new InvalidDataException(L.T("The update checksum did not match. Nothing was installed."));
         }
 
         var exe = Path.Combine(directory, "QNotch.exe");
@@ -63,7 +63,7 @@ internal sealed class UpdateClient(HttpClient http)
             // The release workflow packages a single exe. Never extract arbitrary paths from a downloaded archive.
             if (zip.Entries.Count != 1 || zip.Entries[0].FullName != "QNotch.exe"
                 || zip.Entries[0].Length is <= 0 or > UpdateRelease.MaxDownloadSize)
-                throw new InvalidDataException("The update archive is not a QNotch package.");
+                throw new InvalidDataException(L.T("The update archive is not a QNotch package."));
             zip.Entries[0].ExtractToFile(exe);
         }
         else File.Move(download, exe);
@@ -74,14 +74,14 @@ internal sealed class UpdateClient(HttpClient http)
     {
         using var file = File.OpenRead(path);
         using var reader = new BinaryReader(file);
-        if (file.Length < 64 || reader.ReadUInt16() != 0x5A4D) throw new InvalidDataException("The update is not a Windows executable.");
+        if (file.Length < 64 || reader.ReadUInt16() != 0x5A4D) throw new InvalidDataException(L.T("The update is not a Windows executable."));
         file.Position = 0x3C;
         var pe = reader.ReadInt32();
-        if (pe < 64 || pe > file.Length - 6) throw new InvalidDataException("The update executable is invalid.");
+        if (pe < 64 || pe > file.Length - 6) throw new InvalidDataException(L.T("The update executable is invalid."));
         file.Position = pe;
         if (reader.ReadUInt32() != 0x00004550 || reader.ReadUInt16() != 0x8664)
-            throw new InvalidDataException("The update is not a Windows x64 executable.");
+            throw new InvalidDataException(L.T("The update is not a Windows x64 executable."));
         if (UpdateRelease.ParseVersion(FileVersionInfo.GetVersionInfo(path).FileVersion) != expected)
-            throw new InvalidDataException("The update executable version does not match the release.");
+            throw new InvalidDataException(L.T("The update executable version does not match the release."));
     }
 }

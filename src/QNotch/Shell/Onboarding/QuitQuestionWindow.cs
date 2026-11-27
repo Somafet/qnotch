@@ -27,7 +27,7 @@ internal sealed class QuitQuestionWindow : Window
 
     internal QuitQuestionWindow()
     {
-        Title = "Before you go";
+        Title = L.T("Before you go");
         // Always dark, like the welcome tour: the dark palette overrides the app's for everything in this window.
         Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("pack://application:,,,/Theme/Theme.Dark.xaml") });
         var styled = Motion.Enabled;
@@ -56,10 +56,10 @@ internal sealed class QuitQuestionWindow : Window
         root.SetResourceReference(Panel.BackgroundProperty, "WindowBrush");
 
         var stack = new StackPanel { Margin = new Thickness(24, 22, 24, 18) };
-        var heading = new TextBlock { Text = "Before you go", FontSize = 20, FontWeight = FontWeights.Bold, Margin = new Thickness(0, 0, 28, 0) };
-        AutomationProperties.SetName(heading, "Before you go");
+        var heading = new TextBlock { Text = L.T("Before you go"), FontSize = 20, FontWeight = FontWeights.Bold, Margin = new Thickness(0, 0, 28, 0) };
+        AutomationProperties.SetName(heading, L.T("Before you go"));
         stack.Children.Add(heading);
-        var ask = new TextBlock { Text = "What is the main reason you are quitting?", Margin = new Thickness(0, 4, 0, 14), TextWrapping = TextWrapping.Wrap };
+        var ask = new TextBlock { Text = L.T("What is the main reason you are quitting?"), Margin = new Thickness(0, 4, 0, 14), TextWrapping = TextWrapping.Wrap };
         ask.SetResourceReference(TextBlock.ForegroundProperty, "TextSecondaryBrush");
         stack.Children.Add(ask);
 
@@ -78,11 +78,11 @@ internal sealed class QuitQuestionWindow : Window
         var footer = new Grid { Margin = new Thickness(0, 10, 0, 0) };
         footer.ColumnDefinitions.Add(new ColumnDefinition());
         footer.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        var fine = new TextBlock { Text = "Sends only the answer you pick, or that you skipped. No text.", FontSize = 11, TextWrapping = TextWrapping.Wrap, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 14, 0) };
+        var fine = new TextBlock { Text = L.T("Sends only the answer you pick, or that you skipped. No text."), FontSize = 11, TextWrapping = TextWrapping.Wrap, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 14, 0) };
         fine.SetResourceReference(TextBlock.ForegroundProperty, "TextSecondaryBrush");
-        var skip = new Button { Content = "Skip", Padding = new Thickness(2, 4, 2, 4), FocusVisualStyle = ring, VerticalAlignment = VerticalAlignment.Center };
+        var skip = new Button { Content = L.T("Skip"), Padding = new Thickness(2, 4, 2, 4), FocusVisualStyle = ring, VerticalAlignment = VerticalAlignment.Center };
         skip.Style = (Style)FindResource(styled ? "TourLinkButton" : "LinkButton");
-        AutomationProperties.SetName(skip, "Skip");
+        AutomationProperties.SetName(skip, L.T("Skip"));
         AutomationProperties.SetAutomationId(skip, "quit-reason-skip");
         skip.Click += (_, _) => Pick(QuitQuestion.Skipped);
         Grid.SetColumn(skip, 1);
@@ -91,8 +91,8 @@ internal sealed class QuitQuestionWindow : Window
         stack.Children.Add(footer);
         root.Children.Add(stack);
 
-        var close = new Button { Style = (Style)FindResource("IconButton"), Content = Glyphs.Close, ToolTip = "Close", HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, 10, 10, 0), FocusVisualStyle = ring };
-        AutomationProperties.SetName(close, "Close");
+        var close = new Button { Style = (Style)FindResource("IconButton"), Content = Glyphs.Close, ToolTip = L.T("Close"), HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, 10, 10, 0), FocusVisualStyle = ring };
+        AutomationProperties.SetName(close, L.T("Close"));
         AutomationProperties.SetAutomationId(close, "quit-reason-close");
         close.Click += (_, _) => Pick(QuitQuestion.Skipped);
         root.Children.Add(close);

@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using CommunityToolkit.Mvvm.ComponentModel;
+using QNotch.Core;
 using QNotch.Theme;
 
 namespace QNotch.Modules.Volume;
@@ -13,7 +14,7 @@ internal sealed partial class VolumeState : ObservableObject
     [ObservableProperty, NotifyPropertyChangedFor(nameof(Text))] double _level;
     [ObservableProperty, NotifyPropertyChangedFor(nameof(Text))] bool _muted;
 
-    public string Text => Muted ? "Muted" : $"{Level:0}%";
+    public string Text => Muted ? L.T("Muted") : $"{Level:0}%";
 }
 
 /// <summary>
@@ -31,7 +32,7 @@ public sealed class VolumeModule : INotchModule, ICadenceAware
     public void Initialize(ModuleContext ctx)
     {
         _ctx = ctx;
-        ctx.Cards.Register(new CardDescriptor("volume", "Volume", 25, Card));
+        ctx.Cards.Register(new CardDescriptor("volume", L.T("Volume"), 25, Card));
         if (ctx.Settings.ReadOnly) { _st.Level = 62; return; } // snapshot run: demo level, never touch the audio device
         _com.Changed += (level, muted) => ctx.Bus.Run(() => Apply(level, muted));
     }
@@ -74,7 +75,7 @@ public sealed class VolumeModule : INotchModule, ICadenceAware
 
     FrameworkElement Card()
     {
-        var mute = new Button { Style = (Style)Application.Current.FindResource("IconButton"), ToolTip = "Mute or unmute", Margin = new Thickness(-6, 0, 4, 0) };
+        var mute = new Button { Style = (Style)Application.Current.FindResource("IconButton"), ToolTip = L.T("Mute or unmute"), Margin = new Thickness(-6, 0, 4, 0) };
         mute.Click += (_, _) => { QNotch.Core.Analytics.Track("volume", "toggle_mute", "ui"); SetMute(!_st.Muted); };
         var text = new TextBlock { FontSize = 22, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center };
         UiKit.Bind(text, TextBlock.TextProperty, _st, nameof(VolumeState.Text));
@@ -83,13 +84,13 @@ public sealed class VolumeModule : INotchModule, ICadenceAware
         top.Children.Add(text);
 
         var slider = new Slider { Minimum = 0, Maximum = 100, SmallChange = 2, LargeChange = 10, IsMoveToPointEnabled = true, Margin = new Thickness(0, 12, 0, 0) };
-        System.Windows.Automation.AutomationProperties.SetName(slider, "Volume");
+        System.Windows.Automation.AutomationProperties.SetName(slider, L.T("Volume"));
         slider.ValueChanged += (_, e) => SetLevel(e.NewValue);
 
         var live = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
         live.Children.Add(top);
         live.Children.Add(slider);
-        var none = Placeholder.Create(Speaker, "", "No playback device.");
+        var none = Placeholder.Create(Speaker, "", L.T("No playback device."));
 
         // Transparent background so the wheel works anywhere on the card body.
         var root = new Grid { Background = System.Windows.Media.Brushes.Transparent };

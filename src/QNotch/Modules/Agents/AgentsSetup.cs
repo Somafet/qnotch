@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
+using QNotch.Core;
 using QNotch.Theme;
 
 namespace QNotch.Modules.Agents;
@@ -45,12 +46,12 @@ internal static class AgentsSetup
             var connected = states.Where(s => s.Item2.Status == HookStatus.Connected).Select(s => s.h).ToList();
             var waiting = connected.Where(h => !Seen(h)).Select(h => h.Kind).Distinct().Order().ToList();
             if (states.FirstOrDefault(s => s.Item2.Status == HookStatus.Error) is { h: not null } bad)
-                Status($"Could not read {bad.h.FileName}: {bad.Item2.Detail}", "DangerBrush");
+                Status(L.F("Could not read {0}: {1}", bad.h.FileName, bad.Item2.Detail), "DangerBrush");
             else if (waiting.Count > 0) Status(AgentsStatus.Waiting(waiting), "WarningBrush");
             else if (connected.Count == hooks.Count) Status(AgentsStatus.Receiving, "SuccessBrush");
-            else if (connected.Count > 0) Status($"{string.Join(", ", connected.Select(h => h.Title))} connected. Receiving events.", "SuccessBrush");
-            else if (states.Any(s => s.Item2.Status == HookStatus.OtherCopy)) Status("Connected to another copy of QNotch", "WarningBrush");
-            else Status("Not connected. Adds hooks to the agent's settings and keeps a backup.", "TextTertiaryBrush");
+            else if (connected.Count > 0) Status(L.F("{0} connected. Receiving events.", string.Join(", ", connected.Select(h => h.Title))), "SuccessBrush");
+            else if (states.Any(s => s.Item2.Status == HookStatus.OtherCopy)) Status(L.T("Connected to another copy of QNotch"), "WarningBrush");
+            else Status(L.T("Not connected. Adds hooks to the agent's settings and keeps a backup."), "TextTertiaryBrush");
         }
 
         foreach (var h in hooks)
@@ -58,7 +59,7 @@ internal static class AgentsSetup
             var hook = h;
             var button = new Button { Margin = new Thickness(8, 0, 0, 0) };
             if (detail is not null) button.Margin = new Thickness(0, 4, 8, 0);
-            AutomationProperties.SetName(button, $"Connect {hook.Title}");
+            AutomationProperties.SetName(button, L.F("Connect {0}", hook.Title));
             buttons.Children.Add(button);
 
             void Sync()
@@ -76,11 +77,11 @@ internal static class AgentsSetup
                     button.Content = chip;
                     button.ClearValue(FrameworkElement.StyleProperty);
                     button.IsEnabled = false;
-                    button.ToolTip = $"{hook.Title} is connected. Disconnect it in Settings, Agents.";
+                    button.ToolTip = L.F("{0} is connected. Disconnect it in Settings, Agents.", hook.Title);
                 }
                 else
                 {
-                    button.Content = $"Connect {hook.Title}";
+                    button.Content = L.F("Connect {0}", hook.Title);
                     button.Style = (Style)Application.Current.FindResource("AccentButton");
                     button.IsEnabled = true;
                 }
@@ -96,7 +97,7 @@ internal static class AgentsSetup
                 try { await Task.Run(hook.Connect); }
                 catch (Exception ex) { error = ex.Message; Core.Log.Warn($"Changing {hook.Title} hooks failed", ex); }
                 Sync();
-                if (error is not null) { lastHint = ""; Status($"Could not change {hook.FileName}: {error}", "DangerBrush"); button.IsEnabled = true; return; }
+                if (error is not null) { lastHint = ""; Status(L.F("Could not change {0}: {1}", hook.FileName, error), "DangerBrush"); button.IsEnabled = true; return; }
                 // Same message as Settings, Agents: the hooks are added, and no event has arrived yet.
                 if (config.MarkSeen(hook.Kind, false)) ctx.Settings.Save(AgentsModule.TabId, config);
                 lastHint = AgentsStatus.Waiting([hook.Kind]);
@@ -106,6 +107,6 @@ internal static class AgentsSetup
         }
         foreach (var s in syncs) s();
         Summary();
-        return row = new SetupRow("Agents", AgentsModule.Icon, status, action, detail);
+        return row = new SetupRow(L.T("Agents"), AgentsModule.Icon, status, action, detail);
     }
 }

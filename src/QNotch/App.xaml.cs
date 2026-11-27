@@ -156,14 +156,14 @@ public partial class App : Application
         Log.Info($"Modules: {string.Join(", ", enabled.Select(i => i.Id))} (off: {(bootDisabled.Count == 0 ? "none" : string.Join(", ", bootDisabled))})");
 
         // Built-in tab and settings sections (modules add theirs in Initialize).
-        tabs.Register(new TabDescriptor("home", "Home", Glyphs.Home, 0, () => new HomeView(layout, shell)));
-        sections.Register(new SettingsSectionDescriptor("features", "Features", Glyphs.Apps, 5, () => FeaturesSection.Create(gs, _store!, ModuleList.All, bootDisabled, Restart, layout, tabs, segments)));
-        sections.Register(new SettingsSectionDescriptor("general", "General", Glyphs.Settings, 0, () => GeneralSection.Create(gs, _store!, SetupCode.All(ModuleList.All), Restart, shell.Nudge.ResetAll, shell.Nudge.SetMode)));
-        sections.Register(new SettingsSectionDescriptor("about", "About", "\uE946", 1000, () => AboutSection.Create(gs, updates, () => ShowTour(gs, _store!, shortcuts, shell), () => QuitByUser(gs, "ui"))));
-        sections.Register(new SettingsSectionDescriptor("appearance", "Appearance", Glyphs.Color, 10, () => AppearanceSection.Create(gs, layout)));
-        sections.Register(new SettingsSectionDescriptor("hotkeys", "Hotkeys", "", 7, () => HotkeysSection.Create(shortcuts)));
-        sections.Register(new SettingsSectionDescriptor("sounds", "Sounds", Glyphs.Volume, 8, () => SoundsSection.Create(sounds)));
-        sections.Register(new SettingsSectionDescriptor("gamemode", "Game mode", Glyphs.Game, 20, () => GameModeSection.Create(shell.GameMode, shortcuts, segments)));
+        tabs.Register(new TabDescriptor("home", L.T("Home"), Glyphs.Home, 0, () => new HomeView(layout, shell)));
+        sections.Register(new SettingsSectionDescriptor("features", L.T("Features"), Glyphs.Apps, 5, () => FeaturesSection.Create(gs, _store!, ModuleList.All, bootDisabled, Restart, layout, tabs, segments)));
+        sections.Register(new SettingsSectionDescriptor("general", L.T("General"), Glyphs.Settings, 0, () => GeneralSection.Create(gs, _store!, SetupCode.All(ModuleList.All), Restart, shell.Nudge.ResetAll, shell.Nudge.SetMode)));
+        sections.Register(new SettingsSectionDescriptor("about", L.T("About"), "\uE946", 1000, () => AboutSection.Create(gs, updates, () => ShowTour(gs, _store!, shortcuts, shell), () => QuitByUser(gs, "ui"))));
+        sections.Register(new SettingsSectionDescriptor("appearance", L.T("Appearance"), Glyphs.Color, 10, () => AppearanceSection.Create(gs, layout)));
+        sections.Register(new SettingsSectionDescriptor("hotkeys", L.T("Hotkeys"), "", 7, () => HotkeysSection.Create(shortcuts)));
+        sections.Register(new SettingsSectionDescriptor("sounds", L.T("Sounds"), Glyphs.Volume, 8, () => SoundsSection.Create(sounds)));
+        sections.Register(new SettingsSectionDescriptor("gamemode", L.T("Game mode"), Glyphs.Game, 20, () => GameModeSection.Create(shell.GameMode, shortcuts, segments)));
 
         var ctx = new ModuleContext
         {

@@ -29,7 +29,7 @@ public sealed class Sound
 public sealed class Sounds(SettingsStore store)
 {
     const string FileName = "sounds";
-    public const string Filter = "Audio files|*.wav;*.mp3;*.wma;*.m4a;*.aac;*.flac|All files|*.*";
+    public static string Filter => L.T("Audio files") + "|*.wav;*.mp3;*.wma;*.m4a;*.aac;*.flac|" + L.T("All files") + "|*.*";
     readonly List<Sound> _items = [];
     readonly SoundSettings _cfg = store.Get<SoundSettings>(FileName);
     MediaPlayer? _player; // only while a file plays

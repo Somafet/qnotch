@@ -68,9 +68,9 @@ public sealed class TaildropModule : INotchModule, ICadenceAware
     public void Initialize(ModuleContext ctx)
     {
         _ctx = ctx;
-        ctx.Tabs.Register(new TabDescriptor(TabId, "Taildrop", Icon, 45, () => new TaildropTab(this, _st, ctx.Shell)));
-        ctx.Cards.Register(new CardDescriptor(TabId, "Taildrop", 85, () => new TaildropCard(this, _st, ctx.Shell)));
-        ctx.Drops.Register(new DropSourceDescriptor(TabId, "Taildrop", Icon, 20, files => DropTargets(_st, files, Directory.Exists, (d, paths) =>
+        ctx.Tabs.Register(new TabDescriptor(TabId, L.T("Taildrop"), Icon, 45, () => new TaildropTab(this, _st, ctx.Shell)));
+        ctx.Cards.Register(new CardDescriptor(TabId, L.T("Taildrop"), 85, () => new TaildropCard(this, _st, ctx.Shell)));
+        ctx.Drops.Register(new DropSourceDescriptor(TabId, L.T("Taildrop"), Icon, 20, files => DropTargets(_st, files, Directory.Exists, (d, paths) =>
         {
             Send(d, paths);
             ctx.Shell.SelectTab(TabId);
@@ -129,7 +129,7 @@ public sealed class TaildropModule : INotchModule, ICadenceAware
             {
                 Log.Warn("Taildrop: refresh failed", ex);
                 availability = TaildropAvailability.Ready;
-                error = ex is TaildropException ? ex.Message : "Tailscale could not be read.";
+                error = ex is TaildropException ? ex.Message : L.T("Tailscale could not be read.");
             }
             _ctx.Bus.Run(() =>
             {
@@ -151,12 +151,12 @@ public sealed class TaildropModule : INotchModule, ICadenceAware
         var skipped = paths.Count - files.Count;
         if (files.Count == 0)
         {
-            _st.SetTransfer(false, null, paths.Any(Directory.Exists) ? "Folders can't be sent. Send the files inside, or a zip." : "Nothing to send.", "DangerBrush", -1);
+            _st.SetTransfer(false, null, paths.Any(Directory.Exists) ? L.T("Folders can't be sent. Send the files inside, or a zip.") : L.T("Nothing to send."), "DangerBrush", -1);
             return;
         }
         if (_client is not { } client)
         {
-            _st.SetTransfer(false, null, $"Sent {Count(files.Count)} to {device.Name}", "SuccessBrush", -1); // snapshot: nothing leaves the machine
+            _st.SetTransfer(false, null, L.F("Sent {0} to {1}", Count(files.Count), device.Name), "SuccessBrush", -1); // snapshot: nothing leaves the machine
             return;
         }
         var cts = _transfer = new CancellationTokenSource();
@@ -185,11 +185,11 @@ public sealed class TaildropModule : INotchModule, ICadenceAware
                     sent++;
                 }
             }
-            catch (OperationCanceledException) when (cts.IsCancellationRequested) { failure = sent > 0 ? $"Stopped after {Count(sent)}." : "Sending stopped."; }
+            catch (OperationCanceledException) when (cts.IsCancellationRequested) { failure = sent > 0 ? L.F("Stopped after {0}.", Count(sent)) : L.T("Sending stopped."); }
             catch (Exception ex)
             {
                 Log.Warn($"Taildrop: send to {device.Name} failed", ex);
-                failure = ex is TaildropException ? ex.Message : IsUnreachable(ex) ? "Tailscale stopped answering." : "The file could not be sent.";
+                failure = ex is TaildropException ? ex.Message : IsUnreachable(ex) ? L.T("Tailscale stopped answering.") : L.T("The file could not be sent.");
             }
             _ctx.Bus.Run(() =>
             {
@@ -197,14 +197,14 @@ public sealed class TaildropModule : INotchModule, ICadenceAware
                 cts.Dispose();
                 if (failure is null)
                 {
-                    var done = $"Sent {Count(sent)} to {device.Name}" + (skipped > 0 ? $" ({Count(skipped, "folder")} skipped)" : "");
+                    var done = skipped > 0 ? L.F("Sent {0} to {1} ({2} skipped)", Count(sent), device.Name, Folders(skipped)) : L.F("Sent {0} to {1}", Count(sent), device.Name);
                     _st.SetTransfer(false, null, done, "SuccessBrush", -1);
                     _ctx.Shell.Peek(Icon, done, "SuccessBrush");
                 }
                 else
                 {
                     _st.SetTransfer(false, null, failure, "DangerBrush", -1);
-                    if (!cts.IsCancellationRequested) _ctx.Shell.Peek(Icon, $"Taildrop: {failure}", "DangerBrush");
+                    if (!cts.IsCancellationRequested) _ctx.Shell.Peek(Icon, L.F("Taildrop: {0}", failure), "DangerBrush");
                 }
             });
         });
@@ -216,13 +216,13 @@ public sealed class TaildropModule : INotchModule, ICadenceAware
     internal static IReadOnlyList<DropTarget> DropTargets(TaildropState st, IReadOnlyList<string> files, Func<string, bool> isFolder, Action<TaildropDevice, string[]> send)
     {
         if (TaildropEmpty.For(st) is { } empty) return [new DropTarget("unavailable", empty.Title, Icon, _ => { }, Enabled: false)];
-        if (st.Availability != TaildropAvailability.Ready) return [new DropTarget("unavailable", "Checking Tailscale", Icon, _ => { }, "One moment", Enabled: false)];
+        if (st.Availability != TaildropAvailability.Ready) return [new DropTarget("unavailable", L.T("Checking Tailscale"), Icon, _ => { }, L.T("One moment"), Enabled: false)];
         var folders = files.Count > 0 && files.All(isFolder);
         return st.Devices.Select(d =>
         {
-            var reason = folders ? "Folders can't be sent" : st.Busy ? "Busy sending" : !d.Online ? "Offline" : null; // spec order
+            var reason = folders ? L.T("Folders can't be sent") : st.Busy ? L.T("Busy sending") : !d.Online ? L.T("Offline") : null; // spec order
             var os = TaildropUi.OsName(d.Os);
-            return new DropTarget(d.Id, d.Name, TaildropUi.DeviceGlyph(d), paths => send(d, paths), reason ?? (os.Length > 0 ? os : "Online"), Enabled: reason is null);
+            return new DropTarget(d.Id, d.Name, TaildropUi.DeviceGlyph(d), paths => send(d, paths), reason ?? (os.Length > 0 ? os : L.T("Online")), Enabled: reason is null);
         }).ToList();
     }
 
@@ -233,10 +233,10 @@ public sealed class TaildropModule : INotchModule, ICadenceAware
         var names = _st.Waiting.Select(w => w.Name).ToList();
         if (_client is not { } client)
         {
-            _st.SetTransfer(false, null, $"Saved {Count(names.Count)} to Downloads", "SuccessBrush", -1);
+            _st.SetTransfer(false, null, L.F("Saved {0} to Downloads", Count(names.Count)), "SuccessBrush", -1);
             return;
         }
-        _st.SetTransfer(true, null, $"Saving {Count(names.Count)} to Downloads", "TextSecondaryBrush", -1);
+        _st.SetTransfer(true, null, L.F("Saving {0} to Downloads", Count(names.Count)), "TextSecondaryBrush", -1);
         Task.Run(async () =>
         {
             var folder = TaildropNative.DownloadsFolder();
@@ -248,12 +248,12 @@ public sealed class TaildropModule : INotchModule, ICadenceAware
                 catch (Exception ex)
                 {
                     Log.Warn($"Taildrop: saving a waiting file failed", ex);
-                    failure = ex is TaildropException ? ex.Message : "A file could not be saved to Downloads.";
+                    failure = ex is TaildropException ? ex.Message : L.T("A file could not be saved to Downloads.");
                 }
             }
             _ctx.Bus.Run(() =>
             {
-                _st.SetTransfer(false, null, failure ?? $"Saved {Count(saved)} to Downloads", failure is null ? "SuccessBrush" : "DangerBrush", -1, last);
+                _st.SetTransfer(false, null, failure ?? L.F("Saved {0} to Downloads", Count(saved)), failure is null ? "SuccessBrush" : "DangerBrush", -1, last);
                 Refresh();
             });
         });
@@ -275,9 +275,11 @@ public sealed class TaildropModule : INotchModule, ICadenceAware
     }
 
     static string Sending(List<string> files, int index, TaildropDevice device) =>
-        $"Sending {Path.GetFileName(files[index])} to {device.Name}" + (files.Count > 1 ? $" · {index + 1} of {files.Count}" : "");
+        files.Count > 1 ? L.F("Sending {0} to {1} · {2} of {3}", Path.GetFileName(files[index]), device.Name, index + 1, files.Count)
+            : L.F("Sending {0} to {1}", Path.GetFileName(files[index]), device.Name);
 
-    internal static string Count(int n, string noun = "file") => n == 1 ? $"1 {noun}" : $"{n} {noun}s";
+    internal static string Count(int n) => n == 1 ? L.T("1 file") : L.F("{0} files", n);
+    static string Folders(int n) => n == 1 ? L.T("1 folder") : L.F("{0} folders", n);
 
     void Seed()
     {

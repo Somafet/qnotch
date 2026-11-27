@@ -4,6 +4,7 @@ using System.Net.Http;
 using System.Security.Principal;
 using System.Text.Json;
 using Microsoft.Win32;
+using QNotch.Core;
 
 namespace QNotch.Modules.Taildrop;
 
@@ -144,7 +145,7 @@ public sealed class TaildropClient : IDisposable
     /// <summary>Moves one waiting file into <paramref name="folder"/> (a free name, never overwriting) and returns its path.</summary>
     public async Task<string> SaveWaitingAsync(string name, string folder, CancellationToken ct)
     {
-        if (!IsPlainFileName(name)) throw new TaildropException("The file name is not valid.");
+        if (!IsPlainFileName(name)) throw new TaildropException(L.T("The file name is not valid."));
         var escaped = Uri.EscapeDataString(name);
         using (var res = await _http.GetAsync("files/" + escaped, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false))
         {
@@ -203,7 +204,7 @@ public sealed class TaildropClient : IDisposable
         catch { text = ""; }
         if (text.Length > 200) text = text[..200];
         throw new TaildropException(text.Length > 0 ? Sentence(text) : res.StatusCode == HttpStatusCode.Forbidden
-            ? "Tailscale refused the request." : $"Tailscale answered {(int)res.StatusCode}.");
+            ? L.T("Tailscale refused the request.") : L.F("Tailscale answered {0}.", (int)res.StatusCode));
     }
 
     static string Sentence(string s) => char.ToUpperInvariant(s[0]) + s[1..] + (s.EndsWith('.') ? "" : ".");

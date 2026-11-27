@@ -82,7 +82,7 @@ public partial class SettingsWindow : Window
             catch (Exception ex)
             {
                 Log.Error($"Settings section '{id}' failed", ex);
-                v = Placeholder.Create(Glyphs.Warning, d.Title, "This section failed to load. See logs.");
+                v = Placeholder.Create(Glyphs.Warning, d.Title, L.T("This section failed to load. See logs."));
             }
             _views[id] = v;
         }

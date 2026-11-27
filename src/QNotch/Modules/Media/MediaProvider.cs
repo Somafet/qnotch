@@ -153,7 +153,7 @@ internal sealed class MediaProvider(EventBus bus)
         foreach (var t in live)
         {
             var app = Label(t);
-            var label = dup.Contains(app) ? $"{app}: {(await TitleOf(t) is { Length: > 0 } title ? title : "session")}" : app;
+            var label = dup.Contains(app) ? (await TitleOf(t) is { Length: > 0 } title ? $"{app}: {title}" : L.F("{0}: session", app)) : app;
             list.Add(new MediaSessionInfo(t.Id, label, app));
         }
         return new MediaSessions(list, sel);

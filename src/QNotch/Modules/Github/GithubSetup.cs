@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Input;
+using QNotch.Core;
 using QNotch.Theme;
 
 namespace QNotch.Modules.Github;
@@ -22,7 +23,7 @@ internal static class GithubSetup
         var status = new TextBlock();
         var done = UiKit.Glyph(Glyphs.Accept, 14, "SuccessBrush");
         done.Visibility = Visibility.Collapsed;
-        AutomationProperties.SetName(done, "Connected");
+        AutomationProperties.SetName(done, L.T("Connected"));
         var controls = new StackPanel { Orientation = Orientation.Horizontal };
         var action = new Grid();
         action.Children.Add(controls);
@@ -45,25 +46,25 @@ internal static class GithubSetup
         }
         async Task<(bool Ok, string Message)> Save(string token)
         {
-            if (ctx.Demo) return (true, "Connected as @octocat.");
-            if (!await Task.Run(() => CredentialStore.Write(token))) return (false, "Windows refused to store the token.");
+            if (ctx.Demo) return (true, L.F("Connected as @{0}.", "octocat"));
+            if (!await Task.Run(() => CredentialStore.Write(token))) return (false, L.T("Windows refused to store the token."));
             TokenSaved?.Invoke();
             return await GithubService.TestAsync(token);
         }
 
         // Paste box: the fallback, or the only way in while there is no client id.
-        var box = new PasswordBox { Width = 170, MaxLength = 255, ToolTip = "Paste a personal access token" };
-        AutomationProperties.SetName(box, "GitHub token");
-        var save = new Button { Content = "Save", Margin = new Thickness(8, 0, 0, 0) };
+        var box = new PasswordBox { Width = 170, MaxLength = 255, ToolTip = L.T("Paste a personal access token") };
+        AutomationProperties.SetName(box, L.T("GitHub token"));
+        var save = new Button { Content = L.T("Save"), Margin = new Thickness(8, 0, 0, 0) };
         var tokenRow = new StackPanel { Orientation = Orientation.Horizontal };
         tokenRow.Children.Add(box);
         tokenRow.Children.Add(save);
         async void SaveBox()
         {
             var t = box.Password.Trim();
-            if (t.Length == 0) { Status("Paste a token first.", "WarningBrush"); return; }
+            if (t.Length == 0) { Status(L.T("Paste a token first."), "WarningBrush"); return; }
             save.IsEnabled = false;
-            Status("Checking the token…", "TextSecondaryBrush");
+            Status(L.T("Checking the token…"), "TextSecondaryBrush");
             var (ok, message) = await Save(t);
             save.IsEnabled = true;
             if (ok) { box.Clear(); Connected(message); }
@@ -76,7 +77,7 @@ internal static class GithubSetup
         {
             var signIn = new GithubSignIn(Save);
             signIn.Connected += Connected;
-            var useToken = new Button { Content = "Use a token instead", Style = (Style)Application.Current.FindResource("LinkButton"), Margin = new Thickness(0, 0, 12, 0) };
+            var useToken = new Button { Content = L.T("Use a token instead"), Style = (Style)Application.Current.FindResource("LinkButton"), Margin = new Thickness(0, 0, 12, 0) };
             controls.Children.Add(useToken);
             controls.Children.Add(signIn.Button);
             tokenRow.Margin = new Thickness(0, 10, 0, 0);
@@ -94,7 +95,7 @@ internal static class GithubSetup
         }
         else
         {
-            var get = new Button { Content = "Get a token", Style = (Style)Application.Current.FindResource("LinkButton"), Margin = new Thickness(0, 0, 12, 0), ToolTip = "Opens GitHub's token page with read:user picked" };
+            var get = new Button { Content = L.T("Get a token"), Style = (Style)Application.Current.FindResource("LinkButton"), Margin = new Thickness(0, 0, 12, 0), ToolTip = L.T("Opens GitHub's token page with read:user picked") };
             get.Click += (_, _) =>
             { QNotch.Core.Analytics.Track("github", "open_token_page", "ui");
                 try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(TokenPage) { UseShellExecute = true }); }
@@ -104,14 +105,14 @@ internal static class GithubSetup
             controls.Children.Add(tokenRow);
         }
 
-        if (ctx.Demo) Connected("Connected as @octocat.");
+        if (ctx.Demo) Connected(L.F("Connected as @{0}.", "octocat"));
         else
         {
-            Status("Not connected", "TextTertiaryBrush");
+            Status(L.T("Not connected"), "TextTertiaryBrush");
             // A token from an earlier install: say so without a request (the tour itself never goes online).
             _ = Task.Run(CredentialStore.Read).ContinueWith(t =>
             {
-                if (t.Result is { Length: > 0 } && controls.Visibility == Visibility.Visible) Status("A token is saved", "SuccessBrush");
+                if (t.Result is { Length: > 0 } && controls.Visibility == Visibility.Visible) Status(L.T("A token is saved"), "SuccessBrush");
             }, TaskScheduler.FromCurrentSynchronizationContext());
         }
         return row = new SetupRow("GitHub", Glyphs.Github, status, action, detail);

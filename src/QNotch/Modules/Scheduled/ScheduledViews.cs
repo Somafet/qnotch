@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using QNotch.Core;
 using QNotch.Shell;
 using QNotch.Theme;
 
@@ -29,7 +30,7 @@ internal sealed class ScheduledCard : Grid
     public ScheduledCard(ScheduledState st, IShell shell)
     {
         var rows = new StackPanel { VerticalAlignment = VerticalAlignment.Top };
-        var empty = Placeholder.Create(ScheduledModule.Icon, "", "No scheduled tasks.");
+        var empty = Placeholder.Create(ScheduledModule.Icon, "", L.T("No scheduled tasks."));
         Children.Add(rows);
         Children.Add(empty);
 
@@ -71,8 +72,8 @@ internal sealed class ScheduledTab : Grid
     readonly ScheduledState _st;
     readonly StackPanel _rows = new() { Margin = new Thickness(0, 0, 0, 12) };
     readonly TextBlock _error = UiKit.Text("", "Muted");
-    readonly FrameworkElement _empty = Placeholder.Create(ScheduledModule.Icon, "No scheduled tasks", "Tasks you add to the Windows Task Scheduler show up here.");
-    readonly FrameworkElement _unavailable = Placeholder.Create(Glyphs.Warning, "Task Scheduler unavailable", "The Windows Task Scheduler could not be read.");
+    readonly FrameworkElement _empty = Placeholder.Create(ScheduledModule.Icon, L.T("No scheduled tasks"), L.T("Tasks you add to the Windows Task Scheduler show up here."));
+    readonly FrameworkElement _unavailable = Placeholder.Create(Glyphs.Warning, L.T("Task Scheduler unavailable"), L.T("The Windows Task Scheduler could not be read."));
     string? _confirm; // name of the task whose delete waits for a second click
 
     public ScheduledTab(ScheduledModule module, ScheduledState st)
@@ -126,15 +127,15 @@ internal sealed class ScheduledTab : Grid
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 0) };
         if (_confirm == t.Name)
         {
-            var delete = TextButton("Delete", () => _module.Delete(t));
+            var delete = TextButton(L.T("Delete"), () => _module.Delete(t));
             delete.SetResourceReference(Control.ForegroundProperty, "DangerBrush");
             buttons.Children.Add(delete);
-            buttons.Children.Add(TextButton("Cancel", () => { _confirm = null; Render(); }));
+            buttons.Children.Add(TextButton(L.T("Cancel"), () => { _confirm = null; Render(); }));
         }
         else
         {
-            buttons.Children.Add(IconButton(t.Enabled ? Glyphs.Pause : Glyphs.Play, t.Enabled ? "Pause" : "Resume", () => _module.SetEnabled(t, !t.Enabled)));
-            buttons.Children.Add(IconButton(Glyphs.Delete, "Delete", () => { _confirm = t.Name; Render(); }));
+            buttons.Children.Add(IconButton(t.Enabled ? Glyphs.Pause : Glyphs.Play, t.Enabled ? L.T("Pause") : L.T("Resume"), () => _module.SetEnabled(t, !t.Enabled)));
+            buttons.Children.Add(IconButton(Glyphs.Delete, L.T("Delete"), () => { _confirm = t.Name; Render(); }));
         }
 
         var g = new Grid();

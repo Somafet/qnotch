@@ -97,7 +97,7 @@ internal sealed class GithubService
         {
             Log.Warn("GitHub refresh failed", ex);
             _timer.Change(RetryAfterError, Timeout.InfiniteTimeSpan);
-            _ctx.Bus.Run(() => Fail("Something went wrong. See the log.", false));
+            _ctx.Bus.Run(() => Fail(L.T("Something went wrong. See the log."), false));
         }
         finally
         {
@@ -112,7 +112,7 @@ internal sealed class GithubService
         try
         {
             var data = await QueryAsync(token, "query { viewer { login } }");
-            return (true, $"Connected as @{data.GetProperty("viewer").GetProperty("login").GetString()}.");
+            return (true, L.F("Connected as @{0}.", data.GetProperty("viewer").GetProperty("login").GetString()));
         }
         catch (GithubException ex) { return (false, ex.Message); }
     }
@@ -159,9 +159,9 @@ internal sealed class GithubService
         else _s.GithubGraph.FetchedUtc = d.FetchedUtc;
         var shown = _s.GithubGraph;
         _s.GithubLogin = shown.Login;
-        _s.GithubTotalText = shown.Total == 1 ? "1 contribution" : $"{shown.Total:N0} contributions";
+        _s.GithubTotalText = shown.Total == 1 ? L.T("1 contribution") : L.F("{0:N0} contributions", shown.Total);
         var streak = shown.Streak();
-        _s.GithubStreakText = streak > 0 ? $"{streak} day streak" : "No active streak";
+        _s.GithubStreakText = streak == 1 ? L.T("1 day streak") : streak > 1 ? L.F("{0} day streak", streak) : L.T("No active streak");
         _s.GithubStale = stale;
         _s.GithubMessage = message;
         _s.GithubUpdatedText = UpdatedText(shown, stale);
@@ -173,7 +173,7 @@ internal sealed class GithubService
         if (_s.GithubGraph is { } d)
         {
             _s.GithubStale = true;
-            _s.GithubMessage = offline ? "Offline, showing saved activity." : $"Could not refresh: {message}";
+            _s.GithubMessage = offline ? L.T("Offline, showing saved activity.") : L.F("Could not refresh: {0}", message);
             _s.GithubUpdatedText = UpdatedText(d, true);
             _s.GithubStatus = GithubStatus.Ready;
         }
@@ -187,8 +187,9 @@ internal sealed class GithubService
     static string UpdatedText(GithubData d, bool stale)
     {
         var age = DateTime.UtcNow - d.FetchedUtc;
-        var ago = age.TotalMinutes < 1 ? "just now" : age.TotalHours < 1 ? $"{(int)age.TotalMinutes} min ago" : age.TotalDays < 1 ? $"{(int)age.TotalHours} h ago" : $"{(int)age.TotalDays} d ago";
-        return (stale ? "Saved " : "Updated ") + ago;
+        if (stale)
+            return age.TotalMinutes < 1 ? L.T("Saved just now") : age.TotalHours < 1 ? L.F("Saved {0} min ago", (int)age.TotalMinutes) : age.TotalDays < 1 ? L.F("Saved {0} h ago", (int)age.TotalHours) : L.F("Saved {0} d ago", (int)age.TotalDays);
+        return age.TotalMinutes < 1 ? L.T("Updated just now") : age.TotalHours < 1 ? L.F("Updated {0} min ago", (int)age.TotalMinutes) : age.TotalDays < 1 ? L.F("Updated {0} h ago", (int)age.TotalHours) : L.F("Updated {0} d ago", (int)age.TotalDays);
     }
 
     // ---------- thread pool ----------
@@ -227,18 +228,18 @@ internal sealed class GithubService
         {
             using var resp = await http.SendAsync(req);
             var body = await resp.Content.ReadAsStringAsync();
-            if (resp.StatusCode == HttpStatusCode.Unauthorized) throw new GithubException("GitHub rejected the token. Check it in Settings.", false);
-            if (resp.StatusCode is HttpStatusCode.Forbidden or HttpStatusCode.TooManyRequests) throw new GithubException("GitHub refused the request (rate limit or missing permission).", false);
-            if (!resp.IsSuccessStatusCode) throw new GithubException($"GitHub returned {(int)resp.StatusCode}.", false);
+            if (resp.StatusCode == HttpStatusCode.Unauthorized) throw new GithubException(L.T("GitHub rejected the token. Check it in Settings."), false);
+            if (resp.StatusCode is HttpStatusCode.Forbidden or HttpStatusCode.TooManyRequests) throw new GithubException(L.T("GitHub refused the request (rate limit or missing permission)."), false);
+            if (!resp.IsSuccessStatusCode) throw new GithubException(L.F("GitHub returned {0}.", (int)resp.StatusCode), false);
             using var doc = JsonDocument.Parse(body);
             var root = doc.RootElement;
             if (root.TryGetProperty("errors", out var errors) && errors.GetArrayLength() > 0)
-                throw new GithubException(errors[0].TryGetProperty("message", out var m) ? m.GetString() ?? "GitHub returned an error." : "GitHub returned an error.", false);
+                throw new GithubException(errors[0].TryGetProperty("message", out var m) ? m.GetString() ?? L.T("GitHub returned an error.") : L.T("GitHub returned an error."), false);
             return root.GetProperty("data").Clone();
         }
-        catch (HttpRequestException) { throw new GithubException("No connection to GitHub.", true); }
-        catch (TaskCanceledException) { throw new GithubException("GitHub did not respond in time.", true); }
-        catch (JsonException) { throw new GithubException("GitHub sent an unexpected response.", false); }
+        catch (HttpRequestException) { throw new GithubException(L.T("No connection to GitHub."), true); }
+        catch (TaskCanceledException) { throw new GithubException(L.T("GitHub did not respond in time."), true); }
+        catch (JsonException) { throw new GithubException(L.T("GitHub sent an unexpected response."), false); }
     }
 
     static GithubData? ReadCache()

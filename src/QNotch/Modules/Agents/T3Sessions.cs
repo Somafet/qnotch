@@ -43,7 +43,7 @@ internal static class T3Sessions
             var since = DateTime.TryParse(row[7], CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal, out var at)
                 ? at : DateTime.UtcNow;
             return new T3Session(row[0], row[1].Length > 0 ? row[1] : "t3:" + row[0], row[2], agent, row[4].Trim(), row[5], status, since,
-                status != AgentStatus.NeedsYou ? "" : row[8] == "user_input" ? "T3 Code is waiting for your answer" : "T3 Code needs your permission",
+                status != AgentStatus.NeedsYou ? "" : row[8] == "user_input" ? L.T("T3 Code is waiting for your answer") : L.T("T3 Code needs your permission"),
                 ThreadLink(environment, row[0]));
         }).ToList();
     }

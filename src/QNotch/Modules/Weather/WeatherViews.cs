@@ -68,10 +68,10 @@ internal sealed class WeatherCard : Grid
     {
         _s = state;
         _ready = BuildReady(svc, shell);
-        _noPlace = Centered("Pick a place", "Search for your town in Settings to see its forecast from yr.no.",
-            Action("Pick a place", () => shell.OpenSettings("weather")));
-        _loading = Centered("Loading forecast", "Fetching the forecast from yr.no.", null);
-        _error = Centered("Could not load the forecast", "", Action("Retry", svc.Refresh), _errorText);
+        _noPlace = Centered(L.T("Pick a place"), L.T("Search for your town in Settings to see its forecast from yr.no."),
+            Action(L.T("Pick a place"), () => shell.OpenSettings("weather")));
+        _loading = Centered(L.T("Loading forecast"), L.T("Fetching the forecast from yr.no."), null);
+        _error = Centered(L.T("Could not load the forecast"), "", Action(L.T("Retry"), svc.Refresh), _errorText);
         foreach (var e in new[] { _ready, _noPlace, _loading, _error }) Children.Add(e);
         _s.PropertyChanged += OnChanged;
         Sync();
@@ -111,7 +111,7 @@ internal sealed class WeatherCard : Grid
         root.ColumnDefinitions.Add(new ColumnDefinition());
         root.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
-        var open = new Button { Style = (Style)Application.Current.FindResource("IconButton"), Content = Glyphs.Link, Width = 24, Height = 24, ToolTip = "Open on yr.no",
+        var open = new Button { Style = (Style)Application.Current.FindResource("IconButton"), Content = Glyphs.Link, Width = 24, Height = 24, ToolTip = L.T("Open on yr.no"),
             VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(4, -2, -4, 0) };
         open.Click += (_, _) => { svc.OpenYr(); shell.ClosePanel(); };
         Grid.SetColumn(open, 2);

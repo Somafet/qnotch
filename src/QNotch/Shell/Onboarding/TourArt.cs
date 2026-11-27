@@ -3,6 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using Path = System.Windows.Shapes.Path;
+using QNotch.Core;
 using QNotch.Theme;
 
 namespace QNotch.Shell.Onboarding;
@@ -118,9 +119,9 @@ internal static class TourArt
             StrokeDashArray = [CheckLength, CheckLength],
         };
         check.SetResourceReference(Shape.StrokeProperty, "SuccessBrush");
-        System.Windows.Automation.AutomationProperties.SetName(check, "Ready");
+        System.Windows.Automation.AutomationProperties.SetName(check, L.T("Ready"));
         row.Children.Add(check);
-        row.Children.Add(Text("QNotch is ready", 13, weight: FontWeights.SemiBold));
+        row.Children.Add(Text(L.T("QNotch is ready"), 13, weight: FontWeights.SemiBold));
         var pill = Pill(row, 300);
         pill.Padding = new Thickness(22, 0, 24, 1);
         return pill;
@@ -150,8 +151,8 @@ internal static class TourArt
         avatar.Children.Add(initial);
         profile.Children.Add(avatar);
         var who = new StackPanel { Margin = new Thickness(7, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
-        who.Children.Add(Text("Good morning", 10.5, weight: FontWeights.SemiBold));
-        who.Children.Add(Text("Monday, October 19", 9, "TextTertiaryBrush"));
+        who.Children.Add(Text(L.T("Good morning"), 10.5, weight: FontWeights.SemiBold));
+        who.Children.Add(Text(L.T("Monday, October 19"), 9, "TextTertiaryBrush"));
         profile.Children.Add(who);
         header.Children.Add(profile);
         var tabs = new Border { CornerRadius = new CornerRadius(9), Padding = new Thickness(2) };
@@ -253,7 +254,7 @@ internal static class TourArt
             g.Children.Add(v);
             rows.Children.Add(g);
         }
-        return Card("System", rows);
+        return Card(L.T("System"), rows);
     }
 
     static Border MediaCard()
@@ -277,7 +278,7 @@ internal static class TourArt
         }
         text.Children.Add(controls);
         row.Children.Add(text);
-        return Card("Now playing", row);
+        return Card(L.T("Now playing"), row);
     }
 
     public static Border WeatherCard(string place, double height = 104)
@@ -286,9 +287,9 @@ internal static class TourArt
         row.Children.Add(Glyph("", 26, "WarningBrush"));
         var text = new StackPanel { Margin = new Thickness(10, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
         text.Children.Add(Text("14°", 20, weight: FontWeights.SemiBold));
-        text.Children.Add(Text($"{place}, partly cloudy", 9.5, "TextSecondaryBrush"));
+        text.Children.Add(Text(L.F("{0}, partly cloudy", place), 9.5, "TextSecondaryBrush"));
         row.Children.Add(text);
-        return Card("Weather", row, height);
+        return Card(L.T("Weather"), row, height);
     }
 
     /// <param name="cells">Receives the graph cells, each with its diagonal (column plus row) in Tag, for the fill wave.</param>
@@ -322,14 +323,14 @@ internal static class TourArt
         }
         var body = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
         body.Children.Add(grid);
-        body.Children.Add(Text("1,284 contributions", 9.5, "TextSecondaryBrush"));
+        body.Children.Add(Text(L.T("1,284 contributions"), 9.5, "TextSecondaryBrush"));
         return Card("GitHub", body, height);
     }
 
     public static Border AgentsCard(double height)
     {
         var rows = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
-        foreach (var (name, state, brush) in new[] { ("api", "Needs you", "WarningBrush"), ("website", "Working", "AccentBrush") })
+        foreach (var (name, state, brush) in new[] { ("api", L.T("Needs you"), "WarningBrush"), ("website", L.T("Working"), "AccentBrush") })
         {
             var g = new Grid { Margin = new Thickness(0, 3, 0, 3) };
             g.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -345,7 +346,7 @@ internal static class TourArt
             g.Children.Add(s);
             rows.Children.Add(g);
         }
-        return Card("Agents", rows, height);
+        return Card(L.T("Agents"), rows, height);
     }
 
     /// <summary>One key cap, with a deeper bottom edge. <paramref name="lit"/>: the accent outline when the shortcut was just pressed.</summary>
@@ -367,7 +368,7 @@ internal static class TourArt
     public static FrameworkElement KeyCaps(string gesture, double size, bool lit)
     {
         var row = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center };
-        if (gesture.Length == 0) { row.Children.Add(Text("No shortcut", size, "TextTertiaryBrush")); return row; }
+        if (gesture.Length == 0) { row.Children.Add(Text(L.T("No shortcut"), size, "TextTertiaryBrush")); return row; }
         var parts = gesture.EndsWith("++", StringComparison.Ordinal) ? gesture[..^2].Split('+').Append("+") : gesture.Split('+');
         foreach (var p in parts.Where(p => p.Length > 0)) row.Children.Add(KeyCap(KeyName(p), size, lit));
         System.Windows.Automation.AutomationProperties.SetName(row, gesture);

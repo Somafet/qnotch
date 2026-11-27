@@ -44,8 +44,10 @@ public sealed unsafe class TrayIcon : IDisposable
             cbSize = (uint)sizeof(NOTIFYICONDATAW), hWnd = _w.Hwnd, uID = 1, uFlags = flags,
             uCallbackMessage = CallbackMessage, hIcon = _shell.Mode == ShellMode.GameBar || _shell.GameMode.Override != GameModeOverride.Auto ? _iconActive : _icon,
         };
-        var tip = $"QNotch\nGame mode: {Label(_shell.GameMode.Override)}{(_shell.Mode == ShellMode.GameBar ? ", game bar showing" : "")}";
-        if (_updates.State.HasUpdate) tip += $"\nUpdate available: {_updates.State.AvailableVersion}";
+        var tip = "QNotch\n" + (_shell.Mode == ShellMode.GameBar
+            ? L.F("Game mode: {0}, game bar showing", Label(_shell.GameMode.Override))
+            : L.F("Game mode: {0}", Label(_shell.GameMode.Override)));
+        if (_updates.State.HasUpdate) tip += "\n" + L.F("Update available: {0}", _updates.State.AvailableVersion);
         for (var i = 0; i < Math.Min(tip.Length, 127); i++) d.szTip[i] = tip[i];
         return d;
     }
@@ -59,8 +61,8 @@ public sealed unsafe class TrayIcon : IDisposable
         // Leave the update pending during fullscreen games, presentations and Windows quiet time.
         if (Native.SHQueryUserNotificationState(out var state) >= 0 && state != Native.QUNS_ACCEPTS_NOTIFICATIONS) return;
         var d = Data(NotifyInfo);
-        var title = "QNotch update available";
-        var message = $"QNotch {_updates.State.AvailableVersion} is ready. Click to review the update and choose Update and restart.";
+        var title = L.T("QNotch update available");
+        var message = L.F("QNotch {0} is ready. Click to review the update and choose Update and restart.", _updates.State.AvailableVersion);
         for (var i = 0; i < Math.Min(title.Length, 63); i++) d.szInfoTitle[i] = title[i];
         for (var i = 0; i < Math.Min(message.Length, 255); i++) d.szInfo[i] = message[i];
         d.dwInfoFlags = InfoIcon | RespectQuietTime;
@@ -88,20 +90,20 @@ public sealed unsafe class TrayIcon : IDisposable
         var m = new ContextMenu { Placement = PlacementMode.MousePoint };
         if (_shell.Mode != ShellMode.GameBar)
         {
-            var open = Item("Open QNotch", () => { QNotch.Core.Analytics.Track("shell", "open_panel"); _shell.OpenPanel(); });
+            var open = Item(L.T("Open QNotch"), () => { QNotch.Core.Analytics.Track("shell", "open_panel"); _shell.OpenPanel(); });
             open.InputGestureText = _shortcuts.Find("toggle")?.Gesture ?? "";
             m.Items.Add(open);
         }
-        m.Items.Add(Item("Settings", () => _shell.OpenSettings()));
+        m.Items.Add(Item(L.T("Settings"), () => _shell.OpenSettings()));
         foreach (var action in _shell.QuickActions.Items)
         {
             try { if (action.TrayFactory?.Invoke() is { } item) m.Items.Add(item); }
             catch (Exception ex) { Log.Warn($"Tray action '{action.Id}' failed", ex); }
         }
-        m.Items.Add(Item(_updates.State.HasUpdate ? $"Update to {_updates.State.AvailableVersion}…" : "Updates…",
+        m.Items.Add(Item(_updates.State.HasUpdate ? L.F("Update to {0}…", _updates.State.AvailableVersion) : L.T("Updates…"),
             () => _shell.OpenSettings("about")));
         m.Items.Add(new Separator());
-        m.Items.Add(new MenuItem { Header = "Game mode", Style = (Style)Application.Current.FindResource("MenuHeader") });
+        m.Items.Add(new MenuItem { Header = L.T("Game mode"), Style = (Style)Application.Current.FindResource("MenuHeader") });
         foreach (var o in Enum.GetValues<GameModeOverride>())
         {
             var mode = o;
@@ -110,13 +112,13 @@ public sealed unsafe class TrayIcon : IDisposable
             m.Items.Add(it);
         }
         m.Items.Add(new Separator());
-        m.Items.Add(Item("Quit QNotch", () => { QNotch.Core.Analytics.Track("shell", "quit", "tray"); _exit(); }));
+        m.Items.Add(Item(L.T("Quit QNotch"), () => { QNotch.Core.Analytics.Track("shell", "quit", "tray"); _exit(); }));
         // Keep keyboard focus if "Open panel" was chosen, so Esc and an outside click dismiss the panel.
         m.Closed += (_, _) => { if (_shell.Mode != ShellMode.Expanded) _w.DisableKeyboard(); };
         m.IsOpen = true;
     }
 
-    static string Label(GameModeOverride o) => o switch { GameModeOverride.ForceOn => "On", GameModeOverride.ForceOff => "Off", _ => "Auto" };
+    static string Label(GameModeOverride o) => o switch { GameModeOverride.ForceOn => L.T("On"), GameModeOverride.ForceOff => L.T("Off"), _ => L.T("Auto") };
 
     static MenuItem Item(string header, Action click)
     {

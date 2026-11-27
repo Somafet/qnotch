@@ -57,7 +57,7 @@ internal sealed class CalculatorTab : Grid, IPanelKeyboardInput
         {
             _failed = true;
             Log.Error("Calculator failed to open", ex);
-            Children.Add(Theme.Placeholder.Create(CalculatorModule.Icon, "Calculator unavailable", "Your sheets were not changed. See the log for details."));
+            Children.Add(Theme.Placeholder.Create(CalculatorModule.Icon, L.T("Calculator unavailable"), L.T("Your sheets were not changed. See the log for details.")));
         }
         finally { _loading = false; }
     }

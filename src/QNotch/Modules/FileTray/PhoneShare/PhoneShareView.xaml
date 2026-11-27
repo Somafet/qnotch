@@ -1,6 +1,7 @@
 <UserControl x:Class="QNotch.Modules.FileTray.PhoneShareView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:core="clr-namespace:QNotch.Core"
              xmlns:theme="clr-namespace:QNotch.Theme">
     <!-- DataContext: PhoneShareState. Fills row 1 of the Files tab (696 x 264), so the file list sits in the panel's bottom-left corner. Left: the files; right: start, or the code and transfers. -->
     <UserControl.Resources>
@@ -30,9 +31,9 @@
             <DockPanel DockPanel.Dock="Top" Height="24" Margin="13,0,0,4"> <!-- 2 past the text inset (PanelMetrics.Caption), as before -->
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center"
                             Visibility="{Binding IsIdle, Converter={StaticResource BoolToVis}}">
-                    <Button Style="{StaticResource Link}" Content="All" Click="OnAll" ToolTip="Select every file"
+                    <Button Style="{StaticResource Link}" Content="{core:T 'All'}" Click="OnAll" ToolTip="{core:T 'Select every file'}"
                             Visibility="{Binding HasChoices, Converter={StaticResource BoolToVis}}"/>
-                    <Button Style="{StaticResource Link}" Content="None" Click="OnNone" ToolTip="Receive only: share no files"
+                    <Button Style="{StaticResource Link}" Content="{core:T 'None'}" Click="OnNone" ToolTip="{core:T 'Receive only: share no files'}"
                             Visibility="{Binding HasChoices, Converter={StaticResource BoolToVis}}"/>
                 </StackPanel>
                 <TextBlock Text="{Binding SelectionText}" Style="{StaticResource Caption}" FontSize="12" VerticalAlignment="Center"/>
@@ -57,11 +58,11 @@
                                     <DataTemplate.Triggers>
                                         <DataTrigger Binding="{Binding Item.IsFolder}" Value="True">
                                             <Setter TargetName="Check" Property="IsEnabled" Value="False"/>
-                                            <Setter TargetName="Note" Property="Text" Value="Folder, not shared"/>
+                                            <Setter TargetName="Note" Property="Text" Value="{core:T 'Folder, not shared'}"/>
                                         </DataTrigger>
                                         <DataTrigger Binding="{Binding Item.IsMissing}" Value="True">
                                             <Setter TargetName="Check" Property="IsEnabled" Value="False"/>
-                                            <Setter TargetName="Note" Property="Text" Value="Missing"/>
+                                            <Setter TargetName="Note" Property="Text" Value="{core:T 'Missing'}"/>
                                             <Setter TargetName="Note" Property="Foreground" Value="{DynamicResource WarningBrush}"/>
                                         </DataTrigger>
                                         <!-- While sharing, the list is the frozen set: no checkboxes. -->
@@ -74,7 +75,7 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
                     </ScrollViewer>
-                    <TextBlock Margin="16,0" VerticalAlignment="Center" TextAlignment="Center" Text="The tray is empty. You can still receive files from your phone.">
+                    <TextBlock Margin="16,0" VerticalAlignment="Center" TextAlignment="Center" Text="{core:T 'The tray is empty. You can still receive files from your phone.'}">
                         <TextBlock.Style>
                             <Style TargetType="TextBlock" BasedOn="{StaticResource Help}">
                                 <Setter Property="Visibility" Value="Collapsed"/>
@@ -90,27 +91,27 @@
 
         <!-- Not sharing: explanation, network and Start -->
         <StackPanel Grid.Column="2" Visibility="{Binding IsIdle, Converter={StaticResource BoolToVis}}">
-            <TextBlock Text="Send files to your phone and back" Style="{StaticResource Title}" FontSize="13" Margin="0,3,0,0"/>
+            <TextBlock Text="{core:T 'Send files to your phone and back'}" Style="{StaticResource Title}" FontSize="13" Margin="0,3,0,0"/>
             <TextBlock Style="{StaticResource Help}" FontSize="12" Margin="0,6,0,0"
-                       Text="Start sharing and scan the code with your phone's camera. Its browser can download the files on the left and send photos and files to Downloads\QNotch on this PC. No app or account needed."/>
+                       Text="{core:T 'Start sharing and scan the code with your phone\'s camera. Its browser can download the files on the left and send photos and files to Downloads\\QNotch on this PC. No app or account needed.'}"/>
             <DockPanel Margin="0,12,0,0" Visibility="{Binding HasManyAddresses, Converter={StaticResource BoolToVis}}">
-                <TextBlock Text="Network" Style="{StaticResource Caption}" FontSize="12" VerticalAlignment="Center" Width="60"/>
+                <TextBlock Text="{core:T 'Network'}" Style="{StaticResource Caption}" FontSize="12" VerticalAlignment="Center" Width="60"/>
                 <ComboBox ItemsSource="{Binding Addresses}" SelectedItem="{Binding Address}" FontSize="12"
-                          AutomationProperties.Name="Network address" ToolTip="The address your phone connects to. Pick the network your phone is on."/>
+                          AutomationProperties.Name="{core:T 'Network address'}" ToolTip="{core:T 'The address your phone connects to. Pick the network your phone is on.'}"/>
             </DockPanel>
             <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
-                <Button Style="{StaticResource AccentButton}" Padding="14,6" Click="OnStart" IsEnabled="{Binding CanStart}" ToolTip="Start a sharing session">
+                <Button Style="{StaticResource AccentButton}" Padding="14,6" Click="OnStart" IsEnabled="{Binding CanStart}" ToolTip="{core:T 'Start a sharing session'}">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="&#xE8EA;" Style="{StaticResource Glyph}" FontSize="13" VerticalAlignment="Center" Foreground="{DynamicResource OnAccentBrush}"/>
-                        <TextBlock Text="Start sharing" Margin="7,0,0,0"/>
+                        <TextBlock Text="{core:T 'Start sharing'}" Margin="7,0,0,0"/>
                     </StackPanel>
                 </Button>
                 <TextBlock Text="{Binding Status}" Style="{StaticResource StatusText}" VerticalAlignment="Center" Margin="12,0,0,0" MaxWidth="250"/>
             </StackPanel>
             <TextBlock Style="{StaticResource Help}" Margin="0,16,0,0"
-                       Text="The phone must be on the same network as this PC (Ethernet on the PC is fine). Guest Wi-Fi often keeps devices apart. If Windows asks, allow QNotch on private networks. Sharing ends after 15 minutes."/>
+                       Text="{core:T 'The phone must be on the same network as this PC (Ethernet on the PC is fine). Guest Wi-Fi often keeps devices apart. If Windows asks, allow QNotch on private networks. Sharing ends after 15 minutes.'}"/>
             <TextBlock Style="{StaticResource Help}" Margin="0,6,0,0"
-                       Text="The connection is plain HTTP and not encrypted: others on the network could see what you transfer. The code only controls who can connect."/>
+                       Text="{core:T 'The connection is plain HTTP and not encrypted: others on the network could see what you transfer. The code only controls who can connect.'}"/>
         </StackPanel>
 
         <!-- Sharing: code, link, time, transfers -->
@@ -119,13 +120,13 @@
             <StackPanel>
                 <Border Width="164" Height="164" CornerRadius="12" Background="White" Padding="2" BorderThickness="1" BorderBrush="{DynamicResource StrokeBrush}">
                     <Image Source="{Binding Qr}" Stretch="Uniform" RenderOptions.EdgeMode="Aliased" RenderOptions.BitmapScalingMode="NearestNeighbor"
-                           AutomationProperties.Name="QR code with the sharing link"/>
+                           AutomationProperties.Name="{core:T 'QR code with the sharing link'}"/>
                 </Border>
                 <TextBlock Text="{Binding Url}" Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="2,8,0,0" FontSize="10"/>
-                <Button Style="{StaticResource Link}" HorizontalAlignment="Left" Margin="0,6,0,0" Click="OnCopy" ToolTip="Copy the sharing link">
+                <Button Style="{StaticResource Link}" HorizontalAlignment="Left" Margin="0,6,0,0" Click="OnCopy" ToolTip="{core:T 'Copy the sharing link'}">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="&#xE8C8;" Style="{StaticResource Glyph}" FontSize="11" VerticalAlignment="Center"/>
-                        <TextBlock Text="Copy link" Margin="5,0,0,0"/>
+                        <TextBlock Text="{core:T 'Copy link'}" Margin="5,0,0,0"/>
                     </StackPanel>
                 </Button>
             </StackPanel>
@@ -133,12 +134,12 @@
             <DockPanel Grid.Column="2">
                 <DockPanel DockPanel.Dock="Top" Height="24" Margin="0,0,0,0">
                     <Button DockPanel.Dock="Right" Style="{StaticResource Link}" Content="+15 min" Click="OnExtend" VerticalAlignment="Center"
-                            IsEnabled="{Binding CanExtend}" ToolTip="Keep sharing 15 minutes longer"/>
+                            IsEnabled="{Binding CanExtend}" ToolTip="{core:T 'Keep sharing 15 minutes longer'}"/>
                     <TextBlock Text="{Binding TimeLeft}" Style="{StaticResource Title}" FontSize="13" VerticalAlignment="Center"/>
                 </DockPanel>
                 <TextBlock DockPanel.Dock="Top" Text="{Binding Status}" Style="{StaticResource StatusText}" Margin="0,6,0,0"/>
                 <TextBlock DockPanel.Dock="Bottom" Style="{StaticResource Help}" Margin="0,6,0,0"
-                           Text="Not connecting? Use the same network (no guest Wi-Fi) and allow QNotch in the Windows firewall. Plain HTTP: not encrypted."/>
+                           Text="{core:T 'Not connecting? Use the same network (no guest Wi-Fi) and allow QNotch in the Windows firewall. Plain HTTP: not encrypted.'}"/>
                 <Grid Margin="0,10,0,0">
                     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
                                   Visibility="{Binding HasTransfers, Converter={StaticResource BoolToVis}}">
@@ -152,7 +153,7 @@
                                                    Foreground="{DynamicResource TextSecondaryBrush}"/>
                                         <TextBlock Grid.Column="1" Text="{Binding Name}" FontSize="12" TextTrimming="CharacterEllipsis"/>
                                         <Button x:Name="Show" Grid.Column="2" Grid.RowSpan="2" Style="{StaticResource IconButton}" Width="24" Height="24" FontSize="12"
-                                                Content="&#xE838;" ToolTip="Show in folder" Click="OnReveal" Visibility="Collapsed" VerticalAlignment="Center"/>
+                                                Content="&#xE838;" ToolTip="{core:T 'Show in folder'}" Click="OnReveal" Visibility="Collapsed" VerticalAlignment="Center"/>
                                         <TextBlock x:Name="Detail" Grid.Row="1" Grid.Column="1" Text="{Binding Detail}" Style="{StaticResource Caption}" TextTrimming="CharacterEllipsis"/>
                                         <ProgressBar x:Name="Bar" Grid.Row="1" Grid.Column="1" Value="{Binding Percent}" Maximum="100" Height="3"
                                                      VerticalAlignment="Bottom" Margin="0,0,0,-4" IsTabStop="False"/>
@@ -169,7 +170,7 @@
                         </ItemsControl>
                     </ScrollViewer>
                     <TextBlock VerticalAlignment="Center" HorizontalAlignment="Center" TextAlignment="Center" MaxWidth="200"
-                               Text="Transfers show up here. Received files are added to the tray.">
+                               Text="{core:T 'Transfers show up here. Received files are added to the tray.'}">
                         <TextBlock.Style>
                             <Style TargetType="TextBlock" BasedOn="{StaticResource Help}">
                                 <Style.Triggers>

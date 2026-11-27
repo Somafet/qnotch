@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Threading;
 using Microsoft.Win32;
+using QNotch.Core;
 using QNotch.Shell;
 using QNotch.Theme;
 
@@ -28,7 +29,7 @@ internal static class TaildropUi
     /// <summary>Lets the user pick files to send to <paramref name="device"/>; the panel stays open while the dialog shows.</summary>
     public static void Pick(TaildropModule module, IShell shell, TaildropDevice device)
     {
-        var dlg = new OpenFileDialog { Multiselect = true, Title = $"Send files to {device.Name}" };
+        var dlg = new OpenFileDialog { Multiselect = true, Title = L.F("Send files to {0}", device.Name) };
         bool ok;
         using (shell.HoldOpen()) ok = dlg.ShowDialog() == true;
         if (ok) module.Send(device, dlg.FileNames);
@@ -79,12 +80,12 @@ internal static class TaildropEmpty
     public static (string Title, string Message, string? Action)? For(TaildropState st) => st.Availability switch
     {
         TaildropAvailability.Loading => null,
-        TaildropAvailability.NotInstalled => ("Tailscale is not installed", "Taildrop sends files between your devices on Tailscale. Install Tailscale and sign in to use it.", "Get Tailscale"),
-        TaildropAvailability.NotRunning => ("Tailscale is not running", "Start Tailscale to send files to your devices.", "Open Tailscale"),
-        TaildropAvailability.Stopped => ("Tailscale is disconnected", "Connect Tailscale to send files to your devices.", "Open Tailscale"),
-        TaildropAvailability.NeedsLogin => ("Sign in to Tailscale", "Sign in to Tailscale to send files to your devices.", "Open Tailscale"),
-        _ when st.Devices.Count == 0 && st.Error.Length > 0 => ("Taildrop unavailable", st.Error, null),
-        _ when st.Devices.Count == 0 => ("No devices can receive files", "Taildrop sends to your own devices on this tailnet. Sign in to Tailscale on another device, or check that Taildrop is on for your tailnet.", null),
+        TaildropAvailability.NotInstalled => (L.T("Tailscale is not installed"), L.T("Taildrop sends files between your devices on Tailscale. Install Tailscale and sign in to use it."), L.T("Get Tailscale")),
+        TaildropAvailability.NotRunning => (L.T("Tailscale is not running"), L.T("Start Tailscale to send files to your devices."), L.T("Open Tailscale")),
+        TaildropAvailability.Stopped => (L.T("Tailscale is disconnected"), L.T("Connect Tailscale to send files to your devices."), L.T("Open Tailscale")),
+        TaildropAvailability.NeedsLogin => (L.T("Sign in to Tailscale"), L.T("Sign in to Tailscale to send files to your devices."), L.T("Open Tailscale")),
+        _ when st.Devices.Count == 0 && st.Error.Length > 0 => (L.T("Taildrop unavailable"), st.Error, null),
+        _ when st.Devices.Count == 0 => (L.T("No devices can receive files"), L.T("Taildrop sends to your own devices on this tailnet. Sign in to Tailscale on another device, or check that Taildrop is on for your tailnet."), null),
         _ => null,
     };
 }
@@ -123,8 +124,8 @@ internal sealed class TaildropTab : Grid
         _caption.TextWrapping = TextWrapping.NoWrap;
         _caption.TextTrimming = TextTrimming.CharacterEllipsis;
         _caption.VerticalAlignment = VerticalAlignment.Center;
-        var refresh = new Button { Content = "Refresh", Style = (Style)Application.Current.FindResource("LinkButton"), FontSize = 11, Padding = new Thickness(3, 0, 3, 0), VerticalAlignment = VerticalAlignment.Center, ToolTip = "Refresh devices" };
-        AutomationProperties.SetName(refresh, "Refresh devices");
+        var refresh = new Button { Content = L.T("Refresh"), Style = (Style)Application.Current.FindResource("LinkButton"), FontSize = 11, Padding = new Thickness(3, 0, 3, 0), VerticalAlignment = VerticalAlignment.Center, ToolTip = L.T("Refresh devices") };
+        AutomationProperties.SetName(refresh, L.T("Refresh devices"));
         refresh.Click += (_, _) => module.Refresh();
         DockPanel.SetDock(refresh, Dock.Right);
         var top = new DockPanel { Margin = new Thickness(0, 0, 0, 8) };
@@ -134,7 +135,7 @@ internal sealed class TaildropTab : Grid
 
         // Files waiting in the inbox
         _waiting.SetResourceReference(Border.BackgroundProperty, "AccentSoftBrush");
-        _save = TaildropUi.TextButton("Save to Downloads", module.SaveWaiting, "Move the waiting files into your Downloads folder", accent: true);
+        _save = TaildropUi.TextButton(L.T("Save to Downloads"), module.SaveWaiting, L.T("Move the waiting files into your Downloads folder"), accent: true);
         DockPanel.SetDock(_save, Dock.Right);
         var inbox = UiKit.Glyph("", 14, "TextPrimaryBrush");
         inbox.VerticalAlignment = VerticalAlignment.Center;
@@ -157,8 +158,8 @@ internal sealed class TaildropTab : Grid
         // Transfer line
         (_bar, _setBar) = TaildropUi.Bar();
         _bar.Margin = new Thickness(0, 0, 0, 6);
-        _cancel = TaildropUi.TextButton("Cancel", module.Cancel, "Stop sending");
-        _show = TaildropUi.TextButton("Show", module.ShowSaved, "Show the saved file in File Explorer");
+        _cancel = TaildropUi.TextButton(L.T("Cancel"), module.Cancel, L.T("Stop sending"));
+        _show = TaildropUi.TextButton(L.T("Show"), module.ShowSaved, L.T("Show the saved file in File Explorer"));
         var buttons = new StackPanel { Orientation = Orientation.Horizontal };
         buttons.Children.Add(_show);
         buttons.Children.Add(_cancel);
@@ -186,15 +187,15 @@ internal sealed class TaildropTab : Grid
         _empty.Visibility = empty is null ? Visibility.Collapsed : Visibility.Visible;
         _scroll.Visibility = empty is null ? Visibility.Visible : Visibility.Collapsed;
         var count = _st.Devices.Count;
-        _caption.Text = empty is not null ? "" : (count == 1 ? "1 device" : $"{count} devices") + " · Updates automatically";
+        _caption.Text = empty is not null ? "" : count == 1 ? L.T("1 device · Updates automatically") : L.F("{0} devices · Updates automatically", count);
 
         var waiting = _st.Availability == TaildropAvailability.Ready ? _st.Waiting : [];
         _waiting.Visibility = waiting.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         _waitingText.Text = waiting.Count switch
         {
             0 => "",
-            1 => $"{waiting[0].Name} is waiting in Taildrop",
-            _ => $"{waiting.Count} files are waiting in Taildrop",
+            1 => L.F("{0} is waiting in Taildrop", waiting[0].Name),
+            _ => L.F("{0} files are waiting in Taildrop", waiting.Count),
         };
         _waitingText.ToolTip = string.Join("\n", waiting.Select(w => w.Name));
 
@@ -236,8 +237,8 @@ internal sealed class TaildropTab : Grid
         content.Children.Add(name);
         content.Children.Add(sub);
 
-        var button = new Button { Content = content, Padding = new Thickness(12, 10, 12, 10), IsEnabled = d.Online, ToolTip = d.Online ? $"Send files to {d.Name}" : $"{d.Name} is offline" };
-        AutomationProperties.SetName(button, $"{d.Name}, {(d.Online ? "online" : "offline")}");
+        var button = new Button { Content = content, Padding = new Thickness(12, 10, 12, 10), IsEnabled = d.Online, ToolTip = d.Online ? L.F("Send files to {0}", d.Name) : L.F("{0} is offline", d.Name) };
+        AutomationProperties.SetName(button, d.Online ? L.F("{0}, online", d.Name) : L.F("{0}, offline", d.Name));
         button.Click += (_, _) => TaildropUi.Pick(_module, _shell, d);
         var frame = new Border { Child = button, Width = 160, CornerRadius = new CornerRadius(9), BorderThickness = new Thickness(1.5), Margin = new Thickness(0, 0, 8, 8), BorderBrush = System.Windows.Media.Brushes.Transparent };
 
@@ -245,7 +246,7 @@ internal sealed class TaildropTab : Grid
         {
             var sending = _st.Busy && _st.BusyDevice == d.Id;
             var os = TaildropUi.OsName(d.Os);
-            sub.Text = sending ? (_st.Progress >= 0 ? $"Sending · {_st.Progress:P0}" : "Sending") : d.Online ? (os.Length > 0 ? $"{os} · Online" : "Online") : "Offline";
+            sub.Text = sending ? (_st.Progress >= 0 ? L.F("Sending · {0:P0}", _st.Progress) : L.T("Sending")) : d.Online ? (os.Length > 0 ? L.F("{0} · Online", os) : L.T("Online")) : L.T("Offline");
             sub.SetResourceReference(TextBlock.ForegroundProperty, sending ? "AccentBrush" : d.Online ? "TextSecondaryBrush" : "TextTertiaryBrush");
             button.IsEnabled = d.Online && !_st.Busy;
         }
@@ -307,12 +308,12 @@ internal sealed class TaildropCard : Grid
     {
         var empty = TaildropEmpty.For(_st);
         var online = _st.Devices.Where(d => d.Online).ToList();
-        if (empty is null && online.Count == 0) empty = ("", "No devices are online.", null);
+        if (empty is null && online.Count == 0) empty = ("", L.T("No devices are online."), null);
         _empty.Content = empty is { } e ? Compact(e.Title.Length > 0 ? e.Title : e.Message) : null;
         _empty.Visibility = empty is null ? Visibility.Collapsed : Visibility.Visible;
 
         var line = _st.Line.Length > 0 ? _st.Line
-            : _st.Availability == TaildropAvailability.Ready && _st.Waiting.Count > 0 ? $"{TaildropModule.Count(_st.Waiting.Count)} waiting in Taildrop" : "";
+            : _st.Availability == TaildropAvailability.Ready && _st.Waiting.Count > 0 ? L.F("{0} waiting in Taildrop", TaildropModule.Count(_st.Waiting.Count)) : "";
         _line.Text = _st.Busy && _st.Progress >= 0 ? $"{_st.Progress:P0} · {_st.Line}" : line;
         _line.SetResourceReference(TextBlock.ForegroundProperty, _st.Line.Length > 0 ? _st.LineBrush : "AccentBrush");
         _line.ToolTip = _line.Text.Length > 0 ? _line.Text : null;
@@ -338,10 +339,10 @@ internal sealed class TaildropCard : Grid
         line.Children.Add(glyph);
         line.Children.Add(dot);
         line.Children.Add(name);
-        var b = new Button { Content = line, Padding = new Thickness(6, 4, 6, 4), IsEnabled = !_st.Busy, ToolTip = $"Send files to {d.Name}",
+        var b = new Button { Content = line, Padding = new Thickness(6, 4, 6, 4), IsEnabled = !_st.Busy, ToolTip = L.F("Send files to {0}", d.Name),
             Style = (Style)Application.Current.FindResource("LinkButton") };
         b.SetResourceReference(Control.ForegroundProperty, "TextPrimaryBrush");
-        AutomationProperties.SetName(b, $"Send files to {d.Name}");
+        AutomationProperties.SetName(b, L.F("Send files to {0}", d.Name));
         b.Click += (_, _) => TaildropUi.Pick(_module, _shell, d);
         var frame = new Border { Child = b, CornerRadius = new CornerRadius(6), BorderThickness = new Thickness(1), BorderBrush = System.Windows.Media.Brushes.Transparent,
             Background = System.Windows.Media.Brushes.Transparent, Margin = new Thickness(-6, 0, -6, 2) };

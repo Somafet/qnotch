@@ -37,6 +37,7 @@ Without `--data-dir` (or `QNOTCH_DATA_DIR`) it uses a fresh temporary data folde
 - `--data-dir <path>`: the data folder to read (settings, logs); nothing is saved to it.
 - `--only <patterns>`: only the views whose file name without `.png` matches, `*` for any run of characters, commas between patterns (`--only "tab-*,settings-general"`).
 - `--appearance light|dark`: forces the theme (the positional `light` still works). Default: the system's.
+- `--language <code>`: renders in that interface language, for example `it` ([Interface language](../../spec/localization.md)). Default: English.
 
 Every PNG is rendered at 2x and has a text outline with the same name (`.txt`):
 

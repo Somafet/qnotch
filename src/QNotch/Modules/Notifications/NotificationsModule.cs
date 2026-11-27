@@ -47,15 +47,15 @@ public sealed partial class NotificationsModule : INotchModule, ICadenceAware
         ctx.QuickActions.Register(new QuickActionDescriptor("notifications.mute", 10,
             () => NotificationMuteViews.Button(this, _st, compact: true), () => NotificationMuteViews.Tray(this, _st)));
 
-        ctx.Tabs.Register(new TabDescriptor(TabId, "Notifications", NotifyIcons.Bell, 50, () => new NotificationsTab(this, _st), () => _st.IsEmpty));
-        ctx.Cards.Register(new CardDescriptor("notifications", "Notifications", 60, () => new NotificationsCard(_st, ctx.Shell)));
-        ctx.SettingsSections.Register(new SettingsSectionDescriptor("notifications", "Notifications", NotifyIcons.Bell, 60, () => NotificationsSettingsSection.Create(this, _st)));
-        _sound = ctx.Sounds.Add("notifications.toast", "New notification", "A notification shows a toast. Turn it on in Settings, Notifications.", "Notification.Default", 10);
+        ctx.Tabs.Register(new TabDescriptor(TabId, L.T("Notifications"), NotifyIcons.Bell, 50, () => new NotificationsTab(this, _st), () => _st.IsEmpty));
+        ctx.Cards.Register(new CardDescriptor("notifications", L.T("Notifications"), 60, () => new NotificationsCard(_st, ctx.Shell)));
+        ctx.SettingsSections.Register(new SettingsSectionDescriptor("notifications", L.T("Notifications"), NotifyIcons.Bell, 60, () => NotificationsSettingsSection.Create(this, _st)));
+        _sound = ctx.Sounds.Add("notifications.toast", L.T("New notification"), L.T("A notification shows a toast. Turn it on in Settings, Notifications."), "Notification.Default", 10);
         ctx.Segments.Register(new SegmentDescriptor("notifications.pill", SegmentSlot.PillRight, 5, () => NotificationSegments.Unread(_st)));
         ctx.Segments.Register(new SegmentDescriptor("notifications.glance", SegmentSlot.Glance, 20, () => _glance = NotificationSegments.Glance(_st)));
         ctx.Segments.Register(new SegmentDescriptor("notifications.game", SegmentSlot.GameBar, 15, () => NotificationSegments.Unread(_st),
-            "Notifications", "Unread count, only while something is unread."));
-        ctx.Search.Register(new SearchSource("notifications", "Notifications", NotifyIcons.Bell, 40, q => _st.Items
+            L.T("Notifications"), L.T("Unread count, only while something is unread.")));
+        ctx.Search.Register(new SearchSource("notifications", L.T("Notifications"), NotifyIcons.Bell, 40, q => _st.Items
             .Where(n => n.Title.Contains(q, StringComparison.OrdinalIgnoreCase) || n.Body.Contains(q, StringComparison.OrdinalIgnoreCase) || n.App.Contains(q, StringComparison.OrdinalIgnoreCase))
             .Select(n => new SearchHit(n.Title, n.Meta, () => ctx.Shell.SelectTab(TabId)))));
         ctx.Shell.TabChanged += _ => MarkReadIfVisible();
@@ -165,7 +165,7 @@ public sealed partial class NotificationsModule : INotchModule, ICadenceAware
         {
             waiter = note.Waiter = new(TaskCreationOptions.RunContinuationsAsynchronously);
             note.Pending = true;
-            note.Status = "Waiting for your answer";
+            note.Status = L.T("Waiting for your answer");
         }
         var ttl = r.Ttl;
         _ctx.Bus.Run(() => Post(note, ttl));
@@ -179,7 +179,7 @@ public sealed partial class NotificationsModule : INotchModule, ICadenceAware
         cts.Cancel();
         if (first != waiter.Task)
         {
-            var status = first == left ? "Sender stopped waiting" : "Timed out";
+            var status = first == left ? L.T("Sender stopped waiting") : L.T("Timed out");
             waiter.TrySetResult(new WaitResult("timeout"));
             _ctx.Bus.Run(() => Close(note, status));
         }
@@ -297,7 +297,7 @@ public sealed partial class NotificationsModule : INotchModule, ICadenceAware
     void SetCall(IReadOnlyList<string> apps)
     {
         _inCall = apps.Count > 0;
-        _st.QuietStatus = _inCall ? $"Quiet now: {string.Join(", ", apps)} {(apps.Count == 1 ? "is" : "are")} using the microphone." : "";
+        _st.QuietStatus = !_inCall ? "" : apps.Count == 1 ? L.F("Quiet now: {0} is using the microphone.", apps[0]) : L.F("Quiet now: {0} are using the microphone.", string.Join(", ", apps));
         if (_inCall) { _transient = null; _toastTimer?.Stop(); }
         UpdateToast();
     }
@@ -309,7 +309,7 @@ public sealed partial class NotificationsModule : INotchModule, ICadenceAware
         var delivered = result is null || n.Waiter?.TrySetResult(result) == true;
         n.Waiter = null;
         n.Pending = false;
-        n.Status = delivered ? status : "Expired";
+        n.Status = delivered ? status : L.T("Expired");
         n.Actions = n.Actions.Where(a => !a.AnswersOnly).ToList();
         Changed();
         UpdateToast();
@@ -325,7 +325,7 @@ public sealed partial class NotificationsModule : INotchModule, ICadenceAware
                 catch (Exception ex) { Log.Warn($"Opening '{url}' failed", ex); }
             });
         else if (a.Hwnd != 0) WindowFinder.Focus(a.Hwnd);
-        Close(n, $"Answered: {a.Label}", new WaitResult("clicked", a.Id));
+        Close(n, L.F("Answered: {0}", a.Label), new WaitResult("clicked", a.Id));
         n.Read = true;
         if (_transient == n) _transient = null;
         Changed();
@@ -408,7 +408,7 @@ public sealed partial class NotificationsModule : INotchModule, ICadenceAware
                 Id = s.Id, App = s.App, Title = s.Title, Body = s.Body ?? "", Level = s.Level, Created = s.Created, IconSpec = s.Icon,
                 Glyph = s.Icon is not null && NotifyIcons.Glyphs.TryGetValue(s.Icon, out var g) ? g : NotifyIcons.LevelGlyph(s.Level),
                 Read = s.Read,
-                Status = s.Pending ? "Expired" : s.Status ?? "", // its sender did not survive the restart
+                Status = s.Pending ? L.T("Expired") : s.Status ?? "", // its sender did not survive the restart
             };
             note.Actions = (s.Actions ?? []).Where(a => a.Url is not null && a.Label is not null)
                 .Select(a => new NoteAction { Owner = note, Id = a.Id ?? a.Label!, Label = a.Label!, Url = a.Url }).ToList();
@@ -445,14 +445,14 @@ public sealed partial class NotificationsModule : INotchModule, ICadenceAware
     /// <summary>A new token: everything that posts over HTTP needs it from now on.</summary>
     internal void RenewToken() { QNotch.Core.Analytics.Track("notifications", "renew_token", "ui");  if (!_ctx.Settings.ReadOnly) _token = NotifyToken.Get(renew: true); } // snapshot run: never the credential store
 
-    internal void SendTest() { QNotch.Core.Analytics.Track("notifications", "send_test", "ui");  Post(new Note { Id = "qnotch-test", App = "QNotch", Title = "Test notification", Body = "This is what a notification looks like.", Glyph = NotifyIcons.Bell }, null); }
+    internal void SendTest() { QNotch.Core.Analytics.Track("notifications", "send_test", "ui");  Post(new Note { Id = "qnotch-test", App = "QNotch", Title = L.T("Test notification"), Body = L.T("This is what a notification looks like."), Glyph = NotifyIcons.Bell }, null); }
 
     // ---------- snapshot demo data ----------
 
     void Seed()
     {
-        _st.PipeStatus = $@"Listening on \\.\pipe\{Wire.PipeName}";
-        _st.HttpStatus = $"Listening on http://127.0.0.1:{_cfg.HttpPort}";
+        _st.PipeStatus = L.F("Listening on {0}", $@"\\.\pipe\{Wire.PipeName}");
+        _st.HttpStatus = L.F("Listening on {0}", $"http://127.0.0.1:{_cfg.HttpPort}");
         _token = "0123456789abcdef0123456789abcdef0123456789abcdef";
         var deploy = new Note { Id = "demo-3", App = "Deploy", Title = "Deploy to production failed", Body = "Health check timed out after 60 s.", Level = NoteLevel.Error, Glyph = NotifyIcons.LevelGlyph(NoteLevel.Error), Created = DateTime.Today.AddHours(9).AddMinutes(12), Read = true };
         var build = new Note { Id = "demo-2", App = "Build", Title = "Build finished", Body = "142 tests passed in 38 s.", Level = NoteLevel.Success, Glyph = NotifyIcons.LevelGlyph(NoteLevel.Success), Created = DateTime.Today.AddHours(9).AddMinutes(35) };

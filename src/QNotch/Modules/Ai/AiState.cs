@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
+using QNotch.Core;
 
 namespace QNotch.Modules.Ai;
 
@@ -17,7 +18,7 @@ public sealed partial class AiState : ObservableObject
     [ObservableProperty] private bool _hasApps;
     [ObservableProperty] private bool _noApps;
     [ObservableProperty] private bool _isScanning;
-    [ObservableProperty] private string _appsEmptyText = "Looking for AI apps...";
+    [ObservableProperty] private string _appsEmptyText = L.T("Looking for AI apps...");
     [ObservableProperty] private bool _hasProviders;
     [ObservableProperty] private bool _noProviders;
     [ObservableProperty] private bool _isRefreshing;

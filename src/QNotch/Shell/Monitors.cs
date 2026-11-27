@@ -5,7 +5,9 @@ namespace QNotch.Shell;
 
 public sealed record MonitorInfo(nint Handle, RECT Bounds, bool IsPrimary, double Scale)
 {
-    public string Label(int index) => $"Display {index + 1}  ({Bounds.Width} x {Bounds.Height}){(IsPrimary ? "  primary" : "")}";
+    public string Label(int index) => IsPrimary
+        ? Core.L.F("Display {0}  ({1} x {2})  primary", index + 1, Bounds.Width, Bounds.Height)
+        : Core.L.F("Display {0}  ({1} x {2})", index + 1, Bounds.Width, Bounds.Height);
 }
 
 public static unsafe class Monitors

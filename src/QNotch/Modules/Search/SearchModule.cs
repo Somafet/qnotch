@@ -27,15 +27,15 @@ public sealed class SearchModule : INotchModule, ICadenceAware
     public void Initialize(ModuleContext ctx)
     {
         _ctx = ctx;
-        ctx.Tabs.Register(new TabDescriptor(Id, "Search", Glyph, 5, View));
-        ctx.Search.Register(new SearchSource("tabs", "Tabs","", 80, q => ctx.Tabs.Items
+        ctx.Tabs.Register(new TabDescriptor(Id, L.T("Search"), Glyph, 5, View));
+        ctx.Search.Register(new SearchSource("tabs", L.T("Tabs"),"", 80, q => ctx.Tabs.Items
             .Where(t => t.Id != Id && ctx.Shell.IsTabVisible(t.Id) && t.Title.Contains(q, StringComparison.OrdinalIgnoreCase))
             .Select(t => new SearchHit(t.Title, "", () => ctx.Shell.SelectTab(t.Id)))));
-        ctx.Search.Register(new SearchSource("settings", "Settings", Glyphs.Settings, 90, q => ctx.SettingsSections.Items
+        ctx.Search.Register(new SearchSource("settings", L.T("Settings"), Glyphs.Settings, 90, q => ctx.SettingsSections.Items
             .Where(s => s.Title.Contains(q, StringComparison.OrdinalIgnoreCase))
             .Select(s => new SearchHit(s.Title, "", () => ctx.Shell.OpenSettings(s.Id)))));
         ctx.Shell.TabChanged += id => { if (id == Id) _box?.Focus(); }; // typing works at once when the window has the keyboard
-        _key = ctx.Shortcuts.Add(Id, "Open search", "Opens the Search tab with the cursor in the box.", DefaultKey, Summon, 20);
+        _key = ctx.Shortcuts.Add(Id, L.T("Open search"), L.T("Opens the Search tab with the cursor in the box."), DefaultKey, Summon, 20);
         var presentation = ctx.Settings.Get<WindowsPresentationSettings>("windows-presentation");
         void SyncPresentation()
         {
@@ -60,7 +60,7 @@ public sealed class SearchModule : INotchModule, ICadenceAware
     {
         if (_box is null) return;
         var places = string.Join(", ", _ctx.Search.Items.Select(s => s.Title));
-        _about.Text = $"Looks in: {places}." + (_key.Gesture.Length > 0 && !_key.Taken ? $" {_key.Gesture} opens this from anywhere." : "");
+        _about.Text = _key.Gesture.Length > 0 && !_key.Taken ? L.F("Looks in: {0}. {1} opens this from anywhere.", places, _key.Gesture) : L.F("Looks in: {0}.", places);
     }
 
     /// <summary>Panel closed: the next search starts empty.</summary>
@@ -79,11 +79,11 @@ public sealed class SearchModule : INotchModule, ICadenceAware
     FrameworkElement View()
     {
         var box = _box = new TextBox { FontSize = 13, Padding = new Thickness(17, 4, 5, 4), MaxLength = 200 }; // the content host adds the padding once more
-        System.Windows.Automation.AutomationProperties.SetName(box, "Search");
+        System.Windows.Automation.AutomationProperties.SetName(box, L.T("Search"));
         System.Windows.Automation.AutomationProperties.SetAutomationId(box, "search-field");
         var icon = UiKit.Glyph(Glyph, 14, "TextTertiaryBrush");
         icon.Margin = new Thickness(12, 0, 0, 0);
-        var prompt = new TextBlock { Text = "Search", FontSize = 13, Margin = new Thickness(37, 0, 0, 0) };
+        var prompt = new TextBlock { Text = L.T("Search"), FontSize = 13, Margin = new Thickness(37, 0, 0, 0) };
         prompt.SetResourceReference(TextBlock.ForegroundProperty, "TextTertiaryBrush");
         foreach (var t in new[] { icon, prompt }) { t.VerticalAlignment = VerticalAlignment.Center; t.HorizontalAlignment = HorizontalAlignment.Left; t.IsHitTestVisible = false; }
         var top = new Grid { Margin = new Thickness(0, 0, 0, 8) };
@@ -93,7 +93,7 @@ public sealed class SearchModule : INotchModule, ICadenceAware
 
         // Never focusable: the keyboard stays in the box, arrows and Enter are handled there.
         _list = new ListBox { Focusable = false, Padding = new Thickness(0, 0, 0, 12) };
-        var hint = (StackPanel)(_hint = Placeholder.Create(Glyph, "Search QNotch", ""));
+        var hint = (StackPanel)(_hint = Placeholder.Create(Glyph, L.T("Search QNotch"), ""));
         _about = (TextBlock)hint.Children[^1];
         About();
         _none = UiKit.Text("", "Muted");
@@ -124,7 +124,7 @@ public sealed class SearchModule : INotchModule, ICadenceAware
             }
         var any = _list.Items.Count > 0;
         if (any) _list.SelectedIndex = 0;
-        _none.Text = $"Nothing matches \"{q}\".";
+        _none.Text = L.F("Nothing matches \"{0}\".", q);
         _list.Visibility = any ? Visibility.Visible : Visibility.Collapsed;
         _hint.Visibility = q.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
         _none.Visibility = q.Length > 0 && !any ? Visibility.Visible : Visibility.Collapsed;

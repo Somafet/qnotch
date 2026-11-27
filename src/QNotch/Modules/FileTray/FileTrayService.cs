@@ -52,7 +52,7 @@ public sealed class FileTrayService
         while (_s.Items.Count > MaxItems) _s.Items.RemoveAt(_s.Items.Count - 1);
         Commit();
         Enqueue(added);
-        SetStatus(added.Count == 1 ? $"Added {added[0].Name}" : $"Added {added.Count} items");
+        SetStatus(added.Count == 1 ? L.F("Added {0}", added[0].Name) : L.F("Added {0} items", added.Count));
     }
 
     public void Remove(TrayItem item)
@@ -65,7 +65,7 @@ public sealed class FileTrayService
         if (_s.Items.Count == 0) return;
         _s.Items.Clear();
         Commit();
-        SetStatus("Tray cleared. Your files were not touched.");
+        SetStatus(L.T("Tray cleared. Your files were not touched."));
     }
 
     /// <summary>Re-check existence and size of every item (panel opened).</summary>
@@ -84,8 +84,8 @@ public sealed class FileTrayService
         var missing = _s.Items.Count(i => i.IsMissing);
         _s.Count = n;
         _s.IsEmpty = n == 0;
-        _s.CountText = n == 0 ? "No files" : n == 1 ? "1 file" : $"{n} files";
-        _s.MissingText = missing > 0 ? $"{missing} missing" : "";
+        _s.CountText = n == 0 ? L.T("No files") : n == 1 ? L.T("1 file") : L.F("{0} files", n);
+        _s.MissingText = missing > 0 ? L.F("{0} missing", missing) : "";
         var recent = _s.Items.Take(RecentCount).ToList();
         if (!recent.SequenceEqual(_s.Recent))
         {
@@ -145,7 +145,7 @@ public sealed class FileTrayService
         var p = it.Path;
         var isDir = Directory.Exists(p);
         var exists = isDir || File.Exists(p);
-        var size = !exists ? "Missing" : isDir ? "Folder" : FormatSize(new FileInfo(p).Length);
+        var size = !exists ? L.T("Missing") : isDir ? L.T("Folder") : FormatSize(new FileInfo(p).Length);
         var thumb = exists && it.Thumbnail is null ? ShellThumbnails.Get(p, ThumbSize) : null;
         _ctx.Bus.Run(() =>
         {
@@ -168,18 +168,18 @@ public sealed class FileTrayService
 
     // ---------- actions (file work off the UI thread) ----------
 
-    public void Open(TrayItem it) { QNotch.Core.Analytics.Track("files", "open", "ui");  Launch(new ProcessStartInfo(it.Path) { UseShellExecute = true }, $"open {it.Name}"); }
+    public void Open(TrayItem it) { QNotch.Core.Analytics.Track("files", "open", "ui");  Launch(new ProcessStartInfo(it.Path) { UseShellExecute = true }, $"open {it.Name}", L.F("Could not open {0}", it.Name)); }
 
     public void Reveal(TrayItem it) { QNotch.Core.Analytics.Track("files", "reveal", "ui");
-        Launch(new ProcessStartInfo("explorer.exe") { Arguments = $"/select,\"{it.Path}\"" }, $"show {it.Name}"); }
+        Launch(new ProcessStartInfo("explorer.exe") { Arguments = $"/select,\"{it.Path}\"" }, $"show {it.Name}", L.F("Could not show {0}", it.Name)); }
 
-    void Launch(ProcessStartInfo psi, string what) => Task.Run(() =>
+    void Launch(ProcessStartInfo psi, string what, string error) => Task.Run(() =>
     {
         try { Process.Start(psi)?.Dispose(); }
         catch (Exception ex)
         {
             Log.Warn($"FileTray: could not {what}", ex);
-            _ctx.Bus.Run(() => SetStatus($"Could not {what}"));
+            _ctx.Bus.Run(() => SetStatus(error));
         }
     });
 
@@ -187,19 +187,19 @@ public sealed class FileTrayService
     public void Export(IReadOnlyList<TrayItem> items, string folder)
     {
         var paths = items.Where(i => !i.IsMissing).Select(i => i.Path).ToArray();
-        if (paths.Length == 0) { SetStatus("Nothing to export: the files are missing"); return; }
-        SetStatus("Exporting...");
+        if (paths.Length == 0) { SetStatus(L.T("Nothing to export: the files are missing")); return; }
+        SetStatus(L.T("Exporting..."));
         Task.Run(() =>
         {
             string msg;
             try
             {
                 foreach (var p in paths) CopyTo(p, folder);
-                msg = paths.Length == 1 ? $"Exported {Path.GetFileName(paths[0])}" : $"Exported {paths.Length} items";
                 var leaf = Path.GetFileName(folder.TrimEnd('\\'));
-                msg += $" to {(leaf.Length > 0 ? leaf : folder)}";
+                var to = leaf.Length > 0 ? leaf : folder;
+                msg = paths.Length == 1 ? L.F("Exported {0} to {1}", Path.GetFileName(paths[0]), to) : L.F("Exported {0} items to {1}", paths.Length, to);
             }
-            catch (Exception ex) { Log.Warn("FileTray export failed", ex); msg = "Export failed: " + ex.Message; }
+            catch (Exception ex) { Log.Warn("FileTray export failed", ex); msg = L.F("Export failed: {0}", ex.Message); }
             _ctx.Bus.Run(() => SetStatus(msg));
         });
     }

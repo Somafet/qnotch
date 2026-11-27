@@ -31,14 +31,14 @@ internal sealed record UpdateRelease(Version Version, string Tag, Uri Download, 
             var expected = $"{Repository}/releases/download/{Uri.EscapeDataString(tag)}/{name}";
             if (!Uri.TryCreate(asset.GetProperty("browser_download_url").GetString(), UriKind.Absolute, out var url)
                 || !string.Equals(url.AbsoluteUri, expected, StringComparison.OrdinalIgnoreCase))
-                throw new InvalidDataException("The release download is not from the QNotch repository.");
+                throw new InvalidDataException(L.T("The release download is not from the QNotch repository."));
             var size = asset.GetProperty("size").GetInt64();
             var digest = asset.TryGetProperty("digest", out var d) ? d.GetString() : null;
             if (size is <= 0 or > MaxDownloadSize || digest is null || !digest.StartsWith("sha256:", StringComparison.Ordinal)
                 || digest.Length != 71 || !digest.AsSpan(7).ToString().All(Uri.IsHexDigit))
-                throw new InvalidDataException("This release has no valid download size or SHA-256 checksum.");
+                throw new InvalidDataException(L.T("This release has no valid download size or SHA-256 checksum."));
             return new(version, tag, url, size, digest[7..], selfContained);
         }
-        throw new InvalidDataException("This release does not have a download for your QNotch installation yet.");
+        throw new InvalidDataException(L.T("This release does not have a download for your QNotch installation yet."));
     }
 }

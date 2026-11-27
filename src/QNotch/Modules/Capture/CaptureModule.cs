@@ -32,7 +32,7 @@ public sealed class CaptureModule : INotchModule
     {
         ctx.Segments.Register(new SegmentDescriptor("capture.pill", SegmentSlot.PillRight, 3, Segment));
         ctx.Segments.Register(new SegmentDescriptor("capture.game", SegmentSlot.GameBar, 12, Segment,
-            "Mic and camera", "Only while an app uses the microphone or camera."));
+            L.T("Mic and camera"), L.T("Only while an app uses the microphone or camera.")));
 
         if (ctx.Settings.ReadOnly) // snapshot run: demo data, no watchers
         {
@@ -59,8 +59,8 @@ public sealed class CaptureModule : INotchModule
         _st.CameraInUse = cam.Count > 0;
         _st.AnyInUse = _st.MicInUse || _st.CameraInUse;
         var parts = new List<string>();
-        if (mic.Count > 0) parts.Add($"Microphone: {string.Join(", ", mic)}.");
-        if (cam.Count > 0) parts.Add($"Camera: {string.Join(", ", cam)}.");
+        if (mic.Count > 0) parts.Add(L.F("Microphone: {0}.", string.Join(", ", mic)));
+        if (cam.Count > 0) parts.Add(L.F("Camera: {0}.", string.Join(", ", cam)));
         _st.Description = string.Join(" ", parts);
     }
 

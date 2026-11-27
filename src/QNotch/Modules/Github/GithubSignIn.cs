@@ -43,9 +43,9 @@ internal sealed class GithubSignIn
         var glyph = new TextBlock { Text = Glyphs.Github, Style = (Style)Application.Current.FindResource("Glyph"), FontSize = 13, Margin = new Thickness(0, 0, 8, 0), VerticalAlignment = VerticalAlignment.Center };
         glyph.SetResourceReference(TextBlock.ForegroundProperty, "OnAccentBrush");
         label.Children.Add(glyph);
-        label.Children.Add(new TextBlock { Text = "Sign in with GitHub", VerticalAlignment = VerticalAlignment.Center });
+        label.Children.Add(new TextBlock { Text = L.T("Sign in with GitHub"), VerticalAlignment = VerticalAlignment.Center });
         Button = new Button { Content = label, Style = (Style)Application.Current.FindResource("AccentButton") };
-        AutomationProperties.SetName(Button, "Sign in with GitHub");
+        AutomationProperties.SetName(Button, L.T("Sign in with GitHub"));
         Button.Click += (_, _) => { QNotch.Core.Analytics.Track("github", "connect", "ui"); Start(); };
 
         _code = new TextBlock
@@ -53,14 +53,14 @@ internal sealed class GithubSignIn
             FontFamily = new FontFamily("Cascadia Mono, Consolas"), FontSize = 26, FontWeight = FontWeights.SemiBold,
             VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 0, 2),
         };
-        AutomationProperties.SetName(_code, "Your code");
+        AutomationProperties.SetName(_code, L.T("Your code"));
         _message = new TextBlock { FontSize = 11.5, TextWrapping = TextWrapping.Wrap };
         // While polling, a soft pulsing dot next to "Waiting for you…" shows it is alive. It runs only while it can be seen.
         _dot = new Ellipse { Width = 6, Height = 6, Margin = new Thickness(1, 0, 7, 0), VerticalAlignment = VerticalAlignment.Center, Visibility = Visibility.Collapsed };
         _dot.SetResourceReference(Shape.FillProperty, "AccentBrush");
-        _open = new Button { Content = "Copy code and open GitHub", Style = (Style)Application.Current.FindResource("AccentButton") };
-        _cancel = new Button { Content = "Cancel", Margin = new Thickness(8, 0, 0, 0) };
-        _retry = new Button { Content = "Try again", Margin = new Thickness(8, 0, 0, 0) };
+        _open = new Button { Content = L.T("Copy code and open GitHub"), Style = (Style)Application.Current.FindResource("AccentButton") };
+        _cancel = new Button { Content = L.T("Cancel"), Margin = new Thickness(8, 0, 0, 0) };
+        _retry = new Button { Content = L.T("Try again"), Margin = new Thickness(8, 0, 0, 0) };
         _open.Click += (_, _) => { QNotch.Core.Analytics.Track("github", "open_authorization", "ui"); CopyAndOpen(); };
         _cancel.Click += (_, _) => { QNotch.Core.Analytics.Track("github", "cancel_connect", "ui"); Stop(); };
         _retry.Click += (_, _) => { QNotch.Core.Analytics.Track("github", "connect", "ui"); Start(); };
@@ -95,7 +95,7 @@ internal sealed class GithubSignIn
     {
         _demo = true;
         _device = new GithubOAuth.DeviceCode("", DemoCode, "https://github.com/login/device", 900, 5);
-        Show(DemoCode, "Waiting for you to approve QNotch on GitHub…", "TextSecondaryBrush", open: true, retry: false, waiting: true);
+        Show(DemoCode, L.T("Waiting for you to approve QNotch on GitHub…"), "TextSecondaryBrush", open: true, retry: false, waiting: true);
     }
 
     async void Start()
@@ -103,17 +103,17 @@ internal sealed class GithubSignIn
         if (_demo) return; // snapshot run: no requests
         Stop(collapse: false);
         var run = _run = new CancellationTokenSource();
-        Show("", "Asking GitHub for a code…", "TextSecondaryBrush", open: false, retry: false);
+        Show("", L.T("Asking GitHub for a code…"), "TextSecondaryBrush", open: false, retry: false);
         using var http = GithubOAuth.Client();
         try
         {
             var device = _device = await GithubOAuth.RequestCodeAsync(http, run.Token);
             if (run.IsCancellationRequested) return;
-            Show(device.User, "Waiting for you to approve QNotch on GitHub…", "TextSecondaryBrush", open: true, retry: false, waiting: true);
+            Show(device.User, L.T("Waiting for you to approve QNotch on GitHub…"), "TextSecondaryBrush", open: true, retry: false, waiting: true);
             var r = await GithubOAuth.WaitForTokenAsync(device, ct => GithubOAuth.PollOnceAsync(http, device, ct), Task.Delay, run.Token);
             if (run.IsCancellationRequested) return;
             if (r.Kind != GithubOAuth.PollKind.Success) { Show("", r.Message, "DangerBrush", open: false, retry: true); return; }
-            Show(device.User, "Approved. Checking the account…", "TextSecondaryBrush", open: false, retry: false);
+            Show(device.User, L.T("Approved. Checking the account…"), "TextSecondaryBrush", open: false, retry: false);
             var (ok, message) = await _save(r.Token);
             if (run.IsCancellationRequested && !ok) return;
             if (!ok) { Show("", message, "DangerBrush", open: false, retry: true); return; }
@@ -125,7 +125,7 @@ internal sealed class GithubSignIn
         catch (Exception ex)
         {
             Log.Warn("GitHub sign-in failed", ex); // the exception text never holds the token or codes
-            if (!run.IsCancellationRequested) Show("", "Something went wrong. See the log.", "DangerBrush", open: false, retry: true);
+            if (!run.IsCancellationRequested) Show("", L.T("Something went wrong. See the log."), "DangerBrush", open: false, retry: true);
         }
         finally { if (_run == run) _run = null; run.Dispose(); }
     }

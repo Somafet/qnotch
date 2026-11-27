@@ -42,6 +42,8 @@ public sealed partial class GeneralSettings : ObservableObject
     /// <summary>The first-week quit question was shown to this install, once. A local value: never in setup codes.</summary>
     [ObservableProperty] bool _quitQuestionAsked;
     [ObservableProperty] string _lastTab = "home";
+    /// <summary>Interface language code (spec/localization.md); "" follows the Windows display language. Applies on restart. A local preference: never in setup codes.</summary>
+    [ObservableProperty] string _language = "";
 
     /// <summary>Ids of modules the user turned off (Settings, Features). They are never created; a change applies on restart.</summary>
     public List<string> DisabledModules { get; set; } = new();

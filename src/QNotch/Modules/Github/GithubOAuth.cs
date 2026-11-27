@@ -1,6 +1,7 @@
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
+using QNotch.Core;
 
 namespace QNotch.Modules.Github;
 
@@ -35,17 +36,17 @@ internal static class GithubOAuth
             using var doc = JsonDocument.Parse(json);
             var r = doc.RootElement;
             if (Str(r, "error") is { Length: > 0 } error)
-                throw new GithubException(error == "device_flow_disabled" ? "Sign in with GitHub is turned off for this app. Use a token instead."
-                    : Str(r, "error_description") is { Length: > 0 } d ? d : "GitHub refused the sign-in request.", false);
+                throw new GithubException(error == "device_flow_disabled" ? L.T("Sign in with GitHub is turned off for this app. Use a token instead.")
+                    : Str(r, "error_description") is { Length: > 0 } d ? d : L.T("GitHub refused the sign-in request."), false);
             var device = Str(r, "device_code");
             var user = Str(r, "user_code");
             var uri = Str(r, "verification_uri");
             // Only ever open GitHub's own page.
             if (device is not { Length: > 0 } || user is not { Length: > 0 } || uri is null || !uri.StartsWith("https://github.com/", StringComparison.OrdinalIgnoreCase))
-                throw new GithubException("GitHub sent an unexpected response.", false);
+                throw new GithubException(L.T("GitHub sent an unexpected response."), false);
             return new DeviceCode(device, user, uri, Int(r, "expires_in") is > 0 and var e ? e : 900, Int(r, "interval") is > 0 and var i ? i : 5);
         }
-        catch (JsonException) { throw new GithubException("GitHub sent an unexpected response.", false); }
+        catch (JsonException) { throw new GithubException(L.T("GitHub sent an unexpected response."), false); }
     }
 
     /// <summary>Reads one access token response. <paramref name="interval"/> is the current poll interval in seconds.</summary>
@@ -55,19 +56,19 @@ internal static class GithubOAuth
         {
             using var doc = JsonDocument.Parse(json);
             var r = doc.RootElement;
-            if (r.ValueKind != JsonValueKind.Object) return new(PollKind.Error, Message: "GitHub sent an unexpected response.");
+            if (r.ValueKind != JsonValueKind.Object) return new(PollKind.Error, Message: L.T("GitHub sent an unexpected response."));
             if (Str(r, "access_token") is { Length: > 0 } token) return new(PollKind.Success, token, interval);
             return Str(r, "error") switch
             {
                 "authorization_pending" => new(PollKind.Pending, Interval: interval),
                 // GitHub adds 5 seconds and usually says the new interval: use it when it is there.
                 "slow_down" => new(PollKind.SlowDown, Interval: Int(r, "interval") is > 0 and var i ? i : interval + 5),
-                "expired_token" => new(PollKind.Expired, Interval: interval, Message: "The code expired."),
-                "access_denied" => new(PollKind.Denied, Interval: interval, Message: "Sign-in was cancelled on GitHub."),
-                _ => new(PollKind.Error, Interval: interval, Message: Str(r, "error_description") is { Length: > 0 } d ? d : "GitHub sent an unexpected response."),
+                "expired_token" => new(PollKind.Expired, Interval: interval, Message: L.T("The code expired.")),
+                "access_denied" => new(PollKind.Denied, Interval: interval, Message: L.T("Sign-in was cancelled on GitHub.")),
+                _ => new(PollKind.Error, Interval: interval, Message: Str(r, "error_description") is { Length: > 0 } d ? d : L.T("GitHub sent an unexpected response.")),
             };
         }
-        catch (JsonException) { return new(PollKind.Error, Interval: interval, Message: "GitHub sent an unexpected response."); }
+        catch (JsonException) { return new(PollKind.Error, Interval: interval, Message: L.T("GitHub sent an unexpected response.")); }
     }
 
     /// <summary>
@@ -84,11 +85,11 @@ internal static class GithubOAuth
         {
             await delay(TimeSpan.FromSeconds(interval), ct);
             waited += interval;
-            if (waited >= code.ExpiresIn) return new(PollKind.Expired, Interval: interval, Message: "The code expired.");
+            if (waited >= code.ExpiresIn) return new(PollKind.Expired, Interval: interval, Message: L.T("The code expired."));
             string body;
             try { body = await poll(ct); }
-            catch (HttpRequestException) { return new(PollKind.Error, Interval: interval, Message: "No connection to GitHub."); }
-            catch (TaskCanceledException) when (!ct.IsCancellationRequested) { return new(PollKind.Error, Interval: interval, Message: "GitHub did not respond in time."); }
+            catch (HttpRequestException) { return new(PollKind.Error, Interval: interval, Message: L.T("No connection to GitHub.")); }
+            catch (TaskCanceledException) when (!ct.IsCancellationRequested) { return new(PollKind.Error, Interval: interval, Message: L.T("GitHub did not respond in time.")); }
             var r = ParsePoll(body, interval);
             if (r.Kind == PollKind.Pending) continue;
             if (r.Kind == PollKind.SlowDown) { interval = Math.Max(interval, r.Interval); continue; }
@@ -112,11 +113,11 @@ internal static class GithubOAuth
         {
             using var resp = await http.PostAsync(CodeUrl, Form(("client_id", ClientId), ("scope", "read:user")), ct);
             var body = await resp.Content.ReadAsStringAsync(ct);
-            if (!resp.IsSuccessStatusCode && !body.TrimStart().StartsWith('{')) throw new GithubException($"GitHub returned {(int)resp.StatusCode}.", false);
+            if (!resp.IsSuccessStatusCode && !body.TrimStart().StartsWith('{')) throw new GithubException(L.F("GitHub returned {0}.", (int)resp.StatusCode), false);
             return ParseDeviceCode(body);
         }
-        catch (HttpRequestException) { throw new GithubException("No connection to GitHub.", true); }
-        catch (TaskCanceledException) when (!ct.IsCancellationRequested) { throw new GithubException("GitHub did not respond in time.", true); }
+        catch (HttpRequestException) { throw new GithubException(L.T("No connection to GitHub."), true); }
+        catch (TaskCanceledException) when (!ct.IsCancellationRequested) { throw new GithubException(L.T("GitHub did not respond in time."), true); }
     }
 
     public static async Task<string> PollOnceAsync(HttpClient http, DeviceCode code, CancellationToken ct)

@@ -67,8 +67,8 @@ public sealed class HomeView : ScrollViewer
         }
         if (shown.Count == 0)
         {
-            _root.Children.Add(Placeholder.Create(Glyphs.Apps, "Your Home is empty", "Choose what appears here in Settings, Features."));
-            var recover = new Button { Content = "Open Features", HorizontalAlignment = HorizontalAlignment.Center };
+            _root.Children.Add(Placeholder.Create(Glyphs.Apps, L.T("Your Home is empty"), L.T("Choose what appears here in Settings, Features.")));
+            var recover = new Button { Content = L.T("Open Features"), HorizontalAlignment = HorizontalAlignment.Center };
             recover.Click += (_, _) => _shell.OpenSettings("features");
             _root.Children.Add(recover);
         }
@@ -81,7 +81,7 @@ public sealed class HomeView : ScrollViewer
         catch (Exception ex)
         {
             Log.Error($"Card '{d.Id}' failed to build", ex);
-            return Placeholder.Create(Glyphs.Warning, "", "This card failed to load. See logs.");
+            return Placeholder.Create(Glyphs.Warning, "", L.T("This card failed to load. See logs."));
         }
     }
 }

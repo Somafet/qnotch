@@ -20,7 +20,7 @@ public sealed partial class TerminalModule : INotchModule, IDisposable
     {
         _ctx = ctx;
         _general = ctx.Settings.Get<GeneralSettings>("general");
-        ctx.Tabs.Register(new TabDescriptor(Id, "Terminal", "", 70, () => _view ??= new TerminalView(this, Buffer)));
+        ctx.Tabs.Register(new TabDescriptor(Id, L.T("Terminal"), "", 70, () => _view ??= new TerminalView(this, Buffer)));
         if (Demo)
         {
             Buffer.Feed("\u001b[32mPS C:\\Users\\Alex>\u001b[0m Get-Date\r\nThursday, October 22, 2026 09:41:00\r\n\r\n\u001b[32mPS C:\\Users\\Alex>\u001b[0m ");
@@ -39,12 +39,12 @@ public sealed partial class TerminalModule : INotchModule, IDisposable
     internal void EnsureSession()
     {
         if (Demo || _disposed || _disabled || _starting is not null || _session is not null) return;
-        _view?.SetStatus("Starting shell…");
+        _view?.SetStatus(L.T("Starting shell…"));
         var shell = Shell();
         var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         _starting = Task.Run(() => ConPtySession.Start(shell.Executable, shell.Arguments, home, Buffer.Columns, Buffer.Rows,
             (text, reply) => { Buffer.Feed(text, reply); _view?.Input.OutputChanged(); },
-            () => _ctx.Dispatcher.BeginInvoke(() => { if (!_disposed) _view?.SetStatus("Session ended. Choose New session to start again."); })));
+            () => _ctx.Dispatcher.BeginInvoke(() => { if (!_disposed) _view?.SetStatus(L.T("Session ended. Choose New session to start again.")); })));
         FinishStart(_starting);
     }
 
@@ -55,19 +55,19 @@ public sealed partial class TerminalModule : INotchModule, IDisposable
             var session = await starting;
             if (_disposed || _disabled) { await session.DisposeAsync(); return; }
             _session = session;
-            _view?.SetStatus("PowerShell · session retained while closed · Ctrl+Shift+C copies screen");
+            _view?.SetStatus(L.T("PowerShell · session retained while closed · Ctrl+Shift+C copies screen"));
         }
         catch (Exception ex)
         {
             Log.Warn("Terminal could not start", ex);
-            if (!_disposed) _view?.SetStatus("Shell unavailable: " + ex.Message);
+            if (!_disposed) _view?.SetStatus(L.F("Shell unavailable: {0}", ex.Message));
         }
     }
 
     internal void Send(string text)
     {
         if (Demo || _disabled || _disposed) return;
-        if (_session?.Send(text) != true) _view?.SetStatus("Shell is not ready or input is full. Choose New session if it ended.");
+        if (_session?.Send(text) != true) _view?.SetStatus(L.T("Shell is not ready or input is full. Choose New session if it ended."));
     }
     internal void Resize(int columns, int rows) { if (!Demo) _session?.Resize(columns, rows); }
     internal void TakeKeyboard() => _ctx.Shell.OpenPanelWithKeyboard(Id);
@@ -99,7 +99,7 @@ public sealed partial class TerminalModule : INotchModule, IDisposable
     {
         if (e.PropertyName != nameof(GeneralSettings.LocalEnabledModules) || _general.LocalEnabledModules.Contains(Id, StringComparer.OrdinalIgnoreCase)) return;
         _disabled = true;
-        _view?.SetStatus("Terminal disabled. Owned processes are stopping; restart QNotch to remove the tab.");
+        _view?.SetStatus(L.T("Terminal disabled. Owned processes are stopping; restart QNotch to remove the tab."));
         _ = CloseSession();
     }
     public void Dispose()

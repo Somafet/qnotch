@@ -10,9 +10,9 @@ public sealed class NoteModule : INotchModule
         var s = new NoteState();
         var note = new NoteStore(ctx, s);
 
-        ctx.Cards.Register(new CardDescriptor("note", "Note", 45, () => new NoteCard(s)));
+        ctx.Cards.Register(new CardDescriptor("note", QNotch.Core.L.T("Note"), 45, () => new NoteCard(s)));
 
-        ctx.Search.Register(new SearchSource("note", "Note", Glyphs.Note, 30, q => s.NoteText.Split('\n')
+        ctx.Search.Register(new SearchSource("note", QNotch.Core.L.T("Note"), Glyphs.Note, 30, q => s.NoteText.Split('\n')
             .Where(l => l.Contains(q, StringComparison.OrdinalIgnoreCase))
             .Select(l => new SearchHit(SearchHit.Snippet(l, q), "", () => ctx.Shell.SelectTab("home")))));
 

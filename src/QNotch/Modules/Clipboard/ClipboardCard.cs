@@ -12,8 +12,8 @@ internal sealed class ClipboardCard : Grid
     readonly ClipboardModule _module;
     readonly ClipboardState _st;
     readonly StackPanel _rows = new() { VerticalAlignment = VerticalAlignment.Top };
-    readonly FrameworkElement _empty = Placeholder.Create(Glyphs.Clipboard, "", "Nothing copied yet.");
-    readonly FrameworkElement _unavailable = Placeholder.Create(Glyphs.Warning, "", "Clipboard unavailable.");
+    readonly FrameworkElement _empty = Placeholder.Create(Glyphs.Clipboard, "", L.T("Nothing copied yet."));
+    readonly FrameworkElement _unavailable = Placeholder.Create(Glyphs.Warning, "", L.T("Clipboard unavailable."));
 
     public ClipboardCard(ClipboardModule module, ClipboardState st)
     {
@@ -48,7 +48,7 @@ internal sealed class ClipboardCard : Grid
         line.Children.Add(g);
         line.Children.Add(t);
 
-        var b = new Border { CornerRadius = new CornerRadius(6), Padding = new Thickness(6, 4, 6, 4), Margin = new Thickness(-6, 0, -6, 1), Background = System.Windows.Media.Brushes.Transparent, Cursor = Cursors.Hand, Child = line, ToolTip = "Copy again", ContextMenu = _module.RowMenu(e) };
+        var b = new Border { CornerRadius = new CornerRadius(6), Padding = new Thickness(6, 4, 6, 4), Margin = new Thickness(-6, 0, -6, 1), Background = System.Windows.Media.Brushes.Transparent, Cursor = Cursors.Hand, Child = line, ToolTip = L.T("Copy again"), ContextMenu = _module.RowMenu(e) };
         b.MouseEnter += (_, _) => b.SetResourceReference(Border.BackgroundProperty, "ControlBrush");
         b.MouseLeave += (_, _) => b.Background = System.Windows.Media.Brushes.Transparent;
         b.MouseLeftButtonUp += (_, _) => _module.CopyAgain(e);

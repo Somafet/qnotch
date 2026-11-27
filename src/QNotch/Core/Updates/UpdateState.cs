@@ -14,7 +14,7 @@ internal sealed partial class UpdateState : ObservableObject
     [NotifyPropertyChangedFor(nameof(CanCheck), nameof(CanUpdate))]
     bool _isBusy;
 
-    [ObservableProperty] string _status = "Automatic checks are off. You can check manually at any time.";
+    [ObservableProperty] string _status = L.T("Automatic checks are off. You can check manually at any time.");
     [ObservableProperty] int _downloadPercent;
     [ObservableProperty] bool _isDownloading;
     [ObservableProperty] bool _needsPreferenceChoice;
@@ -22,5 +22,5 @@ internal sealed partial class UpdateState : ObservableObject
     public bool HasUpdate => AvailableVersion.Length > 0;
     public bool CanCheck => !IsBusy;
     public bool CanUpdate => HasUpdate && !IsBusy;
-    public string AvailableText => $"QNotch {AvailableVersion} is available";
+    public string AvailableText => QNotch.Core.L.F("QNotch {0} is available", AvailableVersion);
 }
