@@ -123,7 +123,7 @@ jobs:
         run: |
           if (-not $env:WINGET_TOKEN) { Write-Output '::warning::WINGET_TOKEN is not set; skipped the winget submission.'; exit 0 }
           Invoke-WebRequest https://aka.ms/wingetcreate/latest -OutFile "$env:RUNNER_TEMP/wingetcreate.exe"
-          & "$env:RUNNER_TEMP/wingetcreate.exe" submit --token $env:WINGET_TOKEN --prtitle "New version: Somafet.QNotch $env:GITHUB_REF_NAME" dist/package-managers/winget
+          node scripts/winget-submit.mjs --tag "$env:GITHUB_REF_NAME" --manifests dist/package-managers/winget --wingetcreate "$env:RUNNER_TEMP/wingetcreate.exe"
           exit $LASTEXITCODE
 
       - name: Update the Scoop bucket

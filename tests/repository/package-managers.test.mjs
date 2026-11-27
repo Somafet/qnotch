@@ -135,7 +135,7 @@ test('package managers run after publication, with each token only in its own st
   assert.ok(!job.permissions, 'The job only reads; the release token stays read-only.');
   const steps = job.steps.filter(step => step.run);
   assert.ok(steps[0].run.includes('scripts/package-managers.mjs') && steps[0].run.includes('GITHUB_REF_NAME'));
-  for (const [secret, text] of [['WINGET_TOKEN', 'wingetcreate.exe" submit'], ['SCOOP_BUCKET_TOKEN', 'Somafet/scoop-bucket'], ['CHOCOLATEY_API_KEY', 'push.chocolatey.org']]) {
+  for (const [secret, text] of [['WINGET_TOKEN', 'scripts/winget-submit.mjs'], ['SCOOP_BUCKET_TOKEN', 'Somafet/scoop-bucket'], ['CHOCOLATEY_API_KEY', 'push.chocolatey.org']]) {
     const using = job.steps.filter(step => JSON.stringify(step).includes(secret));
     assert.equal(using.length, 1, secret);
     assert.ok(using[0].run.includes(text) && using[0].run.includes(`if (-not $env:${secret})`), secret);
