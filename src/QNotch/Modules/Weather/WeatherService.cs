@@ -119,7 +119,7 @@ internal sealed class WeatherService
             catch (Exception ex)
             {
                 Log.Warn("Weather refresh failed", ex);
-                error = "Something went wrong. See the log.";
+                error = L.T("Something went wrong. See the log.");
                 next = RetryAfterError;
             }
             _timer.Change(next, Timeout.InfiniteTimeSpan);
@@ -157,7 +157,7 @@ internal sealed class WeatherService
         var view = _data is null ? null : WeatherFormat.Build(_data, place, _set.Units, DateTime.UtcNow);
         if (view is null)
         {
-            if (_data is not null) { _s.Message = "The saved forecast is out of date."; _s.Status = WeatherStatus.Error; }
+            if (_data is not null) { _s.Message = L.T("The saved forecast is out of date."); _s.Status = WeatherStatus.Error; }
             else if (_s.Status != WeatherStatus.Error) _s.Status = WeatherStatus.Loading;
             _s.PillVisible = _s.GameVisible = false;
             return;
@@ -167,7 +167,8 @@ internal sealed class WeatherService
         _s.ConditionText = view.Condition;
         _s.DetailText = view.Detail;
         if (!_s.Days.SequenceEqual(view.Days)) _s.Days = view.Days;
-        _s.UpdatedText = (_s.Stale ? "Saved " : "Updated ") + WeatherFormat.Ago(_data!.FetchedUtc);
+        var ago = WeatherFormat.Ago(_data!.FetchedUtc);
+        _s.UpdatedText = _s.Stale ? L.F("Saved {0}", ago) : L.F("Updated {0}", ago);
         _s.Status = WeatherStatus.Ready;
         _s.PillVisible = _set.ShowInPill;
         _s.GameVisible = true;
@@ -178,7 +179,7 @@ internal sealed class WeatherService
         if (_data is not null)
         {
             _s.Stale = true;
-            _s.Message = offline ? "Offline, showing the saved forecast." : $"Could not refresh: {message}";
+            _s.Message = offline ? L.T("Offline, showing the saved forecast.") : L.F("Could not refresh: {0}", message);
             Show();
         }
         else
@@ -214,8 +215,8 @@ internal sealed class WeatherService
             if (resp.StatusCode == HttpStatusCode.NotModified && prior is not null)
                 return new WeatherForecast { Lat = prior.Lat, Lon = prior.Lon, FetchedUtc = DateTime.UtcNow, ExpiresUtc = expires, LastModified = prior.LastModified, Points = prior.Points };
             if (resp.StatusCode is HttpStatusCode.TooManyRequests or HttpStatusCode.Forbidden)
-                throw new WeatherException("MET Norway asked QNotch to slow down. Trying again in an hour.", false, TimeSpan.FromHours(1));
-            if (!resp.IsSuccessStatusCode) throw new WeatherException($"MET Norway returned {(int)resp.StatusCode}.", false);
+                throw new WeatherException(L.T("MET Norway asked QNotch to slow down. Trying again in an hour."), false, TimeSpan.FromHours(1));
+            if (!resp.IsSuccessStatusCode) throw new WeatherException(L.F("MET Norway returned {0}.", (int)resp.StatusCode), false);
             if (resp.StatusCode == HttpStatusCode.NonAuthoritativeInformation) Log.Warn("MET Norway says this Locationforecast version is deprecated");
 
             await using var body = await resp.Content.ReadAsStreamAsync();
@@ -248,14 +249,14 @@ internal sealed class WeatherService
                 }
                 f.Points.Add(p);
             }
-            if (f.Points.Count == 0) throw new WeatherException("MET Norway sent an empty forecast.", false);
+            if (f.Points.Count == 0) throw new WeatherException(L.T("MET Norway sent an empty forecast."), false);
             return f;
         }
-        catch (HttpRequestException) { throw new WeatherException("No connection to MET Norway.", true); }
-        catch (TaskCanceledException) { throw new WeatherException("MET Norway did not respond in time.", true); }
+        catch (HttpRequestException) { throw new WeatherException(L.T("No connection to MET Norway."), true); }
+        catch (TaskCanceledException) { throw new WeatherException(L.T("MET Norway did not respond in time."), true); }
         catch (Exception ex) when (ex is JsonException or KeyNotFoundException or InvalidOperationException or FormatException)
         {
-            throw new WeatherException("MET Norway sent an unexpected response.", false);
+            throw new WeatherException(L.T("MET Norway sent an unexpected response."), false);
         }
     }
 
@@ -272,7 +273,7 @@ internal sealed class WeatherService
         {
             using var resp = await http.GetAsync("https://www.yr.no/api/v0/locations/search?language=en&q=" + Uri.EscapeDataString(query));
             if (resp.StatusCode == HttpStatusCode.NotFound) return [];
-            if (!resp.IsSuccessStatusCode) throw new WeatherException($"yr.no returned {(int)resp.StatusCode}.", false);
+            if (!resp.IsSuccessStatusCode) throw new WeatherException(L.F("yr.no returned {0}.", (int)resp.StatusCode), false);
             await using var body = await resp.Content.ReadAsStreamAsync();
             using var doc = await JsonDocument.ParseAsync(body);
             if (!doc.RootElement.TryGetProperty("_embedded", out var emb) || !emb.TryGetProperty("location", out var list)) return [];
@@ -292,11 +293,11 @@ internal sealed class WeatherService
             }
             return found;
         }
-        catch (HttpRequestException) { throw new WeatherException("No connection to yr.no.", true); }
-        catch (TaskCanceledException) { throw new WeatherException("yr.no did not respond in time.", true); }
+        catch (HttpRequestException) { throw new WeatherException(L.T("No connection to yr.no."), true); }
+        catch (TaskCanceledException) { throw new WeatherException(L.T("yr.no did not respond in time."), true); }
         catch (Exception ex) when (ex is JsonException or KeyNotFoundException or InvalidOperationException)
         {
-            throw new WeatherException("yr.no sent an unexpected response.", false);
+            throw new WeatherException(L.T("yr.no sent an unexpected response."), false);
         }
     }
 

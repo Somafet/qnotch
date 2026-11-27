@@ -20,7 +20,7 @@ public sealed partial class StatsState : ObservableObject
     [ObservableProperty] string _clock = "";
 
     [ObservableProperty] string _cpuText = "--";
-    [ObservableProperty] string _gpuText = "n/a";
+    [ObservableProperty] string _gpuText = QNotch.Core.L.T("n/a");
     /// <summary>" 61°C" (leading space: it follows the GPU percentage in the game bar), empty when unknown.</summary>
     [ObservableProperty] string _gpuTempText = "";
     [ObservableProperty] string _ramText = "--";

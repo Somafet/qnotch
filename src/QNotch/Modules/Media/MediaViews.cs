@@ -26,11 +26,11 @@ internal static class MediaViews
         Refresh();
     }
 
-    public static FrameworkElement Nothing(bool compact) => Placeholder.Create(Glyphs.Music, "Nothing playing",
-        compact ? "Play something and it shows up here." : "Start music or a video in any app and it shows up here.");
+    public static FrameworkElement Nothing(bool compact) => Placeholder.Create(Glyphs.Music, L.T("Nothing playing"),
+        compact ? L.T("Play something and it shows up here.") : L.T("Start music or a video in any app and it shows up here."));
 
-    public static FrameworkElement Unavailable(bool compact) => Placeholder.Create(Glyphs.Warning, "Media controls unavailable",
-        compact ? "Windows did not provide media sessions." : "Windows did not provide media sessions, so now playing cannot be shown.");
+    public static FrameworkElement Unavailable(bool compact) => Placeholder.Create(Glyphs.Warning, L.T("Media controls unavailable"),
+        compact ? L.T("Windows did not provide media sessions.") : L.T("Windows did not provide media sessions, so now playing cannot be shown."));
 
     /// <summary>Source switcher for choosing a session. Hidden unless more than one session exists.</summary>
     public static void WirePicker(ListBox box, MediaState m)

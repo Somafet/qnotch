@@ -1,3 +1,5 @@
+using QNotch.Core;
+
 namespace QNotch.Modules.Scheduled;
 
 /// <summary>What the views show. UI thread only; raises <see cref="Changed"/> only when something differs.</summary>
@@ -35,9 +37,9 @@ public sealed class ScheduledModule : INotchModule, ICadenceAware
     public void Initialize(ModuleContext ctx)
     {
         _ctx = ctx;
-        ctx.Tabs.Register(new TabDescriptor(TabId, "Scheduled", Icon, 60, () => new ScheduledTab(this, _st), () => _st.Loaded && !_st.Unavailable && _st.Items.Count == 0));
-        ctx.Cards.Register(new CardDescriptor("scheduled", "Scheduled tasks", 90, () => new ScheduledCard(_st, ctx.Shell)));
-        ctx.Search.Register(new SearchSource("scheduled", "Scheduled tasks", Icon, 50, q => _st.Items
+        ctx.Tabs.Register(new TabDescriptor(TabId, L.T("Scheduled"), Icon, 60, () => new ScheduledTab(this, _st), () => _st.Loaded && !_st.Unavailable && _st.Items.Count == 0));
+        ctx.Cards.Register(new CardDescriptor("scheduled", L.T("Scheduled tasks"), 90, () => new ScheduledCard(_st, ctx.Shell)));
+        ctx.Search.Register(new SearchSource("scheduled", L.T("Scheduled tasks"), Icon, 50, q => _st.Items
             .Where(t => t.Name.Contains(q, StringComparison.OrdinalIgnoreCase))
             .Select(t => new SearchHit(t.Name, t.Meta, () => ctx.Shell.SelectTab(TabId)))));
         if (ctx.Settings.ReadOnly) Seed();
@@ -57,7 +59,7 @@ public sealed class ScheduledModule : INotchModule, ICadenceAware
             var error = "";
             List<SchedTask>? items = null;
             try { action?.Invoke(); }
-            catch (UnauthorizedAccessException) { error = "Access denied: this task can only be changed by an administrator."; }
+            catch (UnauthorizedAccessException) { error = L.T("Access denied: this task can only be changed by an administrator."); }
             catch (Exception ex) { error = ex.Message.Trim(); }
             try { items = SchedulerCom.List(); }
             catch (Exception ex) { error = ex.Message.Trim(); }

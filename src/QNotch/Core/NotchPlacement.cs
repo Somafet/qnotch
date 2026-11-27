@@ -6,7 +6,7 @@ namespace QNotch.Core;
 /// </summary>
 public static class NotchPlacement
 {
-    public const string HintText = "Each app keeps its own pill spot · Settings";
+    public static readonly string HintText = L.T("Each app keeps its own pill spot · Settings");
     public const int HintMs = 6000;
 
     /// <summary>The saved choice, or for settings from before it existed: per app when app spots were already saved

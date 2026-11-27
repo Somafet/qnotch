@@ -6,6 +6,7 @@ using System.Windows.Automation.Provider;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
+using QNotch.Core;
 using QNotch.Theme;
 
 namespace QNotch.Modules.Terminal;
@@ -27,7 +28,7 @@ internal sealed class TerminalSurface : FrameworkElement, IExclusiveKeyboardInpu
     {
         _buffer = buffer; _send = send; _resize = resize; _takeKeyboard = takeKeyboard; _status = status;
         Focusable = true;
-        AutomationProperties.SetName(this, "Terminal input and output");
+        AutomationProperties.SetName(this, L.T("Terminal input and output"));
         AutomationProperties.SetAutomationId(this, "terminal-input");
         IsVisibleChanged += (_, _) => { _visible = IsVisible; if (_visible) { UpdateSize(); InvalidateVisual(); } };
         SizeChanged += (_, _) => { Clip = RoundedClip(); if (IsVisible) UpdateSize(); };
@@ -66,7 +67,7 @@ internal sealed class TerminalSurface : FrameworkElement, IExclusiveKeyboardInpu
         {
             QNotch.Core.Analytics.Track("terminal", "copy", "ui");
             try { System.Windows.Clipboard.SetText(string.Join(Environment.NewLine, _buffer.Capture(_scroll).Lines.Select(l => string.Concat(l.Select(c => c.Text)).TrimEnd()))); }
-            catch (Exception ex) { _status("Copy unavailable: " + ex.Message); }
+            catch (Exception ex) { _status(L.F("Copy unavailable: {0}", ex.Message)); }
             e.Handled = true; return;
         }
         if ((mods.HasFlag(ModifierKeys.Control) && !mods.HasFlag(ModifierKeys.Alt) && key == Key.V) || (mods == ModifierKeys.Shift && key == Key.Insert))
@@ -77,7 +78,7 @@ internal sealed class TerminalSurface : FrameworkElement, IExclusiveKeyboardInpu
                 if (System.Windows.Clipboard.ContainsText())
                 {
                     var text = System.Windows.Clipboard.GetText();
-                    if (text.Length > 16000) _status("Paste is limited to 16,000 characters.");
+                    if (text.Length > 16000) _status(L.T("Paste is limited to 16,000 characters."));
                     else
                     {
                         text = text.Replace("\r\n", "\r").Replace('\n', '\r').Replace("\u001b", "");
@@ -85,7 +86,7 @@ internal sealed class TerminalSurface : FrameworkElement, IExclusiveKeyboardInpu
                     }
                 }
             }
-            catch (Exception ex) { _status("Paste unavailable: " + ex.Message); }
+            catch (Exception ex) { _status(L.F("Paste unavailable: {0}", ex.Message)); }
             e.Handled = true; return;
         }
         if (mods == ModifierKeys.Shift && key is Key.PageUp or Key.PageDown)
@@ -146,7 +147,7 @@ internal sealed class TerminalSurface : FrameworkElement, IExclusiveKeyboardInpu
     {
         protected override string GetClassNameCore() => "Terminal";
         protected override AutomationControlType GetAutomationControlTypeCore() => AutomationControlType.Edit;
-        protected override string GetHelpTextCore() => "Interactive terminal. Ctrl+C interrupts. Ctrl+V pastes. Ctrl+Shift+C copies the visible screen. Shift+PageUp scrolls history. The panel shortcut closes the panel.";
+        protected override string GetHelpTextCore() => L.T("Interactive terminal. Ctrl+C interrupts. Ctrl+V pastes. Ctrl+Shift+C copies the visible screen. Shift+PageUp scrolls history. The panel shortcut closes the panel.");
         public override object? GetPattern(PatternInterface pattern) => pattern == PatternInterface.Value ? this : base.GetPattern(pattern);
         public string Value => owner.Text;
         public bool IsReadOnly => true;

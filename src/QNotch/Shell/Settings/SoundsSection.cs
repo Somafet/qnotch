@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using Microsoft.Win32;
+using QNotch.Core;
 using QNotch.Theme;
 
 namespace QNotch.Shell.Settings;
@@ -13,12 +14,12 @@ public static class SoundsSection
 
     public static FrameworkElement Create(Sounds sounds)
     {
-        var page = UiKit.Page("Sounds");
-        var intro = UiKit.Text("Each sound is one of your Windows sounds until you choose a file or drop one on its row. Turn sounds on or off on each feature's page.");
+        var page = UiKit.Page(L.T("Sounds"));
+        var intro = UiKit.Text(L.T("Each sound is one of your Windows sounds until you choose a file or drop one on its row. Turn sounds on or off on each feature's page."));
         intro.Margin = new Thickness(0, -6, 0, 16);
         page.Children.Add(intro);
         foreach (var s in sounds.Items) page.Children.Add(Row(sounds, s));
-        if (sounds.Items.Count == 0) page.Children.Add(UiKit.Text("No feature that plays a sound is on."));
+        if (sounds.Items.Count == 0) page.Children.Add(UiKit.Text(L.T("No feature that plays a sound is on.")));
         return page;
     }
 
@@ -30,13 +31,13 @@ public static class SoundsSection
             Style = (Style)Application.Current.FindResource("Muted"), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0),
             MaxWidth = 160, TextTrimming = TextTrimming.CharacterEllipsis,
         };
-        var play = new Button { Style = icon, Content = Glyphs.Play, ToolTip = "Play" };
-        var choose = new Button { Content = "Choose...", Padding = new Thickness(14, 6, 14, 6), Margin = new Thickness(4, 0, 0, 0) };
-        var reset = new Button { Style = icon, Content = Glyphs.Refresh, ToolTip = "Use the Windows sound", Margin = new Thickness(4, 0, -6, 0) };
+        var play = new Button { Style = icon, Content = Glyphs.Play, ToolTip = L.T("Play") };
+        var choose = new Button { Content = L.T("Choose..."), Padding = new Thickness(14, 6, 14, 6), Margin = new Thickness(4, 0, 0, 0) };
+        var reset = new Button { Style = icon, Content = Glyphs.Refresh, ToolTip = L.T("Use the Windows sound"), Margin = new Thickness(4, 0, -6, 0) };
 
         void Update()
         {
-            name.Text = s.File.Length > 0 ? Path.GetFileName(s.File) : "Windows sound";
+            name.Text = s.File.Length > 0 ? Path.GetFileName(s.File) : L.T("Windows sound");
             name.ToolTip = s.File.Length > 0 ? s.File : null;
             reset.Visibility = s.File.Length > 0 ? Visibility.Visible : Visibility.Hidden;
         }
@@ -50,7 +51,7 @@ public static class SoundsSection
         play.Click += (_, _) => { QNotch.Core.Analytics.Track("settings", "preview_sound", "ui"); sounds.Play(s); };
         choose.Click += (_, _) =>
         { QNotch.Core.Analytics.Track("settings", "choose_sound", "ui");
-            var dlg = new OpenFileDialog { Title = $"Choose a sound: {s.Title}", Filter = Sounds.Filter };
+            var dlg = new OpenFileDialog { Title = L.F("Choose a sound: {0}", s.Title), Filter = Sounds.Filter };
             if (dlg.ShowDialog(Window.GetWindow(choose)) == true) Use(dlg.FileName);
         };
         reset.Click += (_, _) => { QNotch.Core.Analytics.Track("settings", "reset_sound", "ui"); Use(""); };

@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using QNotch.Core;
 using QNotch.Theme;
 
 namespace QNotch.Shell.Settings;
@@ -10,8 +11,8 @@ public static class HotkeysSection
 {
     public static FrameworkElement Create(Shortcuts keys)
     {
-        var page = UiKit.Page("Hotkeys");
-        var intro = UiKit.Text("Click a box, then press the new shortcut. Esc cancels, Backspace turns the shortcut off.");
+        var page = UiKit.Page(L.T("Hotkeys"));
+        var intro = UiKit.Text(L.T("Click a box, then press the new shortcut. Esc cancels, Backspace turns the shortcut off."));
         intro.Margin = new Thickness(0, -6, 0, 16);
         page.Children.Add(intro);
 
@@ -45,7 +46,7 @@ public static class HotkeysSection
         var box = new TextBox
         {
             Width = 180, IsReadOnly = true, IsReadOnlyCaretVisible = false, TextAlignment = TextAlignment.Center,
-            FontFamily = new System.Windows.Media.FontFamily("Consolas"), FontSize = 12, Cursor = Cursors.Arrow, ToolTip = "Click, then press the new shortcut",
+            FontFamily = new System.Windows.Media.FontFamily("Consolas"), FontSize = 12, Cursor = Cursors.Arrow, ToolTip = L.T("Click, then press the new shortcut"),
         };
         var note = new TextBlock { Margin = new Thickness(0, 0, 10, 0), VerticalAlignment = VerticalAlignment.Center, FontSize = 12 };
         note.SetResourceReference(TextBlock.ForegroundProperty, "DangerBrush");
@@ -54,22 +55,22 @@ public static class HotkeysSection
 
         void Update()
         {
-            if (!box.IsKeyboardFocused) box.Text = s.Gesture.Length > 0 ? s.Gesture : "None";
+            if (!box.IsKeyboardFocused) box.Text = s.Gesture.Length > 0 ? s.Gesture : L.T("None");
             var hidden = clash.Length == 0 && s.Group is not null && !s.Enabled && s.Gesture.Length > 0;
-            note.Text = clash.Length > 0 ? clash : s.UsedBy is { } user ? $"Used by {user.Title}" : s.Taken ? "Taken by another app" : hidden ? "Tab hidden, key is free" : "";
+            note.Text = clash.Length > 0 ? clash : s.UsedBy is { } user ? L.F("Used by {0}", user.Title) : s.Taken ? L.T("Taken by another app") : hidden ? L.T("Tab hidden, key is free") : "";
             note.SetResourceReference(TextBlock.ForegroundProperty, hidden ? "TextSecondaryBrush" : "DangerBrush");
-            reset.ToolTip = s.Default.Length > 0 ? $"Reset to {s.Default}" : "Turn off";
+            reset.ToolTip = s.Default.Length > 0 ? L.F("Reset to {0}", s.Default) : L.T("Turn off");
             reset.Visibility = s.Gesture == s.Default ? Visibility.Hidden : Visibility.Visible;
         }
         void Set(string gesture)
         {
             QNotch.Core.Analytics.Track("settings", "change_shortcut", "ui");
-            clash = keys.Set(s, gesture) is { } other ? $"Used by {other.Title}" : "";
+            clash = keys.Set(s, gesture) is { } other ? L.F("Used by {0}", other.Title) : "";
             Update();
         }
 
         reset.Click += (_, _) => { QNotch.Core.Analytics.Track("settings", "reset_shortcut", "ui"); Set(s.Default); };
-        box.GotKeyboardFocus += (_, _) => { keys.Suspended = true; clash = ""; box.Text = "Press shortcut"; };
+        box.GotKeyboardFocus += (_, _) => { keys.Suspended = true; clash = ""; box.Text = L.T("Press shortcut"); };
         box.LostKeyboardFocus += (_, _) => { keys.Suspended = false; Update(); }; // re-registers and refreshes the "taken" notes
         box.PreviewKeyDown += (_, e) =>
         {
@@ -78,8 +79,8 @@ public static class HotkeysSection
             {
                 case Chord.Incomplete: return;
                 case Chord.Clear: Set(""); break;
-                case Chord.NeedsModifier: box.Text = "Add Ctrl or Alt"; return;
-                case Chord.Unsupported: box.Text = "Not supported"; return;
+                case Chord.NeedsModifier: box.Text = L.T("Add Ctrl or Alt"); return;
+                case Chord.Unsupported: box.Text = L.T("Not supported"); return;
                 case Chord.Gesture: if (gesture != s.Gesture) Set(gesture); break;
             }
             Keyboard.ClearFocus();

@@ -167,9 +167,9 @@ public sealed partial class Note : ObservableObject
         get
         {
             var age = DateTime.Now - Created;
-            var time = age >= TimeSpan.Zero && age.TotalMinutes < 1 ? "just now"
-                : age >= TimeSpan.Zero && age.TotalMinutes < 30 ? $"{(int)age.TotalMinutes} min ago"
-                : Created.Date == DateTime.Today ? Created.ToString("HH:mm", Core.UiCulture.Value) : Created.ToString("MMM d, HH:mm", Core.UiCulture.Value);
+            var time = age >= TimeSpan.Zero && age.TotalMinutes < 1 ? Core.L.T("just now")
+                : age >= TimeSpan.Zero && age.TotalMinutes < 30 ? Core.L.F("{0} min ago", (int)age.TotalMinutes)
+                : Created.Date == DateTime.Today ? Created.ToString("HH:mm", Core.UiCulture.Value) : Created.ToString(Core.L.T("MMM d, HH:mm"), Core.UiCulture.Dates);
             return Status.Length > 0 ? $"{App} · {time} · {Status}" : $"{App} · {time}";
         }
     }
@@ -194,8 +194,8 @@ public sealed partial class NotificationsState : ObservableObject
     [ObservableProperty] bool _muted;
     /// <summary>The notification in the glance strip right now, or null.</summary>
     [ObservableProperty] Note? _toast;
-    [ObservableProperty] string _pipeStatus = "Starting";
-    [ObservableProperty] string _httpStatus = "Starting";
+    [ObservableProperty] string _pipeStatus = Core.L.T("Starting");
+    [ObservableProperty] string _httpStatus = Core.L.T("Starting");
     /// <summary>"Quiet now: Zoom is using the microphone." while a call keeps notifications quiet, otherwise empty.</summary>
     [ObservableProperty, NotifyPropertyChangedFor(nameof(IsQuiet))] string _quietStatus = "";
     public bool IsQuiet => QuietStatus.Length > 0;
@@ -208,6 +208,6 @@ public sealed partial class NotificationsState : ObservableObject
         UnreadText = unread > 99 ? "99+" : unread.ToString(Core.UiCulture.Value);
         IsEmpty = n == 0;
         CanClear = Items.Any(i => !i.Pending);
-        CountText = n == 1 ? "1 notification" : $"{n} notifications";
+        CountText = n == 1 ? Core.L.T("1 notification") : Core.L.F("{0} notifications", n);
     }
 }

@@ -95,9 +95,9 @@ internal sealed partial class AgentsState : ObservableObject
         NeedsYou = waiting.Count > 0;
         PillText = waiting.Count switch
         {
-            1 => $"{waiting[0].Name} needs you",
-            > 1 => $"{waiting.Count} need you",
-            _ => working > 0 ? $"{working} working" : "",
+            1 => L.F("{0} needs you", waiting[0].Name),
+            > 1 => L.F("{0} need you", waiting.Count),
+            _ => working > 0 ? L.F("{0} working", working) : "",
         };
         PillVisible = PillText.Length > 0;
         foreach (var id in Usage.Where(u => u.Value.Today.Tokens == 0 && !Sessions.Exists(s => s.Id == u.Key)).Select(u => u.Key).ToList())
@@ -170,13 +170,13 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
         _cfg = ctx.Settings.Get<AgentsConfig>(TabId);
         _consumerIdentity = new Core.Consumers.ConsumerIdentity(ctx.Settings);
         ctx.Consumers.Register("agents", CaptureAgents);
-        ctx.Tabs.Register(new TabDescriptor(TabId, "Agents", Icon, 35, () => new AgentsTab(this, _st), () => _st.Sessions.Count == 0 && !_st.Groups.Any(g => g.LeftRunning)));
-        ctx.SettingsSections.Register(new SettingsSectionDescriptor(TabId, "Agents", Icon, 45, () => AgentsSettings.Create(this, _cfg, ctx.Settings.ReadOnly)));
+        ctx.Tabs.Register(new TabDescriptor(TabId, L.T("Agents"), Icon, 35, () => new AgentsTab(this, _st), () => _st.Sessions.Count == 0 && !_st.Groups.Any(g => g.LeftRunning)));
+        ctx.SettingsSections.Register(new SettingsSectionDescriptor(TabId, L.T("Agents"), Icon, 45, () => AgentsSettings.Create(this, _cfg, ctx.Settings.ReadOnly)));
         ctx.Segments.Register(new SegmentDescriptor("agents.pill", SegmentSlot.PillRight, 6, () => AgentsViews.Segment(_st)));
-        ctx.Segments.Register(new SegmentDescriptor("agents.game", SegmentSlot.GameBar, 13, () => AgentsViews.Segment(_st), "Agents", "Working agents, and which one needs you."));
-        _needsYouSound = ctx.Sounds.Add("agents.needsyou", "Agent needs you", "An agent waits for your answer.", "Notification.IM", 20);
-        _doneSound = ctx.Sounds.Add("agents.done", "Agent finished", "An agent finished its turn.", "Notification.Default", 21);
-        ctx.Search.Register(new SearchSource(TabId, "Agents", Icon, 45, q => _st.Sessions
+        ctx.Segments.Register(new SegmentDescriptor("agents.game", SegmentSlot.GameBar, 13, () => AgentsViews.Segment(_st), L.T("Agents"), L.T("Working agents, and which one needs you.")));
+        _needsYouSound = ctx.Sounds.Add("agents.needsyou", L.T("Agent needs you"), L.T("An agent waits for your answer."), "Notification.IM", 20);
+        _doneSound = ctx.Sounds.Add("agents.done", L.T("Agent finished"), L.T("An agent finished its turn."), "Notification.Default", 21);
+        ctx.Search.Register(new SearchSource(TabId, L.T("Agents"), Icon, 45, q => _st.Sessions
             .Where(s => s.Title.Contains(q, StringComparison.OrdinalIgnoreCase) || s.Cwd.Contains(q, StringComparison.OrdinalIgnoreCase))
             .Select(s => new SearchHit(s.Title.Length > 0 ? s.Title : s.Name, AgentsViews.Meta(s), () => ctx.Shell.SelectTab(TabId)))));
 
@@ -437,7 +437,7 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
         {
             if (st != s.Status) s.Since = DateTime.UtcNow;
             s.Status = st;
-            s.Message = st == AgentStatus.NeedsYou ? e.Message ?? "Waiting for you" : "";
+            s.Message = st == AgentStatus.NeedsYou ? e.Message ?? L.T("Waiting for you") : "";
             s.WaitingTool = st != AgentStatus.NeedsYou ? null
                 : e.Event == "PreToolUse" ? e.Tool
                 : PermissionTool().Match(s.Message) is { Success: true } m ? m.Groups[1].Value : null;
@@ -446,10 +446,10 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
         ReadAppTitles();
         _st.Raise();
         if (s.Status == was) return;
-        if (s.Status == AgentStatus.NeedsYou) Alert(s, "Needs you", Icon, "WarningBrush", _cfg.SoundNeedsYou ? _needsYouSound : null);
+        if (s.Status == AgentStatus.NeedsYou) Alert(s, L.N("{0}: Needs you"), Icon, "WarningBrush", _cfg.SoundNeedsYou ? _needsYouSound : null);
         // Only a finished turn: Done after an interrupt (Esc) is something the user just did themselves.
         else if (s.Status == AgentStatus.Done && e.Event == "Stop" && was == AgentStatus.Working)
-            Alert(s, "Done", Glyphs.Accept, "SuccessBrush", _cfg.SoundDone ? _doneSound : null);
+            Alert(s, L.N("{0}: Done"), Glyphs.Accept, "SuccessBrush", _cfg.SoundDone ? _doneSound : null);
     }
 
     // ---------- alerts ----------
@@ -462,11 +462,12 @@ public sealed partial class AgentsModule : INotchModule, ICadenceAware
         else if (e.Event == "PostToolUse") { _burstUntil = default; Walk(); }
     }
 
-    /// <summary>Widens the pill for a moment ("api: Needs you") and plays the sound, unless in game mode (Peek returns null) or a call.</summary>
+    /// <summary>Widens the pill for a moment ("api: Needs you") and plays the sound, unless in game mode (Peek returns null) or a call.
+    /// <paramref name="what"/> is an English format string marked with L.N, {0} the session's name.</summary>
     void Alert(AgentSession s, string what, string glyph, string brush, Sound? sound)
     {
         _peek?.Dispose();
-        _peek = _ctx.Shell.Peek(glyph, $"{s.Name}: {what}", brush);
+        _peek = _ctx.Shell.Peek(glyph, L.F(what, s.Name), brush);
         _peekFor = s.Status == AgentStatus.NeedsYou ? s : null;
         if (_peek is not null && sound is not null && !_inCall) _ctx.Sounds.Play(sound);
     }

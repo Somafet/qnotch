@@ -67,7 +67,7 @@ public sealed class PhoneShareService : IPhoneShareEvents
         if (_s.IsActive)
         {
             Open();
-            if (!_s.Choices.Any(c => c.Item == item)) SetStatus($"Already sharing other files. Stop sharing to share {item.Name}.", true);
+            if (!_s.Choices.Any(c => c.Item == item)) SetStatus(L.F("Already sharing other files. Stop sharing to share {0}.", item.Name), true);
             return;
         }
         _unchecked.Clear();
@@ -117,8 +117,8 @@ public sealed class PhoneShareService : IPhoneShareEvents
         _s.HasChoices = _s.Choices.Count > 0;
         var n = _s.Choices.Count(c => c.IsChecked && c.CanShare);
         _s.SelectionText = _s.IsActive
-            ? n == 0 ? "Receiving only" : n == 1 ? "Sharing 1 file" : $"Sharing {n} files"
-            : _s.Choices.Count == 0 ? "No files in the tray" : $"{n} of {_s.Choices.Count(c => c.CanShare)} files selected";
+            ? n == 0 ? L.T("Receiving only") : n == 1 ? L.T("Sharing 1 file") : L.F("Sharing {0} files", n)
+            : _s.Choices.Count == 0 ? L.T("No files in the tray") : L.F("{0} of {1} files selected", n, _s.Choices.Count(c => c.CanShare));
     }
 
     void OnStateChanged(object? sender, PropertyChangedEventArgs e)
@@ -146,7 +146,7 @@ public sealed class PhoneShareService : IPhoneShareEvents
                 _s.Address = found.FirstOrDefault(a => a.Ip == keep) ?? found.FirstOrDefault();
                 _s.HasManyAddresses = found.Count > 1;
                 _s.CanStart = found.Count > 0;
-                if (!_s.IsActive) SetStatus(found.Count > 0 ? "" : "This PC is not connected to a network.", found.Count == 0);
+                if (!_s.IsActive) SetStatus(found.Count > 0 ? "" : L.T("This PC is not connected to a network."), found.Count == 0);
             });
         });
     }
@@ -186,7 +186,7 @@ public sealed class PhoneShareService : IPhoneShareEvents
         catch (SocketException ex)
         {
             Log.Warn("Phone sharing: could not listen", ex);
-            SetStatus("Could not start: no free network port. Try again.", true);
+            SetStatus(L.T("Could not start: no free network port. Try again."), true);
             return;
         }
         _session = session;
@@ -202,13 +202,13 @@ public sealed class PhoneShareService : IPhoneShareEvents
         _s.CanExtend = true;
         Summarize();
         ShowUrl();
-        SetStatus("Waiting for your phone. Point its camera at the code.", false);
+        SetStatus(L.T("Waiting for your phone. Point its camera at the code."), false);
         ArmExpiry();
         UpdateTimeLeft();
         Log.Info($"Phone sharing started on port {_port} with {shared.Count} file(s)");
     }
 
-    public void Stop() => End("Sharing stopped.");
+    public void Stop() => End(L.N("Sharing stopped."));
 
     /// <summary>Adds 15 minutes (at most two hours left).</summary>
     public void Extend()
@@ -237,7 +237,7 @@ public sealed class PhoneShareService : IPhoneShareEvents
         _s.TimeLeft = "";
         _s.CanExtend = false;
         foreach (var r in _s.Transfers.Where(r => r.IsRunning)) Fail(r, "Stopped");
-        SetStatus(reason, false);
+        SetStatus(L.T(reason), false);
         Rebuild();
         if (_s.IsOpen) FindAddresses();
         Log.Info("Phone sharing ended: " + reason);
@@ -262,7 +262,7 @@ public sealed class PhoneShareService : IPhoneShareEvents
     void OnExpiry()
     {
         if (_session is not { } s) return;
-        if (DateTime.UtcNow >= s.Deadline) End("Sharing ended after the time ran out.");
+        if (DateTime.UtcNow >= s.Deadline) End(L.N("Sharing ended after the time ran out."));
         else ArmExpiry(); // extended meanwhile
     }
 
@@ -273,7 +273,7 @@ public sealed class PhoneShareService : IPhoneShareEvents
         if (_session is not { } s) return;
         var left = s.Deadline - DateTime.UtcNow;
         var mins = Math.Max(1, (int)Math.Ceiling(left.TotalMinutes));
-        _s.TimeLeft = mins == 1 ? "Ends in 1 min" : $"Ends in {mins} min";
+        _s.TimeLeft = mins == 1 ? L.T("Ends in 1 min") : L.F("Ends in {0} min", mins);
         if (!_fast) return;
         var next = left - TimeSpan.FromMinutes(mins - 1) + TimeSpan.FromMilliseconds(50);
         if (next < TimeSpan.FromMilliseconds(200)) next = TimeSpan.FromMilliseconds(200);
@@ -308,13 +308,13 @@ public sealed class PhoneShareService : IPhoneShareEvents
     {
         if (r.IsDone) return;
         r.IsFailed = true;
-        r.Detail = reason;
+        r.Detail = L.T(reason);
     }
 
     void IPhoneShareEvents.Seen(IPAddress device) => _ctx.Bus.Run(() =>
     {
         if (!_s.IsActive || !_devices.Add(device)) return;
-        SetStatus(_devices.Count == 1 ? "Phone connected." : $"{_devices.Count} devices connected.", false);
+        SetStatus(_devices.Count == 1 ? L.T("Phone connected.") : L.F("{0} devices connected.", _devices.Count), false);
     });
 
     int IPhoneShareEvents.Begin(string name, bool upload, long total)
@@ -340,7 +340,7 @@ public sealed class PhoneShareService : IPhoneShareEvents
     {
         if (!_rows.TryGetValue(id, out var r) || !r.IsRunning) return;
         r.Percent = percent;
-        r.Detail = $"{percent}% of {FileTrayService.FormatSize(r.Total)}";
+        r.Detail = L.F("{0}% of {1}", percent, FileTrayService.FormatSize(r.Total));
     });
 
     void IPhoneShareEvents.Done(int id, string? savedPath) => _ctx.Bus.Run(() =>
@@ -349,14 +349,14 @@ public sealed class PhoneShareService : IPhoneShareEvents
         {
             _traySvc.Add([savedPath]);
             var name = Path.GetFileName(savedPath);
-            _ctx.Shell.Peek("\uE896", $"Received {name}", "AccentBrush");
+            _ctx.Shell.Peek("\uE896", L.F("Received {0}", name), "AccentBrush");
         }
         if (!_rows.TryGetValue(id, out var r)) return;
         r.Percent = 100;
         r.IsDone = true;
         r.IsFailed = false;
         r.SavedPath = savedPath;
-        r.Detail = savedPath is null ? "Sent" : $"Saved as {Path.GetFileName(savedPath)}";
+        r.Detail = savedPath is null ? L.T("Sent") : L.F("Saved as {0}", Path.GetFileName(savedPath));
     });
 
     void IPhoneShareEvents.Failed(int id, string reason) => _ctx.Bus.Run(() =>
@@ -374,17 +374,17 @@ public sealed class PhoneShareService : IPhoneShareEvents
         _s.HasChoices = true;
         _s.IsActive = true;
         _s.IsOpen = true;
-        _s.SelectionText = "Sharing 2 files";
+        _s.SelectionText = L.F("Sharing {0} files", 2);
         _s.Url = "http://192.168.1.24:51327/s/q7LmZ2xV0cRj8sPwK4nYtA/";
         _s.Qr = QrImage.Create(QrCode.Encode(_s.Url));
-        _s.TimeLeft = "Ends in 14 min";
+        _s.TimeLeft = L.F("Ends in {0} min", 14);
         _s.CanExtend = true;
         _s.Address = new ShareAddress("192.168.1.24", "Wi-Fi");
         _s.Addresses.Add(_s.Address);
-        _s.Status = "Phone connected.";
-        _s.Transfers.Add(new PhoneTransfer("Quarterly report.pdf", false, 2_516_582) { Percent = 64, Detail = "64% of 2.4 MB" });
-        _s.Transfers.Add(new PhoneTransfer("IMG_2041.HEIC", true, 1_843_200) { Percent = 100, IsDone = true, Detail = "Saved as IMG_2041.HEIC", SavedPath = @"C:\Users\demo\Downloads\QNotch\IMG_2041.HEIC" });
-        _s.Transfers.Add(new PhoneTransfer("IMG_2040.HEIC", true, 1_731_100) { IsFailed = true, Detail = "Cancelled on the phone" });
+        _s.Status = L.T("Phone connected.");
+        _s.Transfers.Add(new PhoneTransfer("Quarterly report.pdf", false, 2_516_582) { Percent = 64, Detail = L.F("{0}% of {1}", 64, "2.4 MB") });
+        _s.Transfers.Add(new PhoneTransfer("IMG_2041.HEIC", true, 1_843_200) { Percent = 100, IsDone = true, Detail = L.F("Saved as {0}", "IMG_2041.HEIC"), SavedPath = @"C:\Users\demo\Downloads\QNotch\IMG_2041.HEIC" });
+        _s.Transfers.Add(new PhoneTransfer("IMG_2040.HEIC", true, 1_731_100) { IsFailed = true, Detail = L.T("Cancelled on the phone") });
         _s.HasTransfers = true;
     }
 }

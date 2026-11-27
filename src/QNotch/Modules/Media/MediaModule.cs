@@ -27,12 +27,12 @@ public sealed class MediaModule : INotchModule, ICadenceAware
         _ticker = new DispatcherTimer(DispatcherPriority.Background, ctx.Dispatcher) { Interval = TimeSpan.FromSeconds(1) };
         _ticker.Tick += (_, _) => RefreshProgress();
 
-        ctx.Tabs.Register(new TabDescriptor("media", "Media", Glyphs.Music, 10, () => new MediaTab(_m, ctx.Shell), () => !_m.HasSession));
-        ctx.Cards.Register(new CardDescriptor("media", "Now playing", 20, () => new MediaCard(_m, ctx.Shell), DefaultSize: CardSize.Medium));
+        ctx.Tabs.Register(new TabDescriptor("media", L.T("Media"), Glyphs.Music, 10, () => new MediaTab(_m, ctx.Shell), () => !_m.HasSession));
+        ctx.Cards.Register(new CardDescriptor("media", L.T("Now playing"), 20, () => new MediaCard(_m, ctx.Shell), DefaultSize: CardSize.Medium));
         ctx.Segments.Register(new SegmentDescriptor("media.pill", SegmentSlot.PillLeft, 10, () => MediaSegments.Pill(_m)));
         ctx.Segments.Register(new SegmentDescriptor("media.glance", SegmentSlot.Glance, 10, () => MediaSegments.Glance(_m)));
         ctx.Segments.Register(new SegmentDescriptor("media.game", SegmentSlot.GameBar, 10, () => MediaSegments.Game(_m),
-            "Now playing", "Title and artist, only while something plays."));
+            L.T("Now playing"), L.T("Title and artist, only while something plays.")));
 
         ctx.Bus.Subscribe<MediaUnavailable>(_ => { Clear(); _m.IsAvailable = false; _m.IsReady = true; });
         ctx.Bus.Subscribe<MediaSessions>(Apply);

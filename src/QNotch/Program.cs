@@ -25,6 +25,8 @@ static class Program
         // A smoke run starts its own pipes and child processes: without QNOTCH_INSTANCE they would share a normal instance's names.
         if (diag.Mode == DiagnosticMode.SmokeTest && string.IsNullOrEmpty(Environment.GetEnvironmentVariable("QNOTCH_INSTANCE")))
             Environment.SetEnvironmentVariable("QNOTCH_INSTANCE", $"smoke-{Environment.ProcessId}");
+        // The interface language is fixed for the whole run, before any text is built (spec/localization.md).
+        Core.L.Init(diag.Language ?? (diag.RunsOnce ? "en" : Core.L.SavedPreference()));
         try { return RunApp(); }
         finally { if (temp is not null) DeleteTemp(temp); }
     }

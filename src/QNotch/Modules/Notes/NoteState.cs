@@ -8,7 +8,7 @@ public enum NoteStatus { Saved, Editing, Failed }
 public sealed partial class NoteState : ObservableObject
 {
     [ObservableProperty] string _noteText = "";
-    [ObservableProperty] string _noteWordsText = "0 words";
+    [ObservableProperty] string _noteWordsText = QNotch.Core.L.F("{0} words", 0);
     [ObservableProperty] string _noteDateText = "";
     [ObservableProperty] NoteStatus _noteStatus = NoteStatus.Saved;
 }

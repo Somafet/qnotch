@@ -105,7 +105,7 @@ internal static unsafe partial class ScreenPick
         else
         {
             // Confirm in place, then go away.
-            _label.Text = "Copied";
+            _label.Text = QNotch.Core.L.T("Copied");
             var t = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(700) };
             t.Tick += (_, _) => { t.Stop(); if (_timer is null) ClosePreview(); }; // unless the next pick already runs
             t.Start();

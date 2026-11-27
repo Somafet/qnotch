@@ -1,7 +1,8 @@
 <UserControl x:Class="QNotch.Modules.Media.MediaTab"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:QNotch.Modules.Media">
+             xmlns:local="clr-namespace:QNotch.Modules.Media"
+             xmlns:core="clr-namespace:QNotch.Core">
     <!-- Media tab (body 712 x 322, 19 DIP side inset). DataContext: MediaState. -->
     <UserControl.Resources>
         <ResourceDictionary>
@@ -33,7 +34,7 @@
                         <ContentControl Content="{Binding}" ContentTemplate="{StaticResource SourceIcon}" IsTabStop="False"
                                         VerticalAlignment="Center" Margin="0,0,6,0"/>
                         <TextBlock Text="{Binding AppName}" Style="{StaticResource Caption}" VerticalAlignment="Center"/>
-                        <TextBlock Text="  Paused" VerticalAlignment="Center">
+                        <TextBlock Text="{core:T 'Paused'}" Margin="6,0,0,0" VerticalAlignment="Center">
                             <TextBlock.Style>
                                 <Style TargetType="TextBlock" BasedOn="{StaticResource Muted}">
                                     <Setter Property="Visibility" Value="Visible"/>
@@ -63,11 +64,11 @@
 
                 <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,14,0,0">
                     <Button Style="{StaticResource TransportButton}" Content="&#xE892;" Width="44" Height="44" FontSize="18"
-                            Command="{Binding PreviousCommand}" IsEnabled="{Binding CanPrevious}" ToolTip="Previous"/>
+                            Command="{Binding PreviousCommand}" IsEnabled="{Binding CanPrevious}" ToolTip="{core:T 'Previous'}"/>
                     <Button Style="{StaticResource PlayButton}" Width="56" Height="56" FontSize="22" Margin="8,0"
                             Command="{Binding PlayPauseCommand}" IsEnabled="{Binding CanPlayPause}"/>
                     <Button Style="{StaticResource TransportButton}" Content="&#xE893;" Width="44" Height="44" FontSize="18"
-                            Command="{Binding NextCommand}" IsEnabled="{Binding CanNext}" ToolTip="Next"/>
+                            Command="{Binding NextCommand}" IsEnabled="{Binding CanNext}" ToolTip="{core:T 'Next'}"/>
                 </StackPanel>
             </Grid>
         </Grid>

@@ -4,6 +4,7 @@ using System.Windows.Automation.Peers;
 using System.Windows.Automation.Provider;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
+using QNotch.Core;
 using QNotch.Modules;
 
 namespace QNotch.Shell;
@@ -27,7 +28,7 @@ internal sealed class CardResizeHandle : Thumb
         Style = (Style)host.FindResource("CardResizeHandle");
         var side = direction < 0 ? "left" : "right";
         AutomationProperties.SetAutomationId(this, $"card-resize-{host.CardId}-{side}");
-        AutomationProperties.SetName(this, $"Resize {host.Title}, {side} edge");
+        AutomationProperties.SetName(this, direction < 0 ? L.F("Resize {0}, left edge", host.Title) : L.F("Resize {0}, right edge", host.Title));
         _reportedSize = Size;
         SyncSize();
         DragStarted += (_, e) =>
@@ -58,7 +59,7 @@ internal sealed class CardResizeHandle : Thumb
 
     internal void SyncSize()
     {
-        ToolTip = $"{Size} · Drag to resize. Left/Right: change size. Home/End: smallest/largest.";
+        ToolTip = L.F("{0} · Drag to resize. Left/Right: change size. Home/End: smallest/largest.", Size == CardSize.Small ? L.T("Small") : L.T("Medium"));
         if (_reportedSize != Size && UIElementAutomationPeer.FromElement(this) is { } peer)
             peer.RaisePropertyChangedEvent(RangeValuePatternIdentifiers.ValueProperty, (double)(int)_reportedSize, (double)(int)Size);
         _reportedSize = Size;

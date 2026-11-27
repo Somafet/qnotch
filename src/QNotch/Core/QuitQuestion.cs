@@ -12,12 +12,12 @@ public static class QuitQuestion
     /// <summary>The fixed answers in display order: the analytics target and the button text. Skip, Esc and closing record <see cref="Skipped"/>.</summary>
     public static readonly IReadOnlyList<(string Target, string Label)> Answers =
     [
-        ("quit_in_the_way", "It gets in my way"),
-        ("quit_not_useful", "Nothing in it I'd use"),
-        ("quit_missing_feature", "It's missing something I need"),
-        ("quit_not_working", "Something didn't work"),
-        ("quit_just_trying", "Just having a look"),
-        ("quit_back_later", "Closing it for now, I'll be back"),
+        ("quit_in_the_way", L.T("It gets in my way")),
+        ("quit_not_useful", L.T("Nothing in it I'd use")),
+        ("quit_missing_feature", L.T("It's missing something I need")),
+        ("quit_not_working", L.T("Something didn't work")),
+        ("quit_just_trying", L.T("Just having a look")),
+        ("quit_back_later", L.T("Closing it for now, I'll be back")),
     ];
 
     public const string Skipped = "quit_skipped";

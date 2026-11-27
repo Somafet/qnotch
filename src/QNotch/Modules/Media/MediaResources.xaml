@@ -1,6 +1,7 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:local="clr-namespace:QNotch.Modules.Media">
+                    xmlns:local="clr-namespace:QNotch.Modules.Media"
+                    xmlns:core="clr-namespace:QNotch.Core">
     <!-- Media-only styles. Theme brushes are DynamicResource so theme and accent switch live. -->
 
     <!-- WPF focus adorners appear for keyboard navigation without competing with pointer hover. -->
@@ -66,7 +67,7 @@
         <Setter Property="FocusVisualStyle" Value="{StaticResource MediaPlayFocus}"/>
         <Setter Property="local:MediaPress.Enabled" Value="True"/>
         <Setter Property="AutomationProperties.Name" Value="{Binding ToolTip, RelativeSource={RelativeSource Self}}"/>
-        <Setter Property="ToolTip" Value="Play"/>
+        <Setter Property="ToolTip" Value="{core:T 'Play'}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
@@ -87,7 +88,7 @@
         <Style.Triggers>
             <DataTrigger Binding="{Binding IsPlaying}" Value="True">
                 <Setter Property="Content" Value="&#xE769;"/>
-                <Setter Property="ToolTip" Value="Pause"/>
+                <Setter Property="ToolTip" Value="{core:T 'Pause'}"/>
             </DataTrigger>
         </Style.Triggers>
     </Style>

@@ -32,16 +32,16 @@ internal static class ClipProcessor
         {
             case ClipKind.Link:
                 preview = Cut(t, 150);
-                meta = "Link" + (Uri.TryCreate(t.StartsWith("www.", StringComparison.OrdinalIgnoreCase) ? "https://" + t : t, UriKind.Absolute, out var u) && u.Host.Length > 0 ? " · " + u.Host : "");
+                meta = Uri.TryCreate(t.StartsWith("www.", StringComparison.OrdinalIgnoreCase) ? "https://" + t : t, UriKind.Absolute, out var u) && u.Host.Length > 0 ? L.F("Link · {0}", u.Host) : L.T("Link");
                 break;
             case ClipKind.Code:
                 var lines = t.Split('\n');
                 preview = string.Join('\n', lines.Select(l => l.Trim()).Where(l => l.Length > 1 || !"{}();".Contains(l)).Take(2).Select(l => Cut(l, 80)));
-                meta = $"Code · {lines.Length} {(lines.Length == 1 ? "line" : "lines")}";
+                meta = lines.Length == 1 ? L.T("Code · 1 line") : L.F("Code · {0} lines", lines.Length);
                 break;
             default:
                 preview = Cut(Collapse(t), 150);
-                meta = $"Text · {t.Length:N0} chars";
+                meta = L.F("Text · {0:N0} chars", t.Length);
                 break;
         }
         return new ClipEntry { Kind = kind, Key = text, Text = text, Preview = preview, Line = Cut(preview.Replace('\n', ' '), 60), Meta = meta };
@@ -108,8 +108,8 @@ internal static class ClipProcessor
         var key = Convert.ToHexString(SHA256.HashData(dib.AsSpan(0, Math.Min(dib.Length, 1 << 20))))[..16] + dib.Length;
         return new ClipEntry
         {
-            Kind = ClipKind.Image, Key = key, Png = png, Thumb = thumb, Preview = "Image", Line = $"Image · {src.PixelWidth} x {src.PixelHeight}",
-            Meta = $"Image · {src.PixelWidth} x {src.PixelHeight} · {Size(png.Length)}",
+            Kind = ClipKind.Image, Key = key, Png = png, Thumb = thumb, Preview = L.T("Image"), Line = L.F("Image · {0} x {1}", src.PixelWidth, src.PixelHeight),
+            Meta = L.F("Image · {0} x {1} · {2}", src.PixelWidth, src.PixelHeight, Size(png.Length)),
         };
     }
 

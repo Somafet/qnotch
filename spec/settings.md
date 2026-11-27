@@ -2,6 +2,10 @@
 
 This file defines the settings rows both platforms share. The layout follows each platform, as described in [UI conventions](ui-conventions.md). Quoted labels and descriptions are exact on both platforms once the platform terms (`{surface}`, `{escape}`) are swapped in. Text marked *platform wording* only has to say the same things; its reasons can differ.
 
+## General: language
+
+Windows only for now. The Language row is defined in [Interface language](localization.md#settings-language).
+
 ## General: opening and closing the panel
 
 On Windows these rows are on the General page. On macOS they are the Panel group of General.

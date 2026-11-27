@@ -101,7 +101,7 @@ internal sealed class TourWindow : Window
         _c = choices; _gs = gs; _store = store; _keys = keys; _modules = modules; _openSettings = openSettings;
         _setup = new SetupContext { Settings = store, Shortcuts = keys };
 
-        Title = "Welcome to QNotch";
+        Title = L.T("Welcome to QNotch");
         // Always dark, like the notch at night: the dark palette overrides the app's for everything in this window.
         Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("pack://application:,,,/Theme/Theme.Dark.xaml") });
         // Buttons with hover fades and a press squash, only when motion is on (the shared styles otherwise).
@@ -134,7 +134,7 @@ internal sealed class TourWindow : Window
         _stage = new Grid { ClipToBounds = true };
         _root.Children.Add(_stage);
 
-        var close = new Button { Style = (Style)FindResource("IconButton"), Content = Glyphs.Close, ToolTip = "Close", HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, 10, 10, 0), FocusVisualStyle = _ring };
+        var close = new Button { Style = (Style)FindResource("IconButton"), Content = Glyphs.Close, ToolTip = L.T("Close"), HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, 10, 10, 0), FocusVisualStyle = _ring };
         close.Click += (_, _) => Close();
         _root.Children.Add(close);
 
@@ -146,7 +146,7 @@ internal sealed class TourWindow : Window
         _dots.Children.Add(_dotRow);
         _dots.Children.Add(_dotPill);
         _skip = new Button { Style = ButtonStyle("LinkButton"), Margin = new Thickness(0, 0, 18, 0), FocusVisualStyle = _ring, Padding = new Thickness(2, 4, 2, 4) };
-        _back = new Button { Content = "Back", Padding = new Thickness(16, 7, 16, 7), Margin = new Thickness(0, 0, 8, 0), FocusVisualStyle = _ring };
+        _back = new Button { Content = L.T("Back"), Padding = new Thickness(16, 7, 16, 7), Margin = new Thickness(0, 0, 8, 0), FocusVisualStyle = _ring };
         if (_styled) _back.Style = (Style)FindResource("TourButton");
         _primaryText = new TextBlock();
         _primary = new Button { Style = ButtonStyle("AccentButton"), Padding = new Thickness(20, 7, 20, 7), MinWidth = 116, FocusVisualStyle = _ring, Content = _primaryText };
@@ -228,12 +228,12 @@ internal sealed class TourWindow : Window
     List<(string Title, List<ModuleInfo> Modules)> Groups()
     {
         var byId = _modules.ToDictionary(m => m.Id, StringComparer.OrdinalIgnoreCase);
-        var groups = ModuleList.TourGroups.Select(g => (g.Title, Modules: g.Ids.Where(byId.ContainsKey).Select(id => byId[id]).ToList())).ToList();
+        var groups = ModuleList.TourGroups.Select(g => (Title: L.T(g.Title), Modules: g.Ids.Where(byId.ContainsKey).Select(id => byId[id]).ToList())).ToList();
         var named = ModuleList.TourGroups.SelectMany(g => g.Ids).ToHashSet(StringComparer.OrdinalIgnoreCase);
         var rest = _modules.Where(m => !named.Contains(m.Id)).ToList();
         if (rest.Count > 0)
         {
-            if (groups.Count == 0) groups.Add(("Features", rest));
+            if (groups.Count == 0) groups.Add((L.T("Features"), rest));
             else groups[^1].Modules.AddRange(rest);
         }
         return groups.Where(g => g.Modules.Count > 0).ToList();
@@ -254,8 +254,8 @@ internal sealed class TourWindow : Window
         if (old is not null) Leave(old, fwd);
 
         _back.Visibility = index == 0 ? Visibility.Collapsed : Visibility.Visible;
-        _skip.Content = id == "welcome" ? "Skip setup" : "Skip";
-        PrimaryLabel(id switch { "welcome" => "Get started", "finish" => "Open QNotch", _ => "Continue" });
+        _skip.Content = id == "welcome" ? L.T("Skip setup") : L.T("Skip");
+        PrimaryLabel(id switch { "welcome" => L.T("Get started"), "finish" => L.T("Open QNotch"), _ => L.T("Continue") });
         Dots();
 
         // The first step enters with the window (Entrance); later ones right away.
@@ -438,7 +438,7 @@ internal sealed class TourWindow : Window
             scale.BeginAnimation(ScaleTransform.ScaleXProperty, stretch);
         }
         else move.X = to;
-        AutomationProperties.SetName(_dots, $"Step {_index + 1} of {_steps.Count}");
+        AutomationProperties.SetName(_dots, L.F("Step {0} of {1}", _index + 1, _steps.Count));
     }
 
     // ---------- step views ----------
@@ -448,12 +448,12 @@ internal sealed class TourWindow : Window
     {
         var (heroHeight, hero, title, subtitle, content) = id switch
         {
-            "welcome" => (262.0, WelcomeHero(), "Welcome to QNotch", "Everything you glance at, in the notch at the top of your screen.", (FrameworkElement?)null),
-            "open" => (226.0, OpenHero(), "Open it from anywhere", "Hover the notch, or press your shortcut.", OpenContent()),
-            "features" => (380.0, FeaturesHero(), "Pick your features",
-                _c.FeaturesEditable ? "You can change these any time in Settings, Features." : "A change applies after a restart.", FeaturesContent()),
-            "connect" => (138.0, ConnectHero(), "Connect your accounts", "Optional. Everything else works without them.", ConnectContent()),
-            _ => (136.0, FinishHero(), "Final touches", "A few last choices. Settings has everything else.", FinishContent()),
+            "welcome" => (262.0, WelcomeHero(), L.T("Welcome to QNotch"), L.T("Everything you glance at, in the notch at the top of your screen."), (FrameworkElement?)null),
+            "open" => (226.0, OpenHero(), L.T("Open it from anywhere"), L.T("Hover the notch, or press your shortcut."), OpenContent()),
+            "features" => (380.0, FeaturesHero(), L.T("Pick your features"),
+                _c.FeaturesEditable ? L.T("You can change these any time in Settings, Features.") : L.T("A change applies after a restart."), FeaturesContent()),
+            "connect" => (138.0, ConnectHero(), L.T("Connect your accounts"), L.T("Optional. Everything else works without them."), ConnectContent()),
+            _ => (136.0, FinishHero(), L.T("Final touches"), L.T("A few last choices. Settings has everything else."), FinishContent()),
         };
         var g = new Grid();
         g.RowDefinitions.Add(new RowDefinition { Height = new GridLength(heroHeight) });
@@ -560,7 +560,7 @@ internal sealed class TourWindow : Window
         s.Children.Add(pointer);
 
         var keys = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, 84, 0, 0) };
-        var or = TourArt.Text("or press", 11.5, "TextTertiaryBrush");
+        var or = TourArt.Text(L.T("or press"), 11.5, "TextTertiaryBrush");
         or.HorizontalAlignment = HorizontalAlignment.Center;
         or.Margin = new Thickness(0, 0, 0, 12);
         keys.Children.Add(or);
@@ -624,15 +624,15 @@ internal sealed class TourWindow : Window
         {
             var g = Toggle?.Gesture ?? "";
             var (text, brush) = _note.Length > 0 ? (_note, "DangerBrush")
-                : _recording ? ("Press the new shortcut. Esc cancels, Backspace turns it off.", "TextSecondaryBrush")
-                : _tried ? ("That's it", "SuccessBrush")
-                : g.Length == 0 ? ("The shortcut is off. Hovering the notch still works.", "TextSecondaryBrush")
-                : ($"Try it now: press {g}.", "TextSecondaryBrush");
+                : _recording ? (L.T("Press the new shortcut. Esc cancels, Backspace turns it off."), "TextSecondaryBrush")
+                : _tried ? (L.T("That's it"), "SuccessBrush")
+                : g.Length == 0 ? (L.T("The shortcut is off. Hovering the notch still works."), "TextSecondaryBrush")
+                : (L.F("Try it now: press {0}.", g), "TextSecondaryBrush");
             _tryText.Text = text;
             _tryText.SetResourceReference(TextBlock.ForegroundProperty, brush);
             ((FrameworkElement)_tryText.Tag).Visibility = _tried && !_recording && _note.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
         }
-        if (_change is not null) _change.Content = _recording ? "Cancel" : "Change";
+        if (_change is not null) _change.Content = _recording ? L.T("Cancel") : L.T("Change");
     }
 
     static FrameworkElement Recording()
@@ -640,7 +640,7 @@ internal sealed class TourWindow : Window
         var b = new Border { CornerRadius = new CornerRadius(10), BorderThickness = new Thickness(1.5), Padding = new Thickness(22, 0, 22, 0), Height = 48 };
         b.SetResourceReference(Border.BorderBrushProperty, "AccentBrush");
         b.SetResourceReference(Border.BackgroundProperty, "AccentSoftBrush");
-        b.Child = TourArt.Text("Press the new shortcut", 15, "TextPrimaryBrush", FontWeights.SemiBold);
+        b.Child = TourArt.Text(L.T("Press the new shortcut"), 15, "TextPrimaryBrush", FontWeights.SemiBold);
         return b;
     }
 
@@ -654,8 +654,8 @@ internal sealed class TourWindow : Window
         AutomationProperties.SetLiveSetting(_tryText, AutomationLiveSetting.Polite);
         row.Children.Add(check);
         row.Children.Add(_tryText);
-        _change = new Button { Content = "Change", Margin = new Thickness(16, 0, 0, 0), Padding = new Thickness(14, 5, 14, 5) };
-        AutomationProperties.SetName(_change, "Change the shortcut");
+        _change = new Button { Content = L.T("Change"), Margin = new Thickness(16, 0, 0, 0), Padding = new Thickness(14, 5, 14, 5) };
+        AutomationProperties.SetName(_change, L.T("Change the shortcut"));
         _change.Click += (_, _) => { if (_recording) StopRecording(); else StartRecording(); };
         row.Children.Add(_change);
         Caps();
@@ -691,14 +691,14 @@ internal sealed class TourWindow : Window
             {
                 case HotkeysSection.Chord.Incomplete: return;
                 case HotkeysSection.Chord.Cancel: StopRecording(); return;
-                case HotkeysSection.Chord.NeedsModifier: _note = "Add Ctrl or Alt."; Caps(); _note = ""; return;
-                case HotkeysSection.Chord.Unsupported: _note = "That key is not supported."; Caps(); _note = ""; return;
+                case HotkeysSection.Chord.NeedsModifier: _note = L.T("Add Ctrl or Alt."); Caps(); _note = ""; return;
+                case HotkeysSection.Chord.Unsupported: _note = L.T("That key is not supported."); Caps(); _note = ""; return;
             }
             var s = Toggle!;
             var other = _keys.Set(s, chord == HotkeysSection.Chord.Clear ? "" : gesture);
             _recording = false;
             _tried = false;
-            _note = other is not null ? $"Used by {other.Title}." : TakenNote(s);
+            _note = other is not null ? L.F("Used by {0}.", other.Title) : TakenNote(s);
             Caps();
             _note = "";
             StartCapsLoop(1200);
@@ -728,7 +728,7 @@ internal sealed class TourWindow : Window
         _keys.Suspended = false;
         var taken = s.Taken;
         _keys.Suspended = IsActive;
-        return taken ? "Taken by another app. Pick another one." : "";
+        return taken ? L.T("Taken by another app. Pick another one.") : "";
     }
 
     static bool Same(string a, string b) =>
@@ -778,7 +778,7 @@ internal sealed class TourWindow : Window
         if (_c.FeaturesEditable)
         {
             var all = new Button { Style = ButtonStyle("LinkButton"), FontSize = 11, HorizontalAlignment = HorizontalAlignment.Right, Padding = new Thickness(2, 0, 2, 0) };
-            void Label() => all.Content = modules.Any(m => _c.IsOn(m.Id)) ? "Turn all off" : "Turn all on";
+            void Label() => all.Content = modules.Any(m => _c.IsOn(m.Id)) ? L.T("Turn all off") : L.T("Turn all on");
             all.Click += (_, _) =>
             {
                 var on = !modules.Any(m => _c.IsOn(m.Id));
@@ -816,10 +816,10 @@ internal sealed class TourWindow : Window
         chip.SetResourceReference(Border.BackgroundProperty, "ControlBrush");
 
         var text = new StackPanel { Margin = new Thickness(10, 0, 8, 0), VerticalAlignment = VerticalAlignment.Center };
-        var name = TourArt.Text(m.Title, 12.5, weight: FontWeights.SemiBold);
+        var name = TourArt.Text(L.T(m.Title), 12.5, weight: FontWeights.SemiBold);
         name.TextTrimming = TextTrimming.CharacterEllipsis;
         text.Children.Add(name);
-        var desc = TourArt.Text(m.Description, 10.5, "TextTertiaryBrush");
+        var desc = TourArt.Text(L.T(m.Description), 10.5, "TextTertiaryBrush");
         desc.TextTrimming = TextTrimming.CharacterEllipsis;
         desc.Margin = new Thickness(0, 1, 0, 0);
         text.Children.Add(desc);
@@ -838,7 +838,7 @@ internal sealed class TourWindow : Window
         g.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         g.Children.Add(body);
 
-        var tile = new Border { CornerRadius = new CornerRadius(10), BorderThickness = new Thickness(1), Padding = new Thickness(9, 5, 10, 5), Margin = new Thickness(0, 0, 0, 5), Child = g, ToolTip = m.Description, Tag = NoDrag };
+        var tile = new Border { CornerRadius = new CornerRadius(10), BorderThickness = new Thickness(1), Padding = new Thickness(9, 5, 10, 5), Margin = new Thickness(0, 0, 0, 5), Child = g, ToolTip = L.T(m.Description), Tag = NoDrag };
         tile.SetResourceReference(Border.BackgroundProperty, "CardBrush");
         tile.SetResourceReference(Border.BorderBrushProperty, "StrokeBrush");
         tiles.Add(tile);
@@ -847,8 +847,8 @@ internal sealed class TourWindow : Window
             var toggle = UiKit.Toggle();
             toggle.IsChecked = on;
             toggle.VerticalAlignment = VerticalAlignment.Center;
-            AutomationProperties.SetName(toggle, m.Title);
-            AutomationProperties.SetHelpText(toggle, m.Description);
+            AutomationProperties.SetName(toggle, L.T(m.Title));
+            AutomationProperties.SetHelpText(toggle, L.T(m.Description));
             AutomationProperties.SetAutomationId(toggle, "feature-" + m.Id);
             void Set(bool v)
             {
@@ -870,7 +870,7 @@ internal sealed class TourWindow : Window
         }
         else
         {
-            var state = TourArt.Text(on ? "On" : "Off", 11, on ? "SuccessBrush" : "TextTertiaryBrush", FontWeights.SemiBold);
+            var state = TourArt.Text(on ? L.T("On") : L.T("Off"), 11, on ? "SuccessBrush" : "TextTertiaryBrush", FontWeights.SemiBold);
             Grid.SetColumn(state, 1);
             g.Children.Add(state);
         }
@@ -887,7 +887,7 @@ internal sealed class TourWindow : Window
     FrameworkElement? FeaturesContent()
     {
         if (_c.FeaturesEditable || _openSettings is null) return null;
-        var link = new Button { Content = "Change in Settings", Style = ButtonStyle("LinkButton"), FontSize = 13 };
+        var link = new Button { Content = L.T("Change in Settings"), Style = ButtonStyle("LinkButton"), FontSize = 13 };
         link.Click += (_, _) => _openSettings("features");
         return link;
     }
@@ -959,7 +959,7 @@ internal sealed class TourWindow : Window
         tick.HorizontalAlignment = HorizontalAlignment.Center;
         tick.FontWeight = FontWeights.Bold;
         badge.Child = tick;
-        AutomationProperties.SetName(badge, "Connected");
+        AutomationProperties.SetName(badge, L.T("Connected"));
         var chipHost = new Grid { VerticalAlignment = VerticalAlignment.Center, Children = { chip, badge } };
 
         var text = new StackPanel { Margin = new Thickness(12, 0, 12, 0), VerticalAlignment = VerticalAlignment.Center };
@@ -1053,17 +1053,17 @@ internal sealed class TourWindow : Window
         var prefs = new StackPanel();
         if (!AppPackage.IsPackaged) // the Store package is updated by the Store
         {
-            prefs.Children.Add(Pref("Check for updates automatically", "Looks for a new release on GitHub every six hours.", _c.Updates, _c.SetUpdates, "finish-updates"));
+            prefs.Children.Add(Pref(L.T("Check for updates automatically"), L.T("Looks for a new release on GitHub every six hours."), _c.Updates, _c.SetUpdates, "finish-updates"));
             var sep = new Border { Height = 1, Margin = new Thickness(0, 10, 0, 10) };
             sep.SetResourceReference(Border.BackgroundProperty, "StrokeBrush");
             prefs.Children.Add(sep);
         }
-        prefs.Children.Add(Pref("Start with Windows", "Opens QNotch when you sign in.", _c.StartWithWindows, _c.SetStartWithWindows, "finish-autostart"));
+        prefs.Children.Add(Pref(L.T("Start with Windows"), L.T("Opens QNotch when you sign in."), _c.StartWithWindows, _c.SetStartWithWindows, "finish-autostart"));
         var left = Card(prefs);
         grid.Children.Add(left);
 
         var tips = new StackPanel();
-        var head = TourArt.Text("Tips", 12, "TextSecondaryBrush", FontWeights.SemiBold);
+        var head = TourArt.Text(L.T("Tips"), 12, "TextSecondaryBrush", FontWeights.SemiBold);
         head.Margin = new Thickness(0, 0, 0, 6);
         AutomationProperties.SetHeadingLevel(head, AutomationHeadingLevel.Level2);
         tips.Children.Add(head);
@@ -1119,7 +1119,7 @@ internal sealed class TourWindow : Window
     /// <summary>Real gestures only: the tray (the shell's), then each enabled feature's own tip.</summary>
     List<string> Tips()
     {
-        var list = new List<string> { "Right-click the tray icon for Settings and Game mode." };
+        var list = new List<string> { L.T("Right-click the tray icon for Settings and Game mode.") };
         foreach (var m in _modules)
         {
             if (m.Tip is null || !_c.IsOn(m.Id)) continue;

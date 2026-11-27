@@ -1,6 +1,7 @@
 <UserControl x:Class="QNotch.Modules.FileTray.FileTrayCard"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:core="clr-namespace:QNotch.Core">
     <!-- DataContext: FileTrayState. Body area is about 188 x 98. Click opens the Files tab. -->
     <Grid Background="Transparent" Cursor="Hand" MouseLeftButtonUp="OnClick">
         <!-- Empty -->
@@ -12,8 +13,8 @@
                 </Style>
             </StackPanel.Style>
             <TextBlock Text="&#xE8B7;" Style="{StaticResource Glyph}" FontSize="22" HorizontalAlignment="Center" Foreground="{DynamicResource TextTertiaryBrush}"/>
-            <TextBlock Text="Drop files here" Style="{StaticResource Caption}" Margin="0,6,0,0" HorizontalAlignment="Center"/>
-            <TextBlock Text="Files stay where they are" Style="{StaticResource Muted}" HorizontalAlignment="Center"/>
+            <TextBlock Text="{core:T 'Drop files here'}" Style="{StaticResource Caption}" Margin="0,6,0,0" HorizontalAlignment="Center"/>
+            <TextBlock Text="{core:T 'Files stay where they are'}" Style="{StaticResource Muted}" HorizontalAlignment="Center"/>
         </StackPanel>
 
         <!-- Items -->
@@ -47,7 +48,7 @@
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
-            <TextBlock Text="Click to open the tray" Style="{StaticResource Muted}" Margin="0,6,0,0" TextTrimming="CharacterEllipsis"/>
+            <TextBlock Text="{core:T 'Click to open the tray'}" Style="{StaticResource Muted}" Margin="0,6,0,0" TextTrimming="CharacterEllipsis"/>
         </StackPanel>
     </Grid>
 </UserControl>

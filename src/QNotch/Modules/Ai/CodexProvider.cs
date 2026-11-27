@@ -105,18 +105,18 @@ internal sealed class CodexProvider : IUsageProvider
         var home = Environment.GetEnvironmentVariable("CODEX_HOME");
         if (string.IsNullOrWhiteSpace(home)) home = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".codex");
         var auth = Path.Combine(home, "auth.json");
-        if (!File.Exists(auth)) return UsageResult.Unavailable("Not signed in. Sign in to Codex to see usage.", "not_signed_in");
+        if (!File.Exists(auth)) return UsageResult.Unavailable(L.N("Not signed in. Sign in to Codex to see usage."), "not_signed_in");
 
         try
         {
             using var doc = JsonDocument.Parse(File.ReadAllBytes(auth));
             if (!doc.RootElement.TryGetProperty("tokens", out var t) || t.ValueKind != JsonValueKind.Object)
-                return UsageResult.Unavailable("Signed in with an API key. Plan usage needs a ChatGPT login.", "subscription_required");
+                return UsageResult.Unavailable(L.N("Signed in with an API key. Plan usage needs a ChatGPT login."), "subscription_required");
         }
-        catch { return UsageResult.Unavailable("Codex sign-in file could not be read.", "credentials_unreadable"); }
+        catch { return UsageResult.Unavailable(L.N("Codex sign-in file could not be read."), "credentials_unreadable"); }
 
         var sessions = Path.Combine(home, "sessions");
-        if (!Directory.Exists(sessions)) return UsageResult.Unavailable("No Codex sessions yet. Run a task to get a reading.", "no_reading");
+        if (!Directory.Exists(sessions)) return UsageResult.Unavailable(L.N("No Codex sessions yet. Run a task to get a reading."), "no_reading");
 
         var now = DateTime.Now;
         var checkedFiles = 0;
@@ -127,7 +127,7 @@ internal sealed class CodexProvider : IUsageProvider
             var r = ReadFile(file, now);
             if (r is not null) return r;
         }
-        return UsageResult.Unavailable("No recent rate limit reading. Run a Codex task to refresh it.", "no_reading");
+        return UsageResult.Unavailable(L.N("No recent rate limit reading. Run a Codex task to refresh it."), "no_reading");
     }
 
     /// <summary>Sessions live in YYYY/MM/DD folders, so walk them newest first instead of enumerating everything.</summary>
@@ -206,9 +206,9 @@ internal sealed class CodexProvider : IUsageProvider
 
     static string Label(int minutes) => minutes switch
     {
-        300 => "5-hour",
-        10080 => "Weekly",
-        <= 0 => "Limit",
+        300 => L.N("5-hour"),
+        10080 => L.N("Weekly"),
+        <= 0 => L.N("Limit"),
         _ when minutes % 1440 == 0 => $"{minutes / 1440}-day",
         _ when minutes % 60 == 0 => $"{minutes / 60}-hour",
         _ => $"{minutes}-min",

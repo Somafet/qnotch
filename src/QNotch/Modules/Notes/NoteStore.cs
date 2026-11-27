@@ -92,7 +92,7 @@ internal sealed class NoteStore
         });
     }
 
-    static string DateText(DateTime d) => d.ToString("ddd, MMM d", QNotch.Core.UiCulture.Value);
+    static string DateText(DateTime d) => d.ToString(QNotch.Core.L.T("ddd, MMM d"), QNotch.Core.UiCulture.Dates);
 
     static string WordsText(string text)
     {
@@ -103,6 +103,6 @@ internal sealed class NoteStore
             if (!space && !inWord) n++;
             inWord = !space;
         }
-        return n == 1 ? "1 word" : $"{n} words";
+        return n == 1 ? QNotch.Core.L.T("1 word") : QNotch.Core.L.F("{0} words", n);
     }
 }

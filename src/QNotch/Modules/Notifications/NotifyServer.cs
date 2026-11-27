@@ -31,7 +31,7 @@ internal sealed class NotifyServer(Func<NotifyRequest, Func<Task>, Task<Reply>> 
             {
                 s = new NamedPipeServerStream(Wire.PipeName, PipeDirection.InOut, NamedPipeServerStream.MaxAllowedServerInstances,
                     PipeTransmissionMode.Byte, PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
-                if (!announced) { announced = true; pipeStatus($@"Listening on \\.\pipe\{Wire.PipeName}"); }
+                if (!announced) { announced = true; pipeStatus(L.F("Listening on {0}", $@"\\.\pipe\{Wire.PipeName}")); }
                 await s.WaitForConnectionAsync();
                 var client = s;
                 s = null;
@@ -46,7 +46,7 @@ internal sealed class NotifyServer(Func<NotifyRequest, Func<Task>, Task<Reply>> 
                 await Task.Delay(1000);
             }
         }
-        pipeStatus("Unavailable: the pipe could not be created. See logs.");
+        pipeStatus(L.T("Unavailable: the pipe could not be created. See logs."));
     }
 
     async Task ServePipe(NamedPipeServerStream s)
@@ -111,20 +111,20 @@ internal sealed class NotifyServer(Func<NotifyRequest, Func<Task>, Task<Reply>> 
     {
         _http?.Stop();
         _http = null;
-        if (!enabled) { httpStatus("Off"); return; }
-        if (port is < 1024 or > 65535) { httpStatus("Off: the port must be between 1024 and 65535."); return; }
+        if (!enabled) { httpStatus(L.T("Off")); return; }
+        if (port is < 1024 or > 65535) { httpStatus(L.T("Off: the port must be between 1024 and 65535.")); return; }
         try
         {
             var l = new TcpListener(IPAddress.Loopback, port);
             l.Start();
             _http = l;
-            httpStatus($"Listening on http://127.0.0.1:{port}");
+            httpStatus(L.F("Listening on {0}", $"http://127.0.0.1:{port}"));
             Task.Run(() => HttpLoop(l));
         }
         catch (SocketException ex)
         {
             Log.Warn($"Notification HTTP port {port} unavailable", ex);
-            httpStatus($"Off: port {port} is in use by another app.");
+            httpStatus(L.F("Off: port {0} is in use by another app.", port));
         }
     }
 

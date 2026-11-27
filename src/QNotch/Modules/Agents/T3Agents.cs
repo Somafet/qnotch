@@ -1,3 +1,4 @@
+using QNotch.Core;
 using QNotch.Theme;
 
 namespace QNotch.Modules.Agents;
@@ -30,9 +31,9 @@ public sealed partial class AgentsModule
             // A handoff can leave a provider hook row behind. Keep its usage/process identity when it is the same session.
             changed |= _st.Sessions.RemoveAll(other => other != s && other.Id == t.Session) > 0;
             if ((fresh || was != s.Status) && s.Status == AgentStatus.NeedsYou)
-                Alert(s, "Needs you", Icon, "WarningBrush", _cfg.SoundNeedsYou ? _needsYouSound : null);
+                Alert(s, L.N("{0}: Needs you"), Icon, "WarningBrush", _cfg.SoundNeedsYou ? _needsYouSound : null);
             else if (!fresh && was == AgentStatus.Working && s.Status == AgentStatus.Done)
-                Alert(s, "Done", Glyphs.Accept, "SuccessBrush", _cfg.SoundDone ? _doneSound : null);
+                Alert(s, L.N("{0}: Done"), Glyphs.Accept, "SuccessBrush", _cfg.SoundDone ? _doneSound : null);
         }
         if (changed) _st.Raise();
     }

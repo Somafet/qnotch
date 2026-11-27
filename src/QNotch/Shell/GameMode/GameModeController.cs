@@ -30,7 +30,7 @@ internal sealed class GameModeController
     DispatcherTimer? _entry, _sizeDebounce;
     GameModeOverride _override;
     bool _active;
-    string _reason = "Off";
+    string _reason = L.N("Off");
 
     internal GameModeController(ShellController shell, SettingsStore store, ForegroundWatcher foreground, Registry<SegmentDescriptor> segments)
     {
@@ -154,7 +154,7 @@ internal sealed class GameModeController
                 CancelEntry();
                 _sizeDebounce?.Stop();
                 _size.Stop();
-                Apply(ov == GameModeOverride.ForceOn, ov switch { GameModeOverride.ForceOn => "Forced on", GameModeOverride.ForceOff => "Forced off", _ => "Detection is off" });
+                Apply(ov == GameModeOverride.ForceOn, ov switch { GameModeOverride.ForceOn => L.N("Forced on"), GameModeOverride.ForceOff => L.N("Forced off"), _ => L.N("Detection is off") });
                 return;
             }
 
@@ -165,7 +165,7 @@ internal sealed class GameModeController
             if (verdict == GameVerdict.Ignore) return;
 
             _size.Watch(fg);
-            if (verdict == GameVerdict.NotGame) { CancelEntry(); Apply(false, "Off"); }
+            if (verdict == GameVerdict.NotGame) { CancelEntry(); Apply(false, L.N("Off")); }
             else if (_active) { CancelEntry(); SetReason(reason); }
             else if (confirmed) Apply(true, reason);
             else if (_entry is not { IsEnabled: true }) StartEntry();

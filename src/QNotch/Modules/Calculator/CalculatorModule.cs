@@ -33,10 +33,10 @@ public sealed class CalculatorModule : INotchModule, ICadenceAware, IDisposable
         _ctx = ctx;
         _search = new CalculatorSearch(ctx, this);
 
-        ctx.Tabs.Register(new TabDescriptor(Id, "Calculator", Icon, 25, () => new CalculatorTab(this)));
-        ctx.Search.Register(new SearchSource(Id, "Calculator", Icon, 1, _search.Find));
-        ctx.SettingsSections.Register(new SettingsSectionDescriptor(Id, "Calculator", Icon, 35, () => new CalculatorSettingsPage(this)));
-        ctx.Drops.Register(new DropSourceDescriptor(Id, "Calculator", Icon, 30, ImportTargets));
+        ctx.Tabs.Register(new TabDescriptor(Id, L.T("Calculator"), Icon, 25, () => new CalculatorTab(this)));
+        ctx.Search.Register(new SearchSource(Id, L.T("Calculator"), Icon, 1, _search.Find));
+        ctx.SettingsSections.Register(new SettingsSectionDescriptor(Id, L.T("Calculator"), Icon, 35, () => new CalculatorSettingsPage(this)));
+        ctx.Drops.Register(new DropSourceDescriptor(Id, L.T("Calculator"), Icon, 30, ImportTargets));
         Application.Current.Exit += (_, _) => Shutdown();
     }
 
@@ -111,7 +111,7 @@ public sealed class CalculatorModule : INotchModule, ICadenceAware, IDisposable
     IReadOnlyList<DropTarget> ImportTargets(IReadOnlyList<string> files)
     {
         if (files.Count == 0 || !files.Any(CanImport)) return [];
-        return [new DropTarget("calculator.import", "Import as sheets", Icon, ImportDropped)];
+        return [new DropTarget("calculator.import", L.T("Import as sheets"), Icon, ImportDropped)];
     }
 
     static bool CanImport(string path) => ImportExtensions.Contains(Path.GetExtension(path), StringComparer.OrdinalIgnoreCase);
@@ -155,7 +155,7 @@ internal sealed class CalculatorSettingsPage : System.Windows.Controls.ContentCo
         catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException or System.Text.Json.JsonException or UnsupportedDocumentVersionException)
         {
             Log.Error("Calculator settings failed to open", ex);
-            Content = Placeholder.Create(CalculatorModule.Icon, "Calculator unavailable", "Your sheets were not changed. See the log for details.");
+            Content = Placeholder.Create(CalculatorModule.Icon, L.T("Calculator unavailable"), L.T("Your sheets were not changed. See the log for details."));
         }
     }
 }

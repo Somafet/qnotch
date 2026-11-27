@@ -2,8 +2,12 @@ using System.Globalization;
 
 namespace QNotch.Core;
 
-/// <summary>The UI text is English, so day and month names are too: dates must not come out in the OS language.</summary>
+/// <summary>Number formatting stays English ("20.8/31.9 GB") whatever the OS or interface language, so parsing and layout never change.
+/// Day and month names follow the interface language: use <see cref="Dates"/> for them.</summary>
 public static class UiCulture
 {
     public static readonly CultureInfo Value = CultureInfo.GetCultureInfo("en-US");
+
+    /// <summary>Culture for date and time text shown to the user, in the interface language (<see cref="L.Culture"/>).</summary>
+    public static CultureInfo Dates => L.Culture;
 }

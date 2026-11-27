@@ -83,7 +83,7 @@ internal static class WeatherFormat
 
         var symbol = cur.Symbol1 ?? cur.Symbol6 ?? "";
         var detail = new List<string>(3);
-        if (cur.Feels is { } feels && Deg(feels, units) != Deg(cur.Temp, units)) detail.Add("Feels " + Deg(feels, units));
+        if (cur.Feels is { } feels && Deg(feels, units) != Deg(cur.Temp, units)) detail.Add(L.F("Feels {0}", Deg(feels, units)));
         if (cur.Wind is { } wind) detail.Add(Wind(wind, units));
         if (cur.Precip1 is double rain && rain > 0) detail.Add(Rain(rain, units));
 
@@ -108,9 +108,9 @@ internal static class WeatherFormat
             }
             if (hi == double.MinValue) break;
             var daySymbol = pick?.Symbol6 ?? symbol;
-            var name = i == 0 ? "Today" : date.ToString("ddd", UiCulture.Value);
+            var name = i == 0 ? L.T("Today") : date.ToString("ddd", UiCulture.Dates);
             days.Add(new WeatherDay(name, daySymbol, Deg(hi, units), Deg(lo, units),
-                $"{date.ToString("dddd d MMMM", UiCulture.Value)}: {Condition(daySymbol)}, {Deg(hi, units)} / {Deg(lo, units)}"));
+                $"{date.ToString("dddd d MMMM", UiCulture.Dates)}: {Condition(daySymbol)}, {Deg(hi, units)} / {Deg(lo, units)}"));
         }
 
         return new WeatherView(symbol, Deg(cur.Temp, units), Condition(symbol), string.Join(" · ", detail), days);
@@ -134,35 +134,35 @@ internal static class WeatherFormat
     public static string Ago(DateTime utc)
     {
         var age = DateTime.UtcNow - utc;
-        return age.TotalMinutes < 1 ? "just now" : age.TotalHours < 1 ? $"{(int)age.TotalMinutes} min ago" : age.TotalDays < 1 ? $"{(int)age.TotalHours} h ago" : $"{(int)age.TotalDays} d ago";
+        return age.TotalMinutes < 1 ? L.T("just now") : age.TotalHours < 1 ? L.F("{0} min ago", (int)age.TotalMinutes) : age.TotalDays < 1 ? L.F("{0} h ago", (int)age.TotalHours) : L.F("{0} d ago", (int)age.TotalDays);
     }
 
     /// <summary>"Light rain showers" for "lightrainshowers_day".</summary>
     public static string Condition(string symbol)
     {
         var i = symbol.IndexOf('_');
-        return Names.TryGetValue(i < 0 ? symbol : symbol[..i], out var n) ? n : "";
+        return Names.TryGetValue(i < 0 ? symbol : symbol[..i], out var n) ? L.T(n) : "";
     }
 
     /// <summary>English names from the MET Norway symbol legend (github.com/metno/weathericons, legend.csv).</summary>
     static readonly Dictionary<string, string> Names = new()
     {
-        ["clearsky"] = "Clear sky", ["fair"] = "Fair", ["partlycloudy"] = "Partly cloudy", ["cloudy"] = "Cloudy", ["fog"] = "Fog",
-        ["lightrainshowers"] = "Light rain showers", ["rainshowers"] = "Rain showers", ["heavyrainshowers"] = "Heavy rain showers",
-        ["lightrainshowersandthunder"] = "Light rain showers and thunder", ["rainshowersandthunder"] = "Rain showers and thunder",
-        ["heavyrainshowersandthunder"] = "Heavy rain showers and thunder",
-        ["lightsleetshowers"] = "Light sleet showers", ["sleetshowers"] = "Sleet showers", ["heavysleetshowers"] = "Heavy sleet showers",
-        ["lightsleetshowersandthunder"] = "Light sleet showers and thunder", ["sleetshowersandthunder"] = "Sleet showers and thunder",
-        ["heavysleetshowersandthunder"] = "Heavy sleet showers and thunder",
-        ["lightsnowshowers"] = "Light snow showers", ["snowshowers"] = "Snow showers", ["heavysnowshowers"] = "Heavy snow showers",
-        ["lightsnowshowersandthunder"] = "Light snow showers and thunder", ["snowshowersandthunder"] = "Snow showers and thunder",
-        ["heavysnowshowersandthunder"] = "Heavy snow showers and thunder",
-        ["lightrain"] = "Light rain", ["rain"] = "Rain", ["heavyrain"] = "Heavy rain",
-        ["lightrainandthunder"] = "Light rain and thunder", ["rainandthunder"] = "Rain and thunder", ["heavyrainandthunder"] = "Heavy rain and thunder",
-        ["lightsleet"] = "Light sleet", ["sleet"] = "Sleet", ["heavysleet"] = "Heavy sleet",
-        ["lightsleetandthunder"] = "Light sleet and thunder", ["sleetandthunder"] = "Sleet and thunder", ["heavysleetandthunder"] = "Heavy sleet and thunder",
-        ["lightsnow"] = "Light snow", ["snow"] = "Snow", ["heavysnow"] = "Heavy snow",
-        ["lightsnowandthunder"] = "Light snow and thunder", ["snowandthunder"] = "Snow and thunder", ["heavysnowandthunder"] = "Heavy snow and thunder",
+        ["clearsky"] = L.N("Clear sky"), ["fair"] = L.N("Fair"), ["partlycloudy"] = L.N("Partly cloudy"), ["cloudy"] = L.N("Cloudy"), ["fog"] = L.N("Fog"),
+        ["lightrainshowers"] = L.N("Light rain showers"), ["rainshowers"] = L.N("Rain showers"), ["heavyrainshowers"] = L.N("Heavy rain showers"),
+        ["lightrainshowersandthunder"] = L.N("Light rain showers and thunder"), ["rainshowersandthunder"] = L.N("Rain showers and thunder"),
+        ["heavyrainshowersandthunder"] = L.N("Heavy rain showers and thunder"),
+        ["lightsleetshowers"] = L.N("Light sleet showers"), ["sleetshowers"] = L.N("Sleet showers"), ["heavysleetshowers"] = L.N("Heavy sleet showers"),
+        ["lightsleetshowersandthunder"] = L.N("Light sleet showers and thunder"), ["sleetshowersandthunder"] = L.N("Sleet showers and thunder"),
+        ["heavysleetshowersandthunder"] = L.N("Heavy sleet showers and thunder"),
+        ["lightsnowshowers"] = L.N("Light snow showers"), ["snowshowers"] = L.N("Snow showers"), ["heavysnowshowers"] = L.N("Heavy snow showers"),
+        ["lightsnowshowersandthunder"] = L.N("Light snow showers and thunder"), ["snowshowersandthunder"] = L.N("Snow showers and thunder"),
+        ["heavysnowshowersandthunder"] = L.N("Heavy snow showers and thunder"),
+        ["lightrain"] = L.N("Light rain"), ["rain"] = L.N("Rain"), ["heavyrain"] = L.N("Heavy rain"),
+        ["lightrainandthunder"] = L.N("Light rain and thunder"), ["rainandthunder"] = L.N("Rain and thunder"), ["heavyrainandthunder"] = L.N("Heavy rain and thunder"),
+        ["lightsleet"] = L.N("Light sleet"), ["sleet"] = L.N("Sleet"), ["heavysleet"] = L.N("Heavy sleet"),
+        ["lightsleetandthunder"] = L.N("Light sleet and thunder"), ["sleetandthunder"] = L.N("Sleet and thunder"), ["heavysleetandthunder"] = L.N("Heavy sleet and thunder"),
+        ["lightsnow"] = L.N("Light snow"), ["snow"] = L.N("Snow"), ["heavysnow"] = L.N("Heavy snow"),
+        ["lightsnowandthunder"] = L.N("Light snow and thunder"), ["snowandthunder"] = L.N("Snow and thunder"), ["heavysnowandthunder"] = L.N("Heavy snow and thunder"),
     };
 
     /// <summary>A made up forecast for snapshot runs: nothing is fetched.</summary>

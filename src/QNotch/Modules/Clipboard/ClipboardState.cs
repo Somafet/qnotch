@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Windows.Data;
 using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
+using QNotch.Core;
 
 namespace QNotch.Modules.Clipboard;
 
@@ -79,20 +80,20 @@ public sealed partial class ClipboardState : ObservableObject
     {
         int n = Entries.Count;
         HasUnpinned = Entries.Any(e => !e.Pinned);
-        CountText = n == 1 ? "1 item" : $"{n} items";
+        CountText = n == 1 ? L.T("1 item") : L.F("{0} items", n);
         bool empty = n == 0 || View.IsEmpty;
         ShowUnavailable = !IsAvailable;
         ShowEmpty = IsAvailable && empty;
         ShowList = IsAvailable && !empty;
-        if (n == 0) { EmptyTitle = "Nothing copied yet"; EmptyMessage = "Text and images you copy will show up here."; }
+        if (n == 0) { EmptyTitle = L.T("Nothing copied yet"); EmptyMessage = L.T("Text and images you copy will show up here."); }
         else
         {
-            EmptyTitle = "No matches";
+            EmptyTitle = L.T("No matches");
             EmptyMessage = Filter switch
             {
-                ClipFilter.Code => "Code snippets you copy will show up here.",
-                ClipFilter.Images => "Images you copy will show up here.",
-                _ => "Text you copy will show up here.",
+                ClipFilter.Code => L.T("Code snippets you copy will show up here."),
+                ClipFilter.Images => L.T("Images you copy will show up here."),
+                _ => L.T("Text you copy will show up here."),
             };
         }
     }

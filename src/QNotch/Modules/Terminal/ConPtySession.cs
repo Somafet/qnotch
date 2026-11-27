@@ -43,7 +43,7 @@ internal sealed class ConPtySession : IAsyncDisposable
 
     void Create(string executable, string arguments, string directory, int columns, int rows, IReadOnlyDictionary<string, string>? environment)
     {
-        if (!Path.IsPathFullyQualified(executable) || !File.Exists(executable)) throw new FileNotFoundException("Windows shell is unavailable.", executable);
+        if (!Path.IsPathFullyQualified(executable) || !File.Exists(executable)) throw new FileNotFoundException(QNotch.Core.L.T("Windows shell is unavailable."), executable);
         Check(CreatePipe(out var inputRead, out var inputWrite, 0, 0));
         _write = inputWrite;
         using (inputRead)

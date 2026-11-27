@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using QNotch.Core;
 
 namespace QNotch.Modules.Agents;
 
@@ -10,7 +11,7 @@ internal readonly record struct Usage(long Tokens, double Cost, bool Unpriced = 
     public static Usage operator -(Usage a, Usage b) => new(a.Tokens - b.Tokens, a.Cost - b.Cost, a.Unpriced);
 
     /// <summary>"1.9M tokens · $2.14", empty when there is nothing to show.</summary>
-    public override string ToString() => Tokens == 0 ? "" : $"{FormatTokens(Tokens)} tokens · {FormatCost(this)}";
+    public override string ToString() => Tokens == 0 ? "" : L.F("{0} tokens · {1}", FormatTokens(Tokens), FormatCost(this));
 
     public static string FormatTokens(long n) => n switch
     {
@@ -20,7 +21,7 @@ internal readonly record struct Usage(long Tokens, double Cost, bool Unpriced = 
         _ => n.ToString(CultureInfo.InvariantCulture),
     };
 
-    public static string FormatCost(Usage u) => u.Cost == 0 && u.Unpriced ? "price unknown"
+    public static string FormatCost(Usage u) => u.Cost == 0 && u.Unpriced ? L.T("price unknown")
         : u.Cost >= 100 ? "$" + u.Cost.ToString("0", CultureInfo.InvariantCulture)
         : "$" + u.Cost.ToString("0.00", CultureInfo.InvariantCulture);
 }

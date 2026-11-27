@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using QNotch.Core;
 using QNotch.Theme;
 
 namespace QNotch.Modules.Weather;
@@ -11,17 +12,17 @@ internal static class WeatherSection
     public static FrameworkElement Create(ModuleContext ctx, WeatherState s, WeatherService svc)
     {
         var set = svc.Settings;
-        var page = UiKit.Page("Weather");
+        var page = UiKit.Page(L.T("Weather"));
 
         var current = new TextBlock { FontSize = 12, TextWrapping = TextWrapping.Wrap, MaxWidth = 280, TextAlignment = TextAlignment.Right };
-        page.Children.Add(UiKit.Row("Place", null, current));
+        page.Children.Add(UiKit.Row(L.T("Place"), null, current));
 
-        var box = new TextBox { Width = 200, MaxLength = 100, ToolTip = "Town or place name" };
-        var search = new Button { Content = "Search", Style = (Style)Application.Current.FindResource("AccentButton"), Margin = new Thickness(8, 0, 0, 0) };
+        var box = new TextBox { Width = 200, MaxLength = 100, ToolTip = L.T("Town or place name") };
+        var search = new Button { Content = L.T("Search"), Style = (Style)Application.Current.FindResource("AccentButton"), Margin = new Thickness(8, 0, 0, 0) };
         var searchRow = new StackPanel { Orientation = Orientation.Horizontal };
         searchRow.Children.Add(box);
         searchRow.Children.Add(search);
-        page.Children.Add(UiKit.Row("Find a place", "Searches the places yr.no knows. Pick one from the list.", searchRow));
+        page.Children.Add(UiKit.Row(L.T("Find a place"), L.T("Searches the places yr.no knows. Pick one from the list."), searchRow));
 
         var result = new TextBlock { FontSize = 12, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, -8, 0, 16), Visibility = Visibility.Collapsed };
         page.Children.Add(result);
@@ -36,16 +37,16 @@ internal static class WeatherSection
         var units = new StackPanel { Orientation = Orientation.Horizontal };
         units.Children.Add(metric);
         units.Children.Add(imperial);
-        page.Children.Add(UiKit.Row("Units", null, units));
+        page.Children.Add(UiKit.Row(L.T("Units"), null, units));
 
-        page.Children.Add(UiKit.Row("Show in the pill", "The temperature and sky next to the system stats.",
+        page.Children.Add(UiKit.Row(L.T("Show in the pill"), L.T("The temperature and sky next to the system stats."),
             UiKit.Toggle(set.ShowInPill, v => { QNotch.Core.Analytics.Track("settings", "change", target: "weather_show_in_pill", enabled: v);  set.ShowInPill = v; ctx.Settings.Save("weather", set); svc.Reformat(); })));
 
-        var refresh = new Button { Content = "Refresh now" };
+        var refresh = new Button { Content = L.T("Refresh now") };
         refresh.Click += (_, _) => { QNotch.Core.Analytics.Track("weather", "refresh", "ui"); svc.Refresh(); };
-        page.Children.Add(UiKit.Row("Forecast", "Refreshed about every 30 minutes, when MET Norway publishes a new run. The last one is kept on disk for offline use.", refresh));
+        page.Children.Add(UiKit.Row(L.T("Forecast"), L.T("Refreshed about every 30 minutes, when MET Norway publishes a new run. The last one is kept on disk for offline use."), refresh));
 
-        var credit = UiKit.Text("Forecasts from yr.no, made by the Norwegian Meteorological Institute (MET Norway) and NRK. Weather data under CC BY 4.0, symbols by yr.no under MIT.", "Muted");
+        var credit = UiKit.Text(L.T("Forecasts from yr.no, made by the Norwegian Meteorological Institute (MET Norway) and NRK. Weather data under CC BY 4.0, symbols by yr.no under MIT."), "Muted");
         credit.Margin = new Thickness(0, 8, 0, 0);
         page.Children.Add(credit);
 
@@ -59,13 +60,13 @@ internal static class WeatherSection
         void Sync()
         {
             var p = set.Place;
-            var (text, brush) = p is null ? ("No place picked", "TextTertiaryBrush")
+            var (text, brush) = p is null ? (L.T("No place picked"), "TextTertiaryBrush")
                 : s.Status switch
                 {
                     WeatherStatus.Ready when s.Stale => ($"{Label(p)}. {s.Message}", "WarningBrush"),
                     WeatherStatus.Ready => ($"{Label(p)}. {s.UpdatedText}.", "SuccessBrush"),
                     WeatherStatus.Error => ($"{Label(p)}. {s.Message}", "DangerBrush"),
-                    _ => ($"{Label(p)}. Fetching the forecast", "TextSecondaryBrush"),
+                    _ => (L.F("{0}. Fetching the forecast", Label(p)), "TextSecondaryBrush"),
                 };
             current.Text = text;
             current.SetResourceReference(TextBlock.ForegroundProperty, brush);
@@ -80,17 +81,17 @@ internal static class WeatherSection
         {
             QNotch.Core.Analytics.Track("weather", "search");
             var q = box.Text.Trim();
-            if (q.Length < 2) { Show("Type at least two letters.", "WarningBrush"); return; }
+            if (q.Length < 2) { Show(L.T("Type at least two letters."), "WarningBrush"); return; }
             if (ctx.Settings.ReadOnly) return; // snapshot run: no requests
             search.IsEnabled = false;
             list.Visibility = Visibility.Collapsed;
-            Show("Searching", "TextSecondaryBrush");
+            Show(L.T("Searching"), "TextSecondaryBrush");
             try
             {
                 var found = await WeatherService.SearchAsync(q);
                 list.Items.Clear();
                 foreach (var p in found) list.Items.Add(Row(p));
-                if (found.Count == 0) Show($"yr.no knows no place called \"{q}\".", "WarningBrush");
+                if (found.Count == 0) Show(L.F("yr.no knows no place called \"{0}\".", q), "WarningBrush");
                 else { result.Visibility = Visibility.Collapsed; list.Visibility = Visibility.Visible; }
             }
             catch (WeatherException ex) { Show(ex.Message, "DangerBrush"); }
@@ -116,7 +117,7 @@ internal static class WeatherSection
             list.Items.Clear();
             box.Clear();
             svc.SetPlace(p);
-            Show($"Showing the forecast for {Label(p)}.", "SuccessBrush");
+            Show(L.F("Showing the forecast for {0}.", Label(p)), "SuccessBrush");
         }
 
         return page;

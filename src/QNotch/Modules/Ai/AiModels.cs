@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
 using QNotch.Core;
 using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -20,8 +21,12 @@ public sealed record UsageResult(UsageStatus Status, IReadOnlyList<UsageWindow> 
     public DateTime? CheckedAt { get; init; }
     public string BankedStatus { get; init; } = "unknown";
     public DateTime? BankedCheckedAt { get; init; }
+    /// <summary>The English <see cref="Reason"/> before formatting: <see cref="Reason"/> stays English for the CLI, the panel translates this.</summary>
+    public string? ReasonFormat { get; init; }
+    public object[] ReasonArgs { get; init; } = [];
     public static UsageResult Ok(IReadOnlyList<UsageWindow> windows, string? plan, DateTime asOf, BankedResets? banked = null) => new(UsageStatus.Ok, windows, plan, asOf, null, banked);
-    public static UsageResult Unavailable(string reason, string code = "unavailable") => new(UsageStatus.Unavailable, [], null, DateTime.Now, reason) { ErrorCode = code };
+    public static UsageResult Unavailable(string reason, string code = "unavailable", params object[] args) =>
+        new(UsageStatus.Unavailable, [], null, DateTime.Now, string.Format(CultureInfo.InvariantCulture, reason, args)) { ErrorCode = code, ReasonFormat = reason, ReasonArgs = args };
 }
 
 /// <summary>A usage source. Each one is isolated: own timeout, own try/catch, never affects the others.</summary>
@@ -54,7 +59,7 @@ public sealed partial class AiAppItem : ObservableObject
 
     public string Initial => Name.Length > 0 ? Name[..1].ToUpperInvariant() : "?";
     public string Tooltip => Name
-        + (Hotkey.Length > 0 ? $"\n{Hotkey}" + (HotkeyConflict ? " (already in use)" : "") : "")
+        + (Hotkey.Length > 0 ? "\n" + (HotkeyConflict ? L.F("{0} (already in use)", Hotkey) : Hotkey) : "")
         + (Error.Length > 0 ? "\n" + Error : "");
 
     partial void OnNameChanged(string value) { OnPropertyChanged(nameof(Initial)); OnPropertyChanged(nameof(Tooltip)); }
@@ -76,10 +81,10 @@ public sealed partial class AiWindowItem : ObservableObject
 
     public void Set(UsageWindow w)
     {
-        Label = w.Label;
+        Label = L.T(w.Label);
         UsedPercent = w.UsedPercent;
         UsedText = $"{(int)Math.Round(w.UsedPercent)}%";
-        LeftText = $"{(int)Math.Round(100 - w.UsedPercent)}% left";
+        LeftText = L.F("{0}% left", (int)Math.Round(100 - w.UsedPercent));
         _resetsAt = w.ResetsAt;
         RefreshReset();
     }
@@ -89,8 +94,8 @@ public sealed partial class AiWindowItem : ObservableObject
     {
         if (_resetsAt is not { } at) { ResetText = ""; ResetTip = ""; return; }
         var left = at - DateTime.Now;
-        ResetText = left <= TimeSpan.Zero ? "Reset, refresh for a new reading" : "Resets " + AiFormat.In(left);
-        ResetTip = "Resets " + AiFormat.When(at);
+        ResetText = left <= TimeSpan.Zero ? L.T("Reset, refresh for a new reading") : L.F("Resets {0}", AiFormat.In(left));
+        ResetTip = L.F("Resets {0}", AiFormat.When(at));
     }
 }
 
@@ -133,7 +138,7 @@ public sealed partial class AiProviderItem : ObservableObject
     public bool IsUnavailable => Status == UsageStatus.Unavailable;
     public bool IsPending => Status == UsageStatus.Pending;
     public bool HasPlan => Plan.Length > 0;
-    public string Tooltip => IsOk ? UpdatedText : IsUnavailable ? Reason : "Waiting for the first reading";
+    public string Tooltip => IsOk ? UpdatedText : IsUnavailable ? Reason : L.T("Waiting for the first reading");
 
     partial void OnStatusChanged(UsageStatus value)
     {
@@ -157,7 +162,7 @@ public sealed partial class AiProviderItem : ObservableObject
             }
             Plan = r.Plan ?? "";
             Reason = "";
-            UpdatedText = "Updated " + AiFormat.When(r.AsOf);
+            UpdatedText = L.F("Updated {0}", AiFormat.When(r.AsOf));
             _banked = r.Banked;
             Status = UsageStatus.Ok;
         }
@@ -165,7 +170,7 @@ public sealed partial class AiProviderItem : ObservableObject
         {
             Windows.Clear();
             Plan = "";
-            Reason = r.Reason ?? "No data";
+            Reason = r.ReasonFormat is { } format ? L.F(format, r.ReasonArgs) : r.Reason ?? L.T("No data");
             UpdatedText = "";
             _banked = null;
             Status = UsageStatus.Unavailable;
@@ -192,7 +197,7 @@ public sealed partial class AiProviderItem : ObservableObject
         }
         else
         {
-            HeadlineText = Status == UsageStatus.Pending ? "Checking" : "Unavailable";
+            HeadlineText = Status == UsageStatus.Pending ? L.T("Checking") : L.T("Unavailable");
             HeadlinePercent = 0;
             SubText = Status == UsageStatus.Pending ? "" : Reason;
         }
@@ -201,21 +206,21 @@ public sealed partial class AiProviderItem : ObservableObject
     void RefreshBanked()
     {
         if (_banked is not { Count: > 0 } b) { BankedText = ""; BankedTip = ""; return; }
-        var text = b.Count == 1 ? "1 banked reset" : $"{b.Count} banked resets";
-        if (b.ExpiresAt is { } at && at > DateTime.Now) text += "  ·  expires " + AiFormat.In(at - DateTime.Now);
+        var text = b.Count == 1 ? L.T("1 banked reset") : L.F("{0} banked resets", b.Count);
+        if (b.ExpiresAt is { } at && at > DateTime.Now) text += "  ·  " + L.F("expires {0}", AiFormat.In(at - DateTime.Now));
         BankedText = text;
-        var when = b.ExpiresAt is { } e ? "Expires " + e.ToString("d MMM HH:mm", UiCulture.Value) : "Does not expire";
+        var when = b.ExpiresAt is { } e ? L.F("Expires {0}", e.ToString("d MMM HH:mm", UiCulture.Dates)) : L.T("Does not expire");
         BankedTip = b.Label is { Length: > 0 } l ? l + "\n" + when : when;
     }
 }
 
 static class AiFormat
 {
-    public static string When(DateTime t) => t.Date == DateTime.Today ? t.ToString("HH:mm", UiCulture.Value) : t.ToString("ddd HH:mm", UiCulture.Value);
+    public static string When(DateTime t) => t.Date == DateTime.Today ? t.ToString("HH:mm", UiCulture.Value) : t.ToString("ddd HH:mm", UiCulture.Dates);
 
     public static string In(TimeSpan d) =>
-        d.TotalMinutes < 1 ? "in under a minute"
-        : d.TotalHours < 1 ? $"in {(int)d.TotalMinutes}m"
-        : d.TotalDays < 1 ? $"in {(int)d.TotalHours}h {d.Minutes}m"
-        : $"in {(int)d.TotalDays}d {d.Hours}h";
+        d.TotalMinutes < 1 ? L.T("in under a minute")
+        : d.TotalHours < 1 ? L.F("in {0}m", (int)d.TotalMinutes)
+        : d.TotalDays < 1 ? L.F("in {0}h {1}m", (int)d.TotalHours, d.Minutes)
+        : L.F("in {0}d {1}h", (int)d.TotalDays, d.Hours);
 }

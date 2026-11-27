@@ -81,7 +81,7 @@ public partial class FileTrayView : UserControl
     void OnAdd(object sender, RoutedEventArgs e)
     {
         QNotch.Core.Analytics.Track("files", "choose_files");
-        var dlg = new OpenFileDialog { Multiselect = true, Title = "Add files to the tray" };
+        var dlg = new OpenFileDialog { Multiselect = true, Title = L.T("Add files to the tray") };
         bool ok;
         using (_shell.HoldOpen()) ok = dlg.ShowDialog() == true;
         if (ok) _svc.Add(dlg.FileNames);
@@ -101,8 +101,8 @@ public partial class FileTrayView : UserControl
     void OnCopyPath(object sender, RoutedEventArgs e)
     { QNotch.Core.Analytics.Track("files", "copy_path", "ui");
         if (Item(sender) is not { } it) return;
-        try { System.Windows.Clipboard.SetText(it.Path); _svc.SetStatus("Path copied"); }
-        catch (Exception ex) { Log.Warn("FileTray: copy path failed", ex); _svc.SetStatus("Could not copy the path"); }
+        try { System.Windows.Clipboard.SetText(it.Path); _svc.SetStatus(L.T("Path copied")); }
+        catch (Exception ex) { Log.Warn("FileTray: copy path failed", ex); _svc.SetStatus(L.T("Could not copy the path")); }
     }
 
     void OnMenuOpened(object sender, RoutedEventArgs e) => _menuHold ??= _shell.HoldOpen();
@@ -112,7 +112,7 @@ public partial class FileTrayView : UserControl
     {
         QNotch.Core.Analytics.Track("files", "export");
         if (items.Count == 0) return;
-        var dlg = new OpenFolderDialog { Title = "Export to folder" };
+        var dlg = new OpenFolderDialog { Title = L.T("Export to folder") };
         bool ok;
         using (_shell.HoldOpen()) ok = dlg.ShowDialog() == true;
         if (ok) _svc.Export(items, dlg.FolderName);

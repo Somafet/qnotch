@@ -26,14 +26,14 @@ public sealed class StatsModule : INotchModule, ICadenceAware
     public void Initialize(ModuleContext ctx)
     {
         _ctx = ctx;
-        ctx.Cards.Register(new CardDescriptor("stats", "System", 10, () => new StatsCard { DataContext = _st }));
+        ctx.Cards.Register(new CardDescriptor("stats", L.T("System"), 10, () => new StatsCard { DataContext = _st }));
         ctx.Segments.Register(new SegmentDescriptor("stats.pill", SegmentSlot.PillRight, 10, () => StatsSegments.Pill(_st, on => _gpuPill = on)));
         ctx.Segments.Register(new SegmentDescriptor("stats.game.cpu", SegmentSlot.GameBar, 20, () => StatsSegments.GameCpu(_st), "CPU"));
-        ctx.Segments.Register(new SegmentDescriptor("stats.game.gpu", SegmentSlot.GameBar, 30, () => StatsSegments.GameGpu(_st, on => _gpuGame = on), "GPU", "Usage and temperature. Only when the system reports GPU usage."));
-        ctx.Segments.Register(new SegmentDescriptor("stats.game.ram", SegmentSlot.GameBar, 40, () => StatsSegments.GameRam(_st), "Memory"));
-        ctx.Segments.Register(new SegmentDescriptor("stats.game.net", SegmentSlot.GameBar, 50, () => StatsSegments.GameNet(_st), "Network"));
-        ctx.Segments.Register(new SegmentDescriptor("stats.game.battery", SegmentSlot.GameBar, 60, () => StatsSegments.GameBattery(_st), "Battery", "Only on devices with a battery."));
-        ctx.Segments.Register(new SegmentDescriptor("stats.game.clock", SegmentSlot.GameBar, 70, () => StatsSegments.GameClock(_st), "Clock"));
+        ctx.Segments.Register(new SegmentDescriptor("stats.game.gpu", SegmentSlot.GameBar, 30, () => StatsSegments.GameGpu(_st, on => _gpuGame = on), "GPU", L.T("Usage and temperature. Only when the system reports GPU usage.")));
+        ctx.Segments.Register(new SegmentDescriptor("stats.game.ram", SegmentSlot.GameBar, 40, () => StatsSegments.GameRam(_st), L.T("Memory")));
+        ctx.Segments.Register(new SegmentDescriptor("stats.game.net", SegmentSlot.GameBar, 50, () => StatsSegments.GameNet(_st), L.T("Network")));
+        ctx.Segments.Register(new SegmentDescriptor("stats.game.battery", SegmentSlot.GameBar, 60, () => StatsSegments.GameBattery(_st), L.T("Battery"), L.T("Only on devices with a battery.")));
+        ctx.Segments.Register(new SegmentDescriptor("stats.game.clock", SegmentSlot.GameBar, 70, () => StatsSegments.GameClock(_st), L.T("Clock")));
         ctx.Bus.Subscribe<StatsSample>(Apply);
         ctx.Bus.Subscribe<ClockTick>(t => _st.Clock = t.Text);
 
@@ -104,12 +104,12 @@ public sealed class StatsModule : INotchModule, ICadenceAware
         st.CpuText = $"{s.Cpu}%";
         st.GpuAvailable = s.GpuAvailable;
         st.GpuPercent = s.Gpu;
-        st.GpuText = s.Gpu is { } g ? $"{g}%" : "n/a";
+        st.GpuText = s.Gpu is { } g ? $"{g}%" : L.T("n/a");
         st.GpuTempText = s.GpuTemp is { } c ? $" {c}°C" : "";
         st.RamUsedBytes = s.RamUsed;
         st.RamTotalBytes = s.RamTotal;
         st.RamPercent = s.RamTotal > 0 ? (int)(s.RamUsed * 100 / s.RamTotal) : 0;
-        st.RamText = s.RamTotal > 0 ? $"{s.RamUsed / 1073741824.0:0.0}/{s.RamTotal / 1073741824.0:0.0} GB" : "n/a";
+        st.RamText = s.RamTotal > 0 ? $"{s.RamUsed / 1073741824.0:0.0}/{s.RamTotal / 1073741824.0:0.0} GB" : L.T("n/a");
         st.NetDownBps = s.NetDown ?? 0;
         st.NetUpBps = s.NetUp ?? 0;
         st.NetDownText = Rate(s.NetDown);
@@ -124,7 +124,7 @@ public sealed class StatsModule : INotchModule, ICadenceAware
 
     static string Rate(double? bps) => bps switch
     {
-        null => "n/a",
+        null => L.T("n/a"),
         >= 1024 * 1024 => $"{bps / 1048576.0:0.0} MB/s",
         _ => $"{bps / 1024.0:0} KB/s",
     };

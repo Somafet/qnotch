@@ -4,6 +4,7 @@ using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using QNotch.Core;
 using QNotch.Theme;
 
 namespace QNotch.Modules.Agents;
@@ -36,9 +37,9 @@ internal static class AgentsViews
     static string Status(AgentSession s) => s.Status switch
     {
         AgentStatus.NeedsYou => s.Message,
-        AgentStatus.Working => DateTime.UtcNow - s.Since < TimeSpan.FromMinutes(1) ? "Working" : $"Working for {Span(DateTime.UtcNow - s.Since)}",
-        AgentStatus.Done => DateTime.UtcNow - s.Since < TimeSpan.FromMinutes(1) ? "Done just now" : $"Done {Span(DateTime.UtcNow - s.Since)} ago",
-        _ => "Ready",
+        AgentStatus.Working => DateTime.UtcNow - s.Since < TimeSpan.FromMinutes(1) ? L.T("Working") : L.F("Working for {0}", Span(DateTime.UtcNow - s.Since)),
+        AgentStatus.Done => DateTime.UtcNow - s.Since < TimeSpan.FromMinutes(1) ? L.T("Done just now") : L.F("Done {0} ago", Span(DateTime.UtcNow - s.Since)),
+        _ => L.T("Ready"),
     };
 
     static string Span(TimeSpan t) => t.TotalHours >= 1 ? $"{(int)t.TotalHours}h" : $"{Math.Max(1, (int)t.TotalMinutes)}m";
@@ -80,19 +81,19 @@ internal static class AgentsViews
         return b;
     }
 
-    const string PriceNote = "At API list prices. A Pro or Max plan is not billed per token.";
+    static string PriceNote => L.T("At API list prices. A Pro or Max plan is not billed per token.");
 
     /// <summary>Right side of a row: what the session used today. Null before any usage is known.</summary>
     static FrameworkElement? UsageColumn(AgentsState st, AgentSession s, UIElement? below = null)
     {
         if (!st.Usage.TryGetValue(s.Id, out var u) || u.Today.Tokens == 0) return null;
         var cost = new TextBlock { Text = Usage.FormatCost(u.Today), FontSize = 12, HorizontalAlignment = HorizontalAlignment.Right };
-        var tokens = UiKit.Text($"{Usage.FormatTokens(u.Today.Tokens)} tokens", "Muted");
+        var tokens = UiKit.Text(L.F("{0} tokens", Usage.FormatTokens(u.Today.Tokens)), "Muted");
         tokens.HorizontalAlignment = HorizontalAlignment.Right;
         tokens.Margin = new Thickness(0, 2, 0, 0);
-        var tip = $"Today: {u.Today}";
-        if (u.Total.Tokens != u.Today.Tokens) tip += $"\nWhole session: {u.Total}";
-        if (st.ProjectToday(s.Cwd) is var p && p.Tokens != u.Today.Tokens) tip += $"\nToday in {s.Name}: {p}";
+        var tip = L.F("Today: {0}", u.Today);
+        if (u.Total.Tokens != u.Today.Tokens) tip += "\n" + L.F("Whole session: {0}", u.Total);
+        if (st.ProjectToday(s.Cwd) is var p && p.Tokens != u.Today.Tokens) tip += "\n" + L.F("Today in {0}: {1}", s.Name, p);
         var col = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 0), Background = Brushes.Transparent, ToolTip = $"{tip}\n{PriceNote}" };
         col.Children.Add(cost);
         col.Children.Add(tokens);
@@ -104,10 +105,10 @@ internal static class AgentsViews
     {
         var today = st.Today;
         if (today.Tokens == 0) return null;
-        var label = UiKit.Text("Today", "Muted");
+        var label = UiKit.Text(L.T("Today"), "Muted");
         var value = UiKit.Text(today.ToString(), "Muted");
         value.HorizontalAlignment = HorizontalAlignment.Right;
-        var g = new Grid { Margin = new Thickness(10, 0, 10, 6), Background = Brushes.Transparent, ToolTip = $"Every Claude Code session today.\n{PriceNote}" };
+        var g = new Grid { Margin = new Thickness(10, 0, 10, 6), Background = Brushes.Transparent, ToolTip = L.T("Every Claude Code session today.") + "\n" + PriceNote };
         g.Children.Add(label);
         g.Children.Add(value);
         return g;
@@ -133,8 +134,8 @@ internal static class AgentsViews
 
         // Room for both buttons on every row, so the usage column lines up.
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 0), MinWidth = 60 };
-        if (s.Window != 0 || s.Link.Length > 0) buttons.Children.Add(IconButton(ShowGlyph, s.Link.Length > 0 ? "Open the session" : s.T3Thread is not null ? "Show T3 Code" : "Show its terminal", () => module.Show(s)));
-        if (s.Status is AgentStatus.Done or AgentStatus.Ready) buttons.Children.Add(IconButton(Glyphs.Close, "Clear", () => module.Dismiss(s)));
+        if (s.Window != 0 || s.Link.Length > 0) buttons.Children.Add(IconButton(ShowGlyph, s.Link.Length > 0 ? L.T("Open the session") : s.T3Thread is not null ? L.T("Show T3 Code") : L.T("Show its terminal"), () => module.Show(s)));
+        if (s.Status is AgentStatus.Done or AgentStatus.Ready) buttons.Children.Add(IconButton(Glyphs.Close, L.T("Clear"), () => module.Dismiss(s)));
 
         var g = new Grid();
         g.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -180,10 +181,10 @@ internal sealed class AgentsTab : Grid
         _module = module;
         _st = st;
         Margin = new Thickness(19, 2, 19, 0);
-        _empty = Placeholder.Create(AgentsModule.Icon, "No agents running", "");
+        _empty = Placeholder.Create(AgentsModule.Icon, L.T("No agents running"), "");
         if (_empty is Panel p)
         {
-            var open = new Button { Content = "Open settings", HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 12, 0, 0), Padding = new Thickness(12, 4, 12, 4) };
+            var open = new Button { Content = L.T("Open settings"), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 12, 0, 0), Padding = new Thickness(12, 4, 12, 4) };
             open.Click += (_, _) => module.OpenSettings();
             p.Children.Add(open);
         }
@@ -225,9 +226,9 @@ internal sealed class AgentsTab : Grid
         if (_st.Sessions.Count > 0 && AgentsViews.TodayLine(_st) is { } today) _rows.Children.Add(today);
         foreach (var s in _st.Sessions) _rows.Children.Add(AgentsViews.Row(_module, _st, s, Processes(s)));
         if (left.Count == 0) return;
-        var header = new TextBlock { Text = "Left running", FontSize = 12, FontWeight = FontWeights.SemiBold, Margin = new Thickness(2, 8, 0, 0) };
+        var header = new TextBlock { Text = L.T("Left running"), FontSize = 12, FontWeight = FontWeights.SemiBold, Margin = new Thickness(2, 8, 0, 0) };
         _rows.Children.Add(header);
-        var hint = UiKit.Text("Started by agents whose shell or session has ended. Nothing will stop these for you.", "Muted");
+        var hint = UiKit.Text(L.T("Started by agents whose shell or session has ended. Nothing will stop these for you."), "Muted");
         hint.Margin = new Thickness(2, 2, 0, 8);
         _rows.Children.Add(hint);
         foreach (var g in left) _rows.Children.Add(AgentsViews.Hover(GroupRow(g)));
@@ -250,7 +251,7 @@ internal sealed class AgentsTab : Grid
         var toggle = new Button
         {
             Content = line, Padding = new Thickness(8, 3, 10, 3), HorizontalAlignment = HorizontalAlignment.Left,
-            ToolTip = s.Expanded ? "Hide processes" : "Show processes",
+            ToolTip = s.Expanded ? L.T("Hide processes") : L.T("Show processes"),
         };
         AutomationProperties.SetName(toggle, toggle.ToolTip as string);
         toggle.Click += (_, _) => { s.Expanded = !s.Expanded; Render(); };
@@ -273,7 +274,7 @@ internal sealed class AgentsTab : Grid
         var count = list.Sum(g => g.Members.Length);
         return string.Join(" · ", new[]
         {
-            count == 1 ? "1 process" : $"{count} processes",
+            count == 1 ? L.T("1 process") : L.F("{0} processes", count),
             ProcessTracker.Size(list.Sum(g => g.Memory)),
             ProcessTracker.PortText([.. list.SelectMany(g => g.Ports).Distinct().Order()]),
         }.Where(t => t.Length > 0));
@@ -297,18 +298,18 @@ internal sealed class AgentsTab : Grid
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 0) };
         if (_confirm == g.Root)
         {
-            var ask = UiKit.Text(g.Members.Length == 1 ? "End this process?" : $"End {g.Members.Length} processes?", "Muted");
+            var ask = UiKit.Text(g.Members.Length == 1 ? L.T("End this process?") : L.F("End {0} processes?", g.Members.Length), "Muted");
             ask.VerticalAlignment = VerticalAlignment.Center;
             ask.TextWrapping = TextWrapping.NoWrap;
-            var stop = new Button { Content = "Stop", Margin = new Thickness(8, 0, 0, 0), Padding = new Thickness(12, 2, 12, 2), Style = (Style)Application.Current.FindResource("AccentButton") };
+            var stop = new Button { Content = L.T("Stop"), Margin = new Thickness(8, 0, 0, 0), Padding = new Thickness(12, 2, 12, 2), Style = (Style)Application.Current.FindResource("AccentButton") };
             stop.Click += (_, _) => { _confirm = 0; _module.Stop(g); Render(); };
             buttons.Children.Add(ask);
             buttons.Children.Add(stop);
-            buttons.Children.Add(AgentsViews.IconButton(Glyphs.Close, "Cancel", () => { _confirm = 0; Render(); }));
+            buttons.Children.Add(AgentsViews.IconButton(Glyphs.Close, L.T("Cancel"), () => { _confirm = 0; Render(); }));
         }
         else
         {
-            var stop = new Button { Content = "Stop", Padding = new Thickness(12, 2, 12, 2), ToolTip = "End it and everything it started" };
+            var stop = new Button { Content = L.T("Stop"), Padding = new Thickness(12, 2, 12, 2), ToolTip = L.T("End it and everything it started") };
             stop.Click += (_, _) => { _confirm = g.Root; Render(); };
             buttons.Children.Add(stop);
         }
@@ -328,8 +329,8 @@ internal static class AgentsSettings
 {
     public static FrameworkElement Create(AgentsModule m, AgentsConfig cfg, bool readOnly)
     {
-        var page = UiKit.Page("Agents");
-        var intro = UiKit.Text("T3 Code sessions appear automatically while the app is running. Claude Code and Codex outside T3 use hooks in their settings. Everything stays on this PC.", "Muted");
+        var page = UiKit.Page(L.T("Agents"));
+        var intro = UiKit.Text(L.T("T3 Code sessions appear automatically while the app is running. Claude Code and Codex outside T3 use hooks in their settings. Everything stays on this PC."), "Muted");
         intro.Margin = new Thickness(0, -8, 0, 16);
         page.Children.Add(intro);
 
@@ -348,15 +349,15 @@ internal static class AgentsSettings
             {
                 var (status, detail) = hooks.Check();
                 connected = status == HookStatus.Connected;
-                button.Content = connected ? "Disconnect" : status == HookStatus.OtherCopy ? "Use this copy" : "Connect";
+                button.Content = connected ? L.T("Disconnect") : status == HookStatus.OtherCopy ? L.T("Use this copy") : L.T("Connect");
                 if (connected) button.ClearValue(FrameworkElement.StyleProperty); // back to the themed implicit style
                 else button.Style = (Style)Application.Current.FindResource("AccentButton");
                 var (text, brush) = status switch
                 {
                     HookStatus.Connected => AgentsStatus.Connected(hooks.Kind, readOnly ? hooks is ClaudeHooks : m.Seen(hooks.Kind)),
-                    HookStatus.OtherCopy => ($"Connected to another copy of QNotch ({detail}).", "WarningBrush"),
-                    HookStatus.Error => ($"Could not read {hooks.FileName}: {detail}", "DangerBrush"),
-                    _ => ($"Adds hooks to {hooks.ShownPath} and keeps a backup next to it.", "TextSecondaryBrush"),
+                    HookStatus.OtherCopy => (L.F("Connected to another copy of QNotch ({0}).", detail), "WarningBrush"),
+                    HookStatus.Error => (L.F("Could not read {0}: {1}", hooks.FileName, detail), "DangerBrush"),
+                    _ => (L.F("Adds hooks to {0} and keeps a backup next to it.", hooks.ShownPath), "TextSecondaryBrush"),
                 };
                 hint.Text = text;
                 hint.SetResourceReference(TextBlock.ForegroundProperty, brush);
@@ -372,7 +373,7 @@ internal static class AgentsSettings
                 catch (Exception ex) { error = ex.Message; Core.Log.Warn($"Changing {hooks.Title} hooks failed", ex); }
                 if (error is null) m.ConnectionChanged(hooks.Kind); // starts over as waiting; every row reads again
                 Sync();
-                if (error is not null) { hint.Text = $"Could not change {hooks.FileName}: {error}"; hint.SetResourceReference(TextBlock.ForegroundProperty, "DangerBrush"); }
+                if (error is not null) { hint.Text = L.F("Could not change {0}: {1}", hooks.FileName, error); hint.SetResourceReference(TextBlock.ForegroundProperty, "DangerBrush"); }
                 button.IsEnabled = true;
             };
             Sync();
@@ -383,9 +384,9 @@ internal static class AgentsSettings
         page.Loaded += (_, _) => { m.HooksChanged += SyncAll; SyncAll(); };
         page.Unloaded += (_, _) => m.HooksChanged -= SyncAll;
 
-        page.Children.Add(UiKit.Row("Sound when an agent needs you", "Never in Game mode or while an app uses the microphone. Choose the sound in Settings, Sounds.",
+        page.Children.Add(UiKit.Row(L.T("Sound when an agent needs you"), L.T("Never in Game mode or while an app uses the microphone. Choose the sound in Settings, Sounds."),
             UiKit.Toggle(cfg.SoundNeedsYou, on => { QNotch.Core.Analytics.Track("settings", "change", target: "agents_sound_needs_you", enabled: on); cfg.SoundNeedsYou = on; m.SaveSettings(); })));
-        page.Children.Add(UiKit.Row("Sound when an agent finishes", "Never in Game mode or while an app uses the microphone. Choose the sound in Settings, Sounds.",
+        page.Children.Add(UiKit.Row(L.T("Sound when an agent finishes"), L.T("Never in Game mode or while an app uses the microphone. Choose the sound in Settings, Sounds."),
             UiKit.Toggle(cfg.SoundDone, on => { QNotch.Core.Analytics.Track("settings", "change", target: "agents_sound_done", enabled: on); cfg.SoundDone = on; m.SaveSettings(); })));
         return page;
     }

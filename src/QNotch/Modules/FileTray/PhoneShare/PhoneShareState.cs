@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
+using QNotch.Core;
 
 namespace QNotch.Modules.FileTray;
 
@@ -21,7 +22,7 @@ public sealed partial class PhoneTransfer : ObservableObject
         Name = name;
         IsUpload = isUpload;
         Total = total;
-        _detail = isUpload ? "Receiving" : "Sending";
+        _detail = isUpload ? L.T("Receiving") : L.T("Sending");
     }
 
     public string Name { get; }

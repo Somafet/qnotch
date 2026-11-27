@@ -16,16 +16,16 @@ internal sealed record SchedTask(string Name, bool Enabled, bool Running, string
     {
         get
         {
-            var parts = new List<string> { Running ? "Running now" : Enabled ? Schedule : "Paused" };
-            if (Enabled && Next is { } n) parts.Add("next " + When(n));
-            if (Last is { } l) parts.Add((Failed ? "failed " : "last run ") + When(l));
+            var parts = new List<string> { Running ? L.T("Running now") : Enabled ? Schedule : L.T("Paused") };
+            if (Enabled && Next is { } n) parts.Add(L.F("next {0}", When(n)));
+            if (Last is { } l) parts.Add(Failed ? L.F("failed {0}", When(l)) : L.F("last run {0}", When(l)));
             return string.Join(" · ", parts);
         }
     }
 
-    public string Short => !Enabled ? "Paused" : Next is { } n ? When(n) : Schedule;
+    public string Short => !Enabled ? L.T("Paused") : Next is { } n ? When(n) : Schedule;
 
-    static string When(DateTime d) => d.Date == DateTime.Today ? d.ToString("t") : d.ToString("MMM d, ", UiCulture.Value) + d.ToString("t");
+    static string When(DateTime d) => d.Date == DateTime.Today ? d.ToString("t") : d.ToString(L.T("MMM d, "), UiCulture.Dates) + d.ToString("t");
 }
 
 /// <summary>
@@ -86,13 +86,13 @@ internal static class SchedulerCom
             if (Com(Com(trigger, "Repetition", Get)!, "Interval", Get) is string { Length: > 0 } iso)
             {
                 var every = XmlConvert.ToTimeSpan(iso);
-                return every.TotalMinutes < 60 ? $"Every {every.TotalMinutes:0} min" : every.TotalHours < 24 ? $"Every {every.TotalHours:0.#} h" : $"Every {every.TotalDays:0.#} d";
+                return every.TotalMinutes < 60 ? L.F("Every {0:0} min", every.TotalMinutes) : every.TotalHours < 24 ? L.F("Every {0:0.#} h", every.TotalHours) : L.F("Every {0:0.#} d", every.TotalDays);
             }
             return Convert.ToInt32(Com(trigger, "Type", Get)) switch
             {
-                1 => "Once", 2 => "Daily", 3 => "Weekly", 4 or 5 => "Monthly", 6 => "When idle", 8 => "At startup", 9 => "At sign-in", _ => "On an event",
+                1 => L.T("Once"), 2 => L.T("Daily"), 3 => L.T("Weekly"), 4 or 5 => L.T("Monthly"), 6 => L.T("When idle"), 8 => L.T("At startup"), 9 => L.T("At sign-in"), _ => L.T("On an event"),
             };
         }
-        return "No trigger";
+        return L.T("No trigger");
     }
 }

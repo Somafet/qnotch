@@ -39,11 +39,11 @@ internal sealed class DropScreen : Grid
         AllowDrop = true;
         SetResourceReference(BackgroundProperty, "SurfaceBrush");
         AutomationProperties.SetAutomationId(this, "drop-screen");
-        AutomationProperties.SetName(this, "Drop files");
+        AutomationProperties.SetName(this, L.T("Drop files"));
         RowDefinitions.Add(new RowDefinition { Height = new GridLength(70) });
         RowDefinitions.Add(new RowDefinition());
 
-        var hint = UiKit.Text("Choose where they go", "Muted");
+        var hint = UiKit.Text(L.T("Choose where they go"), "Muted");
         hint.Margin = new Thickness(0, 3, 0, 0);
         var header = new StackPanel { Margin = new Thickness(23, 18, 23, 0), VerticalAlignment = VerticalAlignment.Top };
         header.Children.Add(_title);
@@ -77,9 +77,9 @@ internal sealed class DropScreen : Grid
         _files = files;
         _title.Text = files.Count switch
         {
-            0 => "Drop files",
-            1 => $"Drop {FileName(files[0])}",
-            _ => $"Drop {files.Count} items",
+            0 => L.T("Drop files"),
+            1 => L.F("Drop {0}", FileName(files[0])),
+            _ => L.F("Drop {0} items", files.Count),
         };
         _shown = "";
         Build();
@@ -103,7 +103,7 @@ internal sealed class DropScreen : Grid
         _shown = key;
         _groups.Children.Clear();
         foreach (var (source, targets) in lists) _groups.Children.Add(Group(source, targets));
-        _empty.Content = lists.Count == 0 ? Placeholder.Create("", "", "Nothing can take these files right now.") : null;
+        _empty.Content = lists.Count == 0 ? Placeholder.Create("", "", L.T("Nothing can take these files right now.")) : null;
         _empty.Visibility = lists.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 

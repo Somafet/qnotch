@@ -1,3 +1,5 @@
+using QNotch.Core;
+
 namespace QNotch.Modules.Weather;
 
 /// <summary>The forecast from yr.no for one place: a Home card, the temperature in the pill and the game bar, and a settings section.</summary>
@@ -13,11 +15,11 @@ public sealed class WeatherModule : INotchModule, ICadenceAware
         var set = ctx.Settings.Get<WeatherSettings>("weather");
         var svc = _svc = new WeatherService(ctx, s, set);
 
-        ctx.Cards.Register(new CardDescriptor("weather", "Weather", 15, () => new WeatherCard(s, svc, ctx.Shell), DefaultSize: CardSize.Medium));
-        ctx.SettingsSections.Register(new SettingsSectionDescriptor("weather", "Weather", Sun, 55, () => WeatherSection.Create(ctx, s, svc)));
+        ctx.Cards.Register(new CardDescriptor("weather", L.T("Weather"), 15, () => new WeatherCard(s, svc, ctx.Shell), DefaultSize: CardSize.Medium));
+        ctx.SettingsSections.Register(new SettingsSectionDescriptor("weather", L.T("Weather"), Sun, 55, () => WeatherSection.Create(ctx, s, svc)));
         ctx.Segments.Register(new SegmentDescriptor("weather.pill", SegmentSlot.PillRight, 9, () => WeatherSegments.Pill(s),
             Presented: () => set.ShowInPill, SetPresented: v => { set.ShowInPill = v; ctx.Settings.Save("weather", set); svc.Reformat(); }));
-        ctx.Segments.Register(new SegmentDescriptor("weather.game", SegmentSlot.GameBar, 68, () => WeatherSegments.Game(s), "Weather", "Temperature and sky at your place."));
+        ctx.Segments.Register(new SegmentDescriptor("weather.game", SegmentSlot.GameBar, 68, () => WeatherSegments.Game(s), L.T("Weather"), L.T("Temperature and sky at your place.")));
 
         if (!ctx.Settings.ReadOnly) WeatherSetup.PlaceChosen += svc.SetPlace; // the welcome tour, opened from Settings while this runs
         svc.Start();
