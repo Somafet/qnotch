@@ -208,8 +208,8 @@ internal static partial class Snapshot
             catch (Exception ex) { Fail("onboarding", Reason(ex)); Log.Warn("Welcome tour snapshot failed", ex); }
         }
 
-        // The first-week quit question, rendered from a window that is never activated: quit-question.png.
-        if (Wants("quit-question"))
+        // The first-week quit question, rendered from a window that is never activated: quit-question.png and its second step, quit-question-missing.png.
+        if (Wants("quit-question") || Wants("quit-question-missing"))
         {
             try { Onboarding.QuitQuestionWindow.Snapshot((el, name) => Shot(name, p => Render.Save(el, p))); }
             catch (Exception ex) { Fail("quit-question", Reason(ex)); Log.Warn("Quit question snapshot failed", ex); }

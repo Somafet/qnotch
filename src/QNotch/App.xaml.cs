@@ -295,8 +295,8 @@ public partial class App : Application
         gs.QuitQuestionAsked = true;
         _store!.Save("general", gs);
         _store.Flush();
-        if (Shell.Onboarding.QuitQuestionWindow.Ask() is { } target)
-            Analytics.Track("shell", "quit_reason", surface, target); // OnExit's Analytics.Dispose flushes the queue, this event included
+        if (Shell.Onboarding.QuitQuestionWindow.Ask() is ({ } target, var missing))
+            Analytics.TrackQuitReason(surface, target, missing); // OnExit's Analytics.Dispose flushes the queue, this event included
     }
 
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]

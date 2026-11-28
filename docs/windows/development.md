@@ -50,6 +50,7 @@ Every PNG is rendered at 2x and has a text outline with the same name (`.txt`):
 | `settings-<id>.png`, `settings-<id>-end.png` | Every settings section, and the bottom of a page taller than the window |
 | `onboarding-<step>.png`, `onboarding-features-ondemand.png` | Every welcome tour step, and the read-only Features step opened from Settings |
 | `quit-question.png` | The first-week quit question (Windows only) |
+| `quit-question-missing.png` | Its what's-missing step, with the text box (Windows only) |
 
 `snapshot.txt` starts with `version:`, `self-contained:` and, with `--only`, `only:` lines, then lists `<view>: ok` or `FAILED: <view>: <reason>` for each view; a failed view does not stop the others. The last line is `done` only when every view passed; the exit code is then 0, otherwise 1. Other output, such as the hotkey parse checks, goes to `snapshot.log`. `node scripts/check-snapshots.mjs <dir>` checks the report, that every PNG has an outline and every outline a PNG, the file names, the required views and the outline format. Inspect changed PNGs and attach them to UI pull requests. CI disables native runtime error dialogs, checks the exit code, applies a 120-second timeout, runs the checker and uploads `snapshots` even on failure.
 

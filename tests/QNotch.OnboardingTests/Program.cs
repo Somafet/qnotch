@@ -96,6 +96,20 @@ await Test("quit question answers: six fixed ids plus skip", () =>
         ["quit_in_the_way", "quit_not_useful", "quit_missing_feature", "quit_not_working", "quit_just_trying", "quit_back_later"]));
     Assert(QuitQuestion.Skipped == "quit_skipped" && QuitQuestion.Targets.Count() == 7);
     Assert(QuitQuestion.Answers.All(a => a.Label.Length is > 0 and <= 40 && !a.Label.Contains('—')));
+    Assert(QuitQuestion.Answers.Any(a => a.Target == QuitQuestion.MissingFeature));
+    return Task.CompletedTask;
+});
+await Test("quit question what's missing text is cleaned", () =>
+{
+    Assert(QuitQuestion.CleanMissing(null) is null && QuitQuestion.CleanMissing("") is null && QuitQuestion.CleanMissing(" \t\r\n\u0007 ") is null);
+    Assert(QuitQuestion.CleanMissing("  calendar\r\n\tsync  ") == "calendar sync");
+    Assert(QuitQuestion.CleanMissing("a\u0000\u001Fb") == "a b");
+    var longText = new string('x', 500);
+    Assert(QuitQuestion.CleanMissing(longText)!.Length == QuitQuestion.MissingMaxLength);
+    Assert(QuitQuestion.CleanMissing(new string('x', 199) + "😀")!.Length == 199);          // never half a surrogate pair
+    Assert(QuitQuestion.CleanMissing(new string('x', 198) + "😀") == new string('x', 198) + "😀");
+    Assert(QuitQuestion.CleanMissing(new string('x', 200) + "   y")!.Length == 200);        // a trailing gap is never sent
+    Assert(QuitQuestion.CleanMissing(new string('x', 199) + " y") == new string('x', 199));
     return Task.CompletedTask;
 });
 
