@@ -25,11 +25,29 @@ Package-manager channels are recognized locally from the executable's install fo
 
 A new Windows install is asked once, when the user quits, for the main reason. The question appears only when the install's first run was less than 7 days ago, it was never asked before, analytics is enabled (the local preference and the environment override, with delivery configured), the run is a normal one (not `--snapshot`, `--smoke-test`, `--measure`, `--debug-control` or read-only) and the shell is not in game mode. It never follows another exit: sign-out or shutdown, Restart now, an update install, the debug channel's `quit`, a second instance leaving or a crash. Only the two quit commands a user chooses ask: the tray menu and Settings, About. An install from before the question has no recorded first-run date and is never asked.
 
-Choosing an answer, Skip, Esc or closing the dialog records `shell`/`quit_reason` with the same surface as the `quit` that triggered it (`tray` for the tray menu, `ui` for Settings), then quits. `quit` is unchanged. The `target` is one of seven fixed ids and nothing else: `quit_in_the_way` (It gets in my way), `quit_not_useful` (Nothing in it I'd use), `quit_missing_feature` (It's missing something I need), `quit_not_working` (Something didn't work), `quit_just_trying` (Just having a look), `quit_back_later` (Closing it for now, I'll be back) and `quit_skipped`. There is no text field and nothing else is sent. Every way out of the dialog quits; it cannot cancel the quit. The first-run date and the asked flag are local `GeneralSettings` values, excluded from setup codes. The Mac has no such question.
+Choosing an answer, Skip, Esc or closing the dialog records `shell`/`quit_reason` with the same surface as the `quit` that triggered it (`tray` for the tray menu, `ui` for Settings), then quits. `quit` is unchanged. The `target` is one of seven fixed ids and nothing else: `quit_in_the_way` (It gets in my way), `quit_not_useful` (Nothing in it I'd use), `quit_missing_feature` (It's missing something I need), `quit_not_working` (Something didn't work), `quit_just_trying` (Just having a look), `quit_back_later` (Closing it for now, I'll be back) and `quit_skipped`. The first step has no text field. Every way out of the dialog quits; it cannot cancel the quit. The first-run date and the asked flag are local `GeneralSettings` values, excluded from setup codes. The Mac has no such question.
+
+### What's missing (second step)
+
+Choosing **It's missing something I need** does not quit at once. The same window switches to a second step that asks what was missing:
+
+| Part | Wording or behaviour | Automation id |
+| --- | --- | --- |
+| Heading | What's missing? | |
+| Prompt | What did you need QNotch to do? | |
+| Text box | One box, wraps to three lines, at most 200 characters. Enter sends; it takes no line breaks. Focused when the step opens | `quit-reason-missing-text` |
+| Fine print | Sends what you type with your answer. Leave out anything personal. | |
+| Skip | Link button, left of Send | `quit-reason-missing-skip` |
+| Send | Accent button, last in the footer. Disabled while the box is empty or only spaces | `quit-reason-missing-send` |
+| Close | The same top-right close button as the first step | `quit-reason-close` |
+
+The step has no Back button. The first step's fine print stays as it is ("Sends only the answer you pick, or that you skipped. No text."), because that step sends no text.
+
+Send records `quit_reason` with `target` `quit_missing_feature` and one more property, `missing_feature`: the text, trimmed, with every run of whitespace or control characters turned into one space, and cut to 200 characters without splitting a character. Skip, Esc, the close button and any other close record the same event without `missing_feature`: the answer was already chosen. Every way out still quits. `missing_feature` is the only free text in any QNotch event, it is allowed only on this event with this target, and it is never logged locally.
 
 ## Privacy and identity
 
-No paths, names, titles, clipboard, notes, searches, terminal input/output, file metadata, account names, raw account ids, credentials, JWTs, notification text, token material or arbitrary errors enter payloads. Token reveal/copy events contain only the fixed action. No identify/person updates, autocapture, pageviews, exception capture, session recording or replay are enabled.
+Apart from the text a user types into the quit question's second step and chooses to send (`missing_feature`, see [What's missing](#whats-missing-second-step)), no paths, names, titles, clipboard, notes, searches, terminal input/output, file metadata, account names, raw account ids, credentials, JWTs, notification text, token material or arbitrary errors enter payloads. Token reveal/copy events contain only the fixed action. No identify/person updates, autocapture, pageviews, exception capture, session recording or replay are enabled.
 
 Identity adapts T3 Code commit `32ecd71726fee16f335484c1f95cbce126d461f6`: SHA-256 of Codex `tokens.account_id`, otherwise Claude `userID`, otherwise the persistent random install UUID. `install_id` is always SHA-256 of that UUID. Codex Team accounts can share a distinct id; the install hash distinguishes installations. Missing, malformed or API-key-only provider files fall through. Only the selected identifiers are read locally and hashed; tokens are never sent. [Synthetic hash vectors](../tests/fixtures/analytics/identity-v1.json) are consumed by platform tests. These are pseudonymous identifiers, not a claim of anonymous people.
 

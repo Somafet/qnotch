@@ -122,7 +122,16 @@ internal sealed class Analytics : IDisposable
 
     internal static string? Canonical(string? id) => id switch { "timer" => "pomodoro", "note" => "notes", "filetray" => "files", "colorpicker" => "color_picker", _ => id };
 
-    internal void Record(string module, string action, string surface = "ui", string? target = null, bool? enabled = null)
+    /// <summary>The quit question's answer. <paramref name="missing"/> is the only free text QNotch ever sends (spec/analytics.md, What's
+    /// missing): cleaned here and kept only on <see cref="QuitQuestion.MissingFeature"/>.</summary>
+    internal static void TrackQuitReason(string surface, string target, string? missing) => Current?.RecordQuitReason(surface, target, missing);
+
+    internal void RecordQuitReason(string surface, string target, string? missing) =>
+        Record("shell", "quit_reason", surface, target, null, target == QuitQuestion.MissingFeature ? QuitQuestion.CleanMissing(missing) : null);
+
+    internal void Record(string module, string action, string surface = "ui", string? target = null, bool? enabled = null) => Record(module, action, surface, target, enabled, null);
+
+    void Record(string module, string action, string surface, string? target, bool? enabled, string? missing)
     {
         lock (_gate)
         {
@@ -135,6 +144,7 @@ internal sealed class Analytics : IDisposable
             properties["module"] = module; properties["action"] = action; properties["surface"] = surface; properties["outcome"] = "requested";
             if (target is not null) properties["target"] = target;
             if (enabled is not null) properties["enabled"] = enabled.Value;
+            if (missing is not null) properties["missing_feature"] = missing;
             Enqueue("qnotch_action", ids.Distinct, properties);
         }
     }

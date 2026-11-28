@@ -181,7 +181,7 @@ internal static class AnalyticsChecks
         await LifecycleAsync();
     }
 
-    /// <summary>The first-week quit question: shell/quit_reason with one of the seven fixed targets, nothing free-form, and it leaves with the exit flush.</summary>
+    /// <summary>The first-week quit question: shell/quit_reason with one of the seven fixed targets, free text only as the cleaned missing_feature of quit_missing_feature, and it leaves with the exit flush.</summary>
     static async Task QuitReasonAsync(HashSet<string> catalogTargets)
     {
         Check(AnalyticsCatalog.Allows("shell", "quit") && AnalyticsCatalog.Allows("shell", "quit_reason"));
@@ -192,11 +192,21 @@ internal static class AnalyticsChecks
         analytics.Record("shell", "quit", "tray");
         analytics.Record("shell", "quit_reason", "tray", "quit_back_later");
         analytics.Record("shell", "quit_reason", "ui", "quit_skipped");
-        analytics.Record("shell", "quit_reason", "ui", "quit_because I said so"); // free text is never accepted
-        Check(analytics.Buffered == 3);
+        analytics.Record("shell", "quit_reason", "ui", "quit_because I said so"); // free text is never accepted as a target
+        analytics.RecordQuitReason("tray", "quit_missing_feature", "  calendar\r\nsync ");
+        analytics.RecordQuitReason("ui", "quit_missing_feature", null);
+        analytics.RecordQuitReason("ui", "quit_not_working", "text on another answer is dropped");
+        analytics.RecordQuitReason("ui", "quit_missing_feature", "   ");
+        Check(analytics.Buffered == 7);
         analytics.Dispose(); // exit: the best-effort flush includes an answer recorded a moment before
         var sent = transport.Bodies.SelectMany(b => JsonDocument.Parse(b).RootElement.GetProperty("batch").EnumerateArray()).Select(e => e.GetProperty("properties")).ToArray();
-        Check(sent.Length == 3);
+        Check(sent.Length == 7);
+        Check(sent[3].GetProperty("target").GetString() == "quit_missing_feature" && sent[3].GetProperty("missing_feature").GetString() == "calendar sync"
+            && sent[3].GetProperty("surface").GetString() == "tray");
+        Check(sent[4].GetProperty("target").GetString() == "quit_missing_feature" && !sent[4].TryGetProperty("missing_feature", out _));
+        Check(sent[5].GetProperty("target").GetString() == "quit_not_working" && !sent[5].TryGetProperty("missing_feature", out _));
+        Check(!sent[6].TryGetProperty("missing_feature", out _));
+        Check(sent.Take(3).All(p => !p.TryGetProperty("missing_feature", out _)));
         Check(!sent[0].TryGetProperty("target", out _) && sent[0].GetProperty("action").GetString() == "quit");
         Check(sent[1].GetProperty("action").GetString() == "quit_reason" && sent[1].GetProperty("surface").GetString() == "tray"
             && sent[1].GetProperty("target").GetString() == "quit_back_later" && sent[1].GetProperty("module").GetString() == "shell");

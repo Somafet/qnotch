@@ -22,6 +22,32 @@ public static class QuitQuestion
 
     public const string Skipped = "quit_skipped";
 
+    /// <summary>The answer that opens the second step, which asks what was missing.</summary>
+    public const string MissingFeature = "quit_missing_feature";
+
+    /// <summary>The most characters of what-was-missing text that are sent.</summary>
+    public const int MissingMaxLength = 200;
+
+    /// <summary>The text the second step sends as <c>missing_feature</c>: trimmed, every run of whitespace or control characters made one
+    /// space, cut to <see cref="MissingMaxLength"/> without splitting a surrogate pair. Null when nothing is left.</summary>
+    public static string? CleanMissing(string? text)
+    {
+        if (string.IsNullOrEmpty(text)) return null;
+        var sb = new System.Text.StringBuilder(Math.Min(text.Length, MissingMaxLength));
+        var gap = false;
+        foreach (var c in text)
+        {
+            if (char.IsWhiteSpace(c) || char.IsControl(c)) { gap = sb.Length > 0; continue; }
+            if (gap) { sb.Append(' '); gap = false; }
+            sb.Append(c);
+            if (sb.Length >= MissingMaxLength) break;
+        }
+        if (sb.Length > MissingMaxLength) sb.Length = MissingMaxLength;
+        if (sb.Length > 0 && char.IsHighSurrogate(sb[^1])) sb.Length--;
+        if (sb.Length > 0 && sb[^1] == ' ') sb.Length--; // the cut fell just after a gap
+        return sb.Length == 0 ? null : sb.ToString();
+    }
+
     /// <summary>Every target this question can record.</summary>
     public static IEnumerable<string> Targets => Answers.Select(a => a.Target).Append(Skipped);
 
